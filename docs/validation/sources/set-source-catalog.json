@@ -1,0 +1,2030 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-10",
+  "task": "S2-02",
+  "purpose": "原卷供给审计清单；不是已入库/已发布题目或教师核验结果",
+  "sources": [
+    {
+      "role": "teacher",
+      "path": "docs/validation/raw/第1讲_集合_一轮复习基础梳理_解析版.pdf",
+      "sha256": "866fb29f1d6a285f74290b03d6f5793569fbeb796d58a9ada1f8c5d918b35da2",
+      "physical_pages": 27
+    },
+    {
+      "role": "student_named_source",
+      "path": "docs/validation/raw/第1讲_集合_一轮复习基础梳理_原卷版.pdf",
+      "sha256": "4e721470062d7f8ecc6a7b749a16863636f751aa950260cf709750e86a2d0217",
+      "physical_pages": 18
+    }
+  ],
+  "id_policy": "SET-SRC-001至050按固定指纹解析版阅读顺序分配；本次冻结后不重新编号，后续追加新ID。每个完整父题为一单元，小问不拆分；两个版本为同一源题的两种载体。",
+  "method": "PyMuPDF逐页文本提取、50处明确题目标记与两个版本顺序交叉核对；原解析第14/16/21页及原卷第2/10/16页渲染查验关键异常；非全量逐页视觉核验、非付费OCR、非教师审核。",
+  "totals": {
+    "source_units": 50,
+    "worked_examples": 16,
+    "tracking_exercises": 34,
+    "question_types": {
+      "single_choice": 32,
+      "fill_blank": 16,
+      "free_response": 2
+    },
+    "learned_boundary": {
+      "within": 49,
+      "unknown": 1,
+      "out": 0
+    },
+    "teacher_answer_present": 50,
+    "teacher_solution_present": 50,
+    "student_source_answer_or_solution_leak_units": 11
+  },
+  "dedup": {
+    "exact_normalized_stem_duplicate_groups": [],
+    "assessment": "50个源题保留为独立单元。两版本先按顺序与题干对应归一；局部题号重复不去重。已对50条提取题干去空白后SHA256比较，无完全相同组；不同数值/故事的相近考点题未视为重复。尚未进行全库或语义近重复审核。"
+  },
+  "student_source_leak_audit_ids": [
+    "SET-SRC-001",
+    "SET-SRC-002",
+    "SET-SRC-007",
+    "SET-SRC-008",
+    "SET-SRC-013",
+    "SET-SRC-014",
+    "SET-SRC-028",
+    "SET-SRC-029",
+    "SET-SRC-042",
+    "SET-SRC-043",
+    "SET-SRC-044"
+  ],
+  "benchmark_slots": [
+    {
+      "slot": 1,
+      "benchmark_audit_id": "SET-SRC-001",
+      "direct_alternatives": [
+        "SET-SRC-002",
+        "SET-SRC-003",
+        "SET-SRC-013"
+      ],
+      "partial_alternatives": [
+        "SET-SRC-004"
+      ],
+      "direct_alternative_count": 3,
+      "status": "has_direct_alternative",
+      "note": "直接备选均考确定性单选；第4项同时涉及三特性。"
+    },
+    {
+      "slot": 2,
+      "benchmark_audit_id": "SET-SRC-008",
+      "direct_alternatives": [
+        "SET-SRC-007",
+        "SET-SRC-009",
+        "SET-SRC-010"
+      ],
+      "partial_alternatives": [],
+      "direct_alternative_count": 3,
+      "status": "has_direct_alternative",
+      "note": "均为常用数集属于关系单选；正确个数题的答题形式稍有差异。"
+    },
+    {
+      "slot": 3,
+      "benchmark_audit_id": "SET-SRC-022",
+      "direct_alternatives": [
+        "SET-SRC-020"
+      ],
+      "partial_alternatives": [
+        "SET-SRC-021",
+        "SET-SRC-023"
+      ],
+      "direct_alternative_count": 1,
+      "status": "has_direct_alternative",
+      "note": "第20项同为正整数约束的描述法转列举法；21改考方程根，23反向转描述法。"
+    },
+    {
+      "slot": 4,
+      "benchmark_audit_id": "SET-SRC-035",
+      "direct_alternatives": [
+        "SET-SRC-034"
+      ],
+      "partial_alternatives": [
+        "SET-SRC-036",
+        "SET-SRC-037"
+      ],
+      "direct_alternative_count": 1,
+      "status": "has_direct_alternative",
+      "note": "第34项考空集真子集；36增判别式参数，37转交集及子集数量，均不覆盖原题全部辨析点。"
+    },
+    {
+      "slot": 5,
+      "benchmark_audit_id": "SET-SRC-045",
+      "direct_alternatives": [],
+      "partial_alternatives": [
+        "SET-SRC-043",
+        "SET-SRC-044"
+      ],
+      "direct_alternative_count": 0,
+      "status": "no_direct_alternative",
+      "note": "43为二次不等式与区间交集；44为绝对值补集。二者均缺“绝对值不等式+有限集取交”的完整组合。"
+    },
+    {
+      "slot": 6,
+      "benchmark_audit_id": "SET-SRC-047",
+      "direct_alternatives": [],
+      "partial_alternatives": [
+        "SET-SRC-036",
+        "SET-SRC-046"
+      ],
+      "direct_alternative_count": 0,
+      "status": "no_direct_alternative",
+      "note": "36仅共享含参集合，46仅共享补并运算；均不能保持原题“并集覆盖全集及端点求参”目标。"
+    },
+    {
+      "slot": 7,
+      "benchmark_audit_id": "SET-SRC-018",
+      "direct_alternatives": [],
+      "partial_alternatives": [
+        "SET-SRC-019"
+      ],
+      "direct_alternative_count": 0,
+      "status": "no_direct_alternative",
+      "note": "19同为互异性含参填空，但不含元素属于条件后的二次方程舍根陷阱。"
+    },
+    {
+      "slot": 8,
+      "benchmark_audit_id": "SET-SRC-049",
+      "direct_alternatives": [],
+      "partial_alternatives": [],
+      "direct_alternative_count": 0,
+      "status": "no_direct_alternative",
+      "note": "源内无第二道补集逆推二次方程系数的填空题；不得改题型凑数。"
+    },
+    {
+      "slot": 9,
+      "benchmark_audit_id": "SET-SRC-050",
+      "direct_alternatives": [],
+      "partial_alternatives": [
+        "SET-SRC-041"
+      ],
+      "direct_alternative_count": 0,
+      "status": "no_direct_alternative",
+      "note": "唯一其他解答题是第41项，考点和认知任务不同，且已占标杆第10题；同卷不可重复占位。"
+    },
+    {
+      "slot": 10,
+      "benchmark_audit_id": "SET-SRC-041",
+      "direct_alternatives": [],
+      "partial_alternatives": [
+        "SET-SRC-050"
+      ],
+      "direct_alternative_count": 0,
+      "status": "no_direct_alternative",
+      "note": "唯一其他解答题是第50项，缺a=0退化及非空真子集计数，且已占标杆第9题。"
+    }
+  ],
+  "limitations": [
+    "边界within仅是本次文档核查结论，不表示答案正确性、题目质量、学生掌握、难度或45分钟适用性已经验证。",
+    "原卷版包含例题答案解析和知识讲解，不能原样作为学生成卷；需从题干字段重新排版并做答案泄露检查。",
+    "所有源题缺少本次试卷的分值和逐步评分规则；标杆建议规则不能泛化为源卷评分。",
+    "源题学校、考试来源按汇编原标注保留，未验证最初发布源。",
+    "疑似错误详见content_notes；未在本轮修改物理源PDF。"
+  ],
+  "questions": [
+    {
+      "audit_id": "SET-SRC-001",
+      "sequence": 1,
+      "source_section": 1,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        2
+      ],
+      "student_pdf_pages": [
+        2
+      ],
+      "summary": "成集判断：南充高个学生、难题、方程实根、接近π",
+      "required_knowledge": "确定性与方程实根",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例1.（2025 秋•南充校级期中）下列选项中，能够构成集合的是（  ） \nA．南充高中高2024 级个子较高的学生 \nB．高中数学人教A 版必修第一册中的难题 \nC．关于x 的方程x\n2-1=0 的所有实根 \nD．无限接近于π的所有实数",
+      "stem_extracted_sha256": "af1bce510f38b1608bd8421f56ca815114abebd0415c756d69271c4f6276a31a",
+      "benchmark_slot": 1,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "成集判断：南充高个学生、难题、方程实根、接近π",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-002",
+      "sequence": 2,
+      "source_section": 1,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        2,
+        3
+      ],
+      "student_pdf_pages": [
+        2,
+        3
+      ],
+      "summary": "成集判断：接近0、身高、绝对值5、数学家",
+      "required_knowledge": "确定性与绝对值",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C 典型例题",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例2.（2025 秋•西乡塘区期中）下列对象能组成集合的是（  ） \nA．非常接近0 的数 \nB．身高很高的人 \nC．绝对值为5 的数 \nD．著名的数学家",
+      "stem_extracted_sha256": "39efff1bd212f8639d71e37ac868a54e3eb70387011145c5130937ae5323adfe",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "成集判断：接近0、身高、绝对值5、数学家",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-003",
+      "sequence": 3,
+      "source_section": 1,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        3
+      ],
+      "student_pdf_pages": [
+        3
+      ],
+      "summary": "成集判断：800米达标女生与模糊描述",
+      "required_knowledge": "确定性",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2025 秋•于都县校级月考）下列叙述能够组成集合的是（  ） \nA．我校所有体质好的同学 \nB．我校所有800 米达标的女生 \nC．全国所有优秀的运动员 \nD．全国所有环境优美的城市",
+      "stem_extracted_sha256": "25410c2229e614aa90bac69937a39b85cba98877080d81da3f82199e31621ef2",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "成集判断：800米达标女生与模糊描述",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-004",
+      "sequence": 4,
+      "source_section": 1,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        3,
+        4
+      ],
+      "student_pdf_pages": [
+        3
+      ],
+      "summary": "常任理事国、无序性与重复元素计数",
+      "required_knowledge": "确定性、无序性、互异性",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "A",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】（2025 秋•北碚区校级月考）下列说法中正确的是（  ） \nA．联合国所有常任理事国（共5 个）组成一个集合 \nB．朝阳中学年龄较小的学生组成一个集合 \nC．{1，2，3}与{2，1，3}是不同的集合 \nD．由1，0，5，1，2，5 组成的集合有六个元素",
+      "stem_extracted_sha256": "1c09ba2fd7e80270befc0b2b98a0ec4264d1df08ec8c085f4aacb34055f9dc00",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "常任理事国、无序性与重复元素计数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-005",
+      "sequence": 5,
+      "source_section": 1,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        4
+      ],
+      "student_pdf_pages": [
+        3
+      ],
+      "summary": "不成集对象：非常接近1的实数",
+      "required_knowledge": "确定性",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "②．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】（2024 秋•嘉定区校级月考）下列各对象的全体不能构成集合的有 ______．（填\n序号） \n①上大嘉高高一年级全体学生； \n②与1 非常接近的全体实数； \n③7 的正整数倍的全体； \n④给定的一条长度为1 的线段上的所有点．",
+      "stem_extracted_sha256": "7572957b35db94d8c0c3082d8beb1be1f7b550869e777203300e2e915ca34854",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "不成集对象：非常接近1的实数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-006",
+      "sequence": 6,
+      "source_section": 1,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        4,
+        5
+      ],
+      "student_pdf_pages": [
+        3,
+        4
+      ],
+      "summary": "成集对象：入学学生、到定点距离、正整数不等式解",
+      "required_knowledge": "确定性、初中距离与一次不等式",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "①②④．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】（2025 秋•浦东新区期末）请将下列各组对象能组成集合的序号填在后面的横线\n上 ______． \n①上海市2022 年入学的全体高一年级新生； \n②在平面直角坐标系中，到定点（0，0）的距离等于1 的所有点； \n③影响力比较大的中国数学家； \n④不等式3x-10＜0 的所有正整数解．",
+      "stem_extracted_sha256": "c1ba9cfb85c5536c13e934d36d5290a6f6d45d17e1163045dae22328e6086de4",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "成集对象：入学学生、到定点距离、正整数不等式解",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-007",
+      "sequence": 7,
+      "source_section": 2,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        5
+      ],
+      "student_pdf_pages": [
+        4
+      ],
+      "summary": "判断1/2、√2、|-3|、|-√3|所属数集",
+      "required_knowledge": "常用数集、绝对值与平方根",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例1.（2024 秋•双清区校级期末）给出下列关系：①\n1\n2 ∈𝑅；②√2 ∉𝑅；③|-3|∈N；④| −√3| ∈\n𝑄．其中正确的个数为（  ） \nA．1 \nB．2 \nC．3 \nD．4",
+      "stem_extracted_sha256": "42f3c5c1ebdcf9ec80bf025a16e7abfa0b6318faaca89ea86b8fba2613cec289",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "判断1/2、√2、|-3|、|-√3|所属数集",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-008",
+      "sequence": 8,
+      "source_section": 2,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        6
+      ],
+      "student_pdf_pages": [
+        5
+      ],
+      "summary": "判断-3、√5、1/2、0与数集关系",
+      "required_knowledge": "常用数集与元素关系",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例2.（2024•包河区校级学业考试）下列元素与集合的关系中，正确的是（  ） \nA．-3∈N\n* \nB．√5 ∈𝑅 \nC．\n1\n2 ∈𝑍 \nD．0∉N",
+      "stem_extracted_sha256": "0196c8044458e0a981e871e3b199e5f3d2363664ef027e6033d68c0642ffff8a",
+      "benchmark_slot": 2,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "判断-3、√5、1/2、0与数集关系",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-009",
+      "sequence": 9,
+      "source_section": 2,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        6
+      ],
+      "student_pdf_pages": [
+        5
+      ],
+      "summary": "判断0、5/2、-√2、-7.8与数集关系",
+      "required_knowledge": "常用数集与元素关系",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "D",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2025 秋•武威月考）下列关系正确的是（  ） \nA．0∈N\n* \nB．\n5\n2 ∈𝑍 \nC．−√2 ∈𝑄 \nD．-7.8∈R",
+      "stem_extracted_sha256": "d4dd22fca338f8feab4b2bebebb0c40f2e366bc4148a4bd8bc345ce9c56c5fa7",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "判断0、5/2、-√2、-7.8与数集关系",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-010",
+      "sequence": 10,
+      "source_section": 2,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        6,
+        7
+      ],
+      "student_pdf_pages": [
+        5
+      ],
+      "summary": "判断√2、4、0的元素关系正确个数",
+      "required_knowledge": "常用数集与元素关系",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "A",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】（2025 秋•海陵区校级月考）设有下列关系：①√2∈R；②4∈Q；③0∈N；④0\n∈{0，1}．其中正确的个数为（  ） \nA．4 个 \nB．3 个 \nC．2 个 \nD．1 个",
+      "stem_extracted_sha256": "7ded19fb76d26afdc4a47af4c0d1c0b26df15055cd6597a6a1499d160f50d4f8",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "判断√2、4、0的元素关系正确个数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-011",
+      "sequence": 11,
+      "source_section": 2,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        7
+      ],
+      "student_pdf_pages": [
+        5
+      ],
+      "summary": "填√5、√16与自然数集的属于符号",
+      "required_knowledge": "平方根与元素关系",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "∉，∈．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】（2025 春•武威月考）用符号“∈”或“∉”填空：√5 ______N，√16 ______N．",
+      "stem_extracted_sha256": "d38c84d01c6fd604ef10cc6dcbb68ba9853334f0da06d457c0221e5f12607961",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "填√5、√16与自然数集的属于符号",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-012",
+      "sequence": 12,
+      "source_section": 2,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        7
+      ],
+      "student_pdf_pages": [
+        5
+      ],
+      "summary": "自然数、空集、π与集合元素关系辨析",
+      "required_knowledge": "常用数集、空集与包含关系",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "②．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】（2025 秋•虹口区校级期中）在下列表达式中，①0∉N；②∅⊂{0}；③π∈Q；④\n{1}∈{0，1}，其中正确的为 ______（填写所有正确的序号）．",
+      "stem_extracted_sha256": "a625e1e6c8716414c02abfbd8732c373e6074511dcc99092ecbf65d449ad9203",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "自然数、空集、π与集合元素关系辨析",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-013",
+      "sequence": 13,
+      "source_section": 3,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        8
+      ],
+      "student_pdf_pages": [
+        6
+      ],
+      "summary": "游戏妖怪描述的确定性",
+      "required_knowledge": "确定性",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "A",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例1.（2025•青山湖区校级模拟）8 月20 日《黑传说悟空》风靡全球，下列几组对象可以构成\n集合的是（  ） \nA．游戏中会变身的妖怪 \nB．游戏中长的高的妖怪 \nC．游戏中能力强的妖怪 \nD．游戏中击败后给奖励多的妖怪",
+      "stem_extracted_sha256": "2575ca0cb50ca18ef105b405e8fcf0a42dfec9a922adaa066116b208e49ee59b",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "游戏妖怪描述的确定性",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-014",
+      "sequence": 14,
+      "source_section": 3,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        8,
+        9
+      ],
+      "student_pdf_pages": [
+        7
+      ],
+      "summary": "四根不同长度火柴组成四边形的类别",
+      "required_knowledge": "互异性与初中四边形性质",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "A",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例2.（2024 秋•安康期末）有4 根火柴棒的长度可以构成一个四元数集，将这4 根火柴棒首尾\n相接连成一个平面四边形，则这个平面四边形可能是（  ） \nA．梯形 \nB．矩形 \nC．菱形 \nD．等腰梯形 \n典型例题",
+      "stem_extracted_sha256": "def28cfe810548e8ccc46b3de87f4fd956e63f823a10f121192cd38c549ae660",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "四根不同长度火柴组成四边形的类别",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-015",
+      "sequence": 15,
+      "source_section": 3,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        9
+      ],
+      "student_pdf_pages": [
+        7
+      ],
+      "summary": "1与{1}、无序性、重复方程根、无限集列举辨析",
+      "required_knowledge": "无序性、互异性与表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2024 秋•颍上县校级期末）下列说法中正确的是（  ） \nA．1 与{1}表示同一个集合 \nB．由1，2，3 组成的集合可表示为{1，2，3}或{3，2，1} \nC．方程（x-1）\n2（x-2）=0 的所有解的集合可表示为{1，1，2} \nD．集合{x|4＜x＜5}可以用列举法表示",
+      "stem_extracted_sha256": "12ffa84f1ee40172be834f296ab488de87fce3cb8ffccaa34f61621866130d3c",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "1与{1}、无序性、重复方程根、无限集列举辨析",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-016",
+      "sequence": 16,
+      "source_section": 3,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        9,
+        10
+      ],
+      "student_pdf_pages": [
+        7
+      ],
+      "summary": "含参一次方程(a²-1)x=a-1的解集不可能为何",
+      "required_knowledge": "参数分类、因式分解与空集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C 跟踪训练",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】（2025 秋•浦东新区校级期中）若集合A={x|（a\n2-1）x=a-1}，则不论实数a 取\n何值，集合A 不可能是（  ） \nA．R \nB．∅ \nC．{0} \nD．{1}",
+      "stem_extracted_sha256": "e2e8f1a3a341daf6df4360d4e574d1d25fe9223709874692770067533ffecf5c",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "含参一次方程(a²-1)x=a-1的解集不可能为何",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-017",
+      "sequence": 17,
+      "source_section": 3,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        10
+      ],
+      "student_pdf_pages": [
+        7
+      ],
+      "summary": "三边是集合三个元素的三角形不可能类型",
+      "required_knowledge": "互异性与初中等腰三角形性质",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "D",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】（2025 秋•莎车县期中）若一个集合中的三个元素a,b,c 是△ABC 的三边长，则\n此三角形一定不是（  ） \nA．锐角三角形 \nB．直角三角形 \nC．钝角三角形 \nD．等腰三角形",
+      "stem_extracted_sha256": "db3997e2fcf41ac1f586c8952f92c87a4113294ae6500d148820c313c099cbf5",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "三边是集合三个元素的三角形不可能类型",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-018",
+      "sequence": 18,
+      "source_section": 3,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        10
+      ],
+      "student_pdf_pages": [
+        7
+      ],
+      "summary": "4∈{a,a²-12}求a并检验互异性",
+      "required_knowledge": "一元二次方程、元素关系与互异性",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "-4．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】（2025 秋•水城区月考）若4∈{a,a\n2-12}，则a= ______．",
+      "stem_extracted_sha256": "40f8a94df659264ed3b5c783db61d1242066334b6b04e8bd382d7a2ef1c1f2a9",
+      "benchmark_slot": 7,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "4∈{a,a²-12}求a并检验互异性",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-019",
+      "sequence": 19,
+      "source_section": 3,
+      "local_label": "跟踪训练5",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        10,
+        11
+      ],
+      "student_pdf_pages": [
+        8
+      ],
+      "summary": "M={-1,3a-1}求参数限制",
+      "required_knowledge": "互异性与一次方程",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "{a|a≠0}．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练5】（2025 秋•杨浦区校级期中）已知集合M={-1，3a-1}，则实数a 的取值范围为 \n______．",
+      "stem_extracted_sha256": "d202c384ed3c379e5b26e9dbc668ad4d45c5bdcca00ff4a4d45ca4f88fd9ffae",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "M={-1,3a-1}求参数限制",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-020",
+      "sequence": 20,
+      "source_section": 4,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        12
+      ],
+      "student_pdf_pages": [
+        9
+      ],
+      "summary": "x∈N*且x-3<2转列举法",
+      "required_knowledge": "正整数与一次不等式、表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "例1.（2024 秋•新泰市校级期末）集合{x∈N\n*|x-3＜2}的另一种表示法是（  ） \nA．{0，1，2，3，4} \nB．{1，2，3，4} \nC．{0，1，2，3，4，5} \nD．{1，2，3，4，5}",
+      "stem_extracted_sha256": "0f802075656060cfb74c8ed9dcdfdd98e5b3b59072b6b01f0508fa19cf402670",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "x∈N*且x-3<2转列举法",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-021",
+      "sequence": 21,
+      "source_section": 4,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        12,
+        13
+      ],
+      "student_pdf_pages": [
+        9
+      ],
+      "summary": "5x²+4x=0的实根集转列举法",
+      "required_knowledge": "因式分解与表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "例2.（2024 秋•玉溪期末）已知集合A={x|5x\n2+4x=0}，则集合A=（  ） \nA．{0} \nB．−\n4\n5 \nC．0，−\n4\n5 \nD．0，\n4\n5",
+      "stem_extracted_sha256": "15afe849768c0e4d53e1592d14a980dd7b4d231d51fae9f859c0bcc308fad7cb",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "5x²+4x=0的实根集转列举法",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-022",
+      "sequence": 22,
+      "source_section": 4,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        13
+      ],
+      "student_pdf_pages": [
+        9
+      ],
+      "summary": "x∈N+且x-2≤1转列举法",
+      "required_knowledge": "正整数与一次不等式、表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2025 春•唐县校级期中）集合{x∈N+|x-2≤1}用列举法表示为（  ） \nA．{0，1，2，3} \nB．{1，2，3} \nC．{0，1，2，3，4} D．{1，2，3，4}",
+      "stem_extracted_sha256": "d4f50b983bd1bf93827033fd9d3f0502ffd53a89bac32706280f2d9eaa84c161",
+      "benchmark_slot": 3,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "x∈N+且x-2≤1转列举法",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-023",
+      "sequence": 23,
+      "source_section": 4,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        13
+      ],
+      "student_pdf_pages": [
+        9
+      ],
+      "summary": "{1,5,9,13,17}转含自然数参数的描述法",
+      "required_knowledge": "自然数逐项列举与表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】.（2025 秋•安溪县期中）已知集合M={1，5，9，13，17}，则M=（  ） \nA．{x|x=2n+1，n∈N，n≤8} \nB．{x|x=2n-1，n∈N，n≤9} \nC．{x|x=4n+1，n∈N，n≤4} \nD．{x|x=4n-3，n∈N，n≤5}",
+      "stem_extracted_sha256": "b9a51b14d6053995dd79a6c19fd69794093c3d209e6b405e0db5b7d150f9aa41",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "{1,5,9,13,17}转含自然数参数的描述法",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-024",
+      "sequence": 24,
+      "source_section": 4,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        13
+      ],
+      "student_pdf_pages": [
+        9
+      ],
+      "summary": "-2≤x≤2的自然数集转列举法",
+      "required_knowledge": "自然数与表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "{0，1，2}．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】（2025•黄浦区校级开学）用列举法表示集合{x|-2≤x≤2，x∈N}= ______．",
+      "stem_extracted_sha256": "45ec93a81114f715cd9f41e6b84d6d9fb57945ab0e4aac1a2595098b6e221479",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "-2≤x≤2的自然数集转列举法",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-025",
+      "sequence": 25,
+      "source_section": 4,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        13,
+        14
+      ],
+      "student_pdf_pages": [
+        9,
+        10
+      ],
+      "summary": "被3除余2的自然数集转描述法",
+      "required_knowledge": "初中整数余数与表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "{x|x=3k+2，k∈N}． 跟踪训练",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】（2025 秋•普陀区校级期中）能被3 整除余2 的自然数组成的集合可以用描述法\n表示为 ______．",
+      "stem_extracted_sha256": "0e6a3bf3821fe11014a78c091df93ca0dac109310b15006444a5b02875dd0263",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "被3除余2的自然数集转描述法",
+      "content_notes": [
+        "原题文字“能被3整除余2”表述不规范，解析实际按“被3除余2”处理"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-026",
+      "sequence": 26,
+      "source_section": 4,
+      "local_label": "跟踪训练5",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        14
+      ],
+      "student_pdf_pages": [
+        10
+      ],
+      "summary": "x(x-1)(x+1)=0的根集转列举法",
+      "required_knowledge": "因式分解与表示法",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "{-1，0，1}．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练5】（2025 秋•牡丹区校级期中）已知集合A={x|x（x-1）（x+1）=0}，则A= ______．",
+      "stem_extracted_sha256": "eb48d1b9f4ac56a826c5a445b0f3622b64afc7018d9454560d6ea52852cc407a",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "x(x-1)(x+1)=0的根集转列举法",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-027",
+      "sequence": 27,
+      "source_section": 4,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        14
+      ],
+      "student_pdf_pages": [
+        10
+      ],
+      "summary": "方程组x+y=0、x²-4=0的解集",
+      "required_knowledge": "初中方程组、平方根与有序数对",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "{（-2，2），（2，-2）}．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2024 秋•仁寿县校级期末）方程组{ 𝑥+ 𝑦= 0\n𝑥2 −4 = 0的解组成的集合为 ______．",
+      "stem_extracted_sha256": "3dbd4f7c7af62fa49ad87cbab548176fa5b39f8e2f4763bb51540b127fa8b4f4",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "方程组x+y=0、x²-4=0的解集",
+      "content_notes": [
+        "知识点4末尾局部题号又标跟踪训练1；不是第22项的重复题"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-028",
+      "sequence": 28,
+      "source_section": 5,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        15
+      ],
+      "student_pdf_pages": [
+        10
+      ],
+      "summary": "偶数集与4m+6n整数线性组合的集合相等",
+      "required_knowledge": "整数代数代入、子集与相等",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例1.（2025•石景山区校级开学）已知集合A={x|x=2k,k∈Z}，B={x|x=4m+6n,m,n∈Z}．则（  ） \nA．A∩B=∅ \nB．A⫋B \nC．A=B \nD．A∪B=Z",
+      "stem_extracted_sha256": "db045f4130d97aa92ed095c563de5e2fcf7edb1ecb8f3999f58ef44413ea9b7b",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "偶数集与4m+6n整数线性组合的集合相等",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-029",
+      "sequence": 29,
+      "source_section": 5,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        15
+      ],
+      "student_pdf_pages": [
+        11
+      ],
+      "summary": "数集{2020}与列举方程对象的区别",
+      "required_knowledge": "表示法与对象区分",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例2.（2025 秋•吉林月考）下列集合中，不同于另外三个集合的是（  ） \nA．{x|x=2020} \nB．{y|（y-2020）\n2=0} \nC．{x=2020} \nD．{2020}",
+      "stem_extracted_sha256": "1a475f32ab81c47a80af5bb54105c0feb2d1b28053ecffbcc5266d449ad9f675",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "数集{2020}与列举方程对象的区别",
+      "content_notes": [
+        "原卷采用“方程对象构成集合”的记法；规范化时不得擅自把{x=2020}改成{x|x=2020}"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-030",
+      "sequence": 30,
+      "source_section": 5,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        15,
+        16
+      ],
+      "student_pdf_pages": [
+        11
+      ],
+      "summary": "数集、有序数对集和直线纵坐标集辨析",
+      "required_knowledge": "集合相等与初中直线方程",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2024 春•博湖县期末）下列集合中表示同一集合的是（  ） \nA．M={（3，2）}，N={（2，3）} \nB．M={2，3}，N={3，2} \nC．M={（x,y）|x+y=1}，N={y|x+y=1} \nD．M={2，3}，N={（2，3）} \n跟踪训练 \n典型例题",
+      "stem_extracted_sha256": "f5a1f415d2c8944dfa554e9d743681a703fd86ef5d9044aaba1cb7039b56800b",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "数集、有序数对集和直线纵坐标集辨析",
+      "content_notes": [
+        "原解析D把数集M={2,3}误称点集；原答案B与选项判断不受影响，入库前修正说明"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-031",
+      "sequence": 31,
+      "source_section": 5,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        16
+      ],
+      "student_pdf_pages": [
+        11
+      ],
+      "summary": "含1、√3、π的集合相等及数集点集区别",
+      "required_knowledge": "绝对值、初中方程与集合相等",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "A",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】\n（2024 秋•郧阳区校级期末）下列各组中集合P 与Q，表示同一个集合的是（  ） \nA．P 是由元素1，√3，π构成的集合，Q 是由元素π，1，|-√3|构成的集合 \nB．P 是由π构成的集合，Q 是由3.141 59 构成的集合 \nC．P 是由2，3 构成的集合，Q 是由有序数对（2，3）构成的集合 \nD．P 是满足不等式-1≤x≤1 的自然数构成的集合，Q 是方程x\n2=1 的解集",
+      "stem_extracted_sha256": "c540c21af80a6dc9197b53204b8e149cf971e42b0c2d7a9cb0f65838ec553441",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "含1、√3、π的集合相等及数集点集区别",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-032",
+      "sequence": 32,
+      "source_section": 5,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        16,
+        17
+      ],
+      "student_pdf_pages": [
+        11
+      ],
+      "summary": "六种表示中等于单点集{(2,1)}的个数",
+      "required_knowledge": "非负平方与绝对值、一次方程组、点集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": false,
+      "answer_summary": "3．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】下列集合中，A={x=2，y=1}，B={2，1}，C={（x,y）|（x-2）\n2+|y-1|=0}，D=\n（x,y）|{𝑥+ 𝑦= 3\n𝑥−𝑦= 1}，E={（x,y）|x=2 且y=1}，F={（x,y）|x=2 或y=1}，其中与集合{（2，\n1）}相等的集合共有______个．",
+      "stem_extracted_sha256": "55f9e702ef2b918ab7797c5f22f9cb5afa696c0bc6f30497cdd807f4860a1514",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "六种表示中等于单点集{(2,1)}的个数",
+      "content_notes": [
+        "原题A={x=2,y=1}与原解析A={1,2}的对象语义不一致，且公式花括号排版不规范；需数学内容复核，不能按原解析无条件发布",
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-033",
+      "sequence": 33,
+      "source_section": 5,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        17
+      ],
+      "student_pdf_pages": [
+        11
+      ],
+      "summary": "有序数对、无序数集、空集及二次式范围的相等辨析",
+      "required_knowledge": "初中二次函数初步与集合相等",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": false,
+      "answer_summary": "②③④．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】①M={（1，2）}与N={（2，1）}表示同一个集合； \n②M={1，2}与N={2，1}表示同一个集合； \n③空集是唯一的； \n④若M={y|y=x\n2+1，x∈R}，N={x|x=t\n2+1，t∈R}，则集合M=N，以上的说法中正确的序号为______．",
+      "stem_extracted_sha256": "dac7bb5f75d156ba817b38435454c4557172c9c0218751f62d5f7dfe18249e57",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "有序数对、无序数集、空集及二次式范围的相等辨析",
+      "content_notes": [
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-034",
+      "sequence": 34,
+      "source_section": 6,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        19
+      ],
+      "student_pdf_pages": [
+        14
+      ],
+      "summary": "集合{1,2}的真子集判断",
+      "required_knowledge": "空集与真子集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "例1.（2023 秋•绥宁县校级期末）下列集合中，是集合{1，2}的真子集的是（  ） \nA．{1，2} \nB．∅ \nC．{∅} \nD．{1，2，3}",
+      "stem_extracted_sha256": "e55794adbe2101bf4fc67658e32b373844d6cf7533e83d6524f49c88d398d678",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "集合{1,2}的真子集判断",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-035",
+      "sequence": 35,
+      "source_section": 6,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        20
+      ],
+      "student_pdf_pages": [
+        14
+      ],
+      "summary": "M={-1,0,1}与N={0,1}包含关系判定",
+      "required_knowledge": "子集、真子集与交集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "例2.（2025 秋•襄城区校级月考）已知集合M={-1，0，1}，N={0，1}，则（  ） \nA．M⊆N \nB．M∩N=∅ \nC．N⫋M \nD．M=N",
+      "stem_extracted_sha256": "f26d1dcaf7b68e367a3fc7c2b372263183ae528bf1854e5e9bb08d58a53e4940",
+      "benchmark_slot": 4,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "M={-1,0,1}与N={0,1}包含关系判定",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-036",
+      "sequence": 36,
+      "source_section": 6,
+      "local_label": "例3",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        20
+      ],
+      "student_pdf_pages": [
+        14
+      ],
+      "summary": "空集为x²-ax+1=0根集的真子集时参数范围",
+      "required_knowledge": "空集、判别式与平方不等式",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "D",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "例3.（2025 秋•敖汉旗校级月考）若∅是集合M={x|x\n2-ax+1=0，a∈R}的真子集，则a 的取值\n范围是（  ） \nA．-2＜a＜2 \nB．a＜-2 或a＞2 \nC．-2≤a≤2 \nD．a≤-2 或a≥2",
+      "stem_extracted_sha256": "1a29c5abe3bee41fa0f628441ae44304fb5bfdf4c9a92db18a40dc6f11047d79",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "空集为x²-ax+1=0根集的真子集时参数范围",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-037",
+      "sequence": 37,
+      "source_section": 6,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        20
+      ],
+      "student_pdf_pages": [
+        14
+      ],
+      "summary": "有限集与区间交集的子集个数",
+      "required_knowledge": "交集与有限集子集计数",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2025•武汉模拟）已知集合A={-3，-2，0，2}，B={x|-1＜x＜4}，则A∩B 的\n子集个数为（  ） \nA．2 \nB．4 \nC．8 \nD．16",
+      "stem_extracted_sha256": "95cbe0eb330c208edb4001b490f5b734654681a1f6df5bc6cc403c93c1bdb534",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "有限集与区间交集的子集个数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-038",
+      "sequence": 38,
+      "source_section": 6,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        21
+      ],
+      "student_pdf_pages": [
+        14
+      ],
+      "summary": "1至2025子集中两元素和不属于该子集的最大基数",
+      "required_knowledge": "和不相容集合、分组与抽屉原理",
+      "learned_boundary": "unknown",
+      "boundary_reason": "原解析依赖未在已确认前置中列明的抽屉原理；尚未提供仅用已学知识的可靠解法",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "D",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】（2025 春•北京校级期中）已知集合A={1，2，3，4，5，⋯，2025}的子集B 满\n足：对任意x,y∈B，有x+y∉B，则集合B 中元素个数的最大值是（  ） \nA．506 \nB．507 \nC．1012 \nD．1013",
+      "stem_extracted_sha256": "421ac9810cdc9e6806f5f0f0877fd3a8114cd4635ffb9eca2894a80cacf56c0e",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "1至2025子集中两元素和不属于该子集的最大基数",
+      "content_notes": [
+        "原解析直接假设B中最大元素2025，未证明不失一般性；上界证明需复核"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-039",
+      "sequence": 39,
+      "source_section": 6,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        21
+      ],
+      "student_pdf_pages": [
+        14,
+        15
+      ],
+      "summary": "给定六种二人组合中一男一女对应的子集",
+      "required_knowledge": "已给样本集合的直接筛选，无需概率计算",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": false,
+      "answer_summary": "{AC，AD，BC，BD}．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】（2025 春•徐汇区校级期中）若从两男两女四人中随机选出两人，设两个男生分\n别用A，B 表示，两个女生分别用C，D 表示，相应的样本空间为Ω={AB，AC，AD，BC，BD，CD}，\n则与事件“选出一男一女”对应的样本空间的子集为 ______．",
+      "stem_extracted_sha256": "477c81f189b0e7642fa189ada546edaac52e69a1b0a2c8e3a03367a18ebdb314",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "给定六种二人组合中一男一女对应的子集",
+      "content_notes": [
+        "有样本空间/事件术语，但已给全部六种组合；可直接枚举，不依赖概率公式",
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-040",
+      "sequence": 40,
+      "source_section": 6,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        21,
+        22
+      ],
+      "student_pdf_pages": [
+        15
+      ],
+      "summary": "新定义商集、并集及真子集个数",
+      "required_knowledge": "题干明确定义运算、有限枚举与子集计数",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "15．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】\n（2024 秋•仁寿县校级期末）定义集合的商集运算为：\n𝐵\n𝐴= 𝑥|𝑥=\n𝑛\n𝑚，𝑚∈𝐴，𝑛∈\n𝐵，已知集合A={2，4}，𝐵= 𝑥|𝑥=\n𝑘\n2 −1，𝑘∈𝐴，则集合\n𝐵\n𝐴∪𝐵的真子集个数是 ______．",
+      "stem_extracted_sha256": "94cb77f0ed87ed92855cbed48fbb3b62cd4388a390ab2dd0c814a019d911e6cf",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "新定义商集、并集及真子集个数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-041",
+      "sequence": 41,
+      "source_section": 6,
+      "local_label": "跟踪训练5",
+      "kind": "tracking_exercise",
+      "question_type": "free_response",
+      "teacher_pdf_pages": [
+        22
+      ],
+      "student_pdf_pages": [
+        15
+      ],
+      "summary": "含参二次方程根集与{1,4}并集、非空真子集个数",
+      "required_knowledge": "a=0分类、因式分解、集合关系与子集计数",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "（1）a=0 或a=1 或𝑎= 1 4； （2）𝑎|𝑎≠0 且𝑎≠1 且𝑎≠ 1 4．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练5】（2025 秋•湖北期中）设集合A={x|ax\n2-（a+1）x+1=0，a∈R}，B={x|x\n2-5x+4=0}． \n（1）若A∪B=B，求a 的取值； \n（2）记C=A∪B，若集合C 的非空真子集有6 个，求实数a 的取值范围．",
+      "stem_extracted_sha256": "6481ac7c0068f16501f855b08161264e1a0c8dfa7e8627aec6c290a5dff8e13e",
+      "benchmark_slot": 10,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "含参二次方程根集与{1,4}并集、非空真子集个数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-042",
+      "sequence": 42,
+      "source_section": 7,
+      "local_label": "例1",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        24
+      ],
+      "student_pdf_pages": [
+        16
+      ],
+      "summary": "(-3,1)与x²≤3解集的并集",
+      "required_knowledge": "平方根、数轴与并集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "D",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例1.（2025•烟台三模）已知集合A={x|-3＜x＜1}，B={x|x\n2≤3}，则A∪B=（  ） \nA．[−√3，1） \nB．[−√3，√3] \nC．（−∞，√3] \nD．（−3，√3]",
+      "stem_extracted_sha256": "8e672b32a86ff531d8a4b436a09964b685141128c24125a21794f42580ff9c12",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "(-3,1)与x²≤3解集的并集",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-043",
+      "sequence": 43,
+      "source_section": 7,
+      "local_label": "例2",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        24
+      ],
+      "student_pdf_pages": [
+        16,
+        17
+      ],
+      "summary": "x²-x>0与x+1>0解集的交集",
+      "required_knowledge": "因式分解符号讨论、数轴与交集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例2.（2025•西城区校级三模）已知集合A={x|x\n2-x＞0}，B={x|x+1＞0}，那么集合A∩B=（  ） \nA．（-1，+∞） \nB．（-1，1） \nC．（-1，0）∪（1，+∞） \nD．（1，+∞）",
+      "stem_extracted_sha256": "1fa16a5e5b02ebe523f0a1d25e6361501fe1a6ba16a89168e39c197b49ab7bc7",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "x²-x>0与x+1>0解集的交集",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-044",
+      "sequence": 44,
+      "source_section": 7,
+      "local_label": "例3",
+      "kind": "worked_example",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        24,
+        25
+      ],
+      "student_pdf_pages": [
+        17
+      ],
+      "summary": "|x-1|≤1解集的实数补集",
+      "required_knowledge": "绝对值不等式、数轴与补集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "D",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": true,
+      "student_source_contains_solution": true,
+      "stem_extracted": "例3.（2025 春•汕头校级期中）已知全集U=R，集合A={x||x-1|≤1}，则∁UA=（  ） \nA．[0，2] \nB．（2，+∞） \nC．（0，2） \nD．（-∞，0）∪（2，+∞）",
+      "stem_extracted_sha256": "2d06412afe6cde624cc910b83222e816b197ee3588e975aa8438b977eb7252b5",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "|x-1|≤1解集的实数补集",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-045",
+      "sequence": 45,
+      "source_section": 7,
+      "local_label": "跟踪训练1",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        25
+      ],
+      "student_pdf_pages": [
+        17
+      ],
+      "summary": "{-1,0,1,2,3,4,5}与|2x-5|>3的交集",
+      "required_knowledge": "绝对值不等式与有限集交集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "B",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练1】（2025•安徽模拟）已知集合A={-1，0，1，2，3，4，5}，B={x||2x-5|＞3}，\n则A∩B=（  ） \nA．{-1，0，1，4，5} B．{-1，0，5} \nC．{2，3} \nD．{5}",
+      "stem_extracted_sha256": "0139fede5b4ae8b43775442d29036e52e4a6e114cd9c33f7de5959fbe600bfc7",
+      "benchmark_slot": 5,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "{-1,0,1,2,3,4,5}与|2x-5|>3的交集",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-046",
+      "sequence": 46,
+      "source_section": 7,
+      "local_label": "跟踪训练2",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        25
+      ],
+      "student_pdf_pages": [
+        17
+      ],
+      "summary": "整数全集中区间整数集补集再与有限集并",
+      "required_knowledge": "整数端点、补集与并集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "A",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练2】（2025•安徽模拟）已知全集U=Z，集合A={x|-5＜x＜2，x∈Z}，B={0，1，2，\n3，4}，则（∁UA）∪B=（  ） \nA．{x|x≤-5 或x≥0，x∈Z} \nB．{x|x＜-5 或x＞0，x∈Z} \nC．{x|x≥0，x∈Z} \nD．{x|x＞0，x∈Z}",
+      "stem_extracted_sha256": "196037c80899c0bb769697a05c5e67c9ce2320f4a65e86bd4ab3fd1479d97431",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "整数全集中区间整数集补集再与有限集并",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-047",
+      "sequence": 47,
+      "source_section": 7,
+      "local_label": "跟踪训练3",
+      "kind": "tracking_exercise",
+      "question_type": "single_choice",
+      "teacher_pdf_pages": [
+        25,
+        26
+      ],
+      "student_pdf_pages": [
+        17
+      ],
+      "summary": "x≤2、二次不等式补集、x>a的并集覆盖实数",
+      "required_knowledge": "因式分解符号讨论、端点、交并补与参数",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "C",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练3】（2025 春•靖远县校级月考）已知集合A={x|x≤2}，B={x|x\n2-2x-3≥0}，C={x|x\n＞a}，且A∪（∁RB）∪C=R，则实数a 的取值范围为（  ） \nA．（-1，+∞） \nB．（-∞，-1] \nC．（-∞，3） \nD．（-∞，3]",
+      "stem_extracted_sha256": "fbb2f2e26a9ea307c4afaea9c212a2617b48d61a91f4996c022a7e9018c987f4",
+      "benchmark_slot": 6,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "x≤2、二次不等式补集、x>a的并集覆盖实数",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-048",
+      "sequence": 48,
+      "source_section": 7,
+      "local_label": "跟踪训练4",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        26
+      ],
+      "student_pdf_pages": [
+        17
+      ],
+      "summary": "(-∞,3)与[0,4]的交集",
+      "required_knowledge": "数轴、端点与交集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "[0，3）．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练4】\n（2025•杨浦区校级模拟）已知集合A=（-∞，3），集合B=[0，4]，则A∩B= ______．",
+      "stem_extracted_sha256": "a9658d637dc99162ee675898cf87d63826363803605661bacaa955509db71156",
+      "benchmark_slot": null,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "(-∞,3)与[0,4]的交集",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-049",
+      "sequence": 49,
+      "source_section": 7,
+      "local_label": "跟踪训练5",
+      "kind": "tracking_exercise",
+      "question_type": "fill_blank",
+      "teacher_pdf_pages": [
+        26
+      ],
+      "student_pdf_pages": [
+        18
+      ],
+      "summary": "补集等式逆推ax²-bx-2≤0的端点求a-b",
+      "required_knowledge": "二次方程两根、韦达定理与补集",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "0．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练5】（2025•河北模拟）已知集合M={x|x＜-1 或x＞2}，N={x|ax\n2-bx-2⩽0}，若M=∁\nRN，则a-b=______．",
+      "stem_extracted_sha256": "99f4ef3c2becac5add566716fbb02a170b719f806bf24028180a16b64398baa8",
+      "benchmark_slot": 8,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "补集等式逆推ax²-bx-2≤0的端点求a-b",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    },
+    {
+      "audit_id": "SET-SRC-050",
+      "sequence": 50,
+      "source_section": 7,
+      "local_label": "跟踪训练6",
+      "kind": "tracking_exercise",
+      "question_type": "free_response",
+      "teacher_pdf_pages": [
+        26,
+        27
+      ],
+      "student_pdf_pages": [
+        18
+      ],
+      "summary": "(-4,4)的补集与(2m-1,2m+1)交集、空集条件",
+      "required_knowledge": "区间交补、数轴、一次不等式组与参数",
+      "learned_boundary": "within",
+      "boundary_reason": "可用已确认初中前置与教材1.1–1.3解决；依据题干和原解析核查，非教师核验",
+      "answer_present": true,
+      "standalone_answer_block": true,
+      "answer_summary": "（1）（∁RM）∩N={x|-5＜x≤-4}； （2）[− 3 2 ， 3 2]．",
+      "analysis_present": true,
+      "solution_present": true,
+      "student_source_contains_answer": false,
+      "student_source_contains_solution": false,
+      "stem_extracted": "【跟踪训练6】（2025•柳州开学）已知集合M={x|-4＜x＜4}，N={x|2m-1＜x＜2m+1}． \n（1）当m=-2 时，求（∁RM）∩N； \n（2）若（∁RM）∩N=∅，求实数m 的取值范围．",
+      "stem_extracted_sha256": "993121879d2c33bfcab08ffd76613e6ae41f0428f94439b42dbc053a5f62e63e",
+      "benchmark_slot": 9,
+      "dedup_status": "retained_distinct_source_unit",
+      "dedup_clue": "(-4,4)的补集与(2m-1,2m+1)交集、空集条件",
+      "content_notes": [],
+      "version_pairing": {
+        "method": "compare_pdf_extracted_stem_after_whitespace_and_section_decoration_removal",
+        "equal": true,
+        "similarity_ratio": 1.0
+      }
+    }
+  ],
+  "version_pairing_summary": "50/50题干提取串去空白及“典型例题/跟踪训练/知识点”等栏目标记后完全一致；PDF文本提取公式含版面拆行，并非结构化数学内容质量证明。",
+  "stem_hash_policy": "stem_extracted_sha256 = SHA-256(UTF-8(stem_extracted with all Unicode whitespace removed)); not a canonical mathematical fingerprint"
+}
