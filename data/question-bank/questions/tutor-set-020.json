@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-020",
+  "auditId": "SET-SRC-020",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2024 秋·新泰市校级期末）集合 $\\{x\\in\\mathbb{N}^{*}\\mid x-3<2\\}$ 的另一种表示法是（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{0,1,2,3,4\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\{1,2,3,4\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{0,1,2,3,4,5\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{1,2,3,4,5\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              12
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由 $x-3<2$ 得 $x<5$。再由 $x\\in\\mathbb{N}^{*}$，可得集合为 $\\{1,2,3,4\\}$，故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              12
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        12
+      ],
+      "locator": "知识点4 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        9
+      ],
+      "locator": "知识点4 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的表示法"
+    ],
+    "requiredKnowledge": [
+      "正整数集",
+      "一元一次不等式",
+      "描述法与列举法"
+    ],
+    "allowedSolution": "解一次不等式得 $x<5$，在正整数中列举得到 $\\{1,2,3,4\\}$，与选项 B 一致；仅用已学表示法和初中一次不等式。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-87331c85db705bd4",
+    "teacherVersion": "teacher-740083fa2202b18e"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          12
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          9
+        ]
+      }
+    ],
+    "differences": [
+      "原题正整数符号为 N*，原解析使用 N+；统一记作 $\\mathbb{N}^{*}$，数学含义不变。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-87331c85db705bd4",
+    "teacherVersion": "teacher-740083fa2202b18e"
+  },
+  "contentVersion": "content-87331c85db705bd4",
+  "contentSha256": "87331c85db705bd4ea884f68b3062168658e48f1ca8aca03e6eba6b7b478a7ba",
+  "teacherVersion": "teacher-740083fa2202b18e",
+  "teacherSha256": "740083fa2202b18ec8a552047b5b709f58c8a163cef615cff84139f7a265788b"
+}

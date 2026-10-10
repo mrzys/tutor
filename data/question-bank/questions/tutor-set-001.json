@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-001",
+  "auditId": "SET-SRC-001",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025 秋·南充校级期中）下列选项中，能够构成集合的是（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "南充高中高 2024 级个子较高的学生"
+      },
+      {
+        "label": "B",
+        "text": "高中数学人教 A 版必修第一册中的难题"
+      },
+      {
+        "label": "C",
+        "text": "关于 $x$ 的方程 $x^2-1=0$ 的所有实根"
+      },
+      {
+        "label": "D",
+        "text": "无限接近于 $\\pi$ 的所有实数"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A、B、D 中“个子较高”“难题”“无限接近”没有确定标准，不满足集合元素的确定性。C 中方程 $x^2-1=0$ 的实根为 $x=\\pm1$，确定为集合 $\\{-1,1\\}$，故选 C。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 1 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        2
+      ],
+      "locator": "知识点1 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        2
+      ],
+      "locator": "知识点1 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的确定性"
+    ],
+    "requiredKnowledge": [
+      "集合元素的确定性",
+      "初中一元二次方程"
+    ],
+    "allowedSolution": "按集合的确定性逐项判断；通过因式分解求 $x^2-1=0$ 的实根确认 C。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-fa414a7883a4415c",
+    "teacherVersion": "teacher-d6ed2cc031d71bdc"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          2
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          2
+        ]
+      }
+    ],
+    "differences": [
+      "删除原材料中的局部题号、教学栏目标签；保留命题来源与题面措辞。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。",
+      "原卷版同样含本题答案和解答；学生字段只重录题干与选项，未复制该答案区。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-fa414a7883a4415c",
+    "teacherVersion": "teacher-d6ed2cc031d71bdc",
+    "rootReview": "本题另经主代理视觉复核；041/050 已核对完整父题及两小问。"
+  },
+  "contentVersion": "content-fa414a7883a4415c",
+  "contentSha256": "fa414a7883a4415cab2d55173deb0a336059ccbd14371505dc0baa5a850efaf6",
+  "teacherVersion": "teacher-d6ed2cc031d71bdc",
+  "teacherSha256": "d6ed2cc031d71bdc847c9ca5d2ccf950ba8582d639b173e218190c0c0c471eff"
+}

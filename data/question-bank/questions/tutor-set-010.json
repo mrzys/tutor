@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-010",
+  "auditId": "SET-SRC-010",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025 秋·海陵区校级月考）设有下列关系：① $\\sqrt{2}\\in\\mathbb{R}$；② $4\\in\\mathbb{Q}$；③ $0\\in\\mathbb{N}$；④ $0\\in\\{0,1\\}$。其中正确的个数为（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "4 个"
+      },
+      {
+        "label": "B",
+        "text": "3 个"
+      },
+      {
+        "label": "C",
+        "text": "2 个"
+      },
+      {
+        "label": "D",
+        "text": "1 个"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "A",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6,
+              7
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "$\\sqrt2$ 是实数，①正确；$4$ 是有理数，②正确；$0$ 是自然数，③正确；$0$ 是集合 $\\{0,1\\}$ 的元素，④正确。四个关系均正确，故选 A。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6,
+              7
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        6,
+        7
+      ],
+      "locator": "知识点2 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        5
+      ],
+      "locator": "知识点2 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "常用数集及其记法",
+      "元素与集合的关系"
+    ],
+    "requiredKnowledge": [
+      "自然数集、有理数集、实数集的含义",
+      "列举法与属于关系",
+      "初中平方根"
+    ],
+    "allowedSolution": "按常用数集定义和列举法逐项判断四个关系，统计正确关系个数。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-e784c53ecef8d3c6",
+    "teacherVersion": "teacher-93cd41d8b2809e3c"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          6,
+          7
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          5
+        ]
+      }
+    ],
+    "differences": [
+      "删除原材料中的局部题号、教学栏目标签；保留命题来源与题面措辞。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-e784c53ecef8d3c6",
+    "teacherVersion": "teacher-93cd41d8b2809e3c"
+  },
+  "contentVersion": "content-e784c53ecef8d3c6",
+  "contentSha256": "e784c53ecef8d3c63a03052afb9e8f3b395573d1f6df3cff891d1d67f0d590c0",
+  "teacherVersion": "teacher-93cd41d8b2809e3c",
+  "teacherSha256": "93cd41d8b2809e3c3b3a6778b7afa661d5a42d69d6b8978d50c859ca47099359"
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "contextId": "s201-sets-v1",
+  "purpose": "S2-01 材料适配核查依据；S3-02 仍须确认本次教学条件",
+  "subject": "高中数学",
+  "mainScope": [
+    { "chapter": "1.1", "name": "集合的概念" },
+    { "chapter": "1.2", "name": "集合间的基本关系" },
+    { "chapter": "1.3", "name": "集合的基本运算" }
+  ],
+  "foundation": [
+    "整数、正整数、有理数、无理数与实数的基本认识",
+    "四则运算、分式运算、平方与平方根",
+    "一元一次方程与分类讨论",
+    "数轴、简单一元一次不等式与不等式组",
+    "有限对象的逐项列举、简单计数与分类讨论"
+  ],
+  "explicitPremises": [
+    { "name": "韦达定理", "use": "049：由已知两根求一元二次方程系数", "basis": "docs/validation/mvp-assembly-task.md" },
+    { "name": "一次函数与二次函数初步图象、一元二次方程根的判别式与因式分解", "use": "含参方程退化讨论及二次不等式求解", "basis": "docs/validation/mvp-assembly-task.md" },
+    { "name": "绝对值不等式与平方根运算", "use": "045 及数集、元素关系题", "basis": "docs/validation/mvp-assembly-task.md" }
+  ],
+  "dependencies": [
+    "用列举与二分选择计数有限集合的子集（2^n），并排除空集和全集；041 可直接列举三元素集合核对",
+    "数集符号与区间记法作为集合描述工具"
+  ],
+  "basis": [
+    "docs/validation/mvp-assembly-task.md",
+    "docs/validation/sources/textbook-ch1-catalog.md",
+    "docs/adr/0002-question-bank-blueprint.md"
+  ],
+  "limits": [
+    "教材依据是已归档目录摘录，不能当作教材全文或知识点映射已核验",
+    "每题仍须有完成全部小问的允许解法；标签相同不构成证明",
+    "038 的抽屉原理及原证明疑点未获此上下文认可",
+    "题目适配证据不证明实测难度、45 分钟适用性或用户接受"
+  ]
+}

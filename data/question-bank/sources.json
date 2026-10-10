@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sources": [
+    {
+      "sourceId": "set-teacher",
+      "path": "docs/validation/raw/第1讲_集合_一轮复习基础梳理_解析版.pdf",
+      "sha256": "866fb29f1d6a285f74290b03d6f5793569fbeb796d58a9ada1f8c5d918b35da2",
+      "physicalPages": 27
+    },
+    {
+      "sourceId": "set-student",
+      "path": "docs/validation/raw/第1讲_集合_一轮复习基础梳理_原卷版.pdf",
+      "sha256": "4e721470062d7f8ecc6a7b749a16863636f751aa950260cf709750e86a2d0217",
+      "physicalPages": 18
+    }
+  ]
+}

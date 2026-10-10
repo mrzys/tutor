@@ -1,0 +1,2247 @@
+{
+  "schemaVersion": 1,
+  "sourceCatalog": {
+    "path": "docs/validation/sources/set-source-catalog.json",
+    "canonicalSha256": "a6832a6de63d16fa72d61460e538ff5620298519321a792fc109be5be4dbe6a4"
+  },
+  "entries": [
+    {
+      "questionId": "tutor-set-001",
+      "auditId": "SET-SRC-001",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            2
+          ],
+          "locator": "知识点1 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            2
+          ],
+          "locator": "知识点1 例1"
+        }
+      ],
+      "taskSummary": "成集判断：南充高个学生、难题、方程实根、接近π",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "成集判断：南充高个学生、难题、方程实根、接近π",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-001.json",
+      "contentVersion": "content-fa414a7883a4415c",
+      "teacherVersion": "teacher-d6ed2cc031d71bdc"
+    },
+    {
+      "questionId": "tutor-set-002",
+      "auditId": "SET-SRC-002",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            2,
+            3
+          ],
+          "locator": "知识点1 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            2,
+            3
+          ],
+          "locator": "知识点1 例2"
+        }
+      ],
+      "taskSummary": "成集判断：接近0、身高、绝对值5、数学家",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "成集判断：接近0、身高、绝对值5、数学家",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-002.json",
+      "contentVersion": "content-52af23e78f044f3d",
+      "teacherVersion": "teacher-15fd9b654735c3a6"
+    },
+    {
+      "questionId": "tutor-set-003",
+      "auditId": "SET-SRC-003",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            3
+          ],
+          "locator": "知识点1 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            3
+          ],
+          "locator": "知识点1 跟踪训练1"
+        }
+      ],
+      "taskSummary": "成集判断：800米达标女生与模糊描述",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "成集判断：800米达标女生与模糊描述",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-003.json",
+      "contentVersion": "content-a97649e29d74cfad",
+      "teacherVersion": "teacher-50e66cb691de202e"
+    },
+    {
+      "questionId": "tutor-set-004",
+      "auditId": "SET-SRC-004",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            3,
+            4
+          ],
+          "locator": "知识点1 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            3
+          ],
+          "locator": "知识点1 跟踪训练2"
+        }
+      ],
+      "taskSummary": "常任理事国、无序性与重复元素计数",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "常任理事国、无序性与重复元素计数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-005",
+      "auditId": "SET-SRC-005",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            4
+          ],
+          "locator": "知识点1 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            3
+          ],
+          "locator": "知识点1 跟踪训练3"
+        }
+      ],
+      "taskSummary": "不成集对象：非常接近1的实数",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "不成集对象：非常接近1的实数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-006",
+      "auditId": "SET-SRC-006",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            4,
+            5
+          ],
+          "locator": "知识点1 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            3,
+            4
+          ],
+          "locator": "知识点1 跟踪训练4"
+        }
+      ],
+      "taskSummary": "成集对象：入学学生、到定点距离、正整数不等式解",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "成集对象：入学学生、到定点距离、正整数不等式解",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-007",
+      "auditId": "SET-SRC-007",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            5
+          ],
+          "locator": "知识点2 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            4
+          ],
+          "locator": "知识点2 例1"
+        }
+      ],
+      "taskSummary": "判断1/2、√2、|-3|、|-√3|所属数集",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "判断1/2、√2、|-3|、|-√3|所属数集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-007.json",
+      "contentVersion": "content-e33e9f02de0d2086",
+      "teacherVersion": "teacher-16e96e990b940b07"
+    },
+    {
+      "questionId": "tutor-set-008",
+      "auditId": "SET-SRC-008",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            6
+          ],
+          "locator": "知识点2 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            5
+          ],
+          "locator": "知识点2 例2"
+        }
+      ],
+      "taskSummary": "判断-3、√5、1/2、0与数集关系",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "判断-3、√5、1/2、0与数集关系",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-008.json",
+      "contentVersion": "content-7cc507d1679c9ca6",
+      "teacherVersion": "teacher-b77e2e6cafc37bdf"
+    },
+    {
+      "questionId": "tutor-set-009",
+      "auditId": "SET-SRC-009",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            6
+          ],
+          "locator": "知识点2 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            5
+          ],
+          "locator": "知识点2 跟踪训练1"
+        }
+      ],
+      "taskSummary": "判断0、5/2、-√2、-7.8与数集关系",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "判断0、5/2、-√2、-7.8与数集关系",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-009.json",
+      "contentVersion": "content-e476c2949b2e1f8a",
+      "teacherVersion": "teacher-894fbaa450a9710a"
+    },
+    {
+      "questionId": "tutor-set-010",
+      "auditId": "SET-SRC-010",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            6,
+            7
+          ],
+          "locator": "知识点2 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            5
+          ],
+          "locator": "知识点2 跟踪训练2"
+        }
+      ],
+      "taskSummary": "判断√2、4、0的元素关系正确个数",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "判断√2、4、0的元素关系正确个数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-010.json",
+      "contentVersion": "content-e784c53ecef8d3c6",
+      "teacherVersion": "teacher-93cd41d8b2809e3c"
+    },
+    {
+      "questionId": "tutor-set-011",
+      "auditId": "SET-SRC-011",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            7
+          ],
+          "locator": "知识点2 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            5
+          ],
+          "locator": "知识点2 跟踪训练3"
+        }
+      ],
+      "taskSummary": "填√5、√16与自然数集的属于符号",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "填√5、√16与自然数集的属于符号",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-012",
+      "auditId": "SET-SRC-012",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            7
+          ],
+          "locator": "知识点2 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            5
+          ],
+          "locator": "知识点2 跟踪训练4"
+        }
+      ],
+      "taskSummary": "自然数、空集、π与集合元素关系辨析",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "自然数、空集、π与集合元素关系辨析",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-013",
+      "auditId": "SET-SRC-013",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            8
+          ],
+          "locator": "知识点3 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            6
+          ],
+          "locator": "知识点3 例1"
+        }
+      ],
+      "taskSummary": "游戏妖怪描述的确定性",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "游戏妖怪描述的确定性",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-013.json",
+      "contentVersion": "content-4edcb45933285995",
+      "teacherVersion": "teacher-51df299835297c72"
+    },
+    {
+      "questionId": "tutor-set-014",
+      "auditId": "SET-SRC-014",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            8,
+            9
+          ],
+          "locator": "知识点3 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            7
+          ],
+          "locator": "知识点3 例2"
+        }
+      ],
+      "taskSummary": "四根不同长度火柴组成四边形的类别",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "四根不同长度火柴组成四边形的类别",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-015",
+      "auditId": "SET-SRC-015",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            9
+          ],
+          "locator": "知识点3 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            7
+          ],
+          "locator": "知识点3 跟踪训练1"
+        }
+      ],
+      "taskSummary": "1与{1}、无序性、重复方程根、无限集列举辨析",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "1与{1}、无序性、重复方程根、无限集列举辨析",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-016",
+      "auditId": "SET-SRC-016",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            9,
+            10
+          ],
+          "locator": "知识点3 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            7
+          ],
+          "locator": "知识点3 跟踪训练2"
+        }
+      ],
+      "taskSummary": "含参一次方程(a²-1)x=a-1的解集不可能为何",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "含参一次方程(a²-1)x=a-1的解集不可能为何",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-017",
+      "auditId": "SET-SRC-017",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            10
+          ],
+          "locator": "知识点3 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            7
+          ],
+          "locator": "知识点3 跟踪训练3"
+        }
+      ],
+      "taskSummary": "三边是集合三个元素的三角形不可能类型",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "三边是集合三个元素的三角形不可能类型",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-018",
+      "auditId": "SET-SRC-018",
+      "status": "ready",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            10
+          ],
+          "locator": "知识点3 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            7
+          ],
+          "locator": "知识点3 跟踪训练4"
+        }
+      ],
+      "taskSummary": "4∈{a,a²-12}求a并检验互异性",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "4∈{a,a²-12}求a并检验互异性",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原题未明确两个不同元素，按字面 a=4 也满足；2026-10-10 用户已授权补充两个不同元素条件，结构化题面采用修订版，原文和差异保存在教师资料及核查记录。"
+      ],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-018.json",
+      "contentVersion": "content-927c707069ac3c27",
+      "teacherVersion": "teacher-6752f74631a4bae2"
+    },
+    {
+      "questionId": "tutor-set-019",
+      "auditId": "SET-SRC-019",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            10,
+            11
+          ],
+          "locator": "知识点3 跟踪训练5"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            8
+          ],
+          "locator": "知识点3 跟踪训练5"
+        }
+      ],
+      "taskSummary": "M={-1,3a-1}求参数限制",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "M={-1,3a-1}求参数限制",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-020",
+      "auditId": "SET-SRC-020",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            12
+          ],
+          "locator": "知识点4 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9
+          ],
+          "locator": "知识点4 例1"
+        }
+      ],
+      "taskSummary": "x∈N*且x-3<2转列举法",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "x∈N*且x-3<2转列举法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-020.json",
+      "contentVersion": "content-87331c85db705bd4",
+      "teacherVersion": "teacher-740083fa2202b18e"
+    },
+    {
+      "questionId": "tutor-set-021",
+      "auditId": "SET-SRC-021",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            12,
+            13
+          ],
+          "locator": "知识点4 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9
+          ],
+          "locator": "知识点4 例2"
+        }
+      ],
+      "taskSummary": "5x²+4x=0的实根集转列举法",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "5x²+4x=0的实根集转列举法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-022",
+      "auditId": "SET-SRC-022",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            13
+          ],
+          "locator": "知识点4 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9
+          ],
+          "locator": "知识点4 跟踪训练1"
+        }
+      ],
+      "taskSummary": "x∈N+且x-2≤1转列举法",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "x∈N+且x-2≤1转列举法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-022.json",
+      "contentVersion": "content-050f197058bb1809",
+      "teacherVersion": "teacher-840f38564ef97f20"
+    },
+    {
+      "questionId": "tutor-set-023",
+      "auditId": "SET-SRC-023",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            13
+          ],
+          "locator": "知识点4 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9
+          ],
+          "locator": "知识点4 跟踪训练2"
+        }
+      ],
+      "taskSummary": "{1,5,9,13,17}转含自然数参数的描述法",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "{1,5,9,13,17}转含自然数参数的描述法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-024",
+      "auditId": "SET-SRC-024",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            13
+          ],
+          "locator": "知识点4 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9
+          ],
+          "locator": "知识点4 跟踪训练3"
+        }
+      ],
+      "taskSummary": "-2≤x≤2的自然数集转列举法",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "-2≤x≤2的自然数集转列举法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-025",
+      "auditId": "SET-SRC-025",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            13,
+            14
+          ],
+          "locator": "知识点4 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9,
+            10
+          ],
+          "locator": "知识点4 跟踪训练4"
+        }
+      ],
+      "taskSummary": "被3除余2的自然数集转描述法",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "被3除余2的自然数集转描述法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原题文字“能被3整除余2”表述不规范，解析实际按“被3除余2”处理"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-026",
+      "auditId": "SET-SRC-026",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            14
+          ],
+          "locator": "知识点4 跟踪训练5"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            10
+          ],
+          "locator": "知识点4 跟踪训练5"
+        }
+      ],
+      "taskSummary": "x(x-1)(x+1)=0的根集转列举法",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "x(x-1)(x+1)=0的根集转列举法",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-027",
+      "auditId": "SET-SRC-027",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            14
+          ],
+          "locator": "知识点4 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            10
+          ],
+          "locator": "知识点4 跟踪训练1"
+        }
+      ],
+      "taskSummary": "方程组x+y=0、x²-4=0的解集",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "方程组x+y=0、x²-4=0的解集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "知识点4末尾局部题号又标跟踪训练1；不是第22项的重复题"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-028",
+      "auditId": "SET-SRC-028",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            15
+          ],
+          "locator": "知识点5 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            10
+          ],
+          "locator": "知识点5 例1"
+        }
+      ],
+      "taskSummary": "偶数集与4m+6n整数线性组合的集合相等",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "偶数集与4m+6n整数线性组合的集合相等",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-029",
+      "auditId": "SET-SRC-029",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            15
+          ],
+          "locator": "知识点5 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            11
+          ],
+          "locator": "知识点5 例2"
+        }
+      ],
+      "taskSummary": "数集{2020}与列举方程对象的区别",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "数集{2020}与列举方程对象的区别",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷采用“方程对象构成集合”的记法；规范化时不得擅自把{x=2020}改成{x|x=2020}",
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-030",
+      "auditId": "SET-SRC-030",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            15,
+            16
+          ],
+          "locator": "知识点5 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            11
+          ],
+          "locator": "知识点5 跟踪训练1"
+        }
+      ],
+      "taskSummary": "数集、有序数对集和直线纵坐标集辨析",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "数集、有序数对集和直线纵坐标集辨析",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原解析D把数集M={2,3}误称点集；原答案B与选项判断不受影响，入库前修正说明"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-031",
+      "auditId": "SET-SRC-031",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            16
+          ],
+          "locator": "知识点5 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            11
+          ],
+          "locator": "知识点5 跟踪训练2"
+        }
+      ],
+      "taskSummary": "含1、√3、π的集合相等及数集点集区别",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "含1、√3、π的集合相等及数集点集区别",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-032",
+      "auditId": "SET-SRC-032",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            16,
+            17
+          ],
+          "locator": "知识点5 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            11
+          ],
+          "locator": "知识点5 跟踪训练3"
+        }
+      ],
+      "taskSummary": "六种表示中等于单点集{(2,1)}的个数",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": false,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "六种表示中等于单点集{(2,1)}的个数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原题A={x=2,y=1}与原解析A={1,2}的对象语义不一致，且公式花括号排版不规范；需数学内容复核，不能按原解析无条件发布",
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-033",
+      "auditId": "SET-SRC-033",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            17
+          ],
+          "locator": "知识点5 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            11
+          ],
+          "locator": "知识点5 跟踪训练4"
+        }
+      ],
+      "taskSummary": "有序数对、无序数集、空集及二次式范围的相等辨析",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": false,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "有序数对、无序数集、空集及二次式范围的相等辨析",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-034",
+      "auditId": "SET-SRC-034",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            19
+          ],
+          "locator": "知识点6 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            14
+          ],
+          "locator": "知识点6 例1"
+        }
+      ],
+      "taskSummary": "集合{1,2}的真子集判断",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "集合{1,2}的真子集判断",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-034.json",
+      "contentVersion": "content-0478f9a415f3c09e",
+      "teacherVersion": "teacher-256ba6dc7c885e0d"
+    },
+    {
+      "questionId": "tutor-set-035",
+      "auditId": "SET-SRC-035",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            20
+          ],
+          "locator": "知识点6 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            14
+          ],
+          "locator": "知识点6 例2"
+        }
+      ],
+      "taskSummary": "M={-1,0,1}与N={0,1}包含关系判定",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "M={-1,0,1}与N={0,1}包含关系判定",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-035.json",
+      "contentVersion": "content-f6a8e5ca4396a00c",
+      "teacherVersion": "teacher-23d623300750f174"
+    },
+    {
+      "questionId": "tutor-set-036",
+      "auditId": "SET-SRC-036",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            20
+          ],
+          "locator": "知识点6 例3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            14
+          ],
+          "locator": "知识点6 例3"
+        }
+      ],
+      "taskSummary": "空集为x²-ax+1=0根集的真子集时参数范围",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "空集为x²-ax+1=0根集的真子集时参数范围",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-037",
+      "auditId": "SET-SRC-037",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            20
+          ],
+          "locator": "知识点6 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            14
+          ],
+          "locator": "知识点6 跟踪训练1"
+        }
+      ],
+      "taskSummary": "有限集与区间交集的子集个数",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "有限集与区间交集的子集个数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-038",
+      "auditId": "SET-SRC-038",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            21
+          ],
+          "locator": "知识点6 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            14
+          ],
+          "locator": "知识点6 跟踪训练2"
+        }
+      ],
+      "taskSummary": "1至2025子集中两元素和不属于该子集的最大基数",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "unknown",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "1至2025子集中两元素和不属于该子集的最大基数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原解析直接假设B中最大元素2025，未证明不失一般性；上界证明需复核"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues",
+        "未证实完整允许解法，且原证明需复核"
+      ]
+    },
+    {
+      "questionId": "tutor-set-039",
+      "auditId": "SET-SRC-039",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            21
+          ],
+          "locator": "知识点6 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            14,
+            15
+          ],
+          "locator": "知识点6 跟踪训练3"
+        }
+      ],
+      "taskSummary": "给定六种二人组合中一男一女对应的子集",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": false,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "给定六种二人组合中一男一女对应的子集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "有样本空间/事件术语，但已给全部六种组合；可直接枚举，不依赖概率公式",
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查",
+        "来源记录的问题尚未在 S3-01 解决；详见 issues"
+      ]
+    },
+    {
+      "questionId": "tutor-set-040",
+      "auditId": "SET-SRC-040",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            21,
+            22
+          ],
+          "locator": "知识点6 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            15
+          ],
+          "locator": "知识点6 跟踪训练4"
+        }
+      ],
+      "taskSummary": "新定义商集、并集及真子集个数",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "新定义商集、并集及真子集个数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-041",
+      "auditId": "SET-SRC-041",
+      "status": "ready",
+      "questionType": "free_response",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            22
+          ],
+          "locator": "知识点6 跟踪训练5"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            15
+          ],
+          "locator": "知识点6 跟踪训练5"
+        }
+      ],
+      "taskSummary": "含参二次方程根集与{1,4}并集、非空真子集个数",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "含参二次方程根集与{1,4}并集、非空真子集个数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-041.json",
+      "contentVersion": "content-6c3717c7e65a4d17",
+      "teacherVersion": "teacher-a7d105d53b277eae"
+    },
+    {
+      "questionId": "tutor-set-042",
+      "auditId": "SET-SRC-042",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            24
+          ],
+          "locator": "知识点7 例1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            16
+          ],
+          "locator": "知识点7 例1"
+        }
+      ],
+      "taskSummary": "(-3,1)与x²≤3解集的并集",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "(-3,1)与x²≤3解集的并集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-043",
+      "auditId": "SET-SRC-043",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            24
+          ],
+          "locator": "知识点7 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            16,
+            17
+          ],
+          "locator": "知识点7 例2"
+        }
+      ],
+      "taskSummary": "x²-x>0与x+1>0解集的交集",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "x²-x>0与x+1>0解集的交集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-044",
+      "auditId": "SET-SRC-044",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            24,
+            25
+          ],
+          "locator": "知识点7 例3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            17
+          ],
+          "locator": "知识点7 例3"
+        }
+      ],
+      "taskSummary": "|x-1|≤1解集的实数补集",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "|x-1|≤1解集的实数补集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [
+        "原卷版混入教师内容；仅使用单独整理的 student，不复用原 OCR 整块。"
+      ],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-045",
+      "auditId": "SET-SRC-045",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            25
+          ],
+          "locator": "知识点7 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            17
+          ],
+          "locator": "知识点7 跟踪训练1"
+        }
+      ],
+      "taskSummary": "{-1,0,1,2,3,4,5}与|2x-5|>3的交集",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "{-1,0,1,2,3,4,5}与|2x-5|>3的交集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-045.json",
+      "contentVersion": "content-292ea61f83668ab1",
+      "teacherVersion": "teacher-ee61a13a6eceec07"
+    },
+    {
+      "questionId": "tutor-set-046",
+      "auditId": "SET-SRC-046",
+      "status": "pending",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            25
+          ],
+          "locator": "知识点7 跟踪训练2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            17
+          ],
+          "locator": "知识点7 跟踪训练2"
+        }
+      ],
+      "taskSummary": "整数全集中区间整数集补集再与有限集并",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "整数全集中区间整数集补集再与有限集并",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-047",
+      "auditId": "SET-SRC-047",
+      "status": "ready",
+      "questionType": "single_choice",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            25,
+            26
+          ],
+          "locator": "知识点7 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            17
+          ],
+          "locator": "知识点7 跟踪训练3"
+        }
+      ],
+      "taskSummary": "x≤2、二次不等式补集、x>a的并集覆盖实数",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "x≤2、二次不等式补集、x>a的并集覆盖实数",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-047.json",
+      "contentVersion": "content-c749412c573d0510",
+      "teacherVersion": "teacher-d97e6505785a547e"
+    },
+    {
+      "questionId": "tutor-set-048",
+      "auditId": "SET-SRC-048",
+      "status": "pending",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            26
+          ],
+          "locator": "知识点7 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            17
+          ],
+          "locator": "知识点7 跟踪训练4"
+        }
+      ],
+      "taskSummary": "(-∞,3)与[0,4]的交集",
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "(-∞,3)与[0,4]的交集",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [
+        "尚未完成独立题面结构化及逐题视觉核查"
+      ]
+    },
+    {
+      "questionId": "tutor-set-049",
+      "auditId": "SET-SRC-049",
+      "status": "ready",
+      "questionType": "fill_blank",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            26
+          ],
+          "locator": "知识点7 跟踪训练5"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            18
+          ],
+          "locator": "知识点7 跟踪训练5"
+        }
+      ],
+      "taskSummary": "补集等式逆推ax²-bx-2≤0的端点求a-b",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "补集等式逆推ax²-bx-2≤0的端点求a-b",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-049.json",
+      "contentVersion": "content-52afcad304da04ec",
+      "teacherVersion": "teacher-ac7890f13f62eef8"
+    },
+    {
+      "questionId": "tutor-set-050",
+      "auditId": "SET-SRC-050",
+      "status": "ready",
+      "questionType": "free_response",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            26,
+            27
+          ],
+          "locator": "知识点7 跟踪训练6"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            18
+          ],
+          "locator": "知识点7 跟踪训练6"
+        }
+      ],
+      "taskSummary": "(-4,4)的补集与(2m-1,2m+1)交集、空集条件",
+      "studentStatus": "verified",
+      "teacherStatus": "verified_source_and_adapted",
+      "assetsStatus": "none_required_visual_check",
+      "boundaryStatus": "within",
+      "boundaryBasis": "question_package",
+      "sourceTeacherPresence": {
+        "answerConclusion": true,
+        "standaloneAnswerBlock": true,
+        "analysis": true,
+        "solution": true
+      },
+      "deduplication": {
+        "status": "retained_distinct_source_unit",
+        "clue": "(-4,4)的补集与(2m-1,2m+1)交集、空集条件",
+        "note": "同源两版映射为同一本地身份；不是旧库 ID，也不声称完成跨库语义去重"
+      },
+      "issues": [],
+      "pendingReasons": [],
+      "contentPath": "questions/tutor-set-050.json",
+      "contentVersion": "content-58c3b44f7725832a",
+      "teacherVersion": "teacher-6cb93003c2754961"
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-041",
+  "auditId": "SET-SRC-041",
+  "questionType": "free_response",
+  "student": {
+    "stem": "（2025 秋·湖北期中）设集合 $A=\\{x\\mid ax^{2}-(a+1)x+1=0,\\ a\\in\\mathbb{R}\\}$，$B=\\{x\\mid x^{2}-5x+4=0\\}$。",
+    "options": [],
+    "parts": [
+      {
+        "partId": "p1",
+        "prompt": "若 $A\\cup B=B$，求 $a$ 的取值。"
+      },
+      {
+        "partId": "p2",
+        "prompt": "记 $C=A\\cup B$，若集合 $C$ 的非空真子集有 6 个，求实数 $a$ 的取值范围。"
+      }
+    ],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "p1",
+        "text": "$a=0$ 或 $a=1$ 或 $a=\\frac14$。",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              22
+            ]
+          }
+        ]
+      },
+      {
+        "partId": "p2",
+        "text": "$\\{a\\mid a\\ne 0\\text{ 且 }a\\ne 1\\text{ 且 }a\\ne\\frac14\\}$。",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              22
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "p1",
+        "text": "因式分解 $x^{2}-5x+4=(x-1)(x-4)$，得 $B=\\{1,4\\}$。又 $ax^{2}-(a+1)x+1=(ax-1)(x-1)$。若 $a=0$，则 $A=\\{1\\}$；若 $a\\ne0$，则根为 1 与 $1/a$，其中 $a=1$ 时两根重合，$A=\\{1\\}$。条件 $A\\cup B=B$ 等价于 $A\\subseteq B$，故 $a=0$、$a=1$ 均符合；当 $a\\ne0,1$ 时需 $1/a=4$，即 $a=1/4$。综上，$a=0$ 或 $a=1$ 或 $a=1/4$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              22
+            ]
+          }
+        ]
+      },
+      {
+        "partId": "p2",
+        "text": "设 $C$ 有 $n$ 个元素，非空真子集数为 $2^{n}-2$。由 $2^{n}-2=6$ 得 $n=3$。已知 $B=\\{1,4\\}$；当 $a=0$ 或 $a=1$ 时，$A=\\{1\\}$，并集只有两个元素。当 $a\\ne0,1$ 时，$C=\\{1,4,1/a\\}$；要恰有三个不同元素，还需 $1/a\\ne4$，即 $a\\ne1/4$。故 $a\\in\\mathbb{R}\\setminus\\{0,1,1/4\\}$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              22
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 10 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        22
+      ],
+      "locator": "知识点6 跟踪训练5"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        15
+      ],
+      "locator": "知识点6 跟踪训练5"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合间的基本关系",
+      "集合的基本运算"
+    ],
+    "requiredKnowledge": [
+      "因式分解与方程求根",
+      "参数为0时的退化情形",
+      "并集",
+      "子集判定",
+      "有限集的子集计数"
+    ],
+    "allowedSolution": "对 $a=0$ 与 $a\\ne0$ 分类，用因式分解求 $A$，求出 $B=\\{1,4\\}$；(1) 用 $A\\subseteq B$ 得 $a=0,1,1/4$；(2) 由非空真子集6个可得并集3个元素，再比较 $1/a$ 与1、4得排除上述三值。子集数量也可直接列举三元素集合核验，无需引入高中未确认章节。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-6c3717c7e65a4d17",
+    "teacherVersion": "teacher-a7d105d53b277eae"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          22
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          15
+        ]
+      }
+    ],
+    "differences": [
+      "保留一个共享父题和 p1、p2 两小问；删除标杆卷添加的 8 分、10 分及扣分说明，分值不属于原题或学生内容。",
+      "原卷答案的集合花括号和分式经 LaTeX 规范化；教师解答明确补足 a=0、a=1 的分类。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-6c3717c7e65a4d17",
+    "teacherVersion": "teacher-a7d105d53b277eae",
+    "rootReview": "本题另经主代理视觉复核；041/050 已核对完整父题及两小问。"
+  },
+  "contentVersion": "content-6c3717c7e65a4d17",
+  "contentSha256": "6c3717c7e65a4d1797ddcfdda21777a8b66e9c227899a7a176b9a50d618e75d2",
+  "teacherVersion": "teacher-a7d105d53b277eae",
+  "teacherSha256": "a7d105d53b277eaea9fcc91b8783534539d3669baacde68b6a7d6339ad8ae6d4"
+}

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-022",
+  "auditId": "SET-SRC-022",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025 春·唐县校级期中）集合 $\\{x\\in\\mathbb{N}^{*}\\mid x-2\\le 1\\}$ 用列举法表示为（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{0,1,2,3\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\{1,2,3\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{0,1,2,3,4\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{1,2,3,4\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由 $x-2\\le 1$ 得 $x\\le 3$。结合 $x\\in\\mathbb{N}^{*}$，集合为 $\\{1,2,3\\}$，故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 3 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        13
+      ],
+      "locator": "知识点4 跟踪训练1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        9
+      ],
+      "locator": "知识点4 跟踪训练1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的表示法"
+    ],
+    "requiredKnowledge": [
+      "正整数集",
+      "一元一次不等式",
+      "描述法与列举法"
+    ],
+    "allowedSolution": "解一次不等式得 $x\\le 3$，在正整数中列举得到 $\\{1,2,3\\}$；仅用已学表示法和初中一次不等式。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-050f197058bb1809",
+    "teacherVersion": "teacher-840f38564ef97f20"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          13
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          9
+        ]
+      }
+    ],
+    "differences": [
+      "源题正整数符号显示为 N 下标 +，按标杆卷统一为 $\\mathbb{N}^{*}$；未将 0 加入集合。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-050f197058bb1809",
+    "teacherVersion": "teacher-840f38564ef97f20"
+  },
+  "contentVersion": "content-050f197058bb1809",
+  "contentSha256": "050f197058bb18097f6c82c20751ef974f8d7b0870ccf4896771ed6c10fd3350",
+  "teacherVersion": "teacher-840f38564ef97f20",
+  "teacherSha256": "840f38564ef97f20f177cc1e38a69dcd88c77b06f2b0d1bb8b78d8dea3d4405b"
+}

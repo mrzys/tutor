@@ -1,0 +1,13 @@
+{
+  "name": "tutor-v1",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "bank:list": "node scripts/question-bank.mjs list",
+    "bank:get": "node scripts/question-bank.mjs get",
+    "bank:check": "node scripts/question-bank.mjs check",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

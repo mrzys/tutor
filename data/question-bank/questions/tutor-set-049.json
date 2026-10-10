@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-049",
+  "auditId": "SET-SRC-049",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025·河北模拟）已知集合 $M=\\{x\\mid x<-1\\text{ 或 }x>2\\}$，$N=\\{x\\mid ax^{2}-bx-2\\le0\\}$，若 $M=\\complement_{\\mathbb{R}}N$，则 $a-b=$ ________。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$0$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由补集关系得 $N=\\complement_{\\mathbb{R}}M=[-1,2]$。因此 -1、2 是方程 $ax^{2}-bx-2=0$ 的两根，且 $a>0$。使用本次显式允许的韦达定理，$(-1)+2=b/a$，$(-1)\\times2=-2/a$，解得 $a=1$、$b=1$，故 $a-b=0$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 8 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        26
+      ],
+      "locator": "知识点7 跟踪训练5"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        18
+      ],
+      "locator": "知识点7 跟踪训练5"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的基本运算"
+    ],
+    "requiredKnowledge": [
+      "补集",
+      "区间与端点",
+      "二次方程根与系数关系（本次显式允许韦达定理）"
+    ],
+    "allowedSolution": "由补集得 $N=[-1,2]$，两端点是二次方程的根且 $a>0$，用本次显式注入的韦达定理得到 $b/a=1$、$-2/a=-2$，从而 $a=b=1$、$a-b=0$。该路径明确依赖本次允许的韦达定理，未扩展整章已学范围。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-52afcad304da04ec",
+    "teacherVersion": "teacher-ac7890f13f62eef8"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          26
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          18
+        ]
+      }
+    ],
+    "differences": [
+      "原卷跨行补集符号合并为 $\\complement_{\\mathbb{R}}N$；保留二次式中的 -bx 和常数 -2，以及非严格不等号。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-52afcad304da04ec",
+    "teacherVersion": "teacher-ac7890f13f62eef8"
+  },
+  "contentVersion": "content-52afcad304da04ec",
+  "contentSha256": "52afcad304da04ec1fd79f7d19221e87f53fd35b264248c3dc2ff88ec1c72c0f",
+  "teacherVersion": "teacher-ac7890f13f62eef8",
+  "teacherSha256": "ac7890f13f62eef8bc9dbd66eadcd7051575d40b28d74f36efd84c85eddb51d9"
+}

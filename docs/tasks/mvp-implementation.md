@@ -1,6 +1,6 @@
 # Tutor v1 MVP 开发任务
 
-- 状态：开发准备完成；S3-01～S3-04 均待开始。
+- 状态：S3-01 已完成；S3-02～S3-04 待开始。
 - 日期：2026-10-10；由 S2-04 拆分。
 - 设计依据：[ADR-0001](../adr/0001-assembly-workflow.md)、[ADR-0002](../adr/0002-question-bank-blueprint.md)、[采纳记录](../validation/adr-0002-adoption.md)。
 - 验证基线：[S2-01](../validation/mvp-assembly-task.md)；供给依据：[S2-02](../validation/question-bank-supply.md)和[来源清单](../validation/sources/set-source-catalog.md)。
@@ -19,10 +19,11 @@ flowchart LR
 
 ## S3-01 整理集合材料并提供可用题目读取
 
-- 状态：待开始；依赖：ADR-0002 已采纳。
+- 状态：已完成；18 个优先题包就绪、50 单元台账及实际读取验证齐备。依赖：ADR-0002 已采纳。
 - GitHub Issue：[S3-01 #6](https://github.com/mrzys/tutor/issues/6)。
 - 输入：已归档的两份 PDF、固定 SHA、[50 单元机器清单](../validation/sources/set-source-catalog.json)、[标杆内容](../validation/benchmark-paper.md)及教材目录依据。
 - 交付：版本化结构化题目数据、50 单元处理台账、可运行的本地题目读取模块与命令行验证入口、运行说明；具体文件及读取接口在实现时确定。
+- 本轮实际文件、运行与材料问题：[S3-01 交付记录](../validation/s3-01-question-data.md)。50 单元中另有 32 题尚未结构化；018 已按用户确认补明两个不同元素条件，保留原文与修订记录。
 
 工作与验收：
 
@@ -91,6 +92,6 @@ flowchart LR
 
 ## 完成口径
 
-四项任务均须交付实际可运行成果与相应证据。当前任务拆分和 GitHub Issue 建立不代表任一开发项已实现；50 单元台账、18 题优先就绪与实际合格候选分别报告。
+四项任务均须交付实际可运行成果与相应证据。GitHub Issue 建立本身不代表开发项已实现；当前 S3-01 的实际交付及未完成项见其记录，其他开发项待开始。50 单元台账、优先结构化题包与实际合格候选分别报告。
 
 题目内容问题、来源扩展、知识映射及依赖缺口在对应任务中明确处理，不能用“未知”冒充通过，也不为凑题数静默放宽条件。先从 S3-01 的本地材料与读取开始，完成一个可检查成果后再扩大处理范围。

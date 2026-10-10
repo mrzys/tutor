@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-045",
+  "auditId": "SET-SRC-045",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·安徽模拟）已知集合 $A=\\{-1,0,1,2,3,4,5\\}$，$B=\\{x\\mid |2x-5|>3\\}$，则 $A\\cap B=$（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{-1,0,1,4,5\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\{-1,0,5\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{2,3\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{5\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由 $|2x-5|>3$ 得 $x<1$ 或 $x>4$，故 $B=(-\\infty,1)\\cup(4,+\\infty)$。筛选 $A$ 中满足上述条件的元素，得到 $A\\cap B=\\{-1,0,5\\}$，故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 5 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        25
+      ],
+      "locator": "知识点7 跟踪训练1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        17
+      ],
+      "locator": "知识点7 跟踪训练1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的基本运算"
+    ],
+    "requiredKnowledge": [
+      "交集",
+      "有限集元素筛选",
+      "绝对值运算",
+      "一次不等式"
+    ],
+    "allowedSolution": "可将 A 的七个元素逐一代入 $|2x-5|>3$ 检验，只有 -1、0、5 符合，交集即 $\\{-1,0,5\\}$；该路径只需初中绝对值计算和已学交集定义。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-292ea61f83668ab1",
+    "teacherVersion": "teacher-ee61a13a6eceec07"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          25
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          17
+        ]
+      }
+    ],
+    "differences": [
+      "原卷集合描述法的两个相邻竖线分别表示描述法分隔线与绝对值；规范为 $\\mid |2x-5|>3$，保留严格不等号。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-292ea61f83668ab1",
+    "teacherVersion": "teacher-ee61a13a6eceec07",
+    "rootReview": "本题另经主代理视觉复核；041/050 已核对完整父题及两小问。"
+  },
+  "contentVersion": "content-292ea61f83668ab1",
+  "contentSha256": "292ea61f83668ab19ca9fe6b6498199fc43870f83a7f521a90db4c8ed6800477",
+  "teacherVersion": "teacher-ee61a13a6eceec07",
+  "teacherSha256": "ee61a13a6eceec073a01c91c8a0f5fc495ba83f3dccf901a23c68b893b81ee9b"
+}

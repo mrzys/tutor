@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-013",
+  "auditId": "SET-SRC-013",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·青山湖区校级模拟）8 月 20 日《黑传说悟空》风靡全球，下列几组对象可以构成集合的是（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "游戏中会变身的妖怪"
+      },
+      {
+        "label": "B",
+        "text": "游戏中长的高的妖怪"
+      },
+      {
+        "label": "C",
+        "text": "游戏中能力强的妖怪"
+      },
+      {
+        "label": "D",
+        "text": "游戏中击败后给奖励多的妖怪"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "A",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A 中“会变身”可以确定某个对象是否符合，能构成集合；B、C、D 中“长的高”“能力强”“奖励多”没有确定标准，不满足集合的确定性。故选 A。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        8
+      ],
+      "locator": "知识点3 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        6
+      ],
+      "locator": "知识点3 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的确定性"
+    ],
+    "requiredKnowledge": [
+      "集合元素的确定性"
+    ],
+    "allowedSolution": "依据题面中是否存在确定判断标准逐项检查。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-4edcb45933285995",
+    "teacherVersion": "teacher-51df299835297c72"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          8
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          6
+        ]
+      }
+    ],
+    "differences": [
+      "删除原材料中的局部题号、教学栏目标签；保留命题来源与题面措辞。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。",
+      "《黑传说悟空》及选项“长的高”按两份原 PDF 的印刷文字保留，未按常识静默改为其他名称或措辞。",
+      "原卷版同样含本题答案和解答；学生字段已排除。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-4edcb45933285995",
+    "teacherVersion": "teacher-51df299835297c72"
+  },
+  "contentVersion": "content-4edcb45933285995",
+  "contentSha256": "4edcb459332859958b38248368f8000a39aa1431bee6409cda84971e305c9a12",
+  "teacherVersion": "teacher-51df299835297c72",
+  "teacherSha256": "51df299835297c72bc1d3fb6e88646e5571c4c43eb19fda37720bd0b79ba89d6"
+}

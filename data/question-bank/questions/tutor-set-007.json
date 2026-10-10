@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-007",
+  "auditId": "SET-SRC-007",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2024 秋·双清区校级期末）给出下列关系：① $\\frac{1}{2}\\in\\mathbb{R}$；② $\\sqrt{2}\\notin\\mathbb{R}$；③ $|-3|\\in\\mathbb{N}$；④ $|-\\sqrt{3}|\\in\\mathbb{Q}$。其中正确的个数为（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "1"
+      },
+      {
+        "label": "B",
+        "text": "2"
+      },
+      {
+        "label": "C",
+        "text": "3"
+      },
+      {
+        "label": "D",
+        "text": "4"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              5
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "$\\frac12$ 是实数，①正确；$\\sqrt2$ 是实数，②错误；$|-3|=3$ 是自然数，③正确；$|-\\sqrt3|=\\sqrt3$ 是无理数，④错误。正确的有 2 个，故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              5
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        5
+      ],
+      "locator": "知识点2 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        4
+      ],
+      "locator": "知识点2 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "常用数集及其记法",
+      "元素与集合的关系"
+    ],
+    "requiredKnowledge": [
+      "自然数、整数、有理数与实数的含义",
+      "初中绝对值与平方根"
+    ],
+    "allowedSolution": "分别计算两个绝对值，按常用数集的定义判断四个属于关系并计数。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-e33e9f02de0d2086",
+    "teacherVersion": "teacher-16e96e990b940b07"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          5
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          4
+        ]
+      }
+    ],
+    "differences": [
+      "删除原材料中的局部题号、教学栏目标签；保留命题来源与题面措辞。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。",
+      "原卷版同样含本题答案和解答；学生字段已排除。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-e33e9f02de0d2086",
+    "teacherVersion": "teacher-16e96e990b940b07"
+  },
+  "contentVersion": "content-e33e9f02de0d2086",
+  "contentSha256": "e33e9f02de0d208650436a8cd914e1d40ad2e32e26528d7086324723dfab46bc",
+  "teacherVersion": "teacher-16e96e990b940b07",
+  "teacherSha256": "16e96e990b940b079b4ca3ac5d454dd415592a583dcfe8c4c438202fe18e3116"
+}

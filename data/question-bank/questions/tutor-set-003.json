@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-003",
+  "auditId": "SET-SRC-003",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025 秋·于都县校级月考）下列叙述能够组成集合的是（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "我校所有体质好的同学"
+      },
+      {
+        "label": "B",
+        "text": "我校所有 $800$ 米达标的女生"
+      },
+      {
+        "label": "C",
+        "text": "全国所有优秀的运动员"
+      },
+      {
+        "label": "D",
+        "text": "全国所有环境优美的城市"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "B 中“800 米达标”有确定的判断标准，能构成集合。A、C、D 中“体质好”“优秀”“环境优美”缺乏确定标准，不能构成集合。故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        3
+      ],
+      "locator": "知识点1 跟踪训练1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        3
+      ],
+      "locator": "知识点1 跟踪训练1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的确定性"
+    ],
+    "requiredKnowledge": [
+      "集合元素的确定性"
+    ],
+    "allowedSolution": "依据确定性逐项判断，区分达标的明确标准和主观描述。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-a97649e29d74cfad",
+    "teacherVersion": "teacher-50e66cb691de202e"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          3
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          3
+        ]
+      }
+    ],
+    "differences": [
+      "删除原材料中的局部题号、教学栏目标签；保留命题来源与题面措辞。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-a97649e29d74cfad",
+    "teacherVersion": "teacher-50e66cb691de202e"
+  },
+  "contentVersion": "content-a97649e29d74cfad",
+  "contentSha256": "a97649e29d74cfad747d780987bce6d9b0f02a4590d307197befa8e273e27b58",
+  "teacherVersion": "teacher-50e66cb691de202e",
+  "teacherSha256": "50e66cb691de202ea25f0e28ad8e186a7e251d8c9a73140a1074639b8a198051"
+}

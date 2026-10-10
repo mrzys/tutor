@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-034",
+  "auditId": "SET-SRC-034",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2023 秋·绥宁县校级期末）下列集合中，是集合 $\\{1,2\\}$ 的真子集的是（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{1,2\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\varnothing$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{\\varnothing\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{1,2,3\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              19
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "$\\{1,2\\}$ 的真子集为 $\\varnothing$、$\\{1\\}$、$\\{2\\}$，故 B 正确。A 与原集合相等，不是真子集；C 的唯一元素为空集，而空集不是 $\\{1,2\\}$ 的元素；D 中的元素 3 不属于原集合。故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              19
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        19
+      ],
+      "locator": "知识点6 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        14
+      ],
+      "locator": "知识点6 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合间的基本关系"
+    ],
+    "requiredKnowledge": [
+      "子集与真子集",
+      "空集",
+      "元素与集合的区别"
+    ],
+    "allowedSolution": "列举 $\\{1,2\\}$ 的子集并去掉自身，得 $\\varnothing$、$\\{1\\}$、$\\{2\\}$；与选项比较仅 B 符合。判定 C 时区分空集与含空集的单元素集合。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-0478f9a415f3c09e",
+    "teacherVersion": "teacher-256ba6dc7c885e0d"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          19
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          14
+        ]
+      }
+    ],
+    "differences": [
+      "原卷空集字形规范为 $\\varnothing$；保留 C 为 $\\{\\varnothing\\}$，不得与 B 混同。",
+      "本题与 SET-SRC-035 的共同考点为子集和真子集；本题另含空集与元素层级干扰项，未声称两题所有解题要求相同。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-0478f9a415f3c09e",
+    "teacherVersion": "teacher-256ba6dc7c885e0d",
+    "rootReview": "本题另经主代理视觉复核；041/050 已核对完整父题及两小问。"
+  },
+  "contentVersion": "content-0478f9a415f3c09e",
+  "contentSha256": "0478f9a415f3c09e7bbf990ed8f069310aa33e02fdc083e9bb5ea872a5ccce83",
+  "teacherVersion": "teacher-256ba6dc7c885e0d",
+  "teacherSha256": "256ba6dc7c885e0d109ae74fbd4abf0959e88fc6b2281a6eafad7d8e58c909c0"
+}

@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-050",
+  "auditId": "SET-SRC-050",
+  "questionType": "free_response",
+  "student": {
+    "stem": "（2025·柳州开学）已知全集为 $\\mathbb{R}$，集合 $M=\\{x\\mid -4<x<4\\}$，$N=\\{x\\mid 2m-1<x<2m+1\\}$。",
+    "options": [],
+    "parts": [
+      {
+        "partId": "p1",
+        "prompt": "当 $m=-2$ 时，求 $(\\complement_{\\mathbb{R}}M)\\cap N$。"
+      },
+      {
+        "partId": "p2",
+        "prompt": "若 $(\\complement_{\\mathbb{R}}M)\\cap N=\\varnothing$，求实数 $m$ 的取值范围。"
+      }
+    ],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "p1",
+        "text": "$(\\complement_{\\mathbb{R}}M)\\cap N=\\{x\\mid -5<x\\le-4\\}$。",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26,
+              27
+            ]
+          }
+        ]
+      },
+      {
+        "partId": "p2",
+        "text": "$[-\\frac32,\\frac32]$。",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26,
+              27
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "p1",
+        "text": "$\\complement_{\\mathbb{R}}M=(-\\infty,-4]\\cup[4,+\\infty)$。当 $m=-2$ 时，$N=(-5,-3)$，所以 $(\\complement_{\\mathbb{R}}M)\\cap N=(-5,-4]$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26,
+              27
+            ]
+          }
+        ]
+      },
+      {
+        "partId": "p2",
+        "text": "$N=(2m-1,2m+1)$ 的长度恒为2，非空。条件 $(\\complement_{\\mathbb{R}}M)\\cap N=\\varnothing$ 等价于 $N\\subseteq M$。两个区间均为开区间，所以需且只需 $2m-1\\ge-4$ 且 $2m+1\\le4$；端点相等时仍符合包含关系。解得 $-3/2\\le m\\le3/2$，故 $m\\in[-3/2,3/2]$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26,
+              27
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 9 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        26,
+        27
+      ],
+      "locator": "知识点7 跟踪训练6"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        18
+      ],
+      "locator": "知识点7 跟踪训练6"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的基本运算"
+    ],
+    "requiredKnowledge": [
+      "区间与端点",
+      "补集与交集",
+      "子集",
+      "一次不等式组"
+    ],
+    "allowedSolution": "(1) 代入 m=-2，补 M 得两侧闭区间再交 N 得 $(-5,-4]$；(2) N 恒非空，空交集等价于 $N\\subseteq M$，比较两个开区间的端点得 $2m-1\\ge-4$、$2m+1\\le4$，解得 $[-3/2,3/2]$。仅用集合运算、包含关系及初中一次不等式组。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-58c3b44f7725832a",
+    "teacherVersion": "teacher-6cb93003c2754961"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          26,
+          27
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          18
+        ]
+      }
+    ],
+    "differences": [
+      "保留一个共享父题和 p1、p2 两小问；删除标杆卷添加的 6 分、8 分及逐步赋分说明。",
+      "原题使用下标 R 的补集符号；按标杆卷在父题明示全集为 R，并规范为 $\\complement_{\\mathbb{R}}$，未改变补集全集。",
+      "教师版第 26 页含题干和两问结论，第 27 页续解；两页均已核对，保留第(1)问 -5 开、-4 闭以及第(2)问两端闭的区间。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-58c3b44f7725832a",
+    "teacherVersion": "teacher-6cb93003c2754961",
+    "rootReview": "本题另经主代理视觉复核；041/050 已核对完整父题及两小问。"
+  },
+  "contentVersion": "content-58c3b44f7725832a",
+  "contentSha256": "58c3b44f7725832a25b1d81f3f8695d18d01601b3b693af66326764e026a9a50",
+  "teacherVersion": "teacher-6cb93003c2754961",
+  "teacherSha256": "6cb93003c2754961a8a33642da8e6950837e8af500f9d45515dd9085e0313b7c"
+}

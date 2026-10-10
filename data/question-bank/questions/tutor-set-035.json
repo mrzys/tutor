@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-035",
+  "auditId": "SET-SRC-035",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025 秋·襄城区校级月考）已知集合 $M=\\{-1,0,1\\}$，$N=\\{0,1\\}$，则（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "$M\\subseteq N$"
+      },
+      {
+        "label": "B",
+        "text": "$M\\cap N=\\varnothing$"
+      },
+      {
+        "label": "C",
+        "text": "$N\\subsetneqq M$"
+      },
+      {
+        "label": "D",
+        "text": "$M=N$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "$N$ 的元素 0、1 均属于 $M$，且 $-1\\in M$、$-1\\notin N$，故 $N\\subsetneqq M$，C 正确。于是 A、D 错误；$M\\cap N=\\{0,1\\}\\ne\\varnothing$，B 错误。故选 C。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 4 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        20
+      ],
+      "locator": "知识点6 例2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        14
+      ],
+      "locator": "知识点6 例2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合间的基本关系"
+    ],
+    "requiredKnowledge": [
+      "子集与真子集",
+      "交集"
+    ],
+    "allowedSolution": "逐个比较两个有限集的元素，证明 $N$ 包含于 $M$ 且不相等；求交集为 $\\{0,1\\}$ 后排除其他选项。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-f6a8e5ca4396a00c",
+    "teacherVersion": "teacher-23d623300750f174"
+  },
+  "verification": {
+    "method": "Poppler 将两份原 PDF 的对应物理页渲染为 1700 像素 PNG，逐页视觉核对题干、选项、公式、题目边界、原答案及解答；以 PDF 文本和标杆卷辅助整理，非教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          20
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          14
+        ]
+      }
+    ],
+    "differences": [
+      "原卷真子集字形统一为 $\\subsetneqq$，保留严格包含含义。",
+      "逐题确认无必需图形资产；删除原页知识梳理、其他题目及版式装饰，学生内容不含答案和解析。",
+      "教师解答按原卷思路整理补充中间步骤，标记 source_adapted；原答案与本次整理解答分别保存。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-f6a8e5ca4396a00c",
+    "teacherVersion": "teacher-23d623300750f174",
+    "rootReview": "本题另经主代理视觉复核；041/050 已核对完整父题及两小问。"
+  },
+  "contentVersion": "content-f6a8e5ca4396a00c",
+  "contentSha256": "f6a8e5ca4396a00c35c0e7e0a1e395d95465951e441bfd0e9a209411b2ef8dd1",
+  "teacherVersion": "teacher-23d623300750f174",
+  "teacherSha256": "23d623300750f174462377ff28fac648b1259c8867ffc10d69adf3d74c687fec"
+}

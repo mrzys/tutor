@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-002",
+  "auditId": "SET-SRC-002",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025 秋·西乡塘区期中）下列对象能组成集合的是（　）",
+    "options": [
+      {
+        "label": "A",
+        "text": "非常接近 $0$ 的数"
+      },
+      {
+        "label": "B",
+        "text": "身高很高的人"
+      },
+      {
+        "label": "C",
+        "text": "绝对值为 $5$ 的数"
+      },
+      {
+        "label": "D",
+        "text": "著名的数学家"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2,
+              3
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A、B、D 中“非常接近”“很高”“著名”没有确定标准。C 中绝对值为 $5$ 的数为 $5$ 或 $-5$，对象确定，故选 C。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2,
+              3
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        2,
+        3
+      ],
+      "locator": "知识点1 例2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        2,
+        3
+      ],
+      "locator": "知识点1 例2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "集合的确定性"
+    ],
+    "requiredKnowledge": [
+      "集合元素的确定性",
+      "初中绝对值"
+    ],
+    "allowedSolution": "利用确定性排除模糊描述，求 $|x|=5$ 得到确定对象 $5$ 与 $-5$。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-52af23e78f044f3d",
+    "teacherVersion": "teacher-15fd9b654735c3a6"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          2,
+          3
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          2,
+          3
+        ]
+      }
+    ],
+    "differences": [
+      "删除原材料中的局部题号、教学栏目标签；保留命题来源与题面措辞。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。",
+      "原卷版同样含本题答案和解答，解答跨至下一页；学生字段已排除。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-52af23e78f044f3d",
+    "teacherVersion": "teacher-15fd9b654735c3a6"
+  },
+  "contentVersion": "content-52af23e78f044f3d",
+  "contentSha256": "52af23e78f044f3db4385064e887c9c4f4484b195aa8cfcdba9f66c18cf8b70a",
+  "teacherVersion": "teacher-15fd9b654735c3a6",
+  "teacherSha256": "15fd9b654735c3a6c567af2337ef75004d51cdbe425d112506a063bff1593af8"
+}

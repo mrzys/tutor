@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-018",
+  "auditId": "SET-SRC-018",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025 秋·水城区月考）若集合 $\\{a,a^2-12\\}$ 含两个不同元素，且 $4\\in\\{a,a^2-12\\}$，则 $a=$ ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$-4$（源答案；适用于补明“集合含两个不同元素”的修订题面）",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "原题全文：“（2025 秋·水城区月考）若 $4\\in\\{a,a^2-12\\}$，则 $a=$ ______。”原解析答案为 $-4$，但原文字面也允许 $a=4$。用户于 2026-10-10 明确授权补充“集合含两个不同元素”，本次结构化题面据此修订，原 PDF 未改。修订后解法：由 $4\\in\\{a,a^2-12\\}$，得 $a=4$ 或 $a^2-12=4$，解得 $a=\\pm4$。当 $a=4$ 时，两个列举表达式均为 $4$，所得集合只有一个元素，不满足修订题面“含两个不同元素”的条件，舍去。当 $a=-4$ 时，集合为 $\\{-4,4\\}$，含两个不同元素且包含 $4$，符合条件。因此 $a=-4$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": [
+      {
+        "contextId": "s201-benchmark-v1",
+        "partId": "main",
+        "provenance": "proposed",
+        "basis": {
+          "path": "docs/validation/benchmark-paper.md",
+          "locator": "第 7 题"
+        },
+        "text": "仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。018 仅在用户确认补明两个不同元素条件的修订题面下沿用原建议评分。"
+      }
+    ]
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        10
+      ],
+      "locator": "知识点3 跟踪训练4"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        7
+      ],
+      "locator": "知识点3 跟踪训练4"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "元素与集合的关系",
+      "集合的互异性"
+    ],
+    "requiredKnowledge": [
+      "初中一元二次方程",
+      "元素与集合的关系",
+      "集合列举法"
+    ],
+    "allowedSolution": "利用属于关系分类得 $a=4$ 或 $a^2-12=4$，得到 $a=\\pm4$；结合修订题面明确的两个不同元素条件排除 $a=4$，验证 $a=-4$。全过程只需集合概念、互异性和初中方程。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-927c707069ac3c27",
+    "teacherVersion": "teacher-6752f74631a4bae2"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将双方原 PDF 的指定物理页以 115 dpi 渲染为 PNG，逐页视觉核对题干、选项、公式与解答；学生字段人工重录并与原图核对。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          10
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          7
+        ]
+      }
+    ],
+    "differences": [
+      "删除局部题号与教学栏目标签；保留命题来源，题面按下述用户确认补明两个不同元素条件。",
+      "将分式、根号、上下标和集合记号转写为 LaTeX；不保留版面换行。",
+      "教师解答按原解析压缩整理，标为 source_adapted；未添加评分标准。",
+      "完整检查相关题面，未发现解题必需的图形或图片，assets 留空。",
+      "原题全文：（2025 秋·水城区月考）若 $4\\in\\{a,a^2-12\\}$，则 $a=$ ______。",
+      "原题未明确集合含两个不同元素；按通常集合语义 a=4 也满足原文字面，而源解析仅给 -4。用户于 2026-10-10 明确授权补充“集合含两个不同元素”，本结构化题面据此补明；原 PDF 保留不改。",
+      "教师解答依据修订题面重述原解析舍解理由，源答案 -4 保留并注明适用题面；补明条件作为 source_adapted 差异记录。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-927c707069ac3c27",
+    "teacherVersion": "teacher-6752f74631a4bae2"
+  },
+  "contentVersion": "content-927c707069ac3c27",
+  "contentSha256": "927c707069ac3c27b932ff61b4f85d38da36bbe9522b8274c4c8ad5d632f0cb3",
+  "teacherVersion": "teacher-6752f74631a4bae2",
+  "teacherSha256": "6752f74631a4bae28dbc97b9863dd43ec8d2ef6d5589dc704621908e1429b901"
+}
