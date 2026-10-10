@@ -1,8 +1,10 @@
 import { mkdir, open, readFile, readdir, rename, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { hashContent } from '../question-bank/reader.mjs';
+import { randomUUID } from 'node:crypto';
 
 const validId = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+const updates = new Map();
 
 function storeError(code, message) {
   return Object.assign(new Error(message), { code });
@@ -26,7 +28,7 @@ export async function readDraft(storeRoot, draftId) {
 export async function saveDraft(storeRoot, draft) {
   if (!validId.test(draft.draftId)) throw storeError('save_error', '草稿身份无效。');
   const target = path.join(storeRoot, `${draft.draftId}.json`);
-  const temp = `${target}.${process.pid}.tmp`;
+  const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
   const payload = JSON.stringify({ schemaVersion: 1, sha256: hashContent(draft), draft }, null, 2);
   let file;
   try {
@@ -61,4 +63,24 @@ export async function listDrafts(storeRoot) {
   }
   drafts.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.draftId.localeCompare(b.draftId));
   return { drafts, warnings };
+}
+
+// Serialize read-check-write for a draft. Other drafts can progress independently.
+export async function updateDraft(storeRoot, draftId, transform, { persist = saveDraft } = {}) {
+  if (!validId.test(draftId)) throw storeError('not_found', '没有找到该草稿。');
+  const key = path.resolve(storeRoot, `${draftId}.json`);
+  const previous = updates.get(key) ?? Promise.resolve();
+  const transaction = previous.then(async () => {
+    const current = await readDraft(storeRoot, draftId);
+    const result = await transform(current);
+    if (!result.ok) return result;
+    if ((result.draft.revision ?? 0) !== (current.revision ?? 0)) {
+      await persist(storeRoot, result.draft);
+    }
+    return result;
+  });
+  const tail = transaction.catch(() => {});
+  updates.set(key, tail);
+  try { return await transaction; }
+  finally { if (updates.get(key) === tail) updates.delete(key); }
 }

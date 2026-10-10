@@ -4,7 +4,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, previewBlueprint, recheckBlueprint, createDraft } from './assembly/engine.mjs';
 import { listQuestions } from './question-bank/reader.mjs';
-import { saveDraft, readDraft, listDrafts } from './assembly/store.mjs';
+import { saveDraft, readDraft, listDrafts, updateDraft } from './assembly/store.mjs';
+import { applyDraftOperation, previewDraftCandidates } from './assembly/editor.mjs';
+import { confirmPaper, preparePaperConfirmation, getPaper, listPapers, derivePaperDraft, findPaperForDraft } from './assembly/papers.mjs';
+import { readFeedback, saveFeedback } from './assembly/feedback.mjs';
+import { getPaperOutputs, generateOutput, readOutputFile } from './output/manager.mjs';
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const mimeTypes = {
@@ -16,6 +20,14 @@ const mimeTypes = {
 function json(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   response.end(JSON.stringify(body));
+}
+
+function editorStatus(result) {
+  if (result.ok) return 200;
+  if (['revision_conflict', 'operation_conflict', 'finalized_draft'].includes(result.error.code)) return 409;
+  if (['invalid_operation', 'invalid_plan', 'invalid_request', 'confirmation_required'].includes(result.error.code)) return 400;
+  if (result.error.code === 'not_found') return 404;
+  return 500;
 }
 
 async function body(request) {
@@ -33,6 +45,9 @@ async function body(request) {
 }
 
 export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '.tutor', 'drafts') } = {}) {
+  const papersRoot = path.join(path.dirname(storeRoot), 'papers');
+  const outputRoot = path.join(path.dirname(storeRoot), 'outputs');
+  const feedbackRoot = path.join(path.dirname(storeRoot), 'feedback');
   return http.createServer(async (request, response) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     try {
@@ -77,8 +92,70 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
       if (url.pathname === '/api/drafts' && request.method === 'GET') {
         return json(response, 200, { ok: true, ...await listDrafts(storeRoot) });
       }
+      const confirmationRoute = url.pathname.match(/^\/api\/drafts\/([^/]+)\/(confirmation|confirm)$/);
+      if (confirmationRoute?.[2] === 'confirmation' && request.method === 'GET') {
+        const current = await readDraft(storeRoot, confirmationRoute[1]);
+        return json(response, 200, { ok: true, summary: preparePaperConfirmation(current), confirmedPaperId: current.confirmedPaperId });
+      }
+      if (confirmationRoute?.[2] === 'confirm' && request.method === 'POST') {
+        const result = await confirmPaper(storeRoot, confirmationRoute[1], await body(request), { root, papersRoot });
+        return json(response, editorStatus(result), result);
+      }
+      const editRoute = url.pathname.match(/^\/api\/drafts\/([^/]+)\/(operations|candidates)$/);
+      if (editRoute && request.method === 'POST') {
+        const input = await body(request);
+        const draftId = editRoute[1];
+        const result = editRoute[2] === 'operations'
+          ? await updateDraft(storeRoot, draftId, async current => {
+            const frozen = await findPaperForDraft(papersRoot, draftId);
+            if (!frozen.ok) return frozen;
+            if (frozen.paper && !(current.operations ?? []).some(item => item.operationId === input.operationId)) {
+              return { ok: false, error: { code: 'finalized_draft', message: '该草稿已确认成卷，请从成卷派生新草稿后修改。' } };
+            }
+            return applyDraftOperation(current, input, { root });
+          })
+          : await previewDraftCandidates(await readDraft(storeRoot, draftId), input, { root });
+        return json(response, editorStatus(result), result);
+      }
       if (url.pathname.startsWith('/api/drafts/') && request.method === 'GET') {
-        return json(response, 200, { ok: true, draft: await readDraft(storeRoot, url.pathname.slice('/api/drafts/'.length)) });
+        const draft = await readDraft(storeRoot, url.pathname.slice('/api/drafts/'.length));
+        const frozen = await findPaperForDraft(papersRoot, draft.draftId);
+        if (!frozen.ok) return json(response, editorStatus(frozen), frozen);
+        return json(response, 200, { ok: true, draft: frozen.paper && !draft.confirmedPaperId ? { ...draft, confirmedPaperId: frozen.paper.paperId } : draft });
+      }
+      if (url.pathname === '/api/papers' && request.method === 'GET') {
+        const result = await listPapers(papersRoot);
+        return json(response, editorStatus(result), result);
+      }
+      const paperRoute = url.pathname.match(/^\/api\/papers\/([^/]+)(?:\/(derive|feedback|outputs)(?:\/(student|teacher)(?:\/(file))?)?)?$/);
+      if (paperRoute) {
+        const result = await getPaper(papersRoot, paperRoute[1]);
+        if (!result.ok) return json(response, editorStatus(result), result);
+        const paper = result.paper;
+        if (!paperRoute[2] && request.method === 'GET') {
+          let feedback = null; const warnings = [];
+          try { feedback = await readFeedback(feedbackRoot, paper.paperId); }
+          catch (error) { warnings.push({ code: error.code, message: error.message }); }
+          return json(response, 200, { ok: true, paper, outputs: await getPaperOutputs(paper, { outputRoot }), feedback, warnings });
+        }
+        if (paperRoute[2] === 'derive' && request.method === 'POST') {
+          const derived = await derivePaperDraft(storeRoot, papersRoot, paper.paperId, await body(request));
+          return json(response, editorStatus(derived), derived);
+        }
+        if (paperRoute[2] === 'feedback' && request.method === 'POST') {
+          const feedback = await saveFeedback(feedbackRoot, paper, await body(request));
+          return json(response, 200, { ok: true, feedback });
+        }
+        if (paperRoute[2] === 'outputs' && paperRoute[3] && !paperRoute[4] && request.method === 'POST') {
+          const output = await generateOutput(paper, paperRoute[3], { root, outputRoot });
+          return json(response, editorStatus(output), output);
+        }
+        if (paperRoute[2] === 'outputs' && paperRoute[3] && paperRoute[4] && request.method === 'GET') {
+          const file = await readOutputFile(paper, paperRoute[3], { outputRoot });
+          response.writeHead(200, { 'Content-Type': 'application/pdf', 'Cache-Control': 'no-store',
+            'Content-Disposition': `attachment; filename="${file.filename}"` });
+          return response.end(file.bytes);
+        }
       }
       if (url.pathname.startsWith('/api/')) {
         return json(response, 404, { ok: false, error: { code: 'not_found', message: '没有找到该操作。' } });
@@ -107,7 +184,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
         'Cache-Control': 'no-cache' });
       response.end(request.method === 'HEAD' ? undefined : content);
     } catch (error) {
-      json(response, error.status ?? (error.code === 'not_found' ? 404 : 500),
+      json(response, error.status ?? editorStatus({ ok: false, error }),
         { ok: false, error: { code: error.code ?? 'server_error', message: error.message } });
     }
   });

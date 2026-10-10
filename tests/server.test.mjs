@@ -4,7 +4,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createAppServer } from '../src/server.mjs';
-import { readDraft, listDrafts } from '../src/assembly/store.mjs';
+import { readDraft, listDrafts, saveDraft } from '../src/assembly/store.mjs';
 
 async function app(t, blockedStore = false) {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'tutor-s302-http-'));
@@ -94,4 +94,136 @@ test('damaged saved draft never silently reselects current bank contents', async
   const listed = await request('/api/drafts');
   assert.equal(listed.drafts.length, 0);
   assert.equal(listed.warnings[0].code, 'integrity_error');
+});
+
+async function initialDraft(request) {
+  const preview = await request('/api/blueprint', { requirements: {} });
+  const saved = await request('/api/drafts', { blueprint: preview.blueprint });
+  assert.equal(saved.status, 201);
+  return saved.draft;
+}
+
+test('concurrent duplicate HTTP operations execute once and replay returns the newest saved draft', async t => {
+  const { request, storeRoot } = await app(t);
+  const draft = await initialDraft(request);
+  const route = `/api/drafts/${draft.draftId}/operations`;
+  const lock = { operationId: 'http-lock-once', expectedRevision: 0, type: 'lock', slotId: 'slot-1', locked: true };
+  const repeated = await Promise.all([request(route, lock), request(route, lock)]);
+  repeated.forEach(result => { assert.equal(result.status, 200); assert.equal(result.draft.revision, 1); });
+  assert.equal((await readDraft(storeRoot, draft.draftId)).operations.length, 1);
+  const changed = await request(route, { operationId: 'http-score-next', expectedRevision: 1,
+    type: 'points', slotId: 'slot-8', points: 12, partPoints: [] });
+  assert.equal(changed.status, 200);
+  assert.equal(changed.draft.stats.availablePoints, 102);
+  const replay = await request(route, lock);
+  assert.equal(replay.status, 200);
+  assert.equal(replay.draft.revision, 2);
+  assert.equal(replay.draft.slots[7].points, 12);
+  const reused = await request(route, { ...lock, locked: false });
+  assert.equal(reused.status, 409);
+  assert.equal(reused.error.code, 'operation_conflict');
+  assert.deepEqual((await request(`/api/drafts/${draft.draftId}`)).draft, changed.draft);
+});
+
+test('competing stale HTTP edits cannot overwrite each other', async t => {
+  const { request } = await app(t);
+  const draft = await initialDraft(request);
+  const route = `/api/drafts/${draft.draftId}/operations`;
+  const commands = [12, 14].map(points => ({ operationId: `http-competing-${points}`, expectedRevision: 0,
+    type: 'points', slotId: 'slot-8', points, partPoints: [] }));
+  const results = await Promise.all(commands.map(command => request(route, command)));
+  assert.deepEqual(results.map(result => result.status).sort(), [200, 409]);
+  const success = results.find(result => result.ok);
+  const stale = results.find(result => !result.ok);
+  assert.equal(stale.error.code, 'revision_conflict');
+  const reopened = await request(`/api/drafts/${draft.draftId}`);
+  assert.equal(reopened.draft.revision, 1);
+  assert.deepEqual(reopened.draft, success.draft);
+});
+
+test('candidate preview is read-only and batch HTTP replacement preserves successful items and failed originals', async t => {
+  const { request } = await app(t);
+  const draft = await initialDraft(request);
+  const base = `/api/drafts/${draft.draftId}`;
+  const preview = await request(`${base}/candidates`, { slotId: 'slot-2', expectedRevision: 0 });
+  assert.equal(preview.status, 200);
+  assert.deepEqual((await request(base)).draft, draft);
+  const result = await request(`${base}/operations`, { operationId: 'http-partial-batch', expectedRevision: 0,
+    type: 'replace', slotIds: ['slot-2', 'slot-8'], mode: 'automatic' });
+  assert.equal(result.status, 200);
+  assert.notEqual(result.draft.slots[1].question.questionId, draft.slots[1].question.questionId);
+  assert.deepEqual(result.draft.slots[7].question, draft.slots[7].question);
+  assert.deepEqual(result.draft.slots[0], draft.slots[0]);
+  assert.equal(result.draft.stats.availablePoints, 100);
+  assert.deepEqual((await request(base)).draft, result.draft);
+  assert.equal((await request(`${base}/candidates`, { slotId: 'slot-2', expectedRevision: 0 })).status, 409);
+});
+
+test('HTTP paper confirmation freezes reviewed content, recovers absent source marker and derives an editable new draft', async t => {
+  const { request, storeRoot } = await app(t);
+  const draft = await initialDraft(request);
+  const base = `/api/drafts/${draft.draftId}`;
+  const confirmation = await request(`${base}/confirmation`);
+  assert.equal(confirmation.summary.student.points, 100);
+  assert.equal(confirmation.summary.teacher.issues.filter(item => item.code === 'rubric_missing').length, 3);
+  const payload = { operationId: 'http-confirm', expectedRevision: 0, acknowledgeDifferences: true };
+  assert.equal((await request(`${base}/confirm`, { ...payload, acknowledgeDifferences: false })).status, 400);
+  const confirmed = await request(`${base}/confirm`, payload);
+  assert.equal(confirmed.status, 200);
+  const paperBase = `/api/papers/${confirmed.paper.paperId}`;
+  assert.equal((await request(base)).draft.confirmedPaperId, confirmed.paper.paperId);
+  // Simulate the published-paper/source-marker crash window with a valid old draft file.
+  await saveDraft(storeRoot, draft);
+  assert.equal((await request(base)).draft.confirmedPaperId, confirmed.paper.paperId);
+  const rejected = await request(`${base}/operations`, { operationId: 'late-edit', expectedRevision: 0,
+    type: 'points', slotId: 'slot-8', points: 12, partPoints: [] });
+  assert.equal(rejected.error.code, 'finalized_draft');
+  assert.equal(rejected.status, 409);
+  assert.deepEqual((await request(`${base}/confirm`, payload)).paper, confirmed.paper);
+  assert.equal((await readDraft(storeRoot, draft.draftId)).confirmedPaperId, confirmed.paper.paperId);
+  const reopened = await request(paperBase);
+  assert.deepEqual(reopened.paper, confirmed.paper);
+  assert.equal(reopened.outputs.student.status, 'not_generated');
+  assert.equal(reopened.feedback, null);
+  const derived = await request(`${paperBase}/derive`, { operationId: 'derive-http' });
+  assert.notEqual(derived.draft.draftId, draft.draftId);
+  const edit = await request(`/api/drafts/${derived.draft.draftId}/operations`, { operationId: 'child-score', expectedRevision: 0,
+    type: 'points', slotId: 'slot-8', points: 12, partPoints: [] });
+  assert.equal(edit.draft.stats.availablePoints, 102);
+  assert.deepEqual((await request(paperBase)).paper, confirmed.paper);
+  assert.equal((await request(`${paperBase}/derive`, { operationId: 'derive-http' })).draft.revision, 1);
+});
+
+test('isolated HTTP feedback fixture records actual operation metrics without mutating the paper', async t => {
+  const { request } = await app(t);
+  const draft = await initialDraft(request);
+  const base = `/api/drafts/${draft.draftId}`;
+  const edit = await request(`${base}/operations`, { operationId: 'replace-for-metrics', expectedRevision: 0,
+    type: 'replace', slotIds: ['slot-2'], mode: 'automatic', reason: 'isolated test fixture' });
+  const confirmed = await request(`${base}/confirm`, { operationId: 'feedback-fixture-confirm', expectedRevision: edit.draft.revision, acknowledgeDifferences: true });
+  const paperBase = `/api/papers/${confirmed.paper.paperId}`;
+  assert.equal((await request(`${paperBase}/feedback`, { willingToUse: 'invalid', reason: '', manualCorrections: '' })).status, 400);
+  const fixture = { willingToUse: 'after_changes', reason: 'Automated test fixture only; no human acceptance.', manualCorrections: '' };
+  const response = await request(`${paperBase}/feedback`, fixture);
+  assert.equal(response.feedback.metrics.replacementCount, 1);
+  assert.equal(response.feedback.metrics.replacementRequests, 1);
+  const reopened = await request(paperBase);
+  assert.equal(reopened.feedback.reason, fixture.reason);
+  assert.deepEqual(reopened.paper, confirmed.paper);
+});
+
+test('damaged feedback does not block reopening an intact paper or its output statuses', async t => {
+  const { request, storeRoot } = await app(t);
+  const draft = await initialDraft(request);
+  const confirmed = await request(`/api/drafts/${draft.draftId}/confirm`, {
+    operationId: 'feedback-damage-confirm', expectedRevision: 0, acknowledgeDifferences: true });
+  const base = `/api/papers/${confirmed.paper.paperId}`;
+  await request(`${base}/feedback`, { willingToUse: 'no', reason: 'Isolated fault fixture.', manualCorrections: '' });
+  await writeFile(path.join(path.dirname(storeRoot), 'feedback', `${confirmed.paper.paperId}.json`), 'broken-json');
+  const reopened = await request(base);
+  assert.equal(reopened.status, 200);
+  assert.deepEqual(reopened.paper, confirmed.paper);
+  assert.equal(reopened.outputs.student.status, 'not_generated');
+  assert.equal(reopened.feedback, null);
+  assert.equal(reopened.warnings[0].code, 'read_error');
 });

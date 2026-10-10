@@ -2,13 +2,18 @@ export async function api(url, body, signal) {
   const response = await fetch(url, { ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), signal });
   let result;
   try { result = await response.json(); } catch { throw new Error('服务返回了无法读取的内容，请检查本地服务。'); }
-  if (!response.ok || !result.ok) throw new Error(result.error?.message || `请求失败（${response.status}）`);
+  if (!response.ok || !result.ok) {
+    const failure = new Error(result.error?.message || `请求失败（${response.status}）`);
+    failure.status = response.status;
+    failure.code = result.error?.code;
+    throw failure;
+  }
   return result;
 }
 
 export const typeLabels = { single_choice: '单选', fill_blank: '填空', free_response: '解答' };
 export const typeTitles = { single_choice: '单项选择题', fill_blank: '填空题', free_response: '解答题' };
-export const statusLabels = { eligible: '符合条件', related: '存在差异', unknown: '证据不足', read_failed: '读取失败' };
+export const statusLabels = { eligible: '符合条件', related: '存在差异', unknown: '证据不足', pending: '待整理', read_failed: '读取失败' };
 export const sourceLabel = (source, config) => config.sources.find(item => item.sourceId === source)?.label || (source === 'set-teacher' ? '解析版' : source === 'set-student' ? '原卷版' : source);
 
 export function allocateParts(task, points) {

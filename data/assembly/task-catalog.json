@@ -103,6 +103,13 @@
       "id": "element_parameter_distinct",
       "label": "由元素关系和两个不同元素条件求参数",
       "questionType": "fill_blank",
+      "partialAlternatives": [
+        {
+          "questionId": "tutor-set-019",
+          "reason": "来源清单标注为部分备选：只考集合互异性，未覆盖元素属于条件下求参及舍解的完整目标。",
+          "basis": "docs/validation/sources/set-source-catalog.json#benchmark_slots"
+        }
+      ],
       "sectionIds": [
         "1.1"
       ],

@@ -82,7 +82,7 @@ function knownIds(value, allowed, label) {
   return [...value];
 }
 
-function normalizeRequirements(input, config, sourceIds) {
+export function normalizeRequirements(input, config, sourceIds) {
   if (!object(input)) reject('需求需为结构化对象。');
   const values = { ...config.defaultRequirements, ...input };
   if (!object(values.counts)) reject('题量设置无效。');
@@ -113,7 +113,7 @@ function distribute(total, weights) {
   return result;
 }
 
-function partAllocation(task, points) {
+export function partAllocation(task, points) {
   if (task.questionType !== 'free_response') return [];
   const partIds = task.partIds ?? ['p1', 'p2'];
   const weights = task.partWeights ?? partIds.map(() => 1);
@@ -125,7 +125,7 @@ function partAllocation(task, points) {
   return distribute(points, weights).map((value, i) => ({ partId: partIds[i], points: value }));
 }
 
-async function loadPool(root) {
+export async function loadPool(root) {
   const listed = await listQuestions({ root });
   if (!listed.ok) throw new AssemblyError(listed.error.code, listed.error.message);
   const index = await readData(root, 'question-index.json');
@@ -174,7 +174,7 @@ function assess(item, slot, requirements, usedIds = new Set(), usedGroups = new 
   };
 }
 
-function slotCandidates(pool, slot, requirements, usedIds, usedGroups) {
+export function slotCandidates(pool, slot, requirements, usedIds, usedGroups) {
   return pool.records.filter(item => item.entry.questionType === slot.questionType)
     .map(item => assess(item, slot, requirements, usedIds, usedGroups))
     .sort((a, b) => a.questionId.localeCompare(b.questionId));
