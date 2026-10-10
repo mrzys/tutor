@@ -1,0 +1,27 @@
+import React from 'react';
+import { MathText } from './MathText.jsx';
+import { sourceLabel, statusLabels, typeLabels, typeTitles } from './api.js';
+
+function Evidence({ slot, config }) {
+  const reason = slot.selection.selectedReason;
+  const path = reason?.allowedSolutionPath;
+  return <details className="evidence"><summary><strong>选题依据</strong><span>{slot.taskLabel} · {slot.status === 'selected' ? '已证实符合本次范围' : slot.status === 'search_failed' ? '检索读取失败' : '题位留空'}</span></summary><div className="evidence-body">
+    {reason ? <><p>{reason.text}</p><p>完整允许解法依赖：章节 {path?.requiredSections?.join('、') || '无新增章节'}；显式前提 {path?.requiredPremises?.map(id => config.premises.find(item => item.id === id)?.label || id).join('、') || '无新增前提'}。</p>{reason.notes?.map((text, index) => <p key={index}><MathText text={text}/></p>)}</> : slot.selection.reasons.map(text => <p key={text}>{text}</p>)}
+    {slot.question ? <><p>题目身份：<code>{slot.question.questionId}</code><br/>题面版本：<code>{slot.question.contentVersion}</code><br/>教师资料版本：<code>{slot.question.teacherVersion}</code></p><ul>{slot.question.sourceRefs.map((ref, index) => <li key={index}>{sourceLabel(ref.sourceId, config)} · 物理页 {ref.pages.join('、')} · {ref.locator}</li>)}</ul></> : null}
+    <details className="candidate-details"><summary>候选与差异（{slot.selection.candidates.length} 题）</summary><ul>{slot.selection.candidates.map(candidate => <li key={candidate.questionId}><code>{candidate.questionId}</code> · {statusLabels[candidate.status] || candidate.status}{candidate.reasons?.length ? `：${candidate.reasons.join('；')}` : ''}{candidate.notes?.map((note, index) => <small key={index}><MathText text={note}/></small>)}</li>)}</ul><p className="help">此处展示差异供核查，局部换题将在下一阶段提供。</p></details>
+  </div></details>;
+}
+
+export function DraftRail({ draft, onNew }) {
+  return <><h2>本次草稿</h2><div className="stats-pair"><div><span>实际可用</span><strong>{draft.stats.selectedQuestions} <small>题</small></strong></div><div><span>有效分值</span><strong>{draft.stats.availablePoints} <small>分</small></strong></div></div><div className="rail-status"><span>{draft.stats.missingQuestions ? `缺 ${draft.stats.missingQuestions} 题` : '题量与计划一致'}</span><span>难度估计未知</span></div><div className="rail-separator"/><h2>题目目录</h2><nav className="question-directory" aria-label="题目目录">{draft.slots.map(slot => <a key={slot.slotId} href={`#question-${slot.number}`}><span>{slot.number}</span><span>{typeLabels[slot.questionType]}{slot.status !== 'selected' ? ' · 缺题' : ''}</span><span>{slot.points} 分</span></a>)}</nav><div className="rail-actions"><a href="#selection-summary">查看选题依据</a><button className="link-button" onClick={onNew}>新建组卷</button></div></>;
+}
+
+export function Draft({ draft, config }) {
+  config = { ...config, ...draft.baseline.taskCatalogSnapshot };
+  const groups = Object.entries(typeTitles).map(([type, title]) => ({ type, title, slots: draft.slots.filter(slot => slot.questionType === type) })).filter(group => group.slots.length);
+  return <div className="paper">
+    {draft.stats.missingQuestions ? <div className="notice warning" role="status">未完整卷：实际可用 {draft.stats.selectedQuestions} 题，有效分值 {draft.stats.availablePoints} 分。缺题保留原题号及明确占位。</div> : null}
+    {groups.map((group, index) => <section className="paper-section" key={group.type}><h2>{['一', '二', '三'][index]}、{group.title}</h2><p className="group-subtitle">计划 {group.slots.length} 题 / {group.slots.reduce((sum, slot) => sum + slot.points, 0)} 分；实际可用 {group.slots.filter(slot => slot.status === 'selected').length} 题 / {group.slots.filter(slot => slot.status === 'selected').reduce((sum, slot) => sum + slot.points, 0)} 分</p>{group.slots.map(slot => <article className="question" id={`question-${slot.number}`} key={slot.slotId}><div className="question-top"><strong className="question-number">{slot.number}.</strong><div className="question-stem">{slot.question ? <MathText text={slot.question.student.stem}/> : <span className="missing-stem">【第 {slot.number} 题缺题面 · {slot.status === 'search_failed' ? '读取失败，尚不能判断无题' : '暂无符合条件的候选'}】</span>}</div><span className="question-points">（{slot.points} 分）</span></div>{slot.question ? <div className="question-content">{slot.question.student.options.length ? <div className="options">{slot.question.student.options.map(option => <div className="option" key={option.label}><span>{option.label}.</span><MathText text={option.text}/></div>)}</div> : null}{slot.question.student.parts.map((part, partIndex) => <p className="question-part" key={part.partId}>（{partIndex + 1}）<MathText text={part.prompt}/><span className="part-points">（{slot.partPoints.find(item => item.partId === part.partId)?.points ?? '—'} 分）</span></p>)}</div> : null}<Evidence slot={slot} config={config}/></article>)}</section>)}
+    <section id="selection-summary" className="selection-summary"><h2>本次选题说明</h2><p>按已确认条件读取真实题库；不自动放宽范围、不自动选入未知题。</p><ul>{draft.differences.map((difference, index) => <li key={index}>{difference.message}</li>)}</ul><p>来源单元 {draft.retrieval.sourceUnits ?? 50} 个，{draft.retrieval.pendingCount} 个待整理；{draft.retrieval.failures.length} 个读取失败。</p><details><summary>查看本次确认条件</summary><p>主考章节：{draft.baseline.requirements.mainScope.join('、') || '未选择'}<br/>已学章节：{draft.baseline.requirements.learnedScope.join('、') || '未选择'}<br/>允许前提：{draft.baseline.requirements.premises.map(id => config.premises.find(item => item.id === id)?.label || id).join('、') || '无'}<br/>目标难度：{draft.baseline.requirements.targetDifficulty.toFixed(2)}<br/>教学目的：{draft.baseline.requirements.goal}</p></details></section>
+  </div>;
+}

@@ -1,0 +1,866 @@
+{
+  "schemaVersion": 1,
+  "indexId": "sets-mvp-curated-v1",
+  "description": "针对真实 18 个就绪题包人工整理的任务、主考目标和完整允许解法索引。来源于已核查内容，不是模型自动抽取结果或全库能力声明。",
+  "courseContextPath": "data/question-bank/course-context.json",
+  "readinessLedgerPath": "data/question-bank/ledger.json",
+  "limits": [
+    "只覆盖 18 个当前就绪题包，其余 32 个源单元仍由 50 单元台账报告未就绪；不得把它们变成可选供给。",
+    "主考目标与解法依赖分别记录；至少一条完整允许路径满足本次已学边界及前提才自动合格。",
+    "未满足已有路径仅能说明证据不足，不能据此判定所有可能解法都超纲。",
+    "contentVersion 与 teacherVersion 同时绑定；内容或解法变化后必须重核该条索引。",
+    "duplicateGroup 仅表示同一已审计源单元身份，未把任务相同、题面近似的不同源题误合并。",
+    "difficultyEstimate 全为 null；没有实测或可信估计，不把标杆卷估计复制到新选题。",
+    "初中绝对值基本计算与平方根作为基础自动注入，允许解法按真实必要依赖判断；取消绝对值不等式工具不撤销这些基础知识。"
+  ],
+  "entries": [
+    {
+      "questionId": "tutor-set-001",
+      "contentVersion": "content-fa414a7883a4415c",
+      "teacherVersion": "teacher-d6ed2cc031d71bdc",
+      "tasks": [
+        "set_determinacy"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [
+            "quadratic_basics"
+          ],
+          "basis": "按集合的确定性逐项判断；通过因式分解求 $x^2-1=0$ 的实根确认 C。"
+        },
+        {
+          "id": "square-root-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "A、B、D 中个子较高、难题、无限接近没有确定标准。C 中 x²−1=0 等价于 x²=1，用平方根得到 x=±1，实根构成确定集合 {-1,1}，故 C 正确。此路径将教师解答中的求根改用自动注入的初中平方根运算，结论与原解答相同；不依赖可撤销的额外工具。",
+          "provenance": "curated_alternative"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-001",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-001.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2
+            ],
+            "locator": "知识点1 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              2
+            ],
+            "locator": "知识点1 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-002",
+      "contentVersion": "content-52af23e78f044f3d",
+      "teacherVersion": "teacher-15fd9b654735c3a6",
+      "tasks": [
+        "set_determinacy"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "利用确定性排除模糊描述，求 $|x|=5$ 得到确定对象 $5$ 与 $-5$。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-002",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-002.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2,
+              3
+            ],
+            "locator": "知识点1 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              2,
+              3
+            ],
+            "locator": "知识点1 例2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-003",
+      "contentVersion": "content-a97649e29d74cfad",
+      "teacherVersion": "teacher-50e66cb691de202e",
+      "tasks": [
+        "set_determinacy"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "依据确定性逐项判断，区分达标的明确标准和主观描述。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-003",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-003.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3
+            ],
+            "locator": "知识点1 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              3
+            ],
+            "locator": "知识点1 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-007",
+      "contentVersion": "content-e33e9f02de0d2086",
+      "teacherVersion": "teacher-16e96e990b940b07",
+      "tasks": [
+        "number_membership"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "分别计算两个绝对值，按常用数集的定义判断四个属于关系并计数。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-007",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-007.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              4
+            ],
+            "locator": "知识点2 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-008",
+      "contentVersion": "content-7cc507d1679c9ca6",
+      "teacherVersion": "teacher-b77e2e6cafc37bdf",
+      "tasks": [
+        "number_membership"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "根据 $\\mathbb{N}^{*}$、$\\mathbb{R}$、$\\mathbb{Z}$、$\\mathbb{N}$ 的定义直接判断四个属于关系。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-008",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-008.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6
+            ],
+            "locator": "知识点2 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 例2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-009",
+      "contentVersion": "content-e476c2949b2e1f8a",
+      "teacherVersion": "teacher-894fbaa450a9710a",
+      "tasks": [
+        "number_membership"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "依据数集分类及属于关系逐项检查，确定 $-7.8$ 属于实数集。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-009",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-009.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6
+            ],
+            "locator": "知识点2 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-010",
+      "contentVersion": "content-e784c53ecef8d3c6",
+      "teacherVersion": "teacher-93cd41d8b2809e3c",
+      "tasks": [
+        "number_membership"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "按常用数集定义和列举法逐项判断四个关系，统计正确关系个数。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-010",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-010.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6,
+              7
+            ],
+            "locator": "知识点2 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-013",
+      "contentVersion": "content-4edcb45933285995",
+      "teacherVersion": "teacher-51df299835297c72",
+      "tasks": [
+        "set_determinacy"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "依据题面中是否存在确定判断标准逐项检查。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-013",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-013.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8
+            ],
+            "locator": "知识点3 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              6
+            ],
+            "locator": "知识点3 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-018",
+      "contentVersion": "content-927c707069ac3c27",
+      "teacherVersion": "teacher-6752f74631a4bae2",
+      "tasks": [
+        "element_parameter_distinct"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "利用属于关系分类得 $a=4$ 或 $a^2-12=4$，得到 $a=\\pm4$；结合修订题面明确的两个不同元素条件排除 $a=4$，验证 $a=-4$。全过程只需集合概念、互异性和初中方程。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-018",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-018.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ],
+            "locator": "知识点3 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              7
+            ],
+            "locator": "知识点3 跟踪训练4"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "题面已按用户明确授权补充含两个不同元素，原文及原答案差异保存在教师资料与修订记录中；本索引只匹配当前修订内容版本，不回写 PDF。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-020",
+      "contentVersion": "content-87331c85db705bd4",
+      "teacherVersion": "teacher-740083fa2202b18e",
+      "tasks": [
+        "positive_integer_listing"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "解一次不等式得 $x<5$，在正整数中列举得到 $\\{1,2,3,4\\}$，与选项 B 一致；仅用已学表示法和初中一次不等式。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-020",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-020.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              12
+            ],
+            "locator": "知识点4 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              9
+            ],
+            "locator": "知识点4 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-022",
+      "contentVersion": "content-050f197058bb1809",
+      "teacherVersion": "teacher-840f38564ef97f20",
+      "tasks": [
+        "positive_integer_listing"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "解一次不等式得 $x\\le 3$，在正整数中列举得到 $\\{1,2,3\\}$；仅用已学表示法和初中一次不等式。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-022",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-022.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ],
+            "locator": "知识点4 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              9
+            ],
+            "locator": "知识点4 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-034",
+      "contentVersion": "content-0478f9a415f3c09e",
+      "teacherVersion": "teacher-256ba6dc7c885e0d",
+      "tasks": [
+        "proper_subset"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "列举 $\\{1,2\\}$ 的子集并去掉自身，得 $\\varnothing$、$\\{1\\}$、$\\{2\\}$；与选项比较仅 B 符合。判定 C 时区分空集与含空集的单元素集合。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-034",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-034.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              19
+            ],
+            "locator": "知识点6 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "与 035 同属真子集判断任务，但本题考空集、含空集的集合及相等集合；035 含交集干扰项。仅核心目标匹配，选项细项不完全等价。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-035",
+      "contentVersion": "content-f6a8e5ca4396a00c",
+      "teacherVersion": "teacher-23d623300750f174",
+      "tasks": [
+        "proper_subset"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "逐个检查 N 的元素 0、1 均在 M 中，而 -1 在 M 中但不在 N 中，故 N 是 M 的真子集，C 正确。题目为单选，证明 C 成立即能完成选答，不必依赖其他选项中的交集运算。该路径依据原教师解答中对 C 的证明。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-035",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-035.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ],
+            "locator": "知识点6 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 例2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "与 034 共享真子集判断目标；本题采用证明正确选项 C 的完整路径。选项 B 含交集，未将逐个排除全部干扰项强加为必需解法。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-041",
+      "contentVersion": "content-6c3717c7e65a4d17",
+      "teacherVersion": "teacher-a7d105d53b277eae",
+      "tasks": [
+        "root_set_subset_count"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.2",
+            "1.3"
+          ],
+          "requiredPremises": [
+            "quadratic_basics"
+          ],
+          "basis": "对 $a=0$ 与 $a\\ne0$ 分类，用因式分解求 $A$，求出 $B=\\{1,4\\}$；(1) 用 $A\\subseteq B$ 得 $a=0,1,1/4$；(2) 由非空真子集6个可得并集3个元素，再比较 $1/a$ 与1、4得排除上述三值。子集数量也可直接列举三元素集合核验，无需引入高中未确认章节。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-041",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-041.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              22
+            ],
+            "locator": "知识点6 跟踪训练5"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              15
+            ],
+            "locator": "知识点6 跟踪训练5"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "完整父题包含两个小问，主考根集合关系与真子集计数；并集是完整解法依赖。计数可用集合小规模列举核对，不扩展到未确认的高中计数章节。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-045",
+      "contentVersion": "content-292ea61f83668ab1",
+      "teacherVersion": "teacher-ee61a13a6eceec07",
+      "tasks": [
+        "finite_absolute_intersection"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "可将 A 的七个元素逐一代入 $|2x-5|>3$ 检验，只有 -1、0、5 符合，交集即 $\\{-1,0,5\\}$；该路径只需初中绝对值计算和已学交集定义。"
+        },
+        {
+          "id": "symbolic-absolute-inequality-path",
+          "requiredSections": [
+            "1.1",
+            "1.3"
+          ],
+          "requiredPremises": [
+            "absolute_root"
+          ],
+          "basis": "按教师解答，解 |2x−5|>3 得 x<1 或 x>4，再筛选 A 中元素，交集为 {-1,0,5}，故选 B。该符号不等式路径使用额外工具；已有逐项代入的基础计算路径不受该工具是否勾选影响。",
+          "provenance": "source_adapted"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-045",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-045.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ],
+            "locator": "知识点7 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-047",
+      "contentVersion": "content-c749412c573d0510",
+      "teacherVersion": "teacher-d97e6505785a547e",
+      "tasks": [
+        "union_complement_parameter"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.3"
+          ],
+          "requiredPremises": [
+            "quadratic_basics"
+          ],
+          "basis": "先因式分解 $(x-3)(x+1)$，分 $x<-1$、$x=-1$、$-1<x<3$、$x=3$、$x>3$ 用初中乘法符号判断非负区间；补集为 $(-1,3)$，并 A 后为 $(-\\infty,3)$；并 $(a,+\\infty)$ 覆盖全体实数当且仅当 $a<3$。不依赖尚未确认的高中二次不等式通法。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-047",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-047.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25,
+              26
+            ],
+            "locator": "知识点7 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-049",
+      "contentVersion": "content-52afcad304da04ec",
+      "teacherVersion": "teacher-ac7890f13f62eef8",
+      "tasks": [
+        "complement_quadratic_coefficients"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.3"
+          ],
+          "requiredPremises": [
+            "vieta",
+            "quadratic_basics"
+          ],
+          "basis": "由补集得 $N=[-1,2]$，两端点是二次方程的根且 $a>0$，用本次显式注入的韦达定理得到 $b/a=1$、$-2/a=-2$，从而 $a=b=1$、$a-b=0$。该路径明确依赖本次允许的韦达定理，未扩展整章已学范围。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-049",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-049.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ],
+            "locator": "知识点7 跟踪训练5"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              18
+            ],
+            "locator": "知识点7 跟踪训练5"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "记录已核查的韦达路径及其根与区间依据。缺少此路径前提表示允许解法证据不足，不证明不存在其他允许解法。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-050",
+      "contentVersion": "content-58c3b44f7725832a",
+      "teacherVersion": "teacher-6cb93003c2754961",
+      "tasks": [
+        "interval_complement_parameter"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "source-allowed-path",
+          "requiredSections": [
+            "1.1",
+            "1.2",
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "(1) 代入 m=-2，补 M 得两侧闭区间再交 N 得 $(-5,-4]$；(2) N 恒非空，空交集等价于 $N\\subseteq M$，比较两个开区间的端点得 $2m-1\\ge-4$、$2m+1\\le4$，解得 $[-3/2,3/2]$。仅用集合运算、包含关系及初中一次不等式组。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-050",
+      "basis": {
+        "path": "data/question-bank/questions/tutor-set-050.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26,
+              27
+            ],
+            "locator": "知识点7 跟踪训练6"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              18
+            ],
+            "locator": "知识点7 跟踪训练6"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "完整父题包含两个小问，区间补集交集与参数条件同时保留；解法使用包含关系和初中一次不等式组。"
+      ]
+    }
+  ]
+}

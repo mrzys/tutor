@@ -4,7 +4,16 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=24" },
+  "dependencies": {
+    "katex": "0.19.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": { "vite": "8.3.4" },
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "node scripts/server.mjs",
     "bank:list": "node scripts/question-bank.mjs list",
     "bank:get": "node scripts/question-bank.mjs get",
     "bank:check": "node scripts/question-bank.mjs check",

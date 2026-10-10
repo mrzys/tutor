@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "sets-mvp-tasks-v1",
+  "description": "从本次真实材料人工整理的可见任务预设；不是自动知识映射或难度标定。需求必须经本次确认后使用。",
+  "basis": [
+    "docs/validation/mvp-assembly-task.md",
+    "data/question-bank/course-context.json",
+    "docs/validation/sources/set-source-catalog.json"
+  ],
+  "chapters": [
+    {
+      "id": "1.1",
+      "label": "1.1 集合的概念"
+    },
+    {
+      "id": "1.2",
+      "label": "1.2 集合间的基本关系"
+    },
+    {
+      "id": "1.3",
+      "label": "1.3 集合的基本运算"
+    }
+  ],
+  "premises": [
+    {
+      "id": "vieta",
+      "label": "韦达定理",
+      "description": "由二次方程两根求系数；本次显式允许，不代表整章已学。049 的已记录完整解法使用此工具。"
+    },
+    {
+      "id": "quadratic_basics",
+      "label": "二次方程因式分解与初步图象",
+      "description": "一次、二次函数初步图象、二次方程因式分解及根的判别式；047 采用因式符号判断，未要求高中二次不等式通法。"
+    },
+    {
+      "id": "absolute_root",
+      "label": "绝对值不等式工具",
+      "description": "只管理含变量的绝对值不等式等符号工具；绝对值的定义、基本计算及平方根运算作为初中基础自动注入，不由此选项撤销。有限集逐项代入检查绝对值条件不需本工具。"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "set_determinacy",
+      "label": "判断对象能否构成集合",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "number_membership",
+      "label": "判断常用数集的元素关系",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "positive_integer_listing",
+      "label": "将正整数描述集合化为列举法",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "proper_subset",
+      "label": "判断有限集合的真子集关系",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "finite_absolute_intersection",
+      "label": "筛选满足绝对值条件的有限集交集",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "union_complement_parameter",
+      "label": "由并集与补集的覆盖关系求参数",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "element_parameter_distinct",
+      "label": "由元素关系和两个不同元素条件求参数",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "complement_quadratic_coefficients",
+      "label": "由补集和二次方程根求系数",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "interval_complement_parameter",
+      "label": "计算区间补交集并求空交集参数",
+      "questionType": "free_response",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [
+        "p1",
+        "p2"
+      ],
+      "partWeights": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "root_set_subset_count",
+      "label": "讨论根集合关系和并集子集计数",
+      "questionType": "free_response",
+      "sectionIds": [
+        "1.2"
+      ],
+      "partIds": [
+        "p1",
+        "p2"
+      ],
+      "partWeights": [
+        8,
+        10
+      ]
+    }
+  ],
+  "defaultTasks": {
+    "single_choice": [
+      "set_determinacy",
+      "number_membership",
+      "positive_integer_listing",
+      "proper_subset",
+      "finite_absolute_intersection",
+      "union_complement_parameter"
+    ],
+    "fill_blank": [
+      "element_parameter_distinct",
+      "complement_quadratic_coefficients"
+    ],
+    "free_response": [
+      "interval_complement_parameter",
+      "root_set_subset_count"
+    ]
+  },
+  "defaultRequirements": {
+    "title": "高一数学 · 集合专项",
+    "grade": "高一",
+    "goal": "检验集合概念、表示法、集合关系与交并补运算，关注含参讨论与易错点。",
+    "durationMinutes": 45,
+    "targetScore": 100,
+    "targetDifficulty": 0.7,
+    "mainScope": [
+      "1.1",
+      "1.2",
+      "1.3"
+    ],
+    "learnedScope": [
+      "1.1",
+      "1.2",
+      "1.3"
+    ],
+    "premises": [
+      "vieta",
+      "quadratic_basics",
+      "absolute_root"
+    ],
+    "sourceIds": [
+      "set-teacher",
+      "set-student"
+    ],
+    "counts": {
+      "single_choice": 6,
+      "fill_blank": 2,
+      "free_response": 2
+    }
+  },
+  "limits": [
+    "任务相同表示核心目标相符，不证明题干、所有选项细项或难度完全等价。",
+    "题位分值来自本次蓝图，不属于题库题目的固定属性。partWeights 是可核算的默认比例。",
+    "目标难度 0.7 是用户可改的偏好；现有题包没有可靠的实际难度估计。"
+  ]
+}
