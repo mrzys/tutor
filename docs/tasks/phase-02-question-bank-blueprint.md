@@ -56,6 +56,7 @@ flowchart LR
 - 产物：[ADR-0002](../adr/0002-question-bank-blueprint.md)、[采纳记录](../validation/adr-0002-adoption.md)、[MVP 开发任务](mvp-implementation.md)；执行项为 [S3-01 #6](https://github.com/mrzys/tutor/issues/6)、[S3-02 #7](https://github.com/mrzys/tutor/issues/7)、[S3-03 #8](https://github.com/mrzys/tutor/issues/8)、[S3-04 #9](https://github.com/mrzys/tutor/issues/9)。
 - 完成标准：各开发任务有明确输入、依赖、产物、完成标准和验证方式；未解决的供给或合同问题明确列出，不把只有图和示例的流程称为已运行 MVP。
 - 范围：本任务只准备开发，不提前宣称功能实现、教学质量或效率收益。
+- GitHub 同步：开发 Issue #6～#9 已建立；父任务 #5 的完成记录与关闭操作被当前 token 以权限不足（403）拒绝，仍保留远端旧状态。本地设计采纳与任务拆分已完成，父任务同步待具备相应更新权限时处理。
 
 ## 阶段完成条件
 

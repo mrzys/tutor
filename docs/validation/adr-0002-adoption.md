@@ -30,3 +30,5 @@
 | 尚无应用代码与实际用户运行结果 | 按[四项开发任务](../tasks/mvp-implementation.md)完成一条可运行的组卷路径，再实际验证 |
 
 S2-04 完成条件是设计采纳、任务输入/依赖/交付/验收明确及 GitHub 执行项建立。MVP 开发任务均未开始；当前没有实际生成试卷或教师接受程度的结果。
+
+执行项 [#6](https://github.com/mrzys/tutor/issues/6)～[#9](https://github.com/mrzys/tutor/issues/9) 已建立。当前 GitHub token 无权更新父任务 [#5](https://github.com/mrzys/tutor/issues/5)（返回 403），其远端旧状态尚未同步；本地采纳及开发准备结论不变。
