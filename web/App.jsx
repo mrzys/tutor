@@ -9,6 +9,7 @@ import { AssemblyWorkbench } from './AssemblyWorkbench.jsx';
 import { AuthGate } from './AuthGate.jsx';
 import './conversation.css';
 import { applyBlueprintActions, draftOperationsFor } from './assistant-actions.js';
+import { navigateRoute, normalizeRoute } from './routes.js';
 
 const Draft = lazy(() => import('./Draft.jsx').then(module => ({ default: module.Draft })));
 const Paper = lazy(() => import('./Paper.jsx').then(module => ({ default: module.Paper })));
@@ -160,8 +161,8 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     return () => controller.abort();
   }, [draft?.draftId, draft?.revision, paperResult?.paper?.paperId, historyRefresh]);
 
-  function setLocation(id, kind = 'draft', replace = false) { const url = new URL(window.location.href); url.hash = ''; url.searchParams.delete('draft'); url.searchParams.delete('paper'); url.searchParams.delete('view'); if (id) url.searchParams.set(kind, id); window.history[replace ? 'replaceState' : 'pushState']({}, '', url); }
-  function setUtilityLocation(view, replace = false) { const url = new URL(window.location.href); url.hash = ''; url.searchParams.delete('draft'); url.searchParams.delete('paper'); url.searchParams.set('view', view); window.history[replace ? 'replaceState' : 'pushState']({}, '', url); }
+  function setLocation(id, kind = 'draft', replace = false) { navigateRoute(id ? kind : 'requirements', id, replace); }
+  function setUtilityLocation(view, replace = false) { navigateRoute(view, undefined, replace); }
   async function openDraft(id, location = true) {
     if (actionRef.current) return;
     actionRef.current = true; setBusy(true); setError(''); setChatProposal(null); setAssistantReply(''); setAssistantOpen(false); setAssistantTargets([]); setIntakeKey(current => current + 1);
@@ -184,11 +185,11 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     async function load() {
       try {
         const result = await api('/api/config', undefined, controller.signal);
-        const params = new URL(window.location.href).searchParams;
-        const id = params.get('draft'); const paperId = params.get('paper'); const view = params.get('view');
+        const route = normalizeRoute();
+        const id = route.screen === 'draft' ? route.id : null; const paperId = route.screen === 'paper' ? route.id : null;
         if (paperId) { const saved = await api(`/api/papers/${encodeURIComponent(paperId)}`, undefined, controller.signal); setPaperResult(saved); setScreen('paper'); }
         else if (id) { const saved = await api(`/api/drafts/${encodeURIComponent(id)}`, undefined, controller.signal); if (saved.draft.confirmedPaperId) { const paper = await api(`/api/papers/${encodeURIComponent(saved.draft.confirmedPaperId)}`, undefined, controller.signal); setPaperResult(paper); setScreen('paper'); setLocation(saved.draft.confirmedPaperId, 'paper', true); } else { setDraft(saved.draft); setScreen('draft'); } }
-        else if (['question-bank', 'question-import'].includes(view)) setScreen(view);
+        else setScreen(route.screen);
         setConfig(result.config); setRequirements(structuredClone(result.config.defaultRequirements)); setDrafts(result.config.drafts || []); setWarnings(result.config.draftWarnings || []);
       } catch (failure) { if (failure.name !== 'AbortError') setError(failure.message); }
       finally { if (!controller.signal.aborted) setBusy(false); }
@@ -201,8 +202,8 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
 
   useEffect(() => {
     const pop = () => {
-      const params = new URL(window.location.href).searchParams;
-      const id = params.get('draft'); const paperId = params.get('paper'); const view = params.get('view');
+      const route = normalizeRoute();
+      const id = route.screen === 'draft' ? route.id : null; const paperId = route.screen === 'paper' ? route.id : null;
       // Question anchors share the current document; preserve native scrolling.
       if (paperId && screen === 'paper' && paperResult?.paper?.paperId === paperId) return;
       if (!paperId && id && screen === 'draft' && draft?.draftId === id) return;
@@ -212,8 +213,7 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
       setPlanning(null); setConfirming(false);
       if (paperId) openPaper(paperId, false);
       else if (id) openDraft(id, false);
-      else if (['question-bank', 'question-import'].includes(view)) { setScreen(view); setError(''); setAssistantOpen(false); setAssistantTargets([]); }
-      else { setScreen('requirements'); setError(''); }
+      else { setScreen(route.screen); setError(''); setAssistantOpen(false); setAssistantTargets([]); }
     };
     window.addEventListener('popstate', pop);
     return () => window.removeEventListener('popstate', pop);
@@ -298,14 +298,14 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
   async function savedList() {
     if (actionRef.current) return;
     actionRef.current = true; setBusy(true); setError('');
-    try { const result = await api('/api/drafts'); setDrafts(result.drafts); setWarnings(result.warnings || []); setScreen('saved'); }
+    try { const result = await api('/api/drafts'); setDrafts(result.drafts); setWarnings(result.warnings || []); setScreen('saved'); setUtilityLocation('saved'); }
     catch (failure) { setError(failure.message); }
     finally { actionRef.current = false; setBusy(false); }
   }
   async function savedPaperList() {
     if (actionRef.current) return;
     actionRef.current = true; setBusy(true); setError(''); setConfirming(false); setChatProposal(null); setAssistantReply(''); setAssistantOpen(false); setAssistantTargets([]);
-    try { const result = await api('/api/papers'); setPapers(result.papers); setWarnings(result.warnings || []); setScreen('papers'); }
+    try { const result = await api('/api/papers'); setPapers(result.papers); setWarnings(result.warnings || []); setScreen('papers'); setUtilityLocation('papers'); }
     catch (failure) { setError(failure.message); }
     finally { actionRef.current = false; setBusy(false); }
   }
@@ -406,7 +406,7 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     <div className="app-main">{screen === 'question-bank' ? (!sidebarOpen ? <button ref={sidebarToggle} className="sidebar-icon sidebar-toggle bank-sidebar-toggle" data-state="collapsed" title="展开组卷历史" aria-label="展开组卷历史" aria-expanded="false" aria-controls="assembly-history" onClick={() => setSidebarOpen(true)}><PanelLeft size={22} aria-hidden="true"/></button> : null) : <header className="app-header"><div className="header-inner"><div className="workspace-brand">{!sidebarOpen ? <button ref={sidebarToggle} className="sidebar-icon sidebar-toggle" data-state="collapsed" title="展开组卷历史" aria-label="展开组卷历史" aria-expanded={sidebarOpen} aria-controls="assembly-history" onClick={() => setSidebarOpen(true)}><PanelLeft size={22}/></button> : null}{!sidebarOpen ? <span className="brand">Tutor</span> : null}</div><nav className="steps" aria-label="组卷步骤">{['需求', '蓝图', '试卷'].map((label,index) => <span key={label} className={step === index + 1 && !listScreen ? 'active' : ''} aria-current={step === index + 1 && !listScreen ? 'step' : undefined}><b>{index + 1}</b>{label}</span>)}</nav></div></header>}
     <main className={`workspace ${inWorkbench ? 'product-workspace' : quickFlow ? 'chat-workspace' : ''}`} aria-busy={busy || chatWorking}>
       {error ? <div className="notice error" role="alert">{error}{!config ? <button onClick={() => window.location.reload()}>重新加载</button> : null}</div> : null}
-      {!config || !requirements ? <p role="status">正在读取组卷材料…</p> : inWorkbench ? <AssemblyWorkbench config={config} requirements={displayRequirements} stage={screen} assistantOpen={assistantOpen} onToggleAssistant={() => setAssistantOpen(open => !open)} onEditRequirements={screen === 'blueprint' ? () => reviseIntake() : undefined} busy={busy || chatWorking} assistantAnchor={assistantAnchor} assistant={intake}>{product}</AssemblyWorkbench> : quickFlow ? intake : screen === 'saved' ? <SavedDrafts drafts={drafts} warnings={warnings} onOpen={openDraft} onNew={newTask} busy={busy}/> : screen === 'question-bank' ? <Suspense fallback={<p role="status">正在加载题库…</p>}><QuestionBank onCreated={manualDraftCreated} onImport={() => openUtility('question-import')}/></Suspense> : screen === 'question-import' ? <Suspense fallback={<p role="status">正在加载上传工具…</p>}><QuestionImport/></Suspense> : <Suspense fallback={<p role="status">正在加载成卷列表…</p>}><SavedPapers papers={papers} warnings={warnings} onOpen={openPaper} busy={busy}/></Suspense>}
+      {!config || !requirements ? <p role="status">正在读取组卷材料…</p> : inWorkbench ? <AssemblyWorkbench config={config} requirements={displayRequirements} stage={screen} assistantOpen={assistantOpen} onToggleAssistant={() => setAssistantOpen(open => !open)} onEditRequirements={screen === 'blueprint' ? () => reviseIntake() : undefined} busy={busy || chatWorking} assistantAnchor={assistantAnchor} assistant={intake}>{product}</AssemblyWorkbench> : quickFlow ? intake : screen === 'not-found' ? <div className="empty-message"><h1>没有找到这个页面</h1><p>请从左侧打开题库或组卷记录。</p><button onClick={newTask}>新建组卷</button></div> : screen === 'saved' ? <SavedDrafts drafts={drafts} warnings={warnings} onOpen={openDraft} onNew={newTask} busy={busy}/> : screen === 'question-bank' ? <Suspense fallback={<p role="status">正在加载题库…</p>}><QuestionBank onCreated={manualDraftCreated} onImport={() => openUtility('question-import')}/></Suspense> : screen === 'question-import' ? <Suspense fallback={<p role="status">正在加载上传工具…</p>}><QuestionImport/></Suspense> : <Suspense fallback={<p role="status">正在加载成卷列表…</p>}><SavedPapers papers={papers} warnings={warnings} onOpen={openPaper} busy={busy}/></Suspense>}
       <div className="sr-only" role="status" aria-live="polite">{busy ? '正在处理，请稍候。' : ''}</div>
       {confirming && draft ? <Suspense fallback={<p role="status">正在加载确认摘要…</p>}><Confirmation draft={draft} onClose={() => setConfirming(false)} onConfirmed={confirmed} onReload={() => { setConfirming(false); openDraft(draft.draftId); }}/></Suspense> : null}
     </main></div>

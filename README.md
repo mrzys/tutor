@@ -20,6 +20,8 @@ npm start
 
 首次打开需要使用邮箱和密码注册。数据库中的首个注册账户自动成为管理员，后续账户为教师；角色由后端事务决定。首位管理员认领升级前的组卷历史，之后各账户的需求会话、草稿、成卷、PDF 和上传记录相互隔离，题库共享。左下角显示邮箱字母头像、邮箱、角色和退出入口。邮箱目前作为登录标识，不发送验证邮件。
 
+前端使用路径地址：`/` 新建组卷、`/question-bank` 题库、`/question-import` 上传试卷、`/drafts/:id` 草稿、`/papers/:id` 成卷；`/drafts` 和 `/papers` 查看列表。支持直接打开、刷新及浏览器前进后退，旧的 `?view=`、`?draft=`、`?paper=` 链接自动替换为新路径。生产服务已支持页面路径回退到 SPA 入口；独立部署前端时也需配置相同回退。题库 API 的筛选仍使用查询参数。
+
 在线 AI 整理需要根目录 `.env`，字段见 [.env.example](.env.example)：`LLM_BASE_URL`、`LLM_API_KEY`、`LLM_MODEL`、`LLM_PROVIDER_NAME`。服务启动时读取，修改后重启；密钥仅服务端使用，禁止使用 `VITE_` 前缀或提交到 Git。默认 JSON object + 本地严格校验，支持原生 JSON Schema 的服务可配置 `LLM_STRUCTURED_OUTPUTS=json_schema`。
 
 上面的 `TUTOR_PYTHON` 指定安装依赖及生成 PDF 使用的同一个 Python。也可把该变量设为其他解释器的绝对路径；未设置时，程序先查找本机 Codex 捆绑运行时，再使用系统 `python`（Windows）或 `python3`。Windows 默认尝试 `C:/Windows/Fonts/simhei.ttf`；其他环境或字体可通过 `TUTOR_CJK_FONT` 指定中文 `.ttf` 文件的绝对路径，环境变量需在启动服务前设置。网页公式使用本地 KaTeX，PDF 公式使用 MathJax SVG 与 ReportLab。
