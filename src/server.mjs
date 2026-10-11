@@ -110,7 +110,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
         return json(response, result.ok ? 200 : result.error.code === 'not_found' ? 404 : 500, result);
       }
       if (url.pathname === '/api/question-bank' && request.method === 'GET') {
-        const filters = Object.fromEntries(['sectionId', 'query', 'questionType', 'page', 'pageSize']
+        const filters = Object.fromEntries(['sectionId', 'query', 'questionType', 'difficulty', 'ability', 'literacy', 'page', 'pageSize']
           .filter(key => url.searchParams.has(key)).map(key => [key, url.searchParams.get(key)]));
         const result = await listQuestionBankCatalog({ root, ...filters });
         return json(response, result.ok ? 200 : result.error.code === 'invalid_request' ? 400 : 500, result);

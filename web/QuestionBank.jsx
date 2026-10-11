@@ -281,6 +281,9 @@ export function QuestionBank({ onCreated, onImport }) {
   const [query, setQuery] = useState(saved.query || '');
   const [debouncedQuery, setDebouncedQuery] = useState((saved.query || '').trim());
   const [questionType, setQuestionType] = useState(saved.questionType || 'all');
+  const [difficulty, setDifficulty] = useState(saved.difficulty || '');
+  const [ability, setAbility] = useState(saved.ability || '');
+  const [literacy, setLiteracy] = useState(saved.literacy || '');
   const [selected, setSelected] = useState(() => new Map((saved.questions || []).filter(question => question?.questionId && question.student).map(question => [question.questionId, question])));
   const [selectedOrigins, setSelectedOrigins] = useState(() => new Map(saved.origins || []));
   const [title, setTitle] = useState(saved.title || '题库手动组卷');
@@ -307,6 +310,7 @@ export function QuestionBank({ onCreated, onImport }) {
     const sequence = ++requestSequence.current;
     setLoading(true); setError('');
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+    for (const [key, value] of Object.entries({ difficulty, ability, literacy })) if (value) params.set(key, value);
     if (sectionId) params.set('sectionId', sectionId);
     if (debouncedQuery) params.set('query', debouncedQuery);
     if (questionType !== 'all') params.set('questionType', questionType);
@@ -326,12 +330,12 @@ export function QuestionBank({ onCreated, onImport }) {
       .catch(failure => { if (!controller.signal.aborted && requestSequence.current === sequence) setError(failure.message); })
       .finally(() => { if (!controller.signal.aborted && requestSequence.current === sequence) setLoading(false); });
     return () => controller.abort();
-  }, [sectionId, debouncedQuery, questionType, page, retry]);
+  }, [sectionId, debouncedQuery, questionType, difficulty, ability, literacy, page, retry]);
 
   useEffect(() => {
     if (created.current) return;
-    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ version: 1, sectionId, query, questionType, page, title, questions: [...selected.values()], origins: [...selectedOrigins] })); } catch { /* Session storage may be unavailable or full; keep this session usable. */ }
-  }, [sectionId, query, questionType, page, title, selected, selectedOrigins]);
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ version: 1, sectionId, query, questionType, difficulty, ability, literacy, page, title, questions: [...selected.values()], origins: [...selectedOrigins] })); } catch { /* Session storage may be unavailable or full; keep this session usable. */ }
+  }, [sectionId, query, questionType, difficulty, ability, literacy, page, title, selected, selectedOrigins]);
 
   const textbooks = catalog?.textbooks || EMPTY_TEXTBOOKS;
   const locations = useMemo(() => sectionLocations(textbooks), [textbooks]);
@@ -339,12 +343,14 @@ export function QuestionBank({ onCreated, onImport }) {
   const visibleQuestions = catalog?.questions || [];
   const pagination = catalog?.pagination || { page, total: visibleQuestions.length, totalPages: 1 };
   const pageCount = Math.max(1, pagination.totalPages);
+  const hasFilters = !!(debouncedQuery || questionType !== 'all' || difficulty || ability || literacy);
+  const filterOptions = catalog?.filterOptions || { difficulty: [], abilities: [], literacies: [] };
   const selectedQuestions = useMemo(() => [...selected.values()], [selected]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => { if (questionListRef.current) questionListRef.current.scrollTop = 0; });
     return () => cancelAnimationFrame(frame);
-  }, [page, sectionId, debouncedQuery, questionType]);
+  }, [page, sectionId, debouncedQuery, questionType, difficulty, ability, literacy]);
   useEffect(() => {
     if (!basketOpen) return undefined;
     const closeOnEscape = event => { if (event.key === 'Escape' && !document.querySelector('.tutor-select-popup')) closeBasket(); };
@@ -375,7 +381,7 @@ export function QuestionBank({ onCreated, onImport }) {
     if (creating || (selected.size && !window.confirm(`确定清空组卷篮中的 ${selected.size} 道题吗？`))) return;
     setSelected(new Map()); setSelectedOrigins(new Map()); setCreateError('');
   }
-  function clearFilters() { setQuery(''); setDebouncedQuery(''); setQuestionType('all'); setPage(1); }
+  function clearFilters() { setQuery(''); setDebouncedQuery(''); setQuestionType('all'); setDifficulty(''); setAbility(''); setLiteracy(''); setPage(1); }
 
   async function createDraft(event) {
     event.preventDefault();
@@ -414,9 +420,16 @@ export function QuestionBank({ onCreated, onImport }) {
             <div className="bank-filter-row"><label className="bank-search"><Search size={17}/><span className="sr-only">搜索本小节</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索本小节题干、知识点或题号"/></label>
               <Select value={questionType} aria-label="筛选题型" onChange={event => { setQuestionType(event.target.value); setPage(1); }}><option value="all">全部题型</option>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
             </div>
+            <div className="bank-dimension-filters" aria-label="教学维度筛选">
+              <Select value={difficulty} aria-label="筛选难度" onChange={event => { setDifficulty(event.target.value); setPage(1); }}><option value="">全部难度</option>{filterOptions.difficulty.map(item => <option key={item.value} value={item.value}>{item.label} · {item.count}</option>)}</Select>
+              <Select value={ability} aria-label="筛选能力" onChange={event => { setAbility(event.target.value); setPage(1); }}><option value="">全部能力</option>{filterOptions.abilities.map(item => <option key={item.value} value={item.value}>{item.label} · {item.count}</option>)}</Select>
+              <Select value={literacy} aria-label="筛选核心素养" onChange={event => { setLiteracy(event.target.value); setPage(1); }}><option value="">全部核心素养</option>{filterOptions.literacies.map(item => <option key={item.value} value={item.value}>{item.label} · {item.count}</option>)}</Select>
+              {hasFilters ? <button type="button" className="bank-reset-filters" onClick={clearFilters}>清除筛选</button> : null}
+            </div>
+            {(ability || literacy) ? <p className="bank-annotation-note">能力与素养按已有教研标注筛选，待复核标注仅供检索参考。</p> : difficulty === 'unknown' ? <p className="bank-annotation-note">这些题目尚无独立难度评估。</p> : null}
             <div className="bank-result-summary"><span role="status" aria-live="polite">{loading ? '正在查询…' : `共 ${pagination.total} 道匹配题`}</span><span>已选 {selected.size} 道 · 切换章节保留</span></div>
             {visibleQuestions.length ? <div ref={questionListRef} className="bank-question-list" aria-label="题目列表" aria-busy={loading}>{visibleQuestions.map(question => <QuestionCard key={question.questionId} question={question} selected={selected.has(question.questionId)} disabled={loading || creating} onToggle={toggle}/>)}</div>
-              : <div className="bank-empty"><strong>{loading ? '正在查询题目…' : debouncedQuery || questionType !== 'all' ? '没有找到匹配题目' : '本小节暂无题目'}</strong><span>{debouncedQuery || questionType !== 'all' ? '可清除筛选条件，或切换其他小节。' : '可切换其他小节，或上传试卷补充题目。'}</span>{debouncedQuery || questionType !== 'all' ? <button onClick={clearFilters}>清除筛选</button> : onImport ? <button onClick={onImport}>上传试卷</button> : null}</div>}
+              : <div className="bank-empty"><strong>{loading ? '正在查询题目…' : hasFilters ? '没有找到匹配题目' : '本小节暂无题目'}</strong><span>{hasFilters ? '可清除筛选条件，或切换其他小节。' : '可切换其他小节，或上传试卷补充题目。'}</span>{hasFilters ? <button onClick={clearFilters}>清除筛选</button> : onImport ? <button onClick={onImport}>上传试卷</button> : null}</div>}
             <nav className="bank-pagination" aria-label="题目分页"><button type="button" disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}><ChevronLeft size={16}/>上一页</button><span>第 {pagination.page || page} / {pageCount} 页</span><button type="button" disabled={page >= pageCount || loading} onClick={() => setPage(value => value + 1)}>下一页<ChevronRight size={16}/></button></nav>
           </div>
         </> : <div className="bank-results-empty"><BookOpen size={24}/><h2>选择一个小节</h2><p>题目将显示在这里。</p></div>}

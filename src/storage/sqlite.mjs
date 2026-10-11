@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { getQuestion, listQuestions } from '../question-bank/reader.mjs';
 import { hashContent } from '../question-bank/integrity.mjs';
+import { readPedagogySeed } from '../question-bank/pedagogy.mjs';
 import { registerQuestionBank, registeredStorage, registerStorage, storageForDirectory,
   unregisterQuestionBank, unregisterStorage, questionBankStorage } from './registry.mjs';
 
@@ -46,6 +47,16 @@ export class SqliteRepository {
     this.database.pragma('busy_timeout = 5000');
     this.database.exec(`
       CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS users(
+        user_id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        password_hash TEXT NOT NULL, password_salt TEXT NOT NULL,
+        role TEXT NOT NULL CHECK(role IN ('admin','teacher')), created_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS auth_sessions(
+        token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+        created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS auth_sessions_expiry ON auth_sessions(expires_at);
       CREATE TABLE IF NOT EXISTS documents(
         kind TEXT NOT NULL CHECK(kind IN ('drafts','papers','feedback','outputs')),
         id TEXT NOT NULL, payload TEXT NOT NULL, sha256 TEXT NOT NULL,
@@ -71,6 +82,10 @@ export class SqliteRepository {
       CREATE TABLE IF NOT EXISTS question_bank_config(
         kind TEXT PRIMARY KEY CHECK(kind IN ('task_catalog','course_context','source_manifest')),
         payload TEXT NOT NULL, sha256 TEXT NOT NULL, synced_at TEXT NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS question_bank_pedagogy(
+        kind TEXT PRIMARY KEY CHECK(kind='analysis'), payload TEXT NOT NULL,
+        sha256 TEXT NOT NULL, synced_at TEXT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS question_bank_questions(
         question_id TEXT PRIMARY KEY, payload TEXT NOT NULL, sha256 TEXT NOT NULL,
@@ -169,6 +184,7 @@ export class SqliteRepository {
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(3, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(4, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(5, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
+    this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(6, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     const queues = new Map();
     this.intakeStorage = {
       get: async id => {
@@ -181,11 +197,13 @@ export class SqliteRepository {
       put: async session => {
         if (!session.sessionId) throw storageError('invalid_request', '需求会话身份无效。');
         this.database.transaction(() => {
+          this.beforeIntakeWrite?.(session);
           this.database.prepare(`INSERT INTO intake_sessions VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET
             payload=excluded.payload,sha256=excluded.sha256,updated_at=excluded.updated_at`)
             .run(session.sessionId, JSON.stringify(session), hashContent(session), new Date().toISOString());
           if (session.llmRun) this.database.prepare('INSERT OR IGNORE INTO llm_runs VALUES(?,?,?,?)')
             .run(session.llmRun.runId ?? hashContent(session.llmRun), session.sessionId, JSON.stringify(session.llmRun), new Date().toISOString());
+          this.afterIntakeWrite?.(session);
         }).immediate();
       },
       transaction: async (id, callback) => {
@@ -270,6 +288,7 @@ export class SqliteRepository {
   getQuestionBankLedger() { return this.#readHashed('question_bank_state', 'kind', 'ledger'); }
   getQuestionBankIndex() { return this.#readHashed('question_bank_state', 'kind', 'question_index'); }
   getQuestionBankConfig(kind) { return this.#readHashed('question_bank_config', 'kind', kind); }
+  getQuestionBankPedagogy() { return this.#readHashed('question_bank_pedagogy', 'kind', 'analysis'); }
   getQuestionBankSummary() {
     const count = table => this.database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count;
     return { readyQuestions: count('question_bank_questions'),
@@ -475,7 +494,7 @@ function questionSectionAliases(config, textbooks) {
 export async function syncQuestionBank(root, repository) {
   const resolvedRoot = path.resolve(root);
   if (questionBankStorage(resolvedRoot)) throw storageError('storage_in_use', '此题库根目录已注册，不能从另一数据库混合刷新。');
-  const [ledger, index, config, listed, textbooks, knowledge, catalogMap, bodyMap, courseContext, sourceManifest] = await Promise.all([
+  const [ledger, index, config, listed, textbooks, knowledge, catalogMap, bodyMap, courseContext, sourceManifest, pedagogy] = await Promise.all([
     readVersionedJson(path.join(resolvedRoot, 'data', 'question-bank', 'ledger.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'assembly', 'question-index.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'assembly', 'task-catalog.json')),
@@ -486,6 +505,7 @@ export async function syncQuestionBank(root, repository) {
     readVersionedJson(path.join(resolvedRoot, 'data', 'curriculum', 'textbook-body-knowledge-map.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'question-bank', 'course-context.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'question-bank', 'sources.json')),
+    readPedagogySeed(resolvedRoot),
   ]);
   if (!listed.ok) throw storageError(listed.error.code, listed.error.message);
   if (ledger?.schemaVersion !== 1 || !Array.isArray(ledger.entries)
@@ -519,6 +539,9 @@ export async function syncQuestionBank(root, repository) {
     for (const [kind, value] of [['task_catalog', config], ['course_context', courseContext], ['source_manifest', sourceManifest]]) {
       putConfig.run(kind, JSON.stringify(value), hashContent(value), syncedAt);
     }
+    repository.database.prepare(`INSERT INTO question_bank_pedagogy(kind,payload,sha256,synced_at) VALUES('analysis',?,?,?)
+      ON CONFLICT(kind) DO UPDATE SET payload=excluded.payload,sha256=excluded.sha256,synced_at=excluded.synced_at`)
+      .run(JSON.stringify(pedagogy), hashContent(pedagogy), syncedAt);
 
     repository.database.prepare('DELETE FROM question_bank_questions').run();
     const putQuestion = repository.database.prepare(`INSERT INTO question_bank_questions
@@ -728,8 +751,14 @@ export async function registerSqliteStorage(baseRoot, databasePath, { questionBa
           for (const [kind, value] of values) insert.run(kind, JSON.stringify(value), hashContent(value), new Date().toISOString());
         }).immediate();
         if (!repository.getQuestionBankIndex()) throw storageError('integrity_error', 'SQLite 选题依据清单缺失。');
+        if (!repository.getQuestionBankPedagogy()) {
+          const pedagogy = await readPedagogySeed(questionBankRoot);
+          repository.database.prepare(`INSERT INTO question_bank_pedagogy(kind,payload,sha256,synced_at) VALUES('analysis',?,?,?)`)
+            .run(JSON.stringify(pedagogy), hashContent(pedagogy), new Date().toISOString());
+        }
         questionBank = repository.getQuestionBankSummary();
       }
+      repository.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(7, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     }
     registerStorage(resolved, repository);
     if (questionBankRoot) registerQuestionBank(questionBankRoot, repository);

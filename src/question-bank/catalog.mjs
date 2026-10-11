@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, loadPool, normalizeRequirements } from '../assembly/engine.mjs';
 import { questionBankStorage } from '../storage/registry.mjs';
 import { getQuestion } from './reader.mjs';
+import { pedagogyForQuestion, readPedagogySeed } from './pedagogy.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const clone = value => structuredClone(value);
@@ -37,20 +38,55 @@ function publicQuestion(record, repository) {
     student: clone(question.student),
     topics: clone(question.scopeEvidence.primaryTopics),
     requiredKnowledge: clone(question.scopeEvidence.requiredKnowledge),
+    difficulty: { level: ['easy', 'medium', 'hard'].includes(annotation.difficultyLevel) ? annotation.difficultyLevel : 'unknown',
+      estimate: Number.isFinite(annotation.difficultyEstimate) ? annotation.difficultyEstimate : null },
+    abilities: clone(record.pedagogy?.abilities ?? []),
+    literacies: clone(record.pedagogy?.literacies ?? []),
+    pedagogyStatus: record.pedagogy?.status ?? 'unknown',
     sourceRefs: clone(question.sourceRefs.map(({ sourceId, pages, locator }) => ({ sourceId, pages, locator }))),
   };
 }
 
 function queryOptions(input) {
-  const { sectionId = '', query = '', questionType = '', page, pageSize } = input;
+  const { sectionId = '', query = '', questionType = '', difficulty = '', ability = '', literacy = '', page, pageSize } = input;
   if (typeof query !== 'string' || query.length > 256 || typeof sectionId !== 'string' || sectionId.length > 160
-      || !['', 'single_choice', 'fill_blank', 'free_response'].includes(questionType)) reject('invalid_request', '题库筛选条件无效。');
-  const paginated = page !== undefined || pageSize !== undefined || !!sectionId || !!query || !!questionType;
+      || !['', 'single_choice', 'fill_blank', 'free_response'].includes(questionType)
+      || !['', 'unknown', 'easy', 'medium', 'hard'].includes(difficulty)
+      || [ability, literacy].some(value => typeof value !== 'string' || value.length > 160)) reject('invalid_request', '题库筛选条件无效。');
+  const paginated = page !== undefined || pageSize !== undefined || !!sectionId || !!query || !!questionType || !!difficulty || !!ability || !!literacy;
   const currentPage = page === undefined ? 1 : Number(page);
   const size = pageSize === undefined ? 12 : Number(pageSize);
   if (!Number.isSafeInteger(currentPage) || currentPage < 1 || currentPage > 100000
       || !Number.isSafeInteger(size) || size < 1 || size > 60) reject('invalid_request', '分页参数无效。');
-  return { sectionId, query: query.trim(), questionType, page: currentPage, pageSize: size, paginated };
+  return { sectionId, query: query.trim(), questionType, difficulty, ability: ability.trim(), literacy: literacy.trim(), page: currentPage, pageSize: size, paginated };
+}
+
+const difficultyLevels = [['easy', '基础'], ['medium', '中等'], ['hard', '较难'], ['unknown', '未评估']];
+const difficultySql = `CASE WHEN json_extract(a.value,'$.difficultyLevel') IN ('easy','medium','hard')
+  THEN json_extract(a.value,'$.difficultyLevel') ELSE 'unknown' END`;
+
+function publicFilterOptions(questions) {
+  const tags = key => {
+    const values = [...new Set(questions.flatMap(question => question[key]))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+    return [...values.map(value => ({ value, label: value, count: questions.filter(question => question[key].includes(value)).length })),
+      { value: 'unknown', label: '未标注', count: questions.filter(question => !question[key].length).length }];
+  };
+  return { difficulty: difficultyLevels.map(([value, label]) => ({ value, label,
+    count: questions.filter(question => question.difficulty.level === value).length })), abilities: tags('abilities'), literacies: tags('literacies') };
+}
+
+function databaseFilterOptions(repository, from, baseConditions) {
+  const where = `WHERE ${baseConditions.join(' AND ')}`;
+  const rows = repository.database.prepare(`SELECT ${difficultySql} AS level, count(*) AS count ${from} ${where} GROUP BY level`).all();
+  const tags = key => {
+    const tagged = repository.database.prepare(`SELECT tag.value AS value, COUNT(DISTINCT q.question_id) AS count
+      ${from} JOIN json_each(p.value,'$.${key}') tag ${where} GROUP BY tag.value ORDER BY tag.value`).all();
+    const unknown = repository.database.prepare(`SELECT count(*) AS count ${from} ${where}
+      AND coalesce(json_array_length(p.value,'$.${key}'),0)=0`).get().count;
+    return [...tagged.map(item => ({ ...item, label: item.value })), { value: 'unknown', label: '未标注', count: unknown }];
+  };
+  return { difficulty: difficultyLevels.map(([value, label]) => ({ value, label, count: rows.find(row => row.level === value)?.count ?? 0 })),
+    abilities: tags('abilities'), literacies: tags('literacies') };
 }
 
 async function databaseCatalog(repository, root, options) {
@@ -59,15 +95,25 @@ async function databaseCatalog(repository, root, options) {
     JOIN json_each((SELECT payload FROM question_bank_state WHERE kind='question_index'), '$.entries') a
       ON json_extract(a.value,'$.questionId')=q.question_id
     JOIN json_each((SELECT payload FROM question_bank_state WHERE kind='ledger'), '$.entries') e
-      ON json_extract(e.value,'$.questionId')=q.question_id`;
-  const conditions = ["json_extract(e.value,'$.status')='ready'",
+      ON json_extract(e.value,'$.questionId')=q.question_id
+    LEFT JOIN json_each((SELECT payload FROM question_bank_pedagogy WHERE kind='analysis'), '$.entries') p
+      ON json_extract(p.value,'$.questionId')=q.question_id
+      AND json_extract(p.value,'$.contentVersion')=q.content_version AND json_extract(p.value,'$.teacherVersion')=q.teacher_version`;
+  const baseConditions = ["json_extract(e.value,'$.status')='ready'",
     "json_extract(a.value,'$.contentVersion')=q.content_version", "json_extract(a.value,'$.teacherVersion')=q.teacher_version"];
+  const conditions = [...baseConditions];
   const parameters = [];
   if (options.sectionId) {
     conditions.push('EXISTS (SELECT 1 FROM question_section_mappings m WHERE m.question_id=q.question_id AND m.section_id=?)');
     parameters.push(options.sectionId);
   }
   if (options.questionType) { conditions.push("json_extract(q.payload,'$.questionType')=?"); parameters.push(options.questionType); }
+  if (options.difficulty) { conditions.push(`${difficultySql}=?`); parameters.push(options.difficulty); }
+  for (const [key, value] of [['abilities', options.ability], ['literacies', options.literacy]]) {
+    if (!value) continue;
+    if (value === 'unknown') conditions.push(`coalesce(json_array_length(p.value,'$.${key}'),0)=0`);
+    else { conditions.push(`EXISTS (SELECT 1 FROM json_each(p.value,'$.${key}') tag WHERE tag.value=?)`); parameters.push(value); }
+  }
   if (options.query) {
     conditions.push(`instr(lower(q.question_id || ' ' || coalesce(json_extract(q.payload,'$.student'),'') || ' ' ||
       coalesce(json_extract(q.payload,'$.scopeEvidence'),'') || ' ' || coalesce(json_extract(e.value,'$.taskSummary'),'')), lower(?)) > 0`);
@@ -77,7 +123,9 @@ async function databaseCatalog(repository, root, options) {
   // Verify the shared snapshots before querying their JSON fields.
   const ledger = repository.getQuestionBankLedger();
   const index = repository.getQuestionBankIndex();
+  const pedagogy = repository.getQuestionBankPedagogy();
   if (!ledger || !index) reject('integrity_error', 'SQLite 题库索引缺失。');
+  if (!pedagogy || !Array.isArray(pedagogy.entries)) reject('integrity_error', 'SQLite 教研标注快照缺失。');
   const total = repository.database.prepare(`SELECT count(*) AS count ${from} ${where}`).get(...parameters).count;
   const pageSize = options.paginated ? options.pageSize : Math.max(1, total);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -89,7 +137,8 @@ async function databaseCatalog(repository, root, options) {
   const questions = await Promise.all(rows.map(async row => {
     const result = await getQuestion(row.question_id, { root });
     if (!result.ok) reject(result.error.code, result.error.message);
-    return publicQuestion({ result, entry: entries.get(row.question_id), annotation: annotations.get(row.question_id) }, repository);
+    return publicQuestion({ result, entry: entries.get(row.question_id), annotation: annotations.get(row.question_id),
+      pedagogy: pedagogyForQuestion(pedagogy, result.question) }, repository);
   }));
   const chapters = repository.getQuestionBankChapters().map(chapter => ({ ...chapter,
     questionCount: repository.database.prepare(`SELECT count(*) AS count ${from}
@@ -97,9 +146,12 @@ async function databaseCatalog(repository, root, options) {
       .get(chapter.id).count }));
   const ready = ledger.entries.filter(entry => entry.status === 'ready').length;
   return { ok: true, chapters, textbooks: repository.getQuestionBankTextbooks(), questions,
+    filterOptions: databaseFilterOptions(repository, from, baseConditions),
     pagination: { page, pageSize, total, totalPages },
     totals: { sourceUnits: ledger.entries.length, ready, pending: ledger.entries.length - ready },
-    storage: 'sqlite', limits: { teacherContentIncluded: false, difficultyAvailable: false } };
+    storage: 'sqlite', limits: { teacherContentIncluded: false,
+      difficultyAvailable: index.entries.some(item => ['easy', 'medium', 'hard'].includes(item.difficultyLevel)),
+      pedagogyLabelsAreSelectionEvidence: false } };
 }
 
 export async function listQuestionBankCatalog({ root = defaultRoot, ...input } = {}) {
@@ -108,10 +160,14 @@ export async function listQuestionBankCatalog({ root = defaultRoot, ...input } =
     const registered = questionBankStorage(root);
     if (registered) return await databaseCatalog(registered, root, options);
     const { config, pool, ready, repository } = await loadCatalog(root);
-    const allQuestions = ready.map(record => publicQuestion(record, repository))
+    const pedagogy = await readPedagogySeed(root);
+    const allQuestions = ready.map(record => publicQuestion({ ...record, pedagogy: pedagogyForQuestion(pedagogy, record.result.question) }, repository))
       .sort((a, b) => a.questionId.localeCompare(b.questionId));
     const matching = allQuestions.filter(question => (!options.sectionId || question.chapters.includes(options.sectionId))
       && (!options.questionType || question.questionType === options.questionType)
+      && (!options.difficulty || question.difficulty.level === options.difficulty)
+      && (!options.ability || (options.ability === 'unknown' ? !question.abilities.length : question.abilities.includes(options.ability)))
+      && (!options.literacy || (options.literacy === 'unknown' ? !question.literacies.length : question.literacies.includes(options.literacy)))
       && (!options.query || JSON.stringify(question).toLowerCase().includes(options.query.toLowerCase())));
     const pageSize = options.paginated ? options.pageSize : Math.max(1, matching.length);
     const totalPages = Math.max(1, Math.ceil(matching.length / pageSize));
@@ -121,9 +177,11 @@ export async function listQuestionBankCatalog({ root = defaultRoot, ...input } =
       chapters: config.chapters.map(chapter => ({ ...clone(chapter), questionCount: allQuestions.filter(item => item.chapters.includes(chapter.id)).length })),
       textbooks: repository?.getQuestionBankTextbooks() ?? [],
       questions,
+      filterOptions: publicFilterOptions(allQuestions),
       pagination: { page, pageSize, total: matching.length, totalPages },
       totals: clone(pool.totals),
-      limits: { teacherContentIncluded: false, difficultyAvailable: false },
+      limits: { teacherContentIncluded: false, difficultyAvailable: allQuestions.some(question => question.difficulty.level !== 'unknown'),
+        pedagogyLabelsAreSelectionEvidence: false },
     };
   } catch (error) { return failure(error); }
 }

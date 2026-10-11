@@ -3,6 +3,7 @@ export async function api(url, body, signal) {
   let result;
   try { result = await response.json(); } catch { throw new Error('服务返回了无法读取的内容，请检查本地服务。'); }
   if (!response.ok || !result.ok) {
+    if (response.status === 401 && !url.startsWith('/api/auth/')) window.dispatchEvent(new Event('tutor:unauthorized'));
     const failure = new Error(result.error?.message || `请求失败（${response.status}）`);
     failure.status = response.status;
     failure.code = result.error?.code;
@@ -16,6 +17,7 @@ export async function uploadApi(url, formData, signal) {
   let result;
   try { result = await response.json(); } catch { throw new Error('服务返回了无法读取的内容，请检查本地服务。'); }
   if (!response.ok || !result.ok) {
+    if (response.status === 401) window.dispatchEvent(new Event('tutor:unauthorized'));
     const failure = new Error(result.error?.message || `上传失败（${response.status}）`);
     failure.status = response.status;
     failure.code = result.error?.code;

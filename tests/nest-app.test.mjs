@@ -31,19 +31,26 @@ test('NestJS serves existing contracts through one listener with SQLite persiste
   });
   await application.app.listen(0, '127.0.0.1');
   const url = await application.app.getUrl();
-  const configResponse = await fetch(`${url}/api/config`); const config = await configResponse.json();
+  const registration = await fetch(`${url}/api/auth/register`, { method: 'POST', headers: {
+    'Content-Type': 'application/json', Origin: url,
+  }, body: JSON.stringify({ email: 'nest@example.com', password: 'nest-test-2026' }) });
+  assert.equal(registration.status, 201);
+  const cookie = registration.headers.get('set-cookie').split(';')[0];
+  const authenticatedFetch = (endpoint, options = {}) => fetch(`${url}${endpoint}`, { ...options,
+    headers: { Cookie: cookie, Origin: url, ...options.headers } });
+  const configResponse = await authenticatedFetch('/api/config'); const config = await configResponse.json();
   assert.equal(configResponse.status, 200); assert.equal(config.ok, true);
   assert.equal(config.config.supply.ready, 45);
   assert.equal(configResponse.headers.get('x-powered-by'), null);
   const post = async (endpoint, value) => {
-    const response = await fetch(`${url}${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) });
+    const response = await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) });
     return { status: response.status, value: await response.json() };
   };
   const preview = await post('/api/blueprint', { requirements: config.config.defaultRequirements });
   assert.equal(preview.value.ok, true);
   const saved = await post('/api/drafts', { blueprint: preview.value.blueprint });
   assert.equal(saved.status, 201);
-  const reopened = await (await fetch(`${url}/api/drafts/${saved.value.draft.draftId}`)).json();
+  const reopened = await (await authenticatedFetch(`/api/drafts/${saved.value.draft.draftId}`)).json();
   assert.deepEqual(reopened.draft, saved.value.draft);
   assert.equal(serviceRepository, application.repository);
   assert.equal(application.repository.list('drafts').length, 1);
@@ -52,7 +59,7 @@ test('NestJS serves existing contracts through one listener with SQLite persiste
   const source = '第1题 能构成集合的是（ ）\nA. 较大的数\nB. 方程的实根\n答案：B';
   const form = new FormData();
   form.append('file', new Blob([source], { type: 'text/plain' }), '集合练习.txt');
-  const uploadResponse = await fetch(`${url}/api/question-imports`, { method: 'POST', body: form });
+  const uploadResponse = await authenticatedFetch('/api/question-imports', { method: 'POST', body: form });
   const upload = await uploadResponse.json();
   assert.equal(uploadResponse.status, 201, JSON.stringify(upload));
   const stored = application.repository.database.prepare(`SELECT source_blob,source_sha256,status
@@ -70,7 +77,7 @@ test('NestJS serves existing contracts through one listener with SQLite persiste
   assert.equal(application.repository.database.prepare('SELECT COUNT(*) AS count FROM curriculum_textbooks').get().count, 5);
   assert.equal(application.repository.database.prepare('SELECT COUNT(*) AS count FROM curriculum_chapters').get().count, 18);
   assert.equal(application.repository.database.prepare('SELECT COUNT(*) AS count FROM curriculum_sections').get().count, 73);
-  const bankResponse = await fetch(`${url}/api/question-bank`);
+  const bankResponse = await authenticatedFetch('/api/question-bank');
   const bank = await bankResponse.json();
   assert.equal(bankResponse.status, 200);
   assert.equal(bank.textbooks.length, 5);
@@ -78,9 +85,20 @@ test('NestJS serves existing contracts through one listener with SQLite persiste
   assert.equal(bank.textbooks[0].chapters[0].sections[0].questionCount, 28);
   assert.equal(bank.questions[0].sectionIds[0].startsWith('rja-compulsory-1:'), true);
   assert.deepEqual(await readdir(path.join(base, 'question-imports', 'files')), []);
-  assert.equal((await fetch(`${url}/api/question-imports/${upload.import.importId}`)).status, 200);
+  assert.equal((await authenticatedFetch(`/api/question-imports/${upload.import.importId}`)).status, 200);
+  const teacherRegistration = await fetch(`${url}/api/auth/register`, { method: 'POST', headers: {
+    'Content-Type': 'application/json', Origin: url,
+  }, body: JSON.stringify({ email: 'nest-teacher@example.com', password: 'nest-teacher-2026' }) });
+  assert.equal(teacherRegistration.status, 201);
+  const teacherCookie = teacherRegistration.headers.get('set-cookie').split(';')[0];
+  const foreignImports = await fetch(`${url}/api/question-imports`, { headers: { Cookie: teacherCookie } });
+  assert.equal(foreignImports.status, 200);
+  const foreignImportsBody = await foreignImports.json();
+  assert.equal(foreignImportsBody.ok, true, JSON.stringify(foreignImportsBody));
+  assert.deepEqual(foreignImportsBody.imports, []);
+  assert.equal((await fetch(`${url}/api/question-imports/${upload.import.importId}`, { headers: { Cookie: teacherCookie } })).status, 404);
   application.repository.database.prepare('UPDATE question_imports SET source_blob=? WHERE import_id=?')
     .run(Buffer.from('tampered'), upload.import.importId);
-  const tampered = await fetch(`${url}/api/question-imports/${upload.import.importId}`);
+  const tampered = await authenticatedFetch(`/api/question-imports/${upload.import.importId}`);
   assert.equal(tampered.status, 500);
 });
