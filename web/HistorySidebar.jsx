@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, FileText, MessageSquare, PanelLeft, Plus, RefreshCw, Upload } from 'lucide-react';
+import { BookOpen, FileText, MessageSquare, PanelLeft, Plus, RefreshCw } from 'lucide-react';
 
 function HistoryGroup({ title, items, kind, activeId, busy, onOpen }) {
   return <section className="history-group" aria-label={title}>
@@ -19,7 +19,7 @@ function HistoryGroup({ title, items, kind, activeId, busy, onOpen }) {
   </section>;
 }
 
-export function HistorySidebar({ drafts, papers, activeDraftId, activePaperId, activeView, busy, loading, error, onRetry, onNew, onQuestionBank, onQuestionImport, onOpenDraft, onOpenPaper, onClose }) {
+export function HistorySidebar({ drafts, papers, activeDraftId, activePaperId, activeView, busy, loading, error, onRetry, onNew, onQuestionBank, onOpenDraft, onOpenPaper, onClose }) {
   const confirmedSources = new Set(papers.map(paper => paper.sourceDraftId));
   const ongoing = drafts.filter(draft => !confirmedSources.has(draft.draftId));
   return <aside className="history-sidebar" id="assembly-history" aria-label="组卷历史">
@@ -27,7 +27,6 @@ export function HistorySidebar({ drafts, papers, activeDraftId, activePaperId, a
     <div className="history-sidebar-top"><button className="new-assembly" onClick={onNew} disabled={busy}><Plus size={20}/>新建组卷</button>
       <nav className="sidebar-primary-nav" aria-label="题库功能">
         <button className={activeView === 'question-bank' ? 'active' : ''} aria-current={activeView === 'question-bank' ? 'page' : undefined} onClick={onQuestionBank} disabled={busy}><BookOpen size={18}/><span>题库</span></button>
-        <button className={activeView === 'question-import' ? 'active' : ''} aria-current={activeView === 'question-import' ? 'page' : undefined} onClick={onQuestionImport} disabled={busy}><Upload size={18}/><span>上传试卷</span></button>
       </nav>
     </div>
     <div className="history-scroll">

@@ -11,6 +11,10 @@ import { confirmPaper, getPaper, derivePaperDraft } from '../src/assembly/papers
 import { saveFeedback, readFeedback } from '../src/assembly/feedback.mjs';
 import { generateOutput, readOutputFile, getOutputStatus } from '../src/output/manager.mjs';
 import { hashContent } from '../src/question-bank/reader.mjs';
+import { listQuestions } from '../src/question-bank/reader.mjs';
+import { loadPool } from '../src/assembly/engine.mjs';
+import { listQuestionBankCatalog } from '../src/question-bank/catalog.mjs';
+import Database from 'better-sqlite3';
 
 async function fixture(t, { register = true } = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'tutor-sqlite-'));
@@ -120,4 +124,77 @@ test('SQLite rejects stale paper insertion and exact retry recovers a published 
   const stale = structuredClone(second.paper); stale.paperId = randomUUID(); stale.sourceDraftId = draft.draftId;
   stale.draft = { ...draft, revision: 999 }; stale.sourceRevision = 999; stale.snapshotSha256 = hashContent(stale.draft);
   assert.throws(() => f.storage.repository.put('papers', stale.paperId, { schemaVersion: 1, sha256: hashContent(stale), paper: stale }), { code: 'revision_conflict' });
+});
+
+test('Nest registration seeds the versioned question bank into SQLite and runtime readers use the registered snapshot', async t => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'tutor-bank-sqlite-'));
+  const projectRoot = path.resolve('.');
+  const storage = await registerSqliteStorage(base, 'bank.sqlite', { questionBankRoot: projectRoot });
+  t.after(async () => {
+    storage.close();
+    assert.equal(path.dirname(base), path.resolve(os.tmpdir()));
+    await rm(base, { recursive: true, force: true });
+  });
+  assert.equal(storage.repository.filename, path.join(base, 'bank.sqlite'));
+  assert.deepEqual(storage.questionBank, { readyQuestions: 45, annotations: 45, chapters: 3,
+    textbooks: 5, curriculumChapters: 18, curriculumSections: 73, questionSectionMappings: 53 });
+  assert.equal(storage.repository.database.prepare('SELECT COUNT(*) AS count FROM question_bank_questions').get().count, 45);
+  assert.equal(storage.repository.database.prepare('SELECT COUNT(*) AS count FROM question_bank_chapters').get().count, 3);
+  assert.equal(storage.repository.database.prepare('SELECT COUNT(*) AS count FROM curriculum_textbooks').get().count, 5);
+  assert.equal(storage.repository.database.prepare('SELECT COUNT(*) AS count FROM curriculum_chapters').get().count, 18);
+  assert.equal(storage.repository.database.prepare('SELECT COUNT(*) AS count FROM curriculum_sections').get().count, 73);
+  assert.equal(storage.repository.database.prepare('SELECT COUNT(*) AS count FROM question_section_mappings').get().count, 53);
+  assert.equal(storage.repository.database.prepare(`SELECT COUNT(*) AS count FROM question_section_mappings
+    WHERE section_id NOT LIKE 'rja-compulsory-1:1.%'`).get().count, 0);
+  const catalog = await listQuestionBankCatalog({ root: projectRoot });
+  assert.equal(catalog.ok, true, JSON.stringify(catalog));
+  assert.equal(catalog.textbooks.length, 5);
+  assert.equal(catalog.textbooks.flatMap(book => book.chapters).length, 18);
+  assert.equal(catalog.textbooks.flatMap(book => book.chapters.flatMap(chapter => chapter.sections)).length, 73);
+  const sectionCounts = new Map(catalog.textbooks.flatMap(book => book.chapters
+    .flatMap(chapter => chapter.sections.map(section => [section.id, section.questionCount]))));
+  assert.equal(sectionCounts.get('rja-compulsory-1:1.1'), 28);
+  assert.equal(sectionCounts.get('rja-compulsory-1:1.2'), 14);
+  assert.equal(sectionCounts.get('rja-compulsory-1:1.3'), 11);
+  assert.equal(sectionCounts.get('rja-selective-1:1.1'), 0);
+  assert.equal([...sectionCounts.values()].filter(count => count === 0).length, 70);
+  assert.deepEqual(catalog.questions.find(question => question.questionId === 'tutor-set-001').sectionIds,
+    ['rja-compulsory-1:1.1']);
+  const sectionSnapshot = storage.repository.database.prepare(`SELECT payload,sha256 FROM curriculum_sections
+    WHERE section_id='rja-compulsory-1:1.1'`).get();
+  storage.repository.database.prepare(`UPDATE curriculum_sections SET payload='{}'
+    WHERE section_id='rja-compulsory-1:1.1'`).run();
+  assert.throws(() => storage.repository.getQuestionBankTextbooks(), { code: 'integrity_error' });
+  storage.repository.database.prepare(`UPDATE curriculum_sections SET payload=?,sha256=?
+    WHERE section_id='rja-compulsory-1:1.1'`).run(sectionSnapshot.payload, sectionSnapshot.sha256);
+  storage.repository.database.prepare(`UPDATE curriculum_sections SET sha256='${'0'.repeat(64)}'
+    WHERE section_id='rja-compulsory-1:1.1'`).run();
+  assert.throws(() => storage.repository.getQuestionBankTextbooks(), { code: 'integrity_error' });
+  storage.repository.database.prepare(`UPDATE curriculum_sections SET sha256=?
+    WHERE section_id='rja-compulsory-1:1.1'`).run(sectionSnapshot.sha256);
+  const packageRow = storage.repository.database.prepare(`SELECT payload FROM question_bank_questions
+    WHERE question_id='tutor-set-001'`).get();
+  assert.ok(JSON.parse(packageRow.payload).teacher.answers.length > 0);
+  assert.equal((await listQuestions({ root: projectRoot })).totals.ready, 45);
+  const pool = await loadPool(projectRoot);
+  assert.equal(pool.records.length, 45);
+  assert.equal(pool.questionIndexSnapshot.entries.length, 45);
+});
+
+test('SQLite migrates the pre-BLOB question import table instead of treating CREATE IF NOT EXISTS as a migration', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'tutor-import-schema-'));
+  const filename = path.join(root, 'legacy.sqlite');
+  const legacy = new Database(filename);
+  legacy.exec(`CREATE TABLE question_imports(
+    import_id TEXT PRIMARY KEY, payload TEXT NOT NULL, sha256 TEXT NOT NULL,
+    status TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+  )`);
+  legacy.close();
+  const repository = new SqliteRepository(filename);
+  t.after(async () => { repository.close(); await rm(root, { recursive: true, force: true }); });
+  const columns = new Set(repository.database.pragma('table_info(question_imports)').map(column => column.name));
+  assert.equal(columns.has('source_blob'), true);
+  assert.equal(columns.has('source_sha256'), true);
+  assert.ok(repository.database.prepare(`SELECT name FROM sqlite_master
+    WHERE type='table' AND name='question_imports_without_source_v3'`).get());
 });

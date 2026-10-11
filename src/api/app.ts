@@ -24,7 +24,7 @@ export interface TutorApplicationOptions {
 export async function createNestApp(options: TutorApplicationOptions = {}) {
   const root = options.root ?? fileURLToPath(new URL('../../', import.meta.url));
   const storeRoot = options.storeRoot ?? path.join(root, '.tutor', 'drafts');
-  const storage = await registerSqliteStorage(path.dirname(storeRoot), options.databasePath);
+  const storage = await registerSqliteStorage(path.dirname(storeRoot), options.databasePath, { questionBankRoot: root });
   let app: NestExpressApplication | undefined;
   try {
     const intakeService = options.intakeServiceFactory
