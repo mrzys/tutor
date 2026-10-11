@@ -1,0 +1,1833 @@
+{
+  "schemaVersion": 1,
+  "items": [
+    {
+      "id": "SET-EXP50-026",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\mid -5<x^3<5\\}$，$B=\\{-3,-1,0,2,3\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{-1,0\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{2,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{-3,-1,0\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{-1,0,2\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "A",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\四川省广安市前锋区高2026届第一次全真模拟考试\\前锋区高2026届第一次全真模拟考试+数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "逐一代入立方：$(-3)^3=-27$、$(-1)^3=-1$、$0^3=0$、$2^3=8$、$3^3=27$，只有 $-1,0$ 满足 $-5<x^3<5$，故交集为 $\\{-1,0\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\四川省广安市前锋区高2026届第一次全真模拟考试\\前锋区高2026届第一次全真模拟考试+数学.pdf",
+        "sha256": "992ecf32c31663dc1bd5f705de8e55bc8b8f1549d7d15af320a68eaeadacce25",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "三次不等式集合与有限集合的交集"
+      ],
+      "requiredKnowledge": [
+        "立方运算",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-027",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $M=\\{x\\in\\mathbb Z\\mid -2<x<4\\}$，$N=\\{x\\mid y=\\sqrt{x-2}\\}$，则 $M\\cap N=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{x\\mid 2\\le x<4\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{2,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{1,2,3\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{1,2,3,4\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\成都市第七中学\\四川省成都市第七中学2025-2026学年高三上学期10月月考数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$M=\\{-1,0,1,2,3\\}$；根式有意义要求 $x\\ge2$，故 $N=[2,+\\infty)$，交集为 $\\{2,3\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\成都市第七中学\\四川省成都市第七中学2025-2026学年高三上学期10月月考数学.pdf",
+        "sha256": "40b28d80adb860310d2fc9f4897e4c55ffd177194dc3af7c3ab61a153b05cbac",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "setTopics": [
+        "整数区间集合与根式函数定义域的交集"
+      ],
+      "requiredKnowledge": [
+        "整数范围",
+        "根式函数定义域",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-028",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 A（原 PDF 公式关系符号损坏，文本层呈“{x|0剟x5}”，待核对），集合 B（原 PDF 公式关系符号损坏，文本层呈“{x|x²−4x„0}”，待核对），则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$(0,4)$"
+          },
+          {
+            "label": "B",
+            "text": "$[0,4]$"
+          },
+          {
+            "label": "C",
+            "text": "$(0,5)$"
+          },
+          {
+            "label": "D",
+            "text": "$[0,5]$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\树德中学\\树德中学2025-2026学年高三上学期10月月考+数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": []
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\树德中学\\树德中学2025-2026学年高三上学期10月月考+数学.pdf",
+        "sha256": "4081b1347f248d0e19e9a73e73ecba96e921c451c3082d9a4802651398beacad",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "闭区间与二次不等式集合的交集"
+      ],
+      "requiredKnowledge": [
+        "区间集合",
+        "二次不等式",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。",
+          "MuPDF与Poppler重新渲染均显示题干关系符号乱码；原式未修复，不依据原答案B猜写不等号。需取得清晰原文件或教师核对后才能发布。"
+        ],
+        "sourceIssues": [
+          "stem_relation_glyphs_corrupted"
+        ]
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-029",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知全集 $U=\\mathbb R$，集合 $A=\\{1,2,3,4,5\\}$，$B=\\{x\\mid x<-1\\text{ 或 }x>2\\}$，则 $A\\cap(\\complement_{\\mathbb R}B)=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{1,2\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{3,4,5\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{2,3,4,5\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{1,2,3,4,5\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "A",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\天津\\天津市南开大学附中2025年高三上学期第一次阶段检测\\天津市南开大学附中2025年高三上学期第一次阶段检测+数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$\\complement_{\\mathbb R}B=[-1,2]$，与 $A$ 取交集得 $\\{1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\天津\\天津市南开大学附中2025年高三上学期第一次阶段检测\\天津市南开大学附中2025年高三上学期第一次阶段检测+数学.pdf",
+        "sha256": "de62cbfb24996831046438a205368b22ccea8552fd854b7bffb58afaadf938e6",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "有限集合与区间并集补集的交集"
+      ],
+      "requiredKnowledge": [
+        "并集",
+        "补集",
+        "交集",
+        "区间端点"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-030",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\in\\mathbb N\\mid -2<x<3\\}$，$B=\\{x\\mid\\log_2x<3\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{0,1,2,3\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{1,2,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{0,1,2\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{1,2\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "D",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\天津\\天津市第三中学2026届高三上学期10月月考\\天津市第三中学2026届高三上学期10月月考+数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$A=\\{0,1,2\\}$。由对数定义域及单调性得 $0<x<8$，故交集为 $\\{1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\天津\\天津市第三中学2026届高三上学期10月月考\\天津市第三中学2026届高三上学期10月月考+数学.pdf",
+        "sha256": "c88bc64bcf1f33488ec879fddbc62db9780611775963886cf61db3f725c39e75",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "自然数范围与对数不等式集合的交集"
+      ],
+      "requiredKnowledge": [
+        "自然数含0",
+        "对数函数定义域及单调性",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。",
+          "题干公式为低分辨率嵌入图；另核对同源解析中B=(0,8)及选项D，保留图像清晰度复核项。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-031",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{-1,0,1\\}$，$B=\\{x\\mid-1\\le x\\le1,\\ x\\in\\mathbb Z\\}$，则（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$A=B$"
+          },
+          {
+            "label": "B",
+            "text": "$A\\cap B=\\varnothing$"
+          },
+          {
+            "label": "C",
+            "text": "$B$ [原 PDF 关系符号缺失，待核对] $A$"
+          },
+          {
+            "label": "D",
+            "text": "$A$ [原 PDF 关系符号缺失，待核对] $B$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "A",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\宁夏\\宁夏石嘴山市第一中学2026届高三上学期10月月考\\宁夏石嘴山市第一中学2026届高三上学期10月月考+数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": []
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\宁夏\\宁夏石嘴山市第一中学2026届高三上学期10月月考\\宁夏石嘴山市第一中学2026届高三上学期10月月考+数学.pdf",
+        "sha256": "1ea3da384234ec70a150a65d7ff1ea23c31bf42877920b443f40a858a8c5734c",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "列举集合与整数描述集合的相等关系"
+      ],
+      "requiredKnowledge": [
+        "整数列举",
+        "集合相等",
+        "集合关系"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。",
+          "MuPDF与Poppler重新渲染均显示C/D选项关系符号缺失；保留明确占位，不依据原答案A猜写真子集符号。"
+        ],
+        "sourceIssues": [
+          "option_relation_glyphs_missing"
+        ]
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-032",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\mid x<-1\\text{ 或 }x>0\\}$，$B=\\{x\\mid m-1<x<m+2\\}$，若 $B\\cup A=\\mathbb R$，则实数 $m$ 的取值范围是（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$(-\\infty,-2)\\cup(0,+\\infty)$"
+          },
+          {
+            "label": "B",
+            "text": "$(-3,1)$"
+          },
+          {
+            "label": "C",
+            "text": "$(-2,0)$"
+          },
+          {
+            "label": "D",
+            "text": "$(-\\infty,-3)\\cup(1,+\\infty)$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "C",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\安徽\\合肥市第一中学\\高三10月份教学质量测评数学参考答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$A$ 没有覆盖的区间为 $[-1,0]$，故须 $[-1,0]\\subset(m-1,m+2)$。因 $B$ 两端均开，需 $m-1<-1$ 且 $m+2>0$，得 $-2<m<0$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\安徽\\合肥市第一中学\\高三10月份教学质量测评数学卷.pdf",
+        "sha256": "fb8010db958b86202ae9222a03afb4d304dfa2af202a92a226ec23bcaf456594",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "区间并集为全体实数时确定参数"
+      ],
+      "requiredKnowledge": [
+        "并集覆盖",
+        "含参区间",
+        "端点包含"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-033",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\mid y=\\log_2(3-x)\\}$，$B=\\{x\\in\\mathbb Z\\mid x^2-3x-4\\le0\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{x\\mid-1\\le x<3\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{x\\mid x\\le4\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{-1,0,1,2\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{0,1,2\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "C",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\安徽\\安徽省六安第一中学2025-2026学年高三上学期10月月考\\安徽省六安第一中学2025-2026学年高三上学期10月月考数学试题.pdf",
+            "pages": [
+              3
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "对数真数为正得 $A=(-\\infty,3)$；$(x-4)(x+1)\\le0$ 得 $-1\\le x\\le4$，故 $B=\\{-1,0,1,2,3,4\\}$。取交集得 $\\{-1,0,1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\安徽\\安徽省六安第一中学2025-2026学年高三上学期10月月考\\安徽省六安第一中学2025-2026学年高三上学期10月月考数学试题.pdf",
+        "sha256": "53bce3c755688c05f90e2deb3b7fa5d0e56202f694547ffb637cfc428dbc60ec",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "对数函数定义域与整数二次不等式集合交集"
+      ],
+      "requiredKnowledge": [
+        "对数函数定义域",
+        "二次不等式",
+        "整数范围",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-034",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "设集合 $A=\\{x\\mid x\\text{ 是等腰直角三角形}\\}$，$B=\\{x\\mid x\\text{ 是等腰三角形}\\}$，$C=\\{x\\mid x\\text{ 是等边三角形}\\}$，$D=\\{x\\mid x\\text{ 是直角三角形}\\}$，则（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$C\\subseteq A$"
+          },
+          {
+            "label": "B",
+            "text": "$D\\subseteq A$"
+          },
+          {
+            "label": "C",
+            "text": "$C\\subseteq B$"
+          },
+          {
+            "label": "D",
+            "text": "$D\\subseteq B$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "C",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\山西\\山西大学附属中学\\山西大学附中10月月考数学试题解析.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "等边三角形一定是等腰三角形，故 $C\\subseteq B$；等边三角形不是直角三角形，一般直角三角形也不一定等腰，其余包含关系不成立。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\山西\\山西大学附属中学\\山西大学附中10月月考数学试题.pdf",
+        "sha256": "0bd61148b8e434d9a74dc164e22795e69536e05dd2c4e3189c995b72cc0fc6c5",
+        "pdfPage": 1,
+        "originalQuestionNumber": "3"
+      },
+      "setTopics": [
+        "三角形类型集合之间的包含关系"
+      ],
+      "requiredKnowledge": [
+        "子集",
+        "等腰/等边/直角三角形概念"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-035",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{1,2,3,4,5\\}$，$B=\\left\\{x\\mid\\frac{x-1}{2}\\in\\mathbb Z\\right\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{5\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{3,5\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{1,3,5\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{2,4\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "C",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\山西\\山西大学附属中学\\山西省山西大学附属中学校2025-2026学年高三上学期10月模块诊断（总第四次）数学试题（解析版）.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$\\frac{x-1}{2}\\in\\mathbb Z$ 等价于 $x=2k+1$（$k\\in\\mathbb Z$），故从 $A$ 中取奇数得 $\\{1,3,5\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\山西\\山西大学附属中学\\山西省山西大学附属中学校2025-2026学年高三上学期10月模块诊断（总第四次）数学试题（原卷版）.pdf",
+        "sha256": "08467ed771f14063b801a4a93a87d5e353eab7b2b0d2235d1f8ef6432baad6bc",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "整数整除条件描述集合与有限集合交集"
+      ],
+      "requiredKnowledge": [
+        "整数与奇数",
+        "描述法",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-036",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{4,7,10\\}$，$B=\\{x\\mid|x-2|\\le5\\}$，则 $A\\cap B$ 的真子集个数为（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "1"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "3"
+          },
+          {
+            "label": "D",
+            "text": "4"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "C",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东上进联考2025-2026学年领航高中联盟2026届高三10月一轮复习阶段检测\\广东高三10月上进联考数学答案（官方答案）.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$B=[-3,7]$，故 $A\\cap B=\\{4,7\\}$。两个元素集合共有 $2^2=4$ 个子集，去掉自身得3个真子集。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东上进联考2025-2026学年领航高中联盟2026届高三10月一轮复习阶段检测\\广东高三10月上进联考数学试卷.pdf",
+        "sha256": "74edd0479868d5f933770abc42a0b91f0f299266abffc9bf60d9cbec118a0261",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "有限集合与绝对值不等式交集的真子集个数"
+      ],
+      "requiredKnowledge": [
+        "绝对值不等式",
+        "交集",
+        "真子集计数"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-037",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "集合 $A=\\{x\\mid2\\le x<4\\}$，$B=\\{x\\mid2^x\\ge8\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$(-\\infty,4)$"
+          },
+          {
+            "label": "B",
+            "text": "$[2,+\\infty)$"
+          },
+          {
+            "label": "C",
+            "text": "$[2,3]$"
+          },
+          {
+            "label": "D",
+            "text": "$[3,4)$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "D",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东省六校联盟2025-2026学年高三上学期第二次联考\\广东省六校联考2026届高三上学期第二次联考数学答案（图片版）.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "指数函数 $2^x$ 递增，$2^x\\ge8=2^3$ 等价于 $x\\ge3$，与 $[2,4)$ 取交集得 $[3,4)$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东省六校联盟2025-2026学年高三上学期第二次联考\\广东省六校联考2026届高三上学期第二次联考数学试卷.pdf",
+        "sha256": "68c4b3e163697c9ccbabbcc848ceaaf0ee875f56f5e63c40105855719b040b38",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "区间集合与指数不等式解集的交集"
+      ],
+      "requiredKnowledge": [
+        "指数函数单调性",
+        "交集",
+        "区间端点"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-038",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\mid x^2=2x\\}$，集合 $B=\\{x\\in\\mathbb Z\\mid0<x<3\\}$，则 $A\\cup B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{2\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{0,1,2\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{x\\mid0<x<3\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{x\\mid0\\le x<3\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东省深圳市宝安区2025-2026学年高三上学期10月教学质量检测\\宝一模数学答案及评分细则.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$x(x-2)=0$ 得 $A=\\{0,2\\}$；$B=\\{1,2\\}$，故并集为 $\\{0,1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东省深圳市宝安区2025-2026学年高三上学期10月教学质量检测\\宝一模数学.pdf",
+        "sha256": "cddd8b5a5fd63fa8f98304803d34dba9521d36fd269c537182c872447433434b",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "平方等式根集与整数限定集合的并集"
+      ],
+      "requiredKnowledge": [
+        "因式分解解方程",
+        "整数列举",
+        "并集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-039",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "设集合 $A=\\{x\\mid-2<x<4\\}$，$B=\\{2,3,4,5\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{2\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{2,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{3,4\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{2,3,4\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东省清远市第一中学2025-2026学年高三上学期10月期中\\清远一中2025-2026学年度高三10月期中考试数学试卷 解析.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "从 $B$ 中筛选满足 $-2<x<4$ 的元素为2、3，4不满足严格小于4，故交集为 $\\{2,3\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\广东省清远市第一中学2025-2026学年高三上学期10月期中\\清远一中2025-2026学年度高三10月期中考试数学试卷.pdf",
+        "sha256": "2b8758d642c5f9eaee97b11f0861df6a1f46412a82d384a77c302a48779c3935",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "setTopics": [
+        "有限集合与开区间的交集"
+      ],
+      "requiredKnowledge": [
+        "交集",
+        "区间端点"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-040",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\left\\{x\\mid\\frac{x+3}{x-1}\\le-1\\right\\}$，$B=\\{-2,-1,0,1\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{-1,0,1\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{-1,0\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{-2,-1,0\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{-2,-1,0,1\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\汕头市金山中学\\2023级高三第一学期阶段考试数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "原不等式等价于 $\\frac{2(x+1)}{x-1}\\le0$ 且 $x\\ne1$，解为 $[-1,1)$。与 $B$ 取交集得 $\\{-1,0\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\广东\\汕头市金山中学\\2023级高三第一学期阶段考试数学试卷.pdf",
+        "sha256": "70f64a80a1f7a19d668d8ba010e863198a6468eff7ac4ad425933141ac2907f7",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "分式不等式解集与有限集合的交集"
+      ],
+      "requiredKnowledge": [
+        "分式不等式",
+        "分母非零",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-041",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\in\\mathbb Z\\mid|x-1|\\le1\\}$，$B=\\{1,2,3,4\\}$，则 $A\\cup B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{1,2\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{0,1,2,3,4\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{-1,0,1,2,3,4\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{1,2,3,4\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\江苏\\江苏省无锡市三校联考2025-2026学年高三上学期10月月考\\2025年秋学期10月质量调研 高三数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$|x-1|\\le1$ 得 $0\\le x\\le2$，结合整数条件有 $A=\\{0,1,2\\}$，并集为 $\\{0,1,2,3,4\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\江苏\\江苏省无锡市三校联考2025-2026学年高三上学期10月月考\\无锡市三校联考2025-2026学年高三上学期10月月考数学.pdf",
+        "sha256": "1b9cabd43a449b3e0b379e93a33a5e53602ef915840907feda272d0dba43acb1",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "整数绝对值条件集合与有限集合的并集"
+      ],
+      "requiredKnowledge": [
+        "绝对值不等式",
+        "整数列举",
+        "并集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-042",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{-1,0,1,2,3,4\\}$，$B=\\{x\\mid-1\\le x<3\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{0,1,2\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{0,1,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{-1,0,1,2\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{0,1,2,3\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "C",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\江苏\\江苏省盐城市五校联考2026届高三上学期10月月考\\江苏省盐城市五校联考2026届高三上学期10月月考+数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "从 $A$ 中筛选 $-1\\le x<3$ 的元素，得 $\\{-1,0,1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\江苏\\江苏省盐城市五校联考2026届高三上学期10月月考\\江苏省盐城市五校联考2026届高三上学期10月月考+数学.pdf",
+        "sha256": "8cfb1a390ad4db40c938cb2b5585b4fde6a86cbc90dd5cc741d8ea0f1f026b00",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "有限集合与半开区间集合的交集"
+      ],
+      "requiredKnowledge": [
+        "交集",
+        "区间端点"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-043",
+      "questionType": "multiple_choice",
+      "student": {
+        "stem": "对于集合 $M$ 中元素之间的一个关系“$\\sim$”，满足以下三个条件：① $\\forall m\\in M,\\ m\\sim m$；② $\\forall m,n\\in M$，若 $m\\sim n$，则 $n\\sim m$；③ $\\forall m,n,p\\in M$，若 $m\\sim n$、$n\\sim p$，则 $m\\sim p$。则称“$\\sim$”是集合 $M$ 的一个等价关系。例如：“图形的相似性”是所有平面几何图形构成的集合上的一个等价关系，而“直线的平行关系”不满足条件①，所以不是等价关系。据此，下列关系中为等价关系的是（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "方程的同解"
+          },
+          {
+            "label": "B",
+            "text": "向量的共线"
+          },
+          {
+            "label": "C",
+            "text": "集合的包含"
+          },
+          {
+            "label": "D",
+            "text": "命题的充要条件"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "AD",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\河北\\河北省沧州市普通高中2026届高三复习质量检测\\河北省沧州市普通高中2026届高三复习质量检测+数学答案.pdf",
+            "pages": [
+              5,
+              6
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "方程同解与命题互为充要条件均满足自反、对称、传递三条性质。向量共线不满足传递性：两个不共线的非零向量分别与零向量共线。集合包含不满足对称性。因此选AD。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\河北\\河北省沧州市普通高中2026届高三复习质量检测\\河北省沧州市普通高中2026届高三复习质量检测+数学.pdf",
+        "sha256": "dad8c194d1bb86b8b91d054277689d257daa8f86572fb943e717039689932127",
+        "pdfPage": 2,
+        "originalQuestionNumber": "10"
+      },
+      "setTopics": [
+        "按自反对称传递三条件判断集合上的等价关系"
+      ],
+      "requiredKnowledge": [
+        "新定义等价关系",
+        "自反对称传递",
+        "向量共线与零向量",
+        "集合包含",
+        "命题充要条件"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。",
+          "题干关系符号原文使用“-”，转录规范化为\\sim，仅改记号不改定义；多选原答案AD核于解析PDF5–6页。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-044",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{0,1,2,3,4\\}$，$B=\\{x\\mid0<x<3\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\{1,2\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{1,2,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{0,1,2\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{0,1,2,3\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "A",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\河北\\河北省衡水市2025-2026学年高三上学期第三次调研考试（26008C）\\河北省衡水市2025-2026学年高三上学期第三次调研考试（26008C）数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "严格不等式排除0与3，仅1、2同时属于两集合，故交集为 $\\{1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\河北\\河北省衡水市2025-2026学年高三上学期第三次调研考试（26008C）\\河北省衡水市衡水二中等学校2026届高三三调考试（三模）数学试题.pdf",
+        "sha256": "401b0144953aecb40884e0c5f000f6c7bc697fea031bbabcc0ddb36d6511f28d",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "有限集合与开区间集合的交集"
+      ],
+      "requiredKnowledge": [
+        "交集",
+        "区间端点"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-045",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\mid|x|<3\\}$，$B=\\{y\\in\\mathbb N\\mid y^2<10\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$(0,3)$"
+          },
+          {
+            "label": "B",
+            "text": "$(-3,3)$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{-2,-1,0,1,2\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{0,1,2\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "D",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\浙江\\2026届浙江新阵地教育联盟高三上学期第一次模拟\\浙江新阵地教育联盟2026届高三上学期第一次联考数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$A=(-3,3)$，自然数按含0约定，$B=\\{0,1,2,3\\}$，交集为 $\\{0,1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\浙江\\2026届浙江新阵地教育联盟高三上学期第一次模拟\\浙江新阵地教育联盟2026届高三上学期第一次联考数学试卷.pdf",
+        "sha256": "1b1dca3247041dac7b85b9dbdc7eb24c063fa0024a81c65fb96e421c4adf48a5",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "绝对值范围与自然数平方条件集合的交集"
+      ],
+      "requiredKnowledge": [
+        "自然数含0",
+        "绝对值不等式",
+        "平方约束",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-046",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{1,3,a^2\\}$，$B=\\{1,a+2\\}$，若 $A\\cap B=B$，则实数 $a$ 的值为（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "1"
+          },
+          {
+            "label": "B",
+            "text": "2"
+          },
+          {
+            "label": "C",
+            "text": "$2\\text{ 或 }-1$"
+          },
+          {
+            "label": "D",
+            "text": "$1\\text{ 或 }-1$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "B",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\浙江\\浙江省浙南名校联盟2026届高三上学期10月联考\\浙南名校联盟2026届高三上学期10月联考数学答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "条件等价于 $B\\subseteq A$。允许重复元素表示同一集合时，需 $a+2\\in\\{1,3,a^2\\}$，分别得 $a=-1$、$a=1$ 或 $(a-2)(a+1)=0$，故完整值集为 $\\{-1,1,2\\}$，没有对应完整选项。原答案2依赖另加“A恰有三个不同元素”的前提；本轮不擅补此条件。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\浙江\\浙江省浙南名校联盟2026届高三上学期10月联考\\浙南名校联盟2026届高三上学期10月联考数学试题.pdf",
+        "sha256": "702872c7d023ba4dfac21aa59d83a32a9d8cfcab407ede4970ef6fbf47ec3d4a",
+        "pdfPage": 1,
+        "originalQuestionNumber": "3"
+      },
+      "setTopics": [
+        "含参数集合的包含关系与元素互异性"
+      ],
+      "requiredKnowledge": [
+        "交集与子集等价",
+        "元素与集合关系",
+        "含参二次方程",
+        "集合列表互异性的语义前提"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。",
+          "原答案B（2）依赖未明写的列表元素互异前提；不补条件时a=-1、1、2均满足，原选项无完整正确项。须教师确认是否补“A恰有三个不同元素”。"
+        ],
+        "sourceIssues": [
+          "unstated_distinct_elements_condition"
+        ]
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-047",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "集合 $A=\\{1,2\\}$，$B=\\{x\\mid x^2-3x-4<0,\\ x\\in\\mathbb N\\}$，则满足 $A\\subseteq C\\subseteq B$ 的集合 $C$ 的个数为（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "4"
+          },
+          {
+            "label": "B",
+            "text": "7"
+          },
+          {
+            "label": "C",
+            "text": "15"
+          },
+          {
+            "label": "D",
+            "text": "16"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "A",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\华中师范大学第一附属中学\\湖北省武汉市华中师范大学第一附属中学2025-2026学年高三上学期10月考试数学试题（解析版）.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$(x-4)(x+1)<0$ 得 $-1<x<4$，故 $B=\\{0,1,2,3\\}$。$C$ 必含1、2，0和3各自可选可不选，共 $2^2=4$ 个。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\华中师范大学第一附属中学\\湖北省武汉市华中师范大学第一附属中学2025-2026学年高三上学期10月考试数学试题（原卷版）.pdf",
+        "sha256": "b067552227fef6ada6d4faa90c1b7961f6d9921199757171fe015510359101d7",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "setTopics": [
+        "满足双向包含约束的集合个数"
+      ],
+      "requiredKnowledge": [
+        "二次不等式",
+        "自然数含0",
+        "子集包含",
+        "有限集合计数"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-048",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{x\\mid\\log_2(2x-1)<2\\}$，$B=\\{x\\in\\mathbb N\\mid x^2<11\\}$，则 $A\\cap B=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\left\\{x\\mid\\frac12<x<\\sqrt{11}\\right\\}$"
+          },
+          {
+            "label": "B",
+            "text": "$\\left\\{x\\mid\\frac52<x<\\sqrt{11}\\right\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{0,1,2\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{1,2\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "D",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\湖北省新八校协作体2025-2026学年上学期高三10月联考\\湖北省新八校协作体2025-2026学年高三上学期10月月考数学试题 答案.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "对数真数条件与单调性给出 $0<2x-1<4$，即 $\\frac12<x<\\frac52$。$B=\\{0,1,2,3\\}$，交集为 $\\{1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\湖北省新八校协作体2025-2026学年上学期高三10月联考\\湖北新八校2025-2026学年高三10月联考数学试卷.pdf",
+        "sha256": "1854c5cb590ee6201bedadb2ea69fe83305ae5ed1bcd419975b96a1539693376",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "setTopics": [
+        "对数限定集合与自然数平方条件集合的交集"
+      ],
+      "requiredKnowledge": [
+        "对数函数定义域及单调性",
+        "自然数含0",
+        "平方约束",
+        "交集"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-049",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "“实数集合 $A,B$ 满足：$A\\cap B=B$”的一个充要条件是（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$A\\subseteq B$"
+          },
+          {
+            "label": "B",
+            "text": "$A\\subseteq(A\\,\\mathrm{I}\\,B)$ [原 PDF 印为大写 I，未定义，待核对]"
+          },
+          {
+            "label": "C",
+            "text": "$A\\cup B=B$"
+          },
+          {
+            "label": "D",
+            "text": "$(\\complement_{\\mathbb R}A)\\cap B=\\varnothing$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "D",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\湖北省荆州中学2025-2026学年高三上学期10月月考\\2023级10月底月考数学答案版.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$A\\cap B=B$ 等价于 $B\\subseteq A$，也等价于 $B$ 中没有元素属于 $A$ 的补集，即 $(\\complement_{\\mathbb R}A)\\cap B=\\varnothing$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\湖北省荆州中学2025-2026学年高三上学期10月月考\\2023级10月底月考数学试卷.pdf",
+        "sha256": "0e42ab5e9d84ed0a6197aa06d396796ec97346937c77bb3d4452fa639d660d7d",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "setTopics": [
+        "交集等于一集合的充要条件"
+      ],
+      "requiredKnowledge": [
+        "交集",
+        "子集",
+        "补集",
+        "充要条件"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。",
+          "B选项高倍重新渲染仍印为大写I，题目未定义此运算；忠实保留原字形，不猜改为交集、并集或差集。须获取清晰原稿或教师修正后才能发布。"
+        ],
+        "sourceIssues": [
+          "option_operator_undefined"
+        ]
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-050",
+      "questionType": "single_choice",
+      "student": {
+        "stem": "已知集合 $A=\\{1,2\\}$，$B=\\{1,2,3\\}$，$C=\\{x\\mid x^2-2x-3<0\\}$，则 $(A\\cap B)\\cap C=$（　）",
+        "options": [
+          {
+            "label": "A",
+            "text": "$\\varnothing$"
+          },
+          {
+            "label": "B",
+            "text": "$\\{1,2,3\\}$"
+          },
+          {
+            "label": "C",
+            "text": "$\\{3\\}$"
+          },
+          {
+            "label": "D",
+            "text": "$\\{1,2\\}$"
+          }
+        ],
+        "parts": [],
+        "assets": []
+      },
+      "teacher": {
+        "answers": [
+          {
+            "partId": "main",
+            "text": "D",
+            "provenance": "source",
+            "sourceFile": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖南\\湖南省长沙大学附属中学2025-2026学年高三上学期10月月考\\长沙大学附属中学高三10月月考数学试题卷（教师用卷）.pdf",
+            "pages": [
+              1
+            ]
+          }
+        ],
+        "solutions": [
+          {
+            "partId": "main",
+            "text": "$A\\cap B=\\{1,2\\}$；$(x-3)(x+1)<0$ 得 $C=(-1,3)$，所以再取交集仍为 $\\{1,2\\}$。",
+            "provenance": "generated",
+            "sourceFile": null,
+            "pages": []
+          }
+        ]
+      },
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖南\\湖南省长沙大学附属中学2025-2026学年高三上学期10月月考\\长沙大学附属中学高三10月月考数学试题卷（教师用卷）.pdf",
+        "sha256": "f5e6db14364ace9045ac4a410a793652ee757b5b3f5a202d8b2890aa6f92d4ad",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "setTopics": [
+        "三集合交集与二次不等式条件"
+      ],
+      "requiredKnowledge": [
+        "二次不等式",
+        "交集",
+        "区间端点"
+      ],
+      "verification": {
+        "sourceVisualChecked": true,
+        "answerStatus": "source_checked",
+        "notes": [
+          "逐题查看原PDF题面与答案区渲染；答案来源核对不代表教师复核或题库发布。",
+          "未进行实测难度标定；保留所见跨章依赖，按本次教师范围另行适配。"
+        ],
+        "sourceIssues": []
+      },
+      "reviewStatus": "pending_review"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-039",
+  "auditId": "SET-SRC-039",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025春·徐汇区校级期中）若从两男两女四人中随机选出两人，设两个男生分别用 $A,B$ 表示，两个女生分别用 $C,D$ 表示，相应的样本空间为 $\\Omega=\\{AB,AC,AD,BC,BD,CD\\}$，则与事件“选出一男一女”对应的样本空间的子集为 ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$\\{AC,AD,BC,BD\\}$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "题面已完整列出六种二人组合。AB 是两男，CD 是两女，排除这两个元素；AC、AD、BC、BD 都各含一男一女，保留。因此所求子集为 $\\{AC,AD,BC,BD\\}$。无需计算概率或另用排列组合公式。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        21
+      ],
+      "locator": "知识点6 跟踪训练3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        14,
+        15
+      ],
+      "locator": "知识点6 跟踪训练3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "从已枚举的二人组合中筛选满足条件的子集"
+    ],
+    "requiredKnowledge": [
+      "子集",
+      "给定有限集按条件筛选",
+      "二人组合记号"
+    ],
+    "allowedSolution": "题面已完整列出六种二人组合。AB 是两男，CD 是两女，排除这两个元素；AC、AD、BC、BD 都各含一男一女，保留。因此所求子集为 $\\{AC,AD,BC,BD\\}$。无需计算概率或另用排列组合公式。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-92bf7f422f360fb0",
+    "teacherVersion": "teacher-b462ad33f4a87e83"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          21
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          14,
+          15
+        ]
+      }
+    ],
+    "differences": [
+      "保留原题样本空间、事件术语，但完整解法仅用已给六个元素筛选，不依赖概率知识。",
+      "教师版无独立答案块；结论在第21页解答末尾，已视觉核对。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-92bf7f422f360fb0",
+    "teacherVersion": "teacher-b462ad33f4a87e83"
+  },
+  "contentVersion": "content-92bf7f422f360fb0",
+  "contentSha256": "92bf7f422f360fb0f12d979573c4ce4fde2cbc20f6796d8450e3ef1dfa0f8d6d",
+  "teacherVersion": "teacher-b462ad33f4a87e83",
+  "teacherSha256": "b462ad33f4a87e834ff7eba6273e4b8f8a788c39c3a6ced421fd4f54feb7225f"
+}

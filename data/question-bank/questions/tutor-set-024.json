@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-024",
+  "auditId": "SET-SRC-024",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025·黄浦区校级开学）用列举法表示集合 $\\{x\\mid-2\\le x\\le2,\\ x\\in\\mathbb N\\}=$ ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$\\{0,1,2\\}$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "自然数是非负整数。在−2至2（含端点）的范围内，自然数只有0、1、2，所以集合为 $\\{0,1,2\\}$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        13
+      ],
+      "locator": "知识点4 跟踪训练3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        9
+      ],
+      "locator": "知识点4 跟踪训练3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "将自然数描述集合化为列举法"
+    ],
+    "requiredKnowledge": [
+      "自然数集",
+      "描述法转列举法",
+      "不等式范围"
+    ],
+    "allowedSolution": "自然数是非负整数。在−2至2（含端点）的范围内，自然数只有0、1、2，所以集合为 $\\{0,1,2\\}$。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-ce4cff172fe7e632",
+    "teacherVersion": "teacher-66410667d7c00c0e"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          13
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          9
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-ce4cff172fe7e632",
+    "teacherVersion": "teacher-66410667d7c00c0e"
+  },
+  "contentVersion": "content-ce4cff172fe7e632",
+  "contentSha256": "ce4cff172fe7e6323c846e05952dbdd6b37f8ab867c2a787aa1a8c04605a9952",
+  "teacherVersion": "teacher-66410667d7c00c0e",
+  "teacherSha256": "66410667d7c00c0e6e6b40b6d8b8e5f9c872c57fd5037302e23fe857ad13515e"
+}

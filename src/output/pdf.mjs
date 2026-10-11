@@ -29,6 +29,7 @@ export async function findPdfPython() {
 export function projectPaper(paper, kind) {
   if (!['student','teacher'].includes(kind) || !/^[a-zA-Z0-9-]{1,100}$/.test(paper?.paperId ?? '') || !paper?.draft?.slots) throw new Error('无效成卷或输出类型');
   const draft = paper.draft;
+  const scored = draft.baseline.requirements.scoringMode !== 'none';
   const issues = [];
   const summaryIssues = paper.summary?.teacher?.issues ?? [];
   const hasSummaryIssue = (slotId, code) => summaryIssues.some(issue => issue && typeof issue === 'object' && issue.slotId === slotId && issue.code === code);
@@ -42,11 +43,12 @@ export function projectPaper(paper, kind) {
     const result = { ...base, student: { stem: student.stem, options: (student.options ?? []).map(x => ({label:x.label,text:x.text})), parts: (student.parts ?? []).map(x => ({partId:x.partId,prompt:x.prompt})), assets: (student.assets ?? []).map(x => ({assetId:x.assetId,alt:x.alt ?? ''})) } };
     if (kind === 'teacher') {
       result.teacher = structuredClone(q.teacher ?? {answers:[],solutions:[],scoringSuggestions:[]});
+      if (!scored) delete result.teacher.scoringSuggestions;
       result.sourceRefs = structuredClone(q.sourceRefs ?? []);
       result.versions = { questionId:q.questionId, contentVersion:q.contentVersion, teacherVersion:q.teacherVersion };
       if (!result.teacher.answers?.length && !hasSummaryIssue(slot.slotId,'answer_missing')) issues.push(`第 ${slot.number} 题缺参考答案`);
       if (!result.teacher.solutions?.length && !hasSummaryIssue(slot.slotId,'solution_missing')) issues.push(`第 ${slot.number} 题缺参考解析`);
-      if (!result.teacher.scoringSuggestions?.length && !hasSummaryIssue(slot.slotId,'rubric_missing')) issues.push(`第 ${slot.number} 题缺建议评分`);
+      if (scored && !result.teacher.scoringSuggestions?.length && !hasSummaryIssue(slot.slotId,'rubric_missing')) issues.push(`第 ${slot.number} 题缺建议评分`);
     }
     return result;
   });
@@ -72,7 +74,7 @@ export function projectPaper(paper, kind) {
     }
   }
   const uniqueIssues = [...new Set(issues)];
-  return { schemaVersion:1,paperId:paper.paperId,kind,title:paper.title ?? draft.title,createdAt:paper.createdAt,durationMinutes:draft.baseline.requirements.durationMinutes,questionCount:selected.length,points:selected.reduce((sum,x)=>sum+x.points,0),plannedQuestions:slots.length,plannedPoints:slots.reduce((sum,x)=>sum+x.points,0),status:uniqueIssues.length?'incomplete':'complete',issues:uniqueIssues,slots,assets, ...(kind==='teacher'?{summary:structuredClone(paper.summary ?? {})}:{}) };
+  return { schemaVersion:1,paperId:paper.paperId,kind,scoringMode:scored ? 'points' : 'none',title:paper.title ?? draft.title,createdAt:paper.createdAt,durationMinutes:draft.baseline.requirements.durationMinutes,questionCount:selected.length,points:selected.reduce((sum,x)=>sum+x.points,0),plannedQuestions:slots.length,plannedPoints:slots.reduce((sum,x)=>sum+x.points,0),status:uniqueIssues.length?'incomplete':'complete',issues:uniqueIssues,slots,assets, ...(kind==='teacher'?{summary:structuredClone(paper.summary ?? {})}:{}) };
 }
 
 export async function generatePaperOutput(paper, kind, {outputRoot = path.join(repoRoot,'.tutor','outputs')} = {}) {

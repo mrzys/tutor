@@ -27,7 +27,7 @@ test('HTTP confirmation saves real selected contents and reopening preserves exa
   const { request, storeRoot } = await app(t);
   const config = await request('/api/config');
   assert.equal(config.ok, true);
-  assert.deepEqual(config.config.supply, { sourceUnits: 50, ready: 18, pending: 32 });
+  assert.deepEqual(config.config.supply, { sourceUnits: 50, ready: 45, pending: 5 });
   const preview = await request('/api/blueprint', { requirements: config.config.defaultRequirements });
   assert.equal(preview.ok, true);
   assert.equal((await listDrafts(storeRoot)).drafts.length, 0, 'Preview must not save a draft');
@@ -102,6 +102,29 @@ async function initialDraft(request) {
   assert.equal(saved.status, 201);
   return saved.draft;
 }
+
+test('HTTP candidate supply returns all slots for one revision and rejects stale refreshes', async t => {
+  const { request } = await app(t);
+  const draft = await initialDraft(request);
+  const route = `/api/drafts/${draft.draftId}/candidate-supply`;
+  const supply = await request(route, { expectedRevision: 0 });
+  assert.equal(supply.status, 200);
+  assert.equal(supply.ok, true);
+  assert.equal(supply.revision, 0);
+  assert.deepEqual(supply.slots.map(slot => slot.slotId), draft.slots.map(slot => slot.slotId));
+  const preview = await request(`/api/drafts/${draft.draftId}/candidates`, { slotId: 'slot-1', expectedRevision: 0 });
+  assert.equal(supply.slots[0].eligibleCount, preview.candidates.filter(item => item.canSelect).length);
+  assert.equal(supply.slots[0].suggestionCount, preview.suggestions.filter(item => item.canSelect).length);
+  await request(`/api/drafts/${draft.draftId}/operations`, {
+    operationId: 'candidate-count-revision', expectedRevision: 0, type: 'lock', slotId: 'slot-1', locked: true,
+  });
+  const stale = await request(route, { expectedRevision: 0 });
+  assert.equal(stale.status, 409);
+  assert.equal(stale.error.code, 'revision_conflict');
+  assert.equal((await request(route, { expectedRevision: 1 })).revision, 1);
+  assert.equal((await request(route, {})).status, 400);
+  assert.equal((await request('/api/drafts/not-a-uuid/candidate-supply', { expectedRevision: 0 })).status, 404);
+});
 
 test('concurrent duplicate HTTP operations execute once and replay returns the newest saved draft', async t => {
   const { request, storeRoot } = await app(t);

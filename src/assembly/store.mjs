@@ -2,6 +2,7 @@ import { mkdir, open, readFile, readdir, rename, unlink } from 'node:fs/promises
 import path from 'node:path';
 import { hashContent } from '../question-bank/reader.mjs';
 import { randomUUID } from 'node:crypto';
+import { sqliteStorage } from '../storage/sqlite.mjs';
 
 const validId = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const updates = new Map();
@@ -13,9 +14,16 @@ function storeError(code, message) {
 export async function readDraft(storeRoot, draftId) {
   if (!validId.test(draftId)) throw storeError('not_found', '没有找到该草稿。');
   let saved;
-  try { saved = JSON.parse(await readFile(path.join(storeRoot, `${draftId}.json`), 'utf8')); }
+  try {
+    const repository = sqliteStorage(storeRoot, 'drafts');
+    if (repository) {
+      saved = repository.get('drafts', draftId);
+      if (!saved) throw storeError('ENOENT', '没有找到该草稿。');
+    } else saved = JSON.parse(await readFile(path.join(storeRoot, `${draftId}.json`), 'utf8'));
+  }
   catch (error) {
     if (error.code === 'ENOENT') throw storeError('not_found', '没有找到该草稿。');
+    if (error.code === 'integrity_error') throw error;
     throw storeError('read_error', '草稿文件无法读取，请保留文件并检查本地存储。');
   }
   if (saved.schemaVersion !== 1 || saved.draft?.draftId !== draftId
@@ -25,8 +33,13 @@ export async function readDraft(storeRoot, draftId) {
   return saved.draft;
 }
 
-export async function saveDraft(storeRoot, draft) {
+export async function saveDraft(storeRoot, draft, options = {}) {
   if (!validId.test(draft.draftId)) throw storeError('save_error', '草稿身份无效。');
+  const repository = sqliteStorage(storeRoot, 'drafts');
+  if (repository) {
+    repository.put('drafts', draft.draftId, { schemaVersion: 1, sha256: hashContent(draft), draft }, options);
+    return draft;
+  }
   const target = path.join(storeRoot, `${draft.draftId}.json`);
   const temp = `${target}.${process.pid}.${randomUUID()}.tmp`;
   const payload = JSON.stringify({ schemaVersion: 1, sha256: hashContent(draft), draft }, null, 2);
@@ -48,17 +61,18 @@ export async function saveDraft(storeRoot, draft) {
 
 export async function listDrafts(storeRoot) {
   let files;
-  try { files = await readdir(storeRoot); }
+  const repository = sqliteStorage(storeRoot, 'drafts');
+  try { files = repository ? repository.list('drafts').map(id => `${id}.json`) : await readdir(storeRoot); }
   catch (error) {
     if (error.code === 'ENOENT') return { drafts: [], warnings: [] };
     throw storeError('read_error', '无法读取已保存草稿目录。');
   }
-  const drafts = []; const warnings = [];
+  const drafts = []; const warnings = (repository?.warnings('drafts') ?? []).map(item => ({ ...item, draftId: item.id }));
   for (const filename of files.filter(name => name.endsWith('.json'))) {
     const draftId = filename.slice(0, -5);
     try {
       const draft = await readDraft(storeRoot, draftId);
-      drafts.push({ draftId, title: draft.title, createdAt: draft.createdAt, stats: draft.stats });
+      drafts.push({ draftId, title: draft.title, createdAt: draft.createdAt, stats: draft.stats, scoringMode: draft.baseline.requirements.scoringMode ?? 'points' });
     } catch (error) { warnings.push({ draftId, code: error.code, message: error.message }); }
   }
   drafts.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.draftId.localeCompare(b.draftId));
@@ -75,7 +89,7 @@ export async function updateDraft(storeRoot, draftId, transform, { persist = sav
     const result = await transform(current);
     if (!result.ok) return result;
     if ((result.draft.revision ?? 0) !== (current.revision ?? 0)) {
-      await persist(storeRoot, result.draft);
+      await persist(storeRoot, result.draft, { expectedRevision: current.revision ?? 0 });
     }
     return result;
   });

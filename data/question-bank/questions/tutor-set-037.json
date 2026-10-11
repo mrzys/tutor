@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-037",
+  "auditId": "SET-SRC-037",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·武汉模拟）已知集合 $A=\\{-3,-2,0,2\\}$，$B=\\{x\\mid -1<x<4\\}$，则 $A\\cap B$ 的子集个数为（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "2"
+      },
+      {
+        "label": "B",
+        "text": "4"
+      },
+      {
+        "label": "C",
+        "text": "8"
+      },
+      {
+        "label": "D",
+        "text": "16"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "逐个检查 A 中元素是否满足 $-1<x<4$，得到 $A\\cap B=\\{0,2\\}$。其子集为 $\\varnothing,\\{0\\},\\{2\\},\\{0,2\\}$，共4个。等价地，由两个元素各有选或不选两种情况，得 $2^2=4$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        20
+      ],
+      "locator": "知识点6 跟踪训练1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        14
+      ],
+      "locator": "知识点6 跟踪训练1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "计算有限集与区间交集的子集数"
+    ],
+    "requiredKnowledge": [
+      "交集",
+      "有限集合子集",
+      "枚举计数"
+    ],
+    "allowedSolution": "逐个检查 A 中元素是否满足 $-1<x<4$，得到 $A\\cap B=\\{0,2\\}$。其子集为 $\\varnothing,\\{0\\},\\{2\\},\\{0,2\\}$，共4个。等价地，由两个元素各有选或不选两种情况，得 $2^2=4$。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-316bf8071a0c5f58",
+    "teacherVersion": "teacher-c55ed85254824298"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          20
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          14
+        ]
+      }
+    ],
+    "differences": [
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-316bf8071a0c5f58",
+    "teacherVersion": "teacher-c55ed85254824298"
+  },
+  "contentVersion": "content-316bf8071a0c5f58",
+  "contentSha256": "316bf8071a0c5f581a1b562b4f218b3d65ed489666a1dc270d21de069d7a672c",
+  "teacherVersion": "teacher-c55ed85254824298",
+  "teacherSha256": "c55ed8525482429803251761ff3d9a8f13d58ebe4619ba6c753b9353aaafe022"
+}

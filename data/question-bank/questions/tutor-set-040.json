@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-040",
+  "auditId": "SET-SRC-040",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2024秋·仁寿县校级期末）定义集合的商集运算为 $\\dfrac BA=\\{x\\mid x=\\dfrac nm,\\ m\\in A,\\ n\\in B\\}$。已知集合 $A=\\{2,4\\}$，$B=\\{x\\mid x=\\dfrac k2-1,\\ k\\in A\\}$，则集合 $\\dfrac BA\\cup B$ 的真子集个数是 ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "15",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21,
+              22
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由 $k\\in\\{2,4\\}$，得 $B=\\{0,1\\}$。按题设新定义逐项计算，$0/2=0,0/4=0,1/2=1/2,1/4=1/4$，故 $B/A=\\{0,1/4,1/2\\}$。与 B 取并集得 $\\{0,1/4,1/2,1\\}$，共有4个不同元素。每个元素可以选或不选，子集共 $2^4=16$ 个，去掉集合本身后真子集有15个。A 中无0，所有商均有定义。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21,
+              22
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        21,
+        22
+      ],
+      "locator": "知识点6 跟踪训练4"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        15
+      ],
+      "locator": "知识点6 跟踪训练4"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "按商集新定义求并集并计算真子集数"
+    ],
+    "requiredKnowledge": [
+      "给定新定义",
+      "集合表示法",
+      "并集与互异性",
+      "真子集计数",
+      "分数运算"
+    ],
+    "allowedSolution": "由 $k\\in\\{2,4\\}$，得 $B=\\{0,1\\}$。按题设新定义逐项计算，$0/2=0,0/4=0,1/2=1/2,1/4=1/4$，故 $B/A=\\{0,1/4,1/2\\}$。与 B 取并集得 $\\{0,1/4,1/2,1\\}$，共有4个不同元素。每个元素可以选或不选，子集共 $2^4=16$ 个，去掉集合本身后真子集有15个。A 中无0，所有商均有定义。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-1c258f170048878c",
+    "teacherVersion": "teacher-3ef3d1a5ef22f652"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          21,
+          22
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          15
+        ]
+      }
+    ],
+    "differences": [
+      "原PDF商集定义外层花括号缺失；仅补齐集合描述法的排版括号，不改变商式、m/n归属或约束。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-1c258f170048878c",
+    "teacherVersion": "teacher-3ef3d1a5ef22f652"
+  },
+  "contentVersion": "content-1c258f170048878c",
+  "contentSha256": "1c258f170048878c9ec46855095dfef0e0bc1f167564530407682e4de9babdb3",
+  "teacherVersion": "teacher-3ef3d1a5ef22f652",
+  "teacherSha256": "3ef3d1a5ef22f652b044b24d7ba23eea0befad2df45db0c1b2af4fabee899a2a"
+}

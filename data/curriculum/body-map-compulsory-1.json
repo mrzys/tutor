@@ -1,0 +1,4008 @@
+{
+  "schemaVersion": 1,
+  "bookId": "rja-compulsory-1",
+  "catalogVersion": "legacy-kp-7049861cbd21c754",
+  "observedAt": "2026-10-11",
+  "sourceKnowledgeRecordsSha256": "7049861cbd21c754f6289679427fa1771d868296749c47e83624604332f84d57",
+  "textbookSource": {
+    "path": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第一册.pdf",
+    "sha256": "1cfc10b863905134d839262b44053b06e659875e082105272f151d09782eb340"
+  },
+  "legacyMapSha256": "ec9b55764ba18bac8a63d7f16f0930a2d6d526bf631bc59c183635e63f1ecc44",
+  "evidencePolicy": {
+    "statusMeaning": {
+      "text_evidence_matched": "逐项比较旧定义与教材正文后匹配概念语义；不代表数学公式逐图核准或教师审核通过。",
+      "needs_review": "发现旧定义范围/条件缺失、正文仅部分支持或 OCR 图表不能提供完整证据。",
+      "not_found": "全文与邻页检索后未定位可解释该知识的正文。"
+    },
+    "quotePolicy": "quote 是对应 localTextPath 的真实连续子串，按完整自然段、数学段或表格单元文本摘取，不按固定字符数截断公式；不将 OCR 错字改写成伪造原文。matchReason 是本次判断说明。",
+    "pagePolicy": "pdfPage 一基物理页；printedPage=pdfPage-7。原旧页码单独保留；不能把目录候选区间当正文证据。",
+    "scope": "仅必修第一册 103 个叶节点。手工阅读旧定义、旧页及邻页/相关节正文，必要时全文检索；专名未出现不等于概念不存在。",
+    "reviewStatus": "not_teacher_reviewed",
+    "doesNotGrantLearnedOrSelectionPermission": true
+  },
+  "summary": {
+    "total": 103,
+    "statusCounts": {
+      "text_evidence_matched": 97,
+      "needs_review": 6
+    },
+    "legacyPageDiscrepancyCount": 41,
+    "applicationSupplementUidCount": 11,
+    "applicationSupplementEvidenceCount": 18,
+    "section34BodyAndExerciseUidCount": 6,
+    "section34BodyAndExerciseEvidenceCount": 8
+  },
+  "sectionCoverageGaps": [
+    {
+      "id": "compulsory-1-3.4-model-process",
+      "sectionId": "rja-compulsory-1:3.4",
+      "title": "利用函数模型解决实际问题的过程与方法",
+      "status": "catalog_gap",
+      "explanation": "本节通过个税与汽车实例训练从现实关系建立解析式、计算并解释结果。已有函数/表示法/分段函数节点覆盖组成知识，但 103 叶目录没有函数建模过程的独立节点；不据此伪造教材给出的统一步骤标准。",
+      "evidence": [
+        {
+          "pdfPage": 100,
+          "printedPage": 93,
+          "textSha256": "81e75e056921163ea6b54bff36fccb1a8d57f827334a5a6e57ec28fce891032c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-100.txt",
+          "quote": "我们学习过的一次函数、二次函数、幂函数等都与现实世界有紧密联系。下面通过一些实例感受它们的广泛应用，体会利用函数模型解决实际问题的过程与方法。",
+          "matchReason": "本节导语明确“体会利用函数模型解决实际问题的过程与方法”。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body"
+        }
+      ]
+    },
+    {
+      "id": "compulsory-1-3.4-data-model",
+      "sectionId": "rja-compulsory-1:3.4",
+      "title": "从观测数据猜想近似函数模型",
+      "status": "catalog_gap",
+      "explanation": "弹簧数据题要求寻找“基本反映”变化的解析式，销售数据题要求由点猜想函数关系。表示法节点能覆盖数据表示与转换，但不等于覆盖模型选择、近似误差或检验；教材此处未指定最小二乘等拟合算法。",
+      "evidence": [
+        {
+          "pdfPage": 103,
+          "printedPage": 96,
+          "textSha256": "a7778c09379a434e6b838d68a310bfaff50c7325756a049d18407eef1b0b08ae",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-103.txt",
+          "quote": "描点画出弹簧伸长长度随拉力变化的图象，并写出一个能基本反映这一变化现象的函数解析式.",
+          "matchReason": "弹簧观测数据的近似模型任务。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_exercise"
+        },
+        {
+          "pdfPage": 109,
+          "printedPage": 102,
+          "textSha256": "2640703e0d3c214183fcf5347e3d4cd44677142c3e551864886782b1ca451ebc",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-109.txt",
+          "quote": "（1）根据表中提供的数据描出实数对 $ (x, y) $的对应点，根据画出的点猜想y与x之间的函数关系，并写出一个函数解析式；",
+          "matchReason": "章末销售数据模型猜想任务。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review"
+        }
+      ]
+    },
+    {
+      "id": "compulsory-1-3.4-elementary-models",
+      "sectionId": "rja-compulsory-1:3.4",
+      "title": "一次/二次函数的现实模型（初中前置知识）",
+      "status": "prerequisite_catalog_gap",
+      "explanation": "正文和练习真实使用一次、二次函数模型；旧库仅有“一元二次函数、方程和不等式”分组，没有一次函数/二次函数独立叶 UID。一般 y=ax² 模型不可直接等同于纯幂函数 y=x^α 的完整定义。需要后续补基础知识映射，不能制造已有 UID。",
+      "evidence": [
+        {
+          "pdfPage": 100,
+          "printedPage": 93,
+          "textSha256": "81e75e056921163ea6b54bff36fccb1a8d57f827334a5a6e57ec28fce891032c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-100.txt",
+          "quote": "我们学习过的一次函数、二次函数、幂函数等都与现实世界有紧密联系。下面通过一些实例感受它们的广泛应用，体会利用函数模型解决实际问题的过程与方法。",
+          "matchReason": "导语列明已有初等函数模型。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body"
+        },
+        {
+          "pdfPage": 102,
+          "printedPage": 95,
+          "textSha256": "2af84c0963caf7cb620896afa88523d5bc6226f9dbcb4c9ac3a9b08558909d57",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-102.txt",
+          "quote": "1. 若用模型  $ y=ax^{2} $ 描述汽车紧急刹车后滑行的距离 y（单位：m）与刹车时的速率 x（单位：km/h）的关系，而某种型号的汽车在速率为 60 km/h 时，紧急刹车后滑行的距离为 20 m。在限速为 100 km/h 的高速公路上，一辆这种型号的车紧急刹车后滑行的距离为 50 m，那么这辆车是否超速行驶？",
+          "matchReason": "刹车距离练习明确使用 y=ax² 模型。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_exercise"
+        }
+      ]
+    },
+    {
+      "id": "compulsory-1-3.4-composition",
+      "sectionId": "rja-compulsory-1:3.4",
+      "title": "通过中间变量组合两个函数关系",
+      "status": "cross_book_candidate",
+      "candidateUid": "M-K-02-528",
+      "explanation": "个税例题将 t=g(x) 代入 y=f(t) 得到收入到税额的关系。全库有复合函数 UID M-K-02-528，但标属选择性必修第二册，不在本册 103 叶中。此处是早期操作实例，不据此确认已正式学习复合函数或求导。保留为后续跨册关系核对候选。",
+      "evidence": [
+        {
+          "pdfPage": 100,
+          "printedPage": 93,
+          "textSha256": "81e75e056921163ea6b54bff36fccb1a8d57f827334a5a6e57ec28fce891032c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-100.txt",
+          "quote": "分析：根据3.1.2例8中公式②，可得应纳税所得额t关于综合所得收入额x的解析式 $ t=g(x) $，再结合 $ y=f(t) $的解析式③，即可得出y关于x的函数解析式.",
+          "matchReason": "原文明示通过中间变量 t 联系两个函数解析式。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body"
+        }
+      ]
+    },
+    {
+      "id": "compulsory-1-chapter-3-writing",
+      "chapterId": "rja-compulsory-1:3",
+      "title": "函数历史文献阅读、资料整理与综述写作活动",
+      "status": "enrichment_not_in_math_leaf_catalog",
+      "explanation": "印刷 97—98 页为章末文献阅读与数学写作活动，目录区间被包含在 3.4 后部，但不是函数知识的新定义。数学叶目录无文献检索、资料归纳、综述结构节点，保留活动覆盖缺口而不强挂到函数 UID 冒充完整映射。",
+      "evidence": [
+        {
+          "pdfPage": 104,
+          "printedPage": 97,
+          "textSha256": "97d1e64e1f2c47592e9b9ac74bd8ded65e4e141c3876f0979f7d7e0df5a416bb",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-104.txt",
+          "quote": "2. 体验文献综述的写作过程与方法.",
+          "matchReason": "明确活动目标为体验综述写作。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_enrichment"
+        },
+        {
+          "pdfPage": 105,
+          "printedPage": 98,
+          "textSha256": "9c6c79e31056a65a214efbecf4078ad27b606a7aff677c431592748a680749bb",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-105.txt",
+          "quote": "3. 正文：这是文献综述的核心部分。应在归类整理的基础上，对自己搜集到的有用资料进行系统介绍。",
+          "matchReason": "明确要求按资料归类进行系统介绍。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_enrichment"
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "uid": "M-K-01-111",
+      "name": "元素",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "2be6fa99eb7f48f10d566a47d2944cebe3a9d4f6bce3c69c72bdb578b511fe6b",
+      "legacyPrintedPages": [
+        2
+      ],
+      "evidence": [
+        {
+          "pdfPage": 9,
+          "printedPage": 2,
+          "textSha256": "1d8b25c25ff13b968d7346e7cce660d01a4503947b41bbfcbe0728dc9f7147f1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-009.txt",
+          "quote": "一般地，我们把研究对象统称为元素（element），把一些元素组成的总体叫做集合（set）（简称为集）.",
+          "matchReason": "明确把研究对象称为元素，并在同页说明小写字母记法。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          2
+        ],
+        "bodyEvidencePrintedPages": [
+          2
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-112",
+      "name": "集合",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "ad840251383041dd6153fe465f0b2aa9a25c29a524c49578720ea06615c5da3f",
+      "legacyPrintedPages": [
+        2
+      ],
+      "evidence": [
+        {
+          "pdfPage": 9,
+          "printedPage": 2,
+          "textSha256": "1d8b25c25ff13b968d7346e7cce660d01a4503947b41bbfcbe0728dc9f7147f1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-009.txt",
+          "quote": "给定的集合，它的元素必须是确定的。也就是说，给定一个集合，那么一个元素在或不在这个集合中就确定了。例如，“1～10之间的所有偶数”构成一个集合，2，4，6，8，10是这个集合的元素，1，3，5，7，9，…不是它的元素；“较小的数”不能构成集合，因为组成它的元素是不确定的。",
+          "matchReason": "同页先定义元素总体为集合，随后明确确定性和互异性，与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          2
+        ],
+        "bodyEvidencePrintedPages": [
+          2
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-113",
+      "name": "属于",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "b78d923dc5cb7b2c105090547a85b305f4d0e8abfb691944eba87595269bb54a",
+      "legacyPrintedPages": [
+        2
+      ],
+      "evidence": [
+        {
+          "pdfPage": 9,
+          "printedPage": 2,
+          "textSha256": "1d8b25c25ff13b968d7346e7cce660d01a4503947b41bbfcbe0728dc9f7147f1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-009.txt",
+          "quote": "如果 a 是集合 A 的元素，就说 a 属于（belong to）集合 A，记作  $ a \\in A $；如果 a 不是",
+          "matchReason": "跨页给出属于与不属于的含义和符号，不能只取前半句。"
+        },
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "0540ce10cf220d0f49c1571c91d5afea2e66a507a9c4a4feeaf244c94340a721",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-010.txt",
+          "quote": "集合A中的元素，就说a不属于集合A，记作 $ a\\notin A $。",
+          "matchReason": "跨页给出属于与不属于的含义和符号，不能只取前半句。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          2
+        ],
+        "bodyEvidencePrintedPages": [
+          2,
+          3
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-114",
+      "name": "列举法",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "89bb71cab583702a0bc9d4ed2337b6d942d934799beab22634df6493f1cd0622",
+      "legacyPrintedPages": [
+        3
+      ],
+      "evidence": [
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "0540ce10cf220d0f49c1571c91d5afea2e66a507a9c4a4feeaf244c94340a721",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-010.txt",
+          "quote": "像这样把集合的所有元素一一列举出来，并用花括号“{ }”括起来表示集合的方法叫做列举法.",
+          "matchReason": "定义包含全部元素、一一列出、花括号三个关键条件。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          3
+        ],
+        "bodyEvidencePrintedPages": [
+          3
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-115",
+      "name": "描述法",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "6ba4121c7e783f9dd3f3ba90a379d34c5d9ec2eb6e78ff3d037afc6fe155ac88",
+      "legacyPrintedPages": [
+        4
+      ],
+      "evidence": [
+        {
+          "pdfPage": 11,
+          "printedPage": 4,
+          "textSha256": "e9e1019941e6f3e54ddc56cd9202d9e5ed71165b284ce3db06f2f6d225c81e22",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-011.txt",
+          "quote": "一般地，设 A 是一个集合，我们把集合 A 中所有具有共同特征 P(x) 的元素 x 所组成的集合表示为",
+          "matchReason": "以共同特征 P(x) 限定集合 A 中的元素，紧邻公式给出描述法。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          4
+        ],
+        "bodyEvidencePrintedPages": [
+          4
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-116",
+      "name": "常用数集及其记法",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "fec42308fc244a55fa9340a191f706036ae30a3d35396f18dccc93125d503b51",
+      "legacyPrintedPages": [
+        2
+      ],
+      "evidence": [
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "0540ce10cf220d0f49c1571c91d5afea2e66a507a9c4a4feeaf244c94340a721",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-010.txt",
+          "quote": "全体非负整数组成的集合称为非负整数集（或自然数集），记作  $ N $；",
+          "matchReason": "表格依次列明自然数、正整数、整数、有理数、实数的范围和记号。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          2
+        ],
+        "bodyEvidencePrintedPages": [
+          3
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-117",
+      "name": "有限集与无限集",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "8db6f57123f792fc0249ebd2b9ed27a084b652ca58d8c093c5b839b7c92ec80c",
+      "legacyPrintedPages": [
+        2
+      ],
+      "evidence": [
+        {
+          "pdfPage": 22,
+          "printedPage": 15,
+          "textSha256": "c951a778eb9de78fc8071e7e2ae16d3e8d0ada430c4fe88441d655ff4aca8e10",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-022.txt",
+          "quote": "在研究集合时，经常遇到有关集合中元素的个数问题。我们把含有限个元素的集合 A 叫做有限集，用  $ \\mathrm{card}(A) $ 来表示有限集合 A 中元素的个数。例如， $ A=\\{a, b, c\\} $，则  $ \\mathrm{card}(A)=3 $。",
+          "matchReason": "15 页明确有限集定义；16 页对照元素个数无限的集合并给出正整数与偶数实例，覆盖两类集合的含义。"
+        },
+        {
+          "pdfPage": 23,
+          "printedPage": 16,
+          "textSha256": "fa71c8a03e849d2e55ad8ee33222feac69445a08da9d050209d556b6cca19cae",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-023.txt",
+          "quote": "有限集合中元素的个数，我们可以一一数出来。而对于元素个数无限的集合，如",
+          "matchReason": "15 页明确有限集定义；16 页对照元素个数无限的集合并给出正整数与偶数实例，覆盖两类集合的含义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          2
+        ],
+        "bodyEvidencePrintedPages": [
+          15,
+          16
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "属于阅读与思考材料；16 页没有使用“无限集”专名，但明确解释元素个数无限的集合，不把专名缺失误判为概念不存在。"
+      ]
+    },
+    {
+      "uid": "M-K-01-1210",
+      "name": "并集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "c74a5d78d5ab74618c207c8c2960b225901f4028f9b13e70b6ab46682908131c",
+      "legacyPrintedPages": [
+        10
+      ],
+      "evidence": [
+        {
+          "pdfPage": 17,
+          "printedPage": 10,
+          "textSha256": "267246e61b0163983a6696fd04464ca19d503d3ef634fc9d5eda859d0d21c45d",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-017.txt",
+          "quote": "一般地，由所有属于集合 A 或属于集合 B 的元素组成的集合，称为集合 A 与 B 的并集（union set），记作  $ A \\cup B $（读作“A 并 B”），即",
+          "matchReason": "明确“或”条件与并集，旁边给出集合表达式。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          10
+        ],
+        "bodyEvidencePrintedPages": [
+          10
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1211",
+      "name": "交集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "9dbd1ef80216d7c0e5a634a456ea93634bca6a936108cb17943e78fc683dabc7",
+      "legacyPrintedPages": [
+        11
+      ],
+      "evidence": [
+        {
+          "pdfPage": 18,
+          "printedPage": 11,
+          "textSha256": "3bc55281970fa9b404ee5a2e834f4e1c4a7c32e7a463bef162331548a6f3f988",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-018.txt",
+          "quote": "一般地，由所有属于集合 A 且属于集合 B 的元素组成的集合，称为集合 A 与 B 的交集（intersection set），记作  $ A \\cap B $（读作“A 交 B”），即",
+          "matchReason": "明确“且”条件与交集，旁边给出集合表达式。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          11
+        ],
+        "bodyEvidencePrintedPages": [
+          11
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1212",
+      "name": "全集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "c237481c9307797dd51ed4874b8019d7cbc1b106aa0c1e2104c5f8601bfbcb3c",
+      "legacyPrintedPages": [
+        12
+      ],
+      "evidence": [
+        {
+          "pdfPage": 19,
+          "printedPage": 12,
+          "textSha256": "0c5e6042678e9cf45a2531a61ffcc55d81b950f905ed0a14ed7a906b7466cb87",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-019.txt",
+          "quote": "一般地，如果一个集合含有所研究问题中涉及的所有元素，那么就称这个集合为全集（universal set），通常记作U.",
+          "matchReason": "完整定义全集及记号 U。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          12
+        ],
+        "bodyEvidencePrintedPages": [
+          12
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1213",
+      "name": "补集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "70d1fe04a9ebff97d2b249e72e02a0a3dbfc4247ae48c422cfa0ea14d0cf4cd3",
+      "legacyPrintedPages": [
+        12
+      ],
+      "evidence": [
+        {
+          "pdfPage": 20,
+          "printedPage": 13,
+          "textSha256": "751ba57a4528351ced4b45932261ad6419256d77e58aec3f670c11e629f809c3",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-020.txt",
+          "quote": "对于一个集合 A，由全集 U 中不属于集合 A 的所有元素组成的集合称为集合 A 相对于全集 U 的补集（complementary set），简称为集合 A 的补集，记作  $ \\complement_U A $，即",
+          "matchReason": "明确相对于 U、属于 U 且不属于 A 的补集定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          12
+        ],
+        "bodyEvidencePrintedPages": [
+          13
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1214",
+      "name": "容斥原理",
+      "bookId": "rja-compulsory-1",
+      "relation": "related",
+      "status": "needs_review",
+      "definitionSha256": "8e3ec1134bdc6b716eed5940dc7bfbde7eab692126353c812c3854e754ac3ab8",
+      "legacyPrintedPages": [
+        15
+      ],
+      "evidence": [
+        {
+          "pdfPage": 22,
+          "printedPage": 15,
+          "textSha256": "c951a778eb9de78fc8071e7e2ae16d3e8d0ada430c4fe88441d655ff4aca8e10",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-022.txt",
+          "quote": "一般地，对任意两个有限集合A，B，有\n\n $$ \\mathrm{card}(A\\cup B)=\\mathrm{card}(A)+\\mathrm{card}(B)-\\mathrm{card}(A\\cap B). $$",
+          "matchReason": "两集合基数等式有正文公式；三集合关系只有探究问句，旧定义中的完整三集合公式未被正文直接给出。"
+        },
+        {
+          "pdfPage": 23,
+          "printedPage": 16,
+          "textSha256": "fa71c8a03e849d2e55ad8ee33222feac69445a08da9d050209d556b6cca19cae",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-023.txt",
+          "quote": "这种图解法对于解比较复杂的问题（例如涉及三个\n\n以上集合的并、交的问题）更能显示出它的优越性。对于有限集合  $ A $， $ B $， $ C $，你能发现  $ \\mathrm{card}(A \\cup B \\cup C) $， $ \\mathrm{card}(A) $， $ \\mathrm{card}(B) $， $ \\mathrm{card}(C) $， $ \\mathrm{card}(A \\cap B) $， $ \\mathrm{card}(B \\cap C) $， $ \\mathrm{card}(A \\cap C) $， $ \\mathrm{card}(A \\cap B \\cap C) $ 之间的关系吗？通过一个具体的例子，算一算。",
+          "matchReason": "两集合基数等式有正文公式；三集合关系只有探究问句，旧定义中的完整三集合公式未被正文直接给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          15
+        ],
+        "bodyEvidencePrintedPages": [
+          15,
+          16
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧定义同时包含二集合与三集合容斥公式；不能把三集合探究题当作教材已经给出的完整公式。需决定保留为推导拓展还是拆分映射。"
+      ]
+    },
+    {
+      "uid": "M-K-01-126",
+      "name": "子集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "b2a571f548d5645cdcd5445e257c5a7e3e0c294d606b9c1fbf7bf7e30acafece",
+      "legacyPrintedPages": [
+        7
+      ],
+      "evidence": [
+        {
+          "pdfPage": 14,
+          "printedPage": 7,
+          "textSha256": "e702f90d554d761ec26b5bbb596d9cd4ea6ad5e657e2b4124368bca5bf9627eb",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-014.txt",
+          "quote": "一般地，对于两个集合 A，B，如果集合 A 中任意一个元素都是集合 B 中的元素，就称集合 A 为集合 B 的子集（subset），记作",
+          "matchReason": "子集定义的任意元素量词及包含方向一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          7
+        ],
+        "bodyEvidencePrintedPages": [
+          7
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-127",
+      "name": "真子集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "d625a8e98e96ba689fe92c8db9605588361417efccf4b49ff4cb01d696dce083",
+      "legacyPrintedPages": [
+        7
+      ],
+      "evidence": [
+        {
+          "pdfPage": 15,
+          "printedPage": 8,
+          "textSha256": "5dec4ec5f20b4e8b71ea6af3b751f306a964854b706fc100545a37a429770910",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-015.txt",
+          "quote": "如果集合  $ A \\subseteq B $，但存在元素  $ x \\in B $，且  $ x \\notin A $，就称集合  $ A $ 是集合  $ B $ 的真子集（proper subset），记作",
+          "matchReason": "同时要求包含和存在 B 中不在 A 中的元素，与真子集定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          7
+        ],
+        "bodyEvidencePrintedPages": [
+          8
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-128",
+      "name": "集合相等",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "ee0f259676ffd9b4a6ec249f6a1c4f13676a9afb8a1d6b3c60235d3fd60d9743",
+      "legacyPrintedPages": [
+        7
+      ],
+      "evidence": [
+        {
+          "pdfPage": 14,
+          "printedPage": 7,
+          "textSha256": "e702f90d554d761ec26b5bbb596d9cd4ea6ad5e657e2b4124368bca5bf9627eb",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-014.txt",
+          "quote": "一般地，如果集合 A 的任何一个元素都是集合 B 的元素，同时集合 B 的任何一个元素都是集合 A 的元素，那么集合 A 与集合 B 相等，记作 A = B.",
+          "matchReason": "双向元素包含与双向子集等价判定在相邻两页连续给出。"
+        },
+        {
+          "pdfPage": 15,
+          "printedPage": 8,
+          "textSha256": "5dec4ec5f20b4e8b71ea6af3b751f306a964854b706fc100545a37a429770910",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-015.txt",
+          "quote": "也就是说，若  $ A \\subseteq B $，且  $ B \\subseteq A $，则 A = B。",
+          "matchReason": "双向元素包含与双向子集等价判定在相邻两页连续给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          7
+        ],
+        "bodyEvidencePrintedPages": [
+          7,
+          8
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-129",
+      "name": "空集",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "5d2cbc256a7bab1efbe3f4731721d8f282e12f7421d6b1e22ebe0dd8d16eb908",
+      "legacyPrintedPages": [
+        8
+      ],
+      "evidence": [
+        {
+          "pdfPage": 15,
+          "printedPage": 8,
+          "textSha256": "5dec4ec5f20b4e8b71ea6af3b751f306a964854b706fc100545a37a429770910",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-015.txt",
+          "quote": "一般地，我们把不含任何元素的集合叫做空集（empty set），记为∅，并规定：空集是任何集合的子集.",
+          "matchReason": "空集无元素、记号及任意集合子集约定均在原句中。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          8
+        ],
+        "bodyEvidencePrintedPages": [
+          8
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1314",
+      "name": "命题",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "1ac997b64773e1cfead0e1487172df20c00adce640ad23d6e6215e14e5a37bd7",
+      "legacyPrintedPages": [
+        17
+      ],
+      "evidence": [
+        {
+          "pdfPage": 24,
+          "printedPage": 17,
+          "textSha256": "78d6b67be69d5fba72ed21bc75c8cbe6da8a7b8bf65082902d466890393c41fd",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-024.txt",
+          "quote": "在初中，我们已经对命题有了初步的认识。一般地，我们把用语言、符号或式子表达的，可以判断真假的陈述句叫做命题。判断为真的语句是真命题，判断为假的语句是假命题。中学数学中的许多命题可以写成“若p，则q”“如果p，那么q”等形式。其中p称为命题的条件，q称为命题的结论。本节主要讨论这种形式的命题。下面我们将进一步考察“若p，则q”形式的命题中p和q的关系，学习数学中的三个常用的逻辑用语——充分条件、必要条件和充要条件。",
+          "matchReason": "可以判断真假这一命题条件明确，并区分真命题假命题。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          17
+        ],
+        "bodyEvidencePrintedPages": [
+          17
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1315",
+      "name": "充分条件",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "b61f562ae0269dd18e989b10444deb5e8bd0385e289617e6935c371e11d7336d",
+      "legacyPrintedPages": [
+        18
+      ],
+      "evidence": [
+        {
+          "pdfPage": 24,
+          "printedPage": 17,
+          "textSha256": "78d6b67be69d5fba72ed21bc75c8cbe6da8a7b8bf65082902d466890393c41fd",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-024.txt",
+          "quote": "一般地，“若 p，则 q”为真命题，是指由 p 通过推理可以得出 q. 这时，我们就说，由 p 可以推出 q，记作",
+          "matchReason": "正文以可推出关系说明充分条件，并明确 p 与 q 的方向。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          18
+        ],
+        "bodyEvidencePrintedPages": [
+          17
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1316",
+      "name": "必要条件",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "bd7e4ecd3e71f53b56139602eede00ecf2a4b4e3e9124b25304a68839eacf226",
+      "legacyPrintedPages": [
+        18
+      ],
+      "evidence": [
+        {
+          "pdfPage": 24,
+          "printedPage": 17,
+          "textSha256": "78d6b67be69d5fba72ed21bc75c8cbe6da8a7b8bf65082902d466890393c41fd",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-024.txt",
+          "quote": "并且说，p 是 q 的充分条件（sufficient condition），q 是 p 的必要条件 $ ^{①} $（necessary condition）.",
+          "matchReason": "同一句明确 q 是 p 的必要条件，未把方向倒置。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          18
+        ],
+        "bodyEvidencePrintedPages": [
+          17
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1317",
+      "name": "充要条件",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "0e55c78f069d356e27989123d56ec227002ec84459a7f4543d78a15b5375c91d",
+      "legacyPrintedPages": [
+        20
+      ],
+      "evidence": [
+        {
+          "pdfPage": 27,
+          "printedPage": 20,
+          "textSha256": "d0aceeadcdaf0493eaf5f8ed197d1d88aa8a49a5a161b5e152cd5ed5fcc9c838",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-027.txt",
+          "quote": "如果 “若 p，则 q” 和它的逆命题 “若 q，则 p” 均是真命题，即既有  $ p \\Rightarrow q $，又有  $ q \\Rightarrow p $，就记作",
+          "matchReason": "20 页双向推出前提接续 21 页充要条件定义，旧定义跨页对应。"
+        },
+        {
+          "pdfPage": 28,
+          "printedPage": 21,
+          "textSha256": "c43eff11665e164a4c7209c66526748d254d8917cd0b756f5164d687c4d36ef6",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-028.txt",
+          "quote": "此时，p 既是 q 的充分条件，也是 q 的必要条件，我们说 p 是 q 的充分必要条件，简称为充要条件（necessary and sufficient condition）。显然，如果 p 是 q 的充要条件，那么 q 也是 p 的充要条件。",
+          "matchReason": "20 页双向推出前提接续 21 页充要条件定义，旧定义跨页对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          20
+        ],
+        "bodyEvidencePrintedPages": [
+          20,
+          21
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1318",
+      "name": "全称量词",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "dde4f0010fee86bf6b4df0dbbde9909baeee284b291cdb5ed389a45dffd0f96b",
+      "legacyPrintedPages": [
+        26
+      ],
+      "evidence": [
+        {
+          "pdfPage": 33,
+          "printedPage": 26,
+          "textSha256": "cf3ea4853715bac8d0eae585e8d4b91501f01924648eadac7413b54add74bfb3",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-033.txt",
+          "quote": "短语“所有的”“任意一个”在逻辑中通常叫做全称量词（universal quantifier），并用符号“∀”表示。含有全称量词的命题，叫做全称量词命题。例如，命题“对任意的 $ n \\in \\mathbb{Z} $， $ 2n+1 $是奇数”“所有的正方形都是矩形”都是全称量词命题。",
+          "matchReason": "全称短语与 ∀ 符号直接定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          26
+        ],
+        "bodyEvidencePrintedPages": [
+          26
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1319",
+      "name": "存在量词",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "91bbe0af4cbcd6e5576de4303c4c3d21f0aa17a496d8b738f9d6868dfda1863c",
+      "legacyPrintedPages": [
+        27
+      ],
+      "evidence": [
+        {
+          "pdfPage": 34,
+          "printedPage": 27,
+          "textSha256": "d1a06cc887ea729eb3849f20fa3db7e11dc4c57b96109f184837210e518ab859",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-034.txt",
+          "quote": "短语 “存在一个” “至少有一个” 在逻辑中通常叫做存在量词(existential quantifier)，并用符号 “∃” 表示。含有存在量词的命题，叫做存在量词命题。",
+          "matchReason": "存在量词短语和 ∃ 符号直接定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          27
+        ],
+        "bodyEvidencePrintedPages": [
+          27
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1320",
+      "name": "全称量词命题",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "485ffbc108175259dd354c8e99c6edca0555e6601585e1f9b63c9c01ed286c38",
+      "legacyPrintedPages": [
+        26
+      ],
+      "evidence": [
+        {
+          "pdfPage": 33,
+          "printedPage": 26,
+          "textSha256": "cf3ea4853715bac8d0eae585e8d4b91501f01924648eadac7413b54add74bfb3",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-033.txt",
+          "quote": "短语“所有的”“任意一个”在逻辑中通常叫做全称量词（universal quantifier），并用符号“∀”表示。含有全称量词的命题，叫做全称量词命题。例如，命题“对任意的 $ n \\in \\mathbb{Z} $， $ 2n+1 $是奇数”“所有的正方形都是矩形”都是全称量词命题。",
+          "matchReason": "命题类别及对 M 中任意 x 的符号表示在同页给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          26
+        ],
+        "bodyEvidencePrintedPages": [
+          26
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1321",
+      "name": "存在量词命题",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "6938e714612f209bff7a04f7967b65a6bc3857b5530cd4e787f996db46b0f8c1",
+      "legacyPrintedPages": [
+        27
+      ],
+      "evidence": [
+        {
+          "pdfPage": 34,
+          "printedPage": 27,
+          "textSha256": "d1a06cc887ea729eb3849f20fa3db7e11dc4c57b96109f184837210e518ab859",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-034.txt",
+          "quote": "短语 “存在一个” “至少有一个” 在逻辑中通常叫做存在量词(existential quantifier)，并用符号 “∃” 表示。含有存在量词的命题，叫做存在量词命题。",
+          "matchReason": "命题类别及存在 M 中元素 x 的符号表示在同页给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          27
+        ],
+        "bodyEvidencePrintedPages": [
+          27
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1322",
+      "name": "全称量词命题的否定",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "59bc7feea25b3eb70c1b8df62065b5e23193df997c661bdca059a4db1804e299",
+      "legacyPrintedPages": [
+        28
+      ],
+      "evidence": [
+        {
+          "pdfPage": 36,
+          "printedPage": 29,
+          "textSha256": "d2ab8b0ec499f90459e3e92242d1084690473733045d4d94ea23d1180e1d9c77",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-036.txt",
+          "quote": "对于含有一个量词的全称量词命题的否定，有下面的结论：",
+          "matchReason": "正文给出 ∀ 到 ∃ 并否定谓词的转换及结论。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          28
+        ],
+        "bodyEvidencePrintedPages": [
+          29
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-1323",
+      "name": "存在量词命题的否定",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "7fe8a091e2eb92f376ad686154339ed0599d023d30084dfd3c6f0319840f0e2e",
+      "legacyPrintedPages": [
+        29
+      ],
+      "evidence": [
+        {
+          "pdfPage": 37,
+          "printedPage": 30,
+          "textSha256": "1a82607cafbd2a24e522d6ad0ec14e167a2e49fcbcc3b9e5aebbe132881dbd42",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-037.txt",
+          "quote": "对含有一个量词的存在量词命题的否定，有下面的结论：",
+          "matchReason": "正文给出 ∃ 到 ∀ 并否定谓词的转换及结论。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          29
+        ],
+        "bodyEvidencePrintedPages": [
+          30
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-211",
+      "name": "等式的性质",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "86502ca39a24ff826bb72210d6f6eec6edd48b4be20d685220e91dbd9c6f1841",
+      "legacyPrintedPages": [
+        41
+      ],
+      "evidence": [
+        {
+          "pdfPage": 47,
+          "printedPage": 40,
+          "textSha256": "71de581dbf332640ee53bc032061deb148700ceeb235084232dea79bedf3f690",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-047.txt",
+          "quote": "等式有下面的基本性质：",
+          "matchReason": "性质 1 至 5 的条件和结论与旧定义逐项对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          41
+        ],
+        "bodyEvidencePrintedPages": [
+          40
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-212",
+      "name": "实数的大小比较",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "8f1e98d5d26b0dfe015027db8a0cd4505549037168d265f713903501d1de3e09",
+      "legacyPrintedPages": [
+        39
+      ],
+      "evidence": [
+        {
+          "pdfPage": 45,
+          "printedPage": 38,
+          "textSha256": "2a87bdff8849085f2681d4a4e8cfce603eb86124a05c3e0cd2261a19c59e426e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-045.txt",
+          "quote": "关于实数 a，b 大小的比较，有以下基本事实：",
+          "matchReason": "差与零的符号对应实数大小关系，并明确作差比较方法。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          39
+        ],
+        "bodyEvidencePrintedPages": [
+          38
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-213",
+      "name": "不等式的性质",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "f5c4177462c38cee6bc70741a950e4df6cd430599119208cc2451827f38055dc",
+      "legacyPrintedPages": [
+        40
+      ],
+      "evidence": [
+        {
+          "pdfPage": 48,
+          "printedPage": 41,
+          "textSha256": "d5769629ca59d100714a20c45ad51c7f786e3b521ca945e24de58b756b90b8de",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-048.txt",
+          "quote": "类比等式的性质1，2，可以猜想不等式有如下性质：",
+          "matchReason": "41 页性质 1 至 5，42 页性质 6 至 7；正数、负数及正整数幂条件均有正文。"
+        },
+        {
+          "pdfPage": 49,
+          "printedPage": 42,
+          "textSha256": "aa6ac3e121967dfca38854a118e2a493090de3641cdab46621bbd468f56b0609",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-049.txt",
+          "quote": "性质6 如果  $ a > b > 0 $, c > d > 0, 那么 ac > bd.",
+          "matchReason": "41 页性质 1 至 5，42 页性质 6 至 7；正数、负数及正整数幂条件均有正文。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          40
+        ],
+        "bodyEvidencePrintedPages": [
+          41,
+          42
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-224",
+      "name": "基本不等式",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "383d631e35002953e02d9d2d55d53698b463d604fe3644b25cb48cea12361d30",
+      "legacyPrintedPages": [
+        44
+      ],
+      "evidence": [
+        {
+          "pdfPage": 51,
+          "printedPage": 44,
+          "textSha256": "8372400dc78812ff692fa1db14baa8d74d5ebf5ffa8f9ec35e09250d21bf2de8",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-051.txt",
+          "quote": "特别地，如果 a>0, b>0，我们用 $ \\sqrt{a} $， $ \\sqrt{b} $分别代替上式中的 a, b，可得",
+          "matchReason": "用正数平方根代换得到基本不等式，同页明确等号条件及算术/几何平均数。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          44
+        ],
+        "bodyEvidencePrintedPages": [
+          44
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-01-235",
+      "name": "一元二次不等式",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "733e2c23d0368050faf5ca34ec4d7a24a1c90702f03ded26952a009ecfae96ac",
+      "legacyPrintedPages": [
+        50
+      ],
+      "evidence": [
+        {
+          "pdfPage": 57,
+          "printedPage": 50,
+          "textSha256": "456e238bb6e66a16a067ef6b8cc3be0aeeb8638b481be3a90b86b629cee2b79e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-057.txt",
+          "quote": "一般地，我们把只含有一个未知数，并且未知数的最高次数是2的不等式，称为一元二次不等式（quadratic inequality with one unknown）. 一元二次不等式的一般形式是",
+          "matchReason": "一个未知数、最高次数 2、首项系数非零的定义与一般式完整对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          50
+        ],
+        "bodyEvidencePrintedPages": [
+          50
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-111",
+      "name": "函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "448c66cc3897ea44130f32abf7557a93033149a25028bb225ef9c176be70501f",
+      "legacyPrintedPages": [
+        62
+      ],
+      "evidence": [
+        {
+          "pdfPage": 69,
+          "printedPage": 62,
+          "textSha256": "d767b425a948f53bf4d8a0a91768022b368520444ceb223093f0880a3005546a",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-069.txt",
+          "quote": "一般地，设 A，B 是非空的实数集，如果对于集合 A 中的任意一个数 x，按照某种确定的对应关系 f，在集合 B 中都有唯一确定的数 y 和它对应，那么就称 f：A→B 为从集合 A 到集合 B 的一个函数（function），记作",
+          "matchReason": "非空实数集、任意输入、唯一输出以及确定对应关系与旧函数定义一致。"
+        },
+        {
+          "pdfPage": 102,
+          "printedPage": 95,
+          "textSha256": "2af84c0963caf7cb620896afa88523d5bc6226f9dbcb4c9ac3a9b08558909d57",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-102.txt",
+          "quote": "分析：当时间 t 在 [0, 5] 内变化时，对于任意的时刻 t 都有唯一确定的行驶路程与之相对应。根据图 3.4-1，在时间段 [0, 1)，[1, 2)，[2, 3)，[3, 4)，[4, 5] 内行驶的平均速率分别为 50 km/h，80 km/h，90 km/h，75 km/h，65 km/h，因此在每个时间段内，行驶路程与时间的关系也不一样，需要分段表述。",
+          "matchReason": "汽车运动实例明确每一时刻唯一对应行驶路程，真实使用函数的唯一对应关系构建模型。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          62
+        ],
+        "bodyEvidencePrintedPages": [
+          62
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-112",
+      "name": "定义域",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "c8ff0215cada075f99fab3825ec5ca4f7eda8dc9bdbb97e81075264b8d5ce178",
+      "legacyPrintedPages": [
+        62
+      ],
+      "evidence": [
+        {
+          "pdfPage": 69,
+          "printedPage": 62,
+          "textSha256": "d767b425a948f53bf4d8a0a91768022b368520444ceb223093f0880a3005546a",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-069.txt",
+          "quote": "其中，x 叫做自变量，x 的取值范围 A 叫做函数的定义域 (domain)；与 x 的值相对应的 y 值叫做函数值，函数值的集合  $ \\{f(x) \\mid x \\in A\\} $ 叫做函数的值域 (range).",
+          "matchReason": "定义域基本含义和只给解析式时取有意义实数集合的规则在两页分别说明。"
+        },
+        {
+          "pdfPage": 72,
+          "printedPage": 65,
+          "textSha256": "1b0537fc3801a293df512bd4d3e3060825a7f9d696c9e49321507f0eeeec7c7a",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-072.txt",
+          "quote": "分析：函数的定义域通常由问题的实际背景确定．如果只给出解析式  $ y=f(x) $，而没有指明它的定义域，那么函数的定义域就是指能使这个式子有意义的实数的集合.",
+          "matchReason": "定义域基本含义和只给解析式时取有意义实数集合的规则在两页分别说明。"
+        },
+        {
+          "pdfPage": 102,
+          "printedPage": 95,
+          "textSha256": "2af84c0963caf7cb620896afa88523d5bc6226f9dbcb4c9ac3a9b08558909d57",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-102.txt",
+          "quote": "分析：当时间 t 在 [0, 5] 内变化时，对于任意的时刻 t 都有唯一确定的行驶路程与之相对应。根据图 3.4-1，在时间段 [0, 1)，[1, 2)，[2, 3)，[3, 4)，[4, 5] 内行驶的平均速率分别为 50 km/h，80 km/h，90 km/h，75 km/h，65 km/h，因此在每个时间段内，行驶路程与时间的关系也不一样，需要分段表述。",
+          "matchReason": "汽车运动的时间范围限制为 [0,5]，分段时继续限制每段时间范围，是实际模型定义域的应用。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 107,
+          "printedPage": 100,
+          "textSha256": "3d5185a40c4ebbf96183404ea79c8fc2bd822847f99895197c54c9ce931ce1f9",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-107.txt",
+          "quote": "1. 求下列函数的定义域：",
+          "matchReason": "章末复习题直接要求根据解析式确定定义域；是练习要求，不代表本批已给出求解结果。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          62
+        ],
+        "bodyEvidencePrintedPages": [
+          62,
+          65
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-113",
+      "name": "值域",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "fb7a61e803b10fa5b64c59f0ba102b5bcd1f26475f521748f37c2f25b1d01543",
+      "legacyPrintedPages": [
+        62
+      ],
+      "evidence": [
+        {
+          "pdfPage": 69,
+          "printedPage": 62,
+          "textSha256": "d767b425a948f53bf4d8a0a91768022b368520444ceb223093f0880a3005546a",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-069.txt",
+          "quote": "其中，x 叫做自变量，x 的取值范围 A 叫做函数的定义域 (domain)；与 x 的值相对应的 y 值叫做函数值，函数值的集合  $ \\{f(x) \\mid x \\in A\\} $ 叫做函数的值域 (range).",
+          "matchReason": "函数值集合为值域，随后明确其是 B 的子集。"
+        },
+        {
+          "pdfPage": 108,
+          "printedPage": 101,
+          "textSha256": "ddd3f2e3c5820fa3d0293c2c350a2348b0d03523c7bbbd3592393740ec8f0593",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-108.txt",
+          "quote": "12. 试讨论函数  $ y = x - \\frac{1}{x} $ 的定义域、值域、单调性、奇偶性，并画出函数图象.",
+          "matchReason": "章末练习明确要求讨论函数值域；不能因为没有逐字再次定义值域而遗漏其应用关系。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          62
+        ],
+        "bodyEvidencePrintedPages": [
+          62
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-114",
+      "name": "区间",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "fe1114a9796c92a513514c30f9614dd81a84eb388227980fe142de7c48488f5a",
+      "legacyPrintedPages": [
+        63
+      ],
+      "evidence": [
+        {
+          "pdfPage": 71,
+          "printedPage": 64,
+          "textSha256": "6bdb73d9a1dc1d57c8b9dfd1d3ce9a9cc409c7759456b434f79f8f84604058da",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-071.txt",
+          "quote": "设a，b是两个实数，而且a<b. 我们规定：",
+          "matchReason": "开、闭、半开半闭区间的端点不等式和记号与旧定义对应，同页给出实数集区间表示。"
+        },
+        {
+          "pdfPage": 102,
+          "printedPage": 95,
+          "textSha256": "2af84c0963caf7cb620896afa88523d5bc6226f9dbcb4c9ac3a9b08558909d57",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-102.txt",
+          "quote": "分析：当时间 t 在 [0, 5] 内变化时，对于任意的时刻 t 都有唯一确定的行驶路程与之相对应。根据图 3.4-1，在时间段 [0, 1)，[1, 2)，[2, 3)，[3, 4)，[4, 5] 内行驶的平均速率分别为 50 km/h，80 km/h，90 km/h，75 km/h，65 km/h，因此在每个时间段内，行驶路程与时间的关系也不一样，需要分段表述。",
+          "matchReason": "使用闭区间和半开区间划分汽车运行时间，并使五段覆盖整个 [0,5]。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          63
+        ],
+        "bodyEvidencePrintedPages": [
+          64
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-115",
+      "name": "同一个函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "431573bb262bec1e9a223b67d70ffefe4ac5c00415f83b88784cc8da5220b243",
+      "legacyPrintedPages": [
+        64
+      ],
+      "evidence": [
+        {
+          "pdfPage": 73,
+          "printedPage": 66,
+          "textSha256": "cdb1920de3a95d5ba31d8604807c21c89eb7e2b08feb3ab832b4491ef1ac93e1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-073.txt",
+          "quote": "由函数的定义可知，一个函数的构成要素为：定义域、对应关系和值域。因为值域是由定义域和对应关系决定的，所以，如果两个函数的定义域相同，并且对应关系完全一致，即相同的自变量对应的函数值也相同，那么这两个函数是同一个函数。",
+          "matchReason": "值域由定义域和对应关系决定，并明确相同函数的两个判定条件。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          64
+        ],
+        "bodyEvidencePrintedPages": [
+          66
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-116",
+      "name": "分段函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "9767c2bf6fe2afbc7c6691024b689f87c45954b4d9a35a413bbdb4989a570819",
+      "legacyPrintedPages": [
+        68
+      ],
+      "evidence": [
+        {
+          "pdfPage": 75,
+          "printedPage": 68,
+          "textSha256": "7a6ee7014596e42c3c6548f27b2e403ffe361abe1381253b9df39e4f9bf552ea",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-075.txt",
+          "quote": "像例5中 $ y=\\left\\{\\begin{aligned}-x,&x<0,\\\\ x,&x\\geqslant0\\end{aligned}\\right. $，这样的函数称为分段函数。生活中，有很多可以用分段函数描述的实际问题，如出租车的计费、个人所得税纳税额等。",
+          "matchReason": "以绝对值函数分段解析式引出分段函数，符合不同定义域部分使用不同解析式的旧概括。"
+        },
+        {
+          "pdfPage": 100,
+          "printedPage": 93,
+          "textSha256": "81e75e056921163ea6b54bff36fccb1a8d57f827334a5a6e57ec28fce891032c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-100.txt",
+          "quote": "根据个人应纳税所得额的规定可知，当  $ 0 \\leq x \\leq 87700 $ 时，t=0。所以，个人应纳税所得额 t 关于综合所得收入额 x 的函数解析式为",
+          "matchReason": "个税实例根据收入区间分别确定应纳税所得额解析式，在下一数学段写成分段函数。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 102,
+          "printedPage": 95,
+          "textSha256": "2af84c0963caf7cb620896afa88523d5bc6226f9dbcb4c9ac3a9b08558909d57",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-102.txt",
+          "quote": "本题的解答过程表明，函数图象对分析和理解题意很有帮助。因此，我们要注意提高读图能力。另外，本题用到了分段函数，解决现实问题时经常会用到这类函数。",
+          "matchReason": "教材在汽车实例解答末明确指出本题使用分段函数及其现实应用。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          68
+        ],
+        "bodyEvidencePrintedPages": [
+          68
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-117",
+      "name": "函数的表示法",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "7185c15dc6c4862a9187fa3fd9d9f6d75c8d52a6e97d372f6ff7b915db85be58",
+      "legacyPrintedPages": [
+        67
+      ],
+      "evidence": [
+        {
+          "pdfPage": 74,
+          "printedPage": 67,
+          "textSha256": "11b78c913cb29b6a1cf583e8b7282be4ff081c281141b775d264e0a057d62d2a",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-074.txt",
+          "quote": "我们在初中已经接触过函数的三种表示法：解析法、列表法和图象法.",
+          "matchReason": "解析、列表、图象三种方式有直接列举及后续例题展示。"
+        },
+        {
+          "pdfPage": 101,
+          "printedPage": 94,
+          "textSha256": "de75412251ffaf30dba95781edb2240c73de7b13eb2f47e224bb277169f102e8",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-101.txt",
+          "quote": "（2）假设这辆汽车的里程表在汽车行驶这段路程前的读数为2004km，试建立行驶这段路程时汽车里程表读数s（单位：km）与时间t的函数解析式，并画出相应的图象.",
+          "matchReason": "要求从速率图读取关系，建立里程表读数的函数解析式并作图，真实使用图象与解析式表示及转换。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_body",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 103,
+          "printedPage": 96,
+          "textSha256": "a7778c09379a434e6b838d68a310bfaff50c7325756a049d18407eef1b0b08ae",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-103.txt",
+          "quote": "描点画出弹簧伸长长度随拉力变化的图象，并写出一个能基本反映这一变化现象的函数解析式.",
+          "matchReason": "从给定数据表描点并寻找近似解析式，应用列表、图象、解析三种函数表示；拟合模型本身另列目录缺口。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_exercise",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 109,
+          "printedPage": 102,
+          "textSha256": "2640703e0d3c214183fcf5347e3d4cd44677142c3e551864886782b1ca451ebc",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-109.txt",
+          "quote": "（1）根据表中提供的数据描出实数对 $ (x, y) $的对应点，根据画出的点猜想y与x之间的函数关系，并写出一个函数解析式；",
+          "matchReason": "章末商品价格与销量的数据题要求表格转散点再猜想解析式；只证明表示法被应用，不宣称模型已正确拟合。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          67
+        ],
+        "bodyEvidencePrintedPages": [
+          67
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-1210",
+      "name": "偶函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "4628459e2fb9a4b70c95769343804132c560b99e11a19604745d348df3272e26",
+      "legacyPrintedPages": [
+        83
+      ],
+      "evidence": [
+        {
+          "pdfPage": 90,
+          "printedPage": 83,
+          "textSha256": "b49adc4ba30ef33b02c1b9cf0b6db49805fbcd3442b571d25ea093f3575e73fa",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-090.txt",
+          "quote": "一般地，设函数  $ f(x) $ 的定义域为  $ D $，如果  $ \\forall x \\in D $，都有  $ -x \\in D $，且  $ f(-x) = f(x) $，那么函数  $ f(x) $ 就叫做偶函数（even function）。",
+          "matchReason": "定义域关于原点对称与 f(-x)=f(x) 两条件完整对应。"
+        },
+        {
+          "pdfPage": 108,
+          "printedPage": 101,
+          "textSha256": "ddd3f2e3c5820fa3d0293c2c350a2348b0d03523c7bbbd3592393740ec8f0593",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-108.txt",
+          "quote": "(2) 已知偶函数  $ g(x) $ 在  $ [a, b] $ 上单调递减，那么它在  $ [-b, -a] $ 上单调递增还是单调递减？",
+          "matchReason": "明确给定偶函数在 [a,b] 上单调递减，询问对称区间的单调性，调用偶函数对称关系。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          83
+        ],
+        "bodyEvidencePrintedPages": [
+          83
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-1211",
+      "name": "奇函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "460bf099ad0f1db7062a84282a2f5282444d9e8059d07416d6087a1d73ac982c",
+      "legacyPrintedPages": [
+        84
+      ],
+      "evidence": [
+        {
+          "pdfPage": 91,
+          "printedPage": 84,
+          "textSha256": "e173b47c55023daeadca23aece5a006ff96193af9a8adfa3cc47f38b40ded690",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-091.txt",
+          "quote": "一般地，设函数  $ f(x) $ 的定义域为 D，如果  $ \\forall x \\in D $，都有  $ -x \\in D $，且  $ f(-x) = -f(x) $，那么函数  $ f(x) $ 就叫做奇函数（odd function）.",
+          "matchReason": "定义域关于原点对称与 f(-x)=-f(x) 两条件完整对应。"
+        },
+        {
+          "pdfPage": 108,
+          "printedPage": 101,
+          "textSha256": "ddd3f2e3c5820fa3d0293c2c350a2348b0d03523c7bbbd3592393740ec8f0593",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-108.txt",
+          "quote": "9. (1) 已知奇函数  $ f(x) $ 在  $ [a, b] $ 上单调递减，那么它在  $ [-b, -a] $ 上单调递增还是单调递减？",
+          "matchReason": "明确给定奇函数并讨论对称区间单调性，调用奇函数对称关系。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          84
+        ],
+        "bodyEvidencePrintedPages": [
+          84
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-127",
+      "name": "函数的单调性",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "67607afda045ae3ffe73a8280670cd9ea58651fa1658709460adff2dd81f818f",
+      "legacyPrintedPages": [
+        77
+      ],
+      "evidence": [
+        {
+          "pdfPage": 84,
+          "printedPage": 77,
+          "textSha256": "129b1ca9d90351e9810088e212dc13daf484f032288f400961a57a4223af22f1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-084.txt",
+          "quote": "一般地，设函数  $ f(x) $ 的定义域为 D，区间  $ I \\subseteq D $：",
+          "matchReason": "任意两个自变量的严格大小关系、增减函数及单调区间在该页逐项定义。"
+        },
+        {
+          "pdfPage": 107,
+          "printedPage": 100,
+          "textSha256": "3d5185a40c4ebbf96183404ea79c8fc2bd822847f99895197c54c9ce931ce1f9",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-107.txt",
+          "quote": "4. 已知函数  $ f(x)=4x^{2}-kx-8 $ 在  $ [5,20] $ 上具有单调性，求实数 k 的取值范围.",
+          "matchReason": "章末练习根据函数在指定区间的单调性求参数范围，明确调用单调性性质。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 108,
+          "printedPage": 101,
+          "textSha256": "ddd3f2e3c5820fa3d0293c2c350a2348b0d03523c7bbbd3592393740ec8f0593",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-108.txt",
+          "quote": "9. (1) 已知奇函数  $ f(x) $ 在  $ [a, b] $ 上单调递减，那么它在  $ [-b, -a] $ 上单调递增还是单调递减？",
+          "matchReason": "练习结合奇偶性研究对称区间上的单调性，是联合性质的应用要求，不暗示本批已验证解答。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          77
+        ],
+        "bodyEvidencePrintedPages": [
+          77
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-128",
+      "name": "函数的最大值",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "022b0e60ffbec6f60afce310272459245db4049a32e85ab6cb9d28010fb180e5",
+      "legacyPrintedPages": [
+        80
+      ],
+      "evidence": [
+        {
+          "pdfPage": 87,
+          "printedPage": 80,
+          "textSha256": "ee4f3a8f5378761a7eff79fe61cb2d278f6a1fef3631e28d8c44008e52385eb9",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-087.txt",
+          "quote": "一般地，设函数  $ y=f(x) $ 的定义域为 D，如果存在实数 M 满足：",
+          "matchReason": "上界条件和定义域内存在点取到该值的条件连续给出，符合旧最大值定义。"
+        },
+        {
+          "pdfPage": 102,
+          "printedPage": 95,
+          "textSha256": "2af84c0963caf7cb620896afa88523d5bc6226f9dbcb4c9ac3a9b08558909d57",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-102.txt",
+          "quote": "2. 某广告公司要为客户设计一幅周长为  $ l $（单位：m）的矩形广告牌，如何设计这个广告牌可以使广告牌的面积最大？",
+          "matchReason": "矩形广告牌在固定周长下求最大面积，明确以最大值作为实际问题目标；题干未指定解法。",
+          "chapterId": "rja-compulsory-1:3",
+          "sectionId": "rja-compulsory-1:3.4",
+          "contentContext": "section_exercise",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 108,
+          "printedPage": 101,
+          "textSha256": "ddd3f2e3c5820fa3d0293c2c350a2348b0d03523c7bbbd3592393740ec8f0593",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-108.txt",
+          "quote": "（2）当月产量为何值时，公司所获利润最大？最大利润为多少元？（总收入=总成本+利润）",
+          "matchReason": "章末利润函数问题直接要求最大利润及取得最大值的月产量，覆盖最值及可取到该值的实际解释。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 109,
+          "printedPage": 102,
+          "textSha256": "2640703e0d3c214183fcf5347e3d4cd44677142c3e551864886782b1ca451ebc",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-109.txt",
+          "quote": "（2）设经营此商品的日销售利润为 P（单位：元），根据上述关系，写出 P 关于 x 的函数解析式，并求销售单价为多少元时，才能获得最大日销售利润.",
+          "matchReason": "商品销售模型要求选择单价使日销售利润最大，是建立模型后求最大值的应用任务。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          80
+        ],
+        "bodyEvidencePrintedPages": [
+          80
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-129",
+      "name": "函数的最小值",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "2d87885cc66269d320b5ae7a7d1e836205f99d21c0cffe8021d2357c318202d0",
+      "legacyPrintedPages": [
+        80
+      ],
+      "evidence": [
+        {
+          "pdfPage": 87,
+          "printedPage": 80,
+          "textSha256": "ee4f3a8f5378761a7eff79fe61cb2d278f6a1fef3631e28d8c44008e52385eb9",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-087.txt",
+          "quote": "你能仿照函数最大值的定义，给出函数  $ y=f(x) $ 的最小值（minimum value）的定义吗？",
+          "matchReason": "教材要求类比最大值形成最小值定义，并在相邻例题说明最小值须能取到；旧双量词形式是对该要求的展开。"
+        },
+        {
+          "pdfPage": 88,
+          "printedPage": 81,
+          "textSha256": "03f62aa07a3fa1c89cc44248baea12249a4655f1353ec010a0765780b9f62641",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-088.txt",
+          "quote": "因此，函数  $ f(x)=\\frac{2}{x-1} $ 在区间  $ [2,6] $ 的两个端点上分别取得最大值与最小值. 在 x=2 时取得最大值，最大值是 2；在 x=6 时取得最小值，最小值是 0.4.",
+          "matchReason": "教材要求类比最大值形成最小值定义，并在相邻例题说明最小值须能取到；旧双量词形式是对该要求的展开。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          80
+        ],
+        "bodyEvidencePrintedPages": [
+          80,
+          81
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "教材以类比思考而非直接抄写最小值双量词定义；此映射确认概念语义，不宣称旧定义逐字来自教材。"
+      ]
+    },
+    {
+      "uid": "M-K-02-1312",
+      "name": "幂函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "363005b9dd940af06e2e7ecc82f3560f506e429455ec55544e93e54358f852a3",
+      "legacyPrintedPages": [
+        89
+      ],
+      "evidence": [
+        {
+          "pdfPage": 96,
+          "printedPage": 89,
+          "textSha256": "800c3874e468303b0ffa9b7601a9df068490b11880e3dea1503c393d2cc7ac64",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-096.txt",
+          "quote": "一般地，函数  $ y=x^{\\alpha} $ 叫做幂函数（power function），其中 x 是自变量， $ \\alpha $ 是常数.",
+          "matchReason": "幂函数一般式及五个研究指数范围明确对应。"
+        },
+        {
+          "pdfPage": 97,
+          "printedPage": 90,
+          "textSha256": "316363abae4771bb54247a14669d10c14589a23e6e720c05ee2915af9de948be",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-097.txt",
+          "quote": "在同一坐标系中画出函数 y=x， $ y=x^{2} $， $ y=x^{3} $， $ y=x^{\\frac{1}{2}} $ 和  $ y=x^{-1} $ 的图象（图 3.3-1）.",
+          "matchReason": "幂函数一般式及五个研究指数范围明确对应。"
+        },
+        {
+          "pdfPage": 107,
+          "printedPage": 100,
+          "textSha256": "3d5185a40c4ebbf96183404ea79c8fc2bd822847f99895197c54c9ce931ce1f9",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-107.txt",
+          "quote": "5. 已知幂函数  $ y=f(x) $ 的图象过点  $ \\left(2,\\frac{\\sqrt{2}}{2}\\right) $，试求出此函数的解析式，并画出图象，判断奇偶性、单调性.",
+          "matchReason": "以幂函数图象经过已知点求解析式，并判断奇偶性与单调性，明确应用幂函数概念。",
+          "chapterId": "rja-compulsory-1:3",
+          "contentContext": "chapter_review",
+          "relation": "applies"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          89
+        ],
+        "bodyEvidencePrintedPages": [
+          89,
+          90
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧定义的 y=xα 缺失上标排版，含义由正文指数形式确认；本批不改旧知识树原文。"
+      ]
+    },
+    {
+      "uid": "M-K-02-1313",
+      "name": "对勾函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "e846b833a41426c868e180a621ab1e89e955bb407770e71e1f28383d99cf5ee6",
+      "legacyPrintedPages": [
+        92
+      ],
+      "evidence": [
+        {
+          "pdfPage": 99,
+          "printedPage": 92,
+          "textSha256": "6ac37cc80101ad76734fc1889bf9a71c6ebb80c4d6f680bb49e91eb2f017842c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-099.txt",
+          "quote": "4. 证明：当 x>0 时， $ x+\\frac{1}{x}\\geqslant2 $，当且仅当  $ x=\\frac{1}{x} $，即 x=1 时取得等号；当 x<0 时， $ x+\\frac{1}{x}\\leqslant-2 $，当且仅当  $ x=\\frac{1}{x} $，即 x=-1 时取得等号.",
+          "matchReason": "阅读探究中的正负半轴界值与取等条件，以及 84 页奇函数证明覆盖旧定义。"
+        },
+        {
+          "pdfPage": 91,
+          "printedPage": 84,
+          "textSha256": "e173b47c55023daeadca23aece5a006ff96193af9a8adfa3cc47f38b40ded690",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-091.txt",
+          "quote": "所以，函数  $ f(x)=x+\\frac{1}{x} $ 为奇函数.",
+          "matchReason": "阅读探究中的正负半轴界值与取等条件，以及 84 页奇函数证明覆盖旧定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          92
+        ],
+        "bodyEvidencePrintedPages": [
+          92,
+          84
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "教材未采用“对勾函数”专名；按解析式和性质匹配，不能仅用名称搜索决定覆盖。"
+      ]
+    },
+    {
+      "uid": "M-K-02-211",
+      "name": "n次方根",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "0acba5db370ab3f4c435ee5bccd77ede64c4a6951bbabaa06e9edf21f4f97cc7",
+      "legacyPrintedPages": [
+        104
+      ],
+      "evidence": [
+        {
+          "pdfPage": 111,
+          "printedPage": 104,
+          "textSha256": "f0ef17d54ab96e3fea025167cb92c4e2251989492663316a32bf2b260cfe74f0",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-111.txt",
+          "quote": "一般地，如果  $ x^n = a $，那么  $ x $ 叫做  $ a $ 的  $ n $ 次方根，其中  $ n > 1 $，且  $ n \\in \\mathbb{N}^* $。",
+          "matchReason": "n 次方根定义及奇偶 n 的正负根、零与负数偶次根限制在同页逐条给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          104
+        ],
+        "bodyEvidencePrintedPages": [
+          104
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-212",
+      "name": "根式",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "dc3a4c510aa7082ac44ce3982ec9da8446b1ca543bdecaa925f8bb6fe807f9f3",
+      "legacyPrintedPages": [
+        105
+      ],
+      "evidence": [
+        {
+          "pdfPage": 111,
+          "printedPage": 104,
+          "textSha256": "f0ef17d54ab96e3fea025167cb92c4e2251989492663316a32bf2b260cfe74f0",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-111.txt",
+          "quote": "式子 $ \\sqrt[n]{a} $叫做根式（radical），这里n叫做根指数，a叫做被开方数.",
+          "matchReason": "根指数、被开方数、根式 n 次幂及开 n 次方时奇偶差别分别对应。"
+        },
+        {
+          "pdfPage": 112,
+          "printedPage": 105,
+          "textSha256": "ddd3cb19f2a4718908220b9a2b35a8bea8eb94ad5b3d4962cefa281faeb2e1c1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-112.txt",
+          "quote": "当 $n$ 为奇数时，$\\sqrt[n]{a^n}=a$；",
+          "matchReason": "根指数、被开方数、根式 n 次幂及开 n 次方时奇偶差别分别对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          105
+        ],
+        "bodyEvidencePrintedPages": [
+          104,
+          105
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧定义使用 n√a 等线性字符表示根指数；保留原文但应在显示层修复数学排版。"
+      ]
+    },
+    {
+      "uid": "M-K-02-213",
+      "name": "分数指数幂",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "5bd197a60690aec9ee8c0e40d047c8000367f81164b4c312f9ebe45ad567e167",
+      "legacyPrintedPages": [
+        106
+      ],
+      "evidence": [
+        {
+          "pdfPage": 113,
+          "printedPage": 106,
+          "textSha256": "f490020580cba555bc3cb2cdf5ca37f162bbc4c7fa168a5e65a1c11fb722df69",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-113.txt",
+          "quote": "由此，我们规定，正数的正分数指数幂的意义是",
+          "matchReason": "正负分数幂定义、零的限制与有理数幂运算性质在本页完整给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          106
+        ],
+        "bodyEvidencePrintedPages": [
+          106
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-214",
+      "name": "无理数指数幂",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "923d641b5eee8150cdb05a7f94d0752b2797123793e6e8a405109e3fe6716d03",
+      "legacyPrintedPages": [
+        108
+      ],
+      "evidence": [
+        {
+          "pdfPage": 115,
+          "printedPage": 108,
+          "textSha256": "a1587b67ca9aa3e2bc447edbb529adb4f1f8c6f84e9e1ae41dfec28f99592426",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-115.txt",
+          "quote": "一般地，无理数指数幂  $ a^{\\alpha}(a>0,\\alpha $ 为无理数)是一个确定的实数. 这样，我们就将指数幂  $ a^{x}(a>0) $ 中指数 x 的取值范围从整数逐步拓展到了实数. 实数指数幂是一个确定的实数.",
+          "matchReason": "明确正底数无理指数的确定实数含义与实数幂三条运算性质。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          108
+        ],
+        "bodyEvidencePrintedPages": [
+          108
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-215",
+      "name": "指数函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "fdb49eea1f89bf570bf327d418326e5bddb601cc82b9c2b2a798f47a27995d7b",
+      "legacyPrintedPages": [
+        113
+      ],
+      "evidence": [
+        {
+          "pdfPage": 120,
+          "printedPage": 113,
+          "textSha256": "fddc7329213521edf7b31fcc7f5bca7c0c30ae48b80fb18df3c1fea2d3c4dd75",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-120.txt",
+          "quote": "一般地，函数  $ y = a^x $ ( $ a > 0 $，且  $ a \\neq 1 $) 叫做指数函数（exponential function），其中指数  $ x $ 是自变量，定义域是  $ \\mathbb{R} $。",
+          "matchReason": "底数正且不为 1、指数作自变量、全实数定义域完整对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          113
+        ],
+        "bodyEvidencePrintedPages": [
+          113
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-216",
+      "name": "指数增长",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "65e70f31d58f9efd9102f3a738bd486a7e751184e686ce81fc59fb057be57a08",
+      "legacyPrintedPages": [
+        112
+      ],
+      "evidence": [
+        {
+          "pdfPage": 119,
+          "printedPage": 112,
+          "textSha256": "ab75b88cec205d757e66cf22a813e4c2975a1c3a7a57ab4ddb3bf735ade144e4",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-119.txt",
+          "quote": "像这样，增长率为常数的变化方式，我们称为指数增长。因此，B地景区的游客人次近似于指数增长。",
+          "matchReason": "恒定增长率的概念及 N(1+p)^x 增长次数模型在邻页说明。"
+        },
+        {
+          "pdfPage": 121,
+          "printedPage": 114,
+          "textSha256": "dafda16c29472e33a3b3d0740e6f9e5a7c5377e90065056d09a8627841074c33",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-121.txt",
+          "quote": "在实际问题中，经常会遇到类似于例2(1)的指数增长模型：设原有量为N，每次的增长率为p，经过x次增长，该量增长到y，则 $ y=N(1+p)^x (x\\in\\mathbb{N}) $。形如 $ y=ka^x $（ $ k\\in\\mathbb{R} $，且 $ k\\neq0 $； $ a>0 $，且 $ a\\neq1 $）的函数是刻画指数增长或指数衰减变化规律的非常有用的函数模型。",
+          "matchReason": "恒定增长率的概念及 N(1+p)^x 增长次数模型在邻页说明。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          112
+        ],
+        "bodyEvidencePrintedPages": [
+          112,
+          114
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-217",
+      "name": "指数衰减",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "needs_review",
+      "definitionSha256": "dec4511f4fff9c0f0a08d9b4a6150cf393d3cd01d81e6c584084df11cd173c6c",
+      "legacyPrintedPages": [
+        113
+      ],
+      "evidence": [
+        {
+          "pdfPage": 120,
+          "printedPage": 113,
+          "textSha256": "fddc7329213521edf7b31fcc7f5bca7c0c30ae48b80fb18df3c1fea2d3c4dd75",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-120.txt",
+          "quote": "这也是一个函数，指数 x 是自变量。死亡生物体内碳 14 含量每年都以  $ 1 - \\left( \\frac{1}{2} \\right)^{\\frac{1}{5730}} $ 的衰减率衰减。像这样，衰减率为常数的变化方式，我们称为指数衰减。因此，死亡生物体内碳 14 含量呈指数衰减。",
+          "matchReason": "恒定衰减率有直接说明，实数指数练习讨论 (1/2)^x 随正自变量趋于无穷大的变化，支撑衰减趋势。"
+        },
+        {
+          "pdfPage": 116,
+          "printedPage": 109,
+          "textSha256": "23b09ce21d6bcd39251f68aaa9c8462da41f328e9e36401a18bb45420535ec72",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-116.txt",
+          "quote": "(2)  $ x $ 取正实数，使得  $ x $ 的值逐渐增大并趋向于无穷大，计算相应的  $ \\left(\\frac{1}{2}\\right)^x $ ( $ x \\in \\mathbb{R} $) 的值，观察变化趋势.",
+          "matchReason": "恒定衰减率有直接说明，实数指数练习讨论 (1/2)^x 随正自变量趋于无穷大的变化，支撑衰减趋势。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          113
+        ],
+        "bodyEvidencePrintedPages": [
+          113,
+          109
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧定义概括 y=N(1-p)^x 趋于 0，需显式 N>0、0<p<1；所选正文叙述为碳 14 正质量实例，不能据此把无限制一般式确认无误。"
+      ]
+    },
+    {
+      "uid": "M-K-02-2210",
+      "name": "半衰期与倍增期",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "fd0940916883a045f703f67bf216a6d7f30604f2e1e8ae6825c49cf1eee8e461",
+      "legacyPrintedPages": [
+        115
+      ],
+      "evidence": [
+        {
+          "pdfPage": 122,
+          "printedPage": 115,
+          "textSha256": "b27ddc7d5c88360f58292003ec6df76b31598f553fa3c31eeb33a1e2cd9afac1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-122.txt",
+          "quote": "一般地，如果某物质的半衰期为 h，那么经过时间 t 后，该物质所剩的质量  $ Q(t)=Q_{0}\\left(\\frac{1}{2}\\right)^{\\frac{t}{h}} $，其中  $ Q_{0} $ 是该物质的初始质量。你能说明理由吗？",
+          "matchReason": "该页给出半衰期剩余质量公式及指数增长倍增期定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          115
+        ],
+        "bodyEvidencePrintedPages": [
+          115
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-2211",
+      "name": "对数函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "b79c439c5ff110170f045822c79175d9a53ae30a8932e4039e22830075855f19",
+      "legacyPrintedPages": [
+        130
+      ],
+      "evidence": [
+        {
+          "pdfPage": 137,
+          "printedPage": 130,
+          "textSha256": "ad52634d6d4ab0376c9405b632e34f4699e1b218d147a8eace7e9b525d267e44",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-137.txt",
+          "quote": "一般地，函数  $ y=\\log_{a}x $ ( $ a>0 $，且  $ a\\neq1 $) 叫做对数函数（logarithmic function），其中  $ x $ 是自变量，定义域是  $ (0, +\\infty) $.",
+          "matchReason": "底数约束、自变量 x 和正实数定义域完整对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          130
+        ],
+        "bodyEvidencePrintedPages": [
+          130
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-2212",
+      "name": "反函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "77366a9735f0a650f24968168fe3e8cfd047a70f40226273369f62de1e9e02b3",
+      "legacyPrintedPages": [
+        134
+      ],
+      "evidence": [
+        {
+          "pdfPage": 142,
+          "printedPage": 135,
+          "textSha256": "efdebc44791eb8f96155be6c94ab2c94b1144eaaf75f6fee568543ec3ed5b824",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-142.txt",
+          "quote": "一般地，指数函数  $ y=a^{x}(a>0 $，且  $ a\\neq1) $ 与对数函数  $ y=\\log_{a}x(a>0 $，且  $ a\\neq1) $ 互为反函数，它们的定义域与值域正好互换.",
+          "matchReason": "一般底数指数与对数互为反函数，定义域值域互换，与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          134
+        ],
+        "bodyEvidencePrintedPages": [
+          135
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-2213",
+      "name": "三种函数增长的差异",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "needs_review",
+      "definitionSha256": "69d04e4b5f1bd7cc30f494d254e836bf4896e57eb6804411f78e034fd0065684",
+      "legacyPrintedPages": [
+        136
+      ],
+      "evidence": [
+        {
+          "pdfPage": 144,
+          "printedPage": 137,
+          "textSha256": "2e4bbff59f8673bcd136a5f26c28602de4e56ba07646ef84c14517a6b41975db",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-144.txt",
+          "quote": "一般地，指数函数  $ y=a^{x}(a>1) $ 与一次函数 y=kx (k>0) 的增长差异都与上述情况类似. 即使 k 的值远远大于 a 的值， $ y=a^{x}(a>1) $ 的增长速度最终都会大大超过 y=kx (k>0) 的增长速度.",
+          "matchReason": "正文带 a>1、k>0 条件，并以存在阈值 x0 后函数值恒成立阐述增长差异。"
+        },
+        {
+          "pdfPage": 145,
+          "printedPage": 138,
+          "textSha256": "0a98dcd2c1f6c8b5e9d6e5c8e7b04c28def83c02e86cbceccdef2e3b859f7a53",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-145.txt",
+          "quote": "一般地，虽然对数函数  $ y = \\log_a x $ ( $ a > 1 $) 与一次函数  $ y = kx $ ( $ k > 0 $) 在区间  $ (0, +\\infty) $ 上都单调递增，但它们的增长速度不同。随着  $ x $ 的增大，一次函数  $ y = kx $ ( $ k > 0 $) 保持固定的增长速度，而对数函数  $ y = \\log_a x $ ( $ a > 1 $) 的增长速度越来越慢。即使  $ k $ 的值很小，在一定范围内， $ \\log_a x $ 可能会大于  $ kx $，但由于  $ \\log_a x $ 的增长最终会慢于  $ kx $ 的增长，因此总会存在一个  $ x_0 $，当  $ x > x_0 $ 时，恒有  $ \\log_a x < kx $。",
+          "matchReason": "正文带 a>1、k>0 条件，并以存在阈值 x0 后函数值恒成立阐述增长差异。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          136
+        ],
+        "bodyEvidencePrintedPages": [
+          137,
+          138
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧末句“最终增长速度恒有”易混淆函数值大小与变化速度，且一次函数正系数条件未写明；需澄清后才能确认完整定义。"
+      ]
+    },
+    {
+      "uid": "M-K-02-2214",
+      "name": "对数换底公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "8944fc2f9b28808bfda1ac91cdeb521bb6bf5082002a2f1c8ce9db53a8ca9089",
+      "legacyPrintedPages": [
+        126
+      ],
+      "evidence": [
+        {
+          "pdfPage": 132,
+          "printedPage": 125,
+          "textSha256": "10b94bcb975473d18683010104e4867a454f30429c452829f686c3502c420d5c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-132.txt",
+          "quote": "$$ \\log_{a}b=\\frac{\\log_{c}b}{\\log_{c}a}\\quad(a>0,\\text{ 且 }a\\neq1;\\ b>0;\\ c>0,\\text{ 且 }c\\neq1). $$",
+          "matchReason": "换底公式与三个底/真数限制条件完整保留。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          126
+        ],
+        "bodyEvidencePrintedPages": [
+          125
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-226",
+      "name": "对数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "f6ed506b08b1cfc4f93976a8d3b19f92cd6faff9d14bf63f888160713ee7ea8e",
+      "legacyPrintedPages": [
+        122
+      ],
+      "evidence": [
+        {
+          "pdfPage": 129,
+          "printedPage": 122,
+          "textSha256": "b6920c614d6a0d46c7258033eb33b5fd6d46797c003760fedb8e37964b4e17a1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-129.txt",
+          "quote": "一般地，如果  $ a^x = N (a > 0 $，且  $ a \\ne 1) $，那么数  $ x $ 叫做以  $ a $ 为底  $ N $ 的对数（logarithm），记作",
+          "matchReason": "指数与对数等价定义、底数真数名称和零负数限制在同页给出。"
+        },
+        {
+          "pdfPage": 129,
+          "printedPage": 122,
+          "textSha256": "b6920c614d6a0d46c7258033eb33b5fd6d46797c003760fedb8e37964b4e17a1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-129.txt",
+          "quote": "负数和 0 没有对数：",
+          "matchReason": "指数与对数等价定义、底数真数名称和零负数限制在同页给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          122
+        ],
+        "bodyEvidencePrintedPages": [
+          122,
+          122
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-227",
+      "name": "常用对数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "718463251105e64ceb9bf0992a3508f1d9ecff1f7900b3472f6206ae8cee07dd",
+      "legacyPrintedPages": [
+        122
+      ],
+      "evidence": [
+        {
+          "pdfPage": 129,
+          "printedPage": 122,
+          "textSha256": "b6920c614d6a0d46c7258033eb33b5fd6d46797c003760fedb8e37964b4e17a1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-129.txt",
+          "quote": "通常，我们将以10为底的对数叫做常用对数（common logarithm），并把 $ \\log_{10}N $记为 $ \\lg N $。另外，在科技、经济以及社会生活中经常使用以无理数 $ e=2.718\\ 28\\cdots $为底数的对数，以 $ e $为底的对数称为自然对数（natural logarithm），并把 $ \\log_{e}N $记为 $ \\ln N $。",
+          "matchReason": "底数 10 与 lg 记号直接对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          122
+        ],
+        "bodyEvidencePrintedPages": [
+          122
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-228",
+      "name": "自然对数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "ad84aa5fe92afe4bdd2d0534d7f6fa8abe50d82a2a94fd96abc215b91521cb32",
+      "legacyPrintedPages": [
+        122
+      ],
+      "evidence": [
+        {
+          "pdfPage": 129,
+          "printedPage": 122,
+          "textSha256": "b6920c614d6a0d46c7258033eb33b5fd6d46797c003760fedb8e37964b4e17a1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-129.txt",
+          "quote": "通常，我们将以10为底的对数叫做常用对数（common logarithm），并把 $ \\log_{10}N $记为 $ \\lg N $。另外，在科技、经济以及社会生活中经常使用以无理数 $ e=2.718\\ 28\\cdots $为底数的对数，以 $ e $为底的对数称为自然对数（natural logarithm），并把 $ \\log_{e}N $记为 $ \\ln N $。",
+          "matchReason": "前句给出无理数 e 近似值，本句给出 ln 记号。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          122
+        ],
+        "bodyEvidencePrintedPages": [
+          122
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-229",
+      "name": "对数的运算性质",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "365e11a648ba3b2fb1a9bc3adadadc877288d13c8e442545f8b5ab392bf507b0",
+      "legacyPrintedPages": [
+        125
+      ],
+      "evidence": [
+        {
+          "pdfPage": 131,
+          "printedPage": 124,
+          "textSha256": "45f98b112b0b579fd9d6d4613434b3aa5c14abbf18a72356559ad84f2eceb0f1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-131.txt",
+          "quote": "如果a>0，且 $ a\\neq1 $，M>0，N>0，那么",
+          "matchReason": "正底数非 1、正真数条件下积、商、幂三条对数运算规则均在正文给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          125
+        ],
+        "bodyEvidencePrintedPages": [
+          124
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-2313",
+      "name": "函数的零点",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "b5fe105db6fa093c2dfdc028f1ffcde60478892b66e9989ebe49a00152d0828e",
+      "legacyPrintedPages": [
+        142
+      ],
+      "evidence": [
+        {
+          "pdfPage": 149,
+          "printedPage": 142,
+          "textSha256": "30fa6e1fa0ba1972596368d6d7f86671ea118d5516276c6a6bbf01fb3911818c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-149.txt",
+          "quote": "与二次函数的零点一样，对于一般函数  $ y=f(x) $，我们把使  $ f(x)=0 $ 的实数 x 叫做函数  $ y=f(x) $ 的零点 (zero).",
+          "matchReason": "零点是使 f(x)=0 的实数，并等于方程实数解与图象交点横坐标。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          142
+        ],
+        "bodyEvidencePrintedPages": [
+          142
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-2314",
+      "name": "函数零点存在定理",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "a06aacf0ef5c43ec958c078e6a7111ab911126d8cc598f225e6054188069ef01",
+      "legacyPrintedPages": [
+        143
+      ],
+      "evidence": [
+        {
+          "pdfPage": 150,
+          "printedPage": 143,
+          "textSha256": "9adc2db14d854f0b7ca7b2785af341b46ff131248715eb5f63f1aa9085ba3ad2",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-150.txt",
+          "quote": "函数零点存在定理 如果函数  $ y = f(x) $ 在区间  $ [a, b] $ 上的图象是一条连续不断的曲线，且有  $ f(a)f(b) < 0 $，那么，函数  $ y = f(x) $ 在区间  $ (a, b) $ 内至少有一个零点，即存在  $ c \\in (a, b) $，使得  $ f(c) = 0 $，这个 c 也就是方程  $ f(x) = 0 $ 的解.",
+          "matchReason": "闭区间连续、端点函数值异号保证开区间至少一零点，条件结论一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          143
+        ],
+        "bodyEvidencePrintedPages": [
+          143
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-2315",
+      "name": "二分法",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "37bb6ffc562a9eb0b74a14b18bc870e7780c892efc757fc6d2470c99657b28a1",
+      "legacyPrintedPages": [
+        146
+      ],
+      "evidence": [
+        {
+          "pdfPage": 152,
+          "printedPage": 145,
+          "textSha256": "4c9f52a83054e6c2c08a0efab1d7182cb2115df8da0d756d1283a1e14f638334",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-152.txt",
+          "quote": "对于在区间  $ [a, b] $ 上图象连续不断且  $ f(a)f(b) < 0 $ 的函数  $ y = f(x) $，通过不断地把它的零点所在区间一分为二，使所得区间的两个端点逐步逼近零点，进而得到零点近似值的方法叫做二分法（bisection method）.",
+          "matchReason": "二分法定义明确连续、异号及区间反复二分逼近，不把任意二分视为求根依据。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          146
+        ],
+        "bodyEvidencePrintedPages": [
+          145
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-311",
+      "name": "任意角",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "a3d0cb4d643e4c2704cb6adedd2cccd388e9fa7309c42f31478899a4bd3cbc59",
+      "legacyPrintedPages": [
+        168
+      ],
+      "evidence": [
+        {
+          "pdfPage": 175,
+          "printedPage": 168,
+          "textSha256": "d19b22a4781ad15ba06f8787eb3cd4cec127af2805d774a7ca0134d50a56bd85",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-175.txt",
+          "quote": "我们规定，一条射线绕其端点按逆时针方向旋转形成的角叫做正角，按顺时针方向旋转形成的角叫做负角。",
+          "matchReason": "正负角旋转方向与零角共同形成任意角的概念。"
+        },
+        {
+          "pdfPage": 176,
+          "printedPage": 169,
+          "textSha256": "1f9f268cc1b945773c9964b0eb2d5db7f4e7b0a890f842199f4910687c7308a1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-176.txt",
+          "quote": "如果一条射线没有做任何旋转，就称它形成了一个零角。这样，零角的始边与终边重合。如果  $ \\alpha $ 是零角，那么  $ \\alpha=0^{\\circ} $。图5.1-3(1)中的角是一个正角，它等于  $ 750^{\\circ} $；图5.1-3(2)中，正角  $ \\alpha=210^{\\circ} $，负角  $ \\beta=-150^{\\circ} $， $ \\gamma=-660^{\\circ} $。正常情况下，如果以零时为起始位置，那么钟表的时针或分针在旋转时所形成的角总是负角。",
+          "matchReason": "正负角旋转方向与零角共同形成任意角的概念。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          168
+        ],
+        "bodyEvidencePrintedPages": [
+          168,
+          169
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-312",
+      "name": "象限角",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "325ccc33bcfa607e58a5c5dce85761641cc182ab974e0495f5c934c513d68a42",
+      "legacyPrintedPages": [
+        169
+      ],
+      "evidence": [
+        {
+          "pdfPage": 176,
+          "printedPage": 169,
+          "textSha256": "1f9f268cc1b945773c9964b0eb2d5db7f4e7b0a890f842199f4910687c7308a1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-176.txt",
+          "quote": "我们通常在直角坐标系内讨论角. 为了方便, 使角的顶点与原点重合, 角的始边与 x 轴的非负半轴重合. 那么, 角的终边在第几象限, 就说这个角是第几象限角. 例如, 图 5.1-5 中的  $ 30^{\\circ} $ 角、 $ -120^{\\circ} $ 角分别是第一象限角和第三象限角. 如果角的终边在坐标轴上, 那么就认为这个角不属于任何一个象限.",
+          "matchReason": "顶点原点、始边非负 x 半轴、终边象限和坐标轴例外完整对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          169
+        ],
+        "bodyEvidencePrintedPages": [
+          169
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-313",
+      "name": "终边相同的角",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "79e1e06a75de921ad4b8351ce9712925e4f2894d484d4792301c089cb4d03beb",
+      "legacyPrintedPages": [
+        169
+      ],
+      "evidence": [
+        {
+          "pdfPage": 177,
+          "printedPage": 170,
+          "textSha256": "f290ceff2a794a2c7aedc655934a9a15370ea5dadb4da5c8c32102b5e217b3ab",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-177.txt",
+          "quote": "所有与角  $ \\alpha $ 终边相同的角，连同角  $ \\alpha $ 在内，可构成一个集合",
+          "matchReason": "整数周角差的集合表达式和反向说明与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          169
+        ],
+        "bodyEvidencePrintedPages": [
+          170
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-314",
+      "name": "弧度制",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "cffcbcb447c7754e3f55a7659084796e1cc59ec7b0a9a375e99d91f6c3aa16e6",
+      "legacyPrintedPages": [
+        172
+      ],
+      "evidence": [
+        {
+          "pdfPage": 179,
+          "printedPage": 172,
+          "textSha256": "7da03885d86756a67d55b36a0ca2b0c271dd49ca7b8b596d41947ef17933f7a6",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-179.txt",
+          "quote": "我们规定：长度等于半径长的圆弧所对的圆心角叫做1弧度（radian）的角，弧度单位用符号rad表示，读作弧度.",
+          "matchReason": "1 弧度定义、弧长半径比及弧度符号与旋转方向分别说明。"
+        },
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "d1ac5641475cc15f8828af358171138113711fc5800ddf06ffc9a0c3158962ee",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-180.txt",
+          "quote": "一般地，正角的弧度数是一个正数，负角的弧度数是一个负数，零角的弧度数是0.",
+          "matchReason": "1 弧度定义、弧长半径比及弧度符号与旋转方向分别说明。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          172
+        ],
+        "bodyEvidencePrintedPages": [
+          172,
+          173
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-315",
+      "name": "弧度与角度的换算",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "ef349daf4fdea4b93382e416a9527191c769333262a31c7b1c2ec2da34dfdf3d",
+      "legacyPrintedPages": [
+        173
+      ],
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "d1ac5641475cc15f8828af358171138113711fc5800ddf06ffc9a0c3158962ee",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-180.txt",
+          "quote": "$$ 360^{\\circ}=2\\pi rad,\\ 180^{\\circ}=\\pi rad, $$",
+          "matchReason": "角度与弧度互换的精确关系和近似数值逐项对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          173
+        ],
+        "bodyEvidencePrintedPages": [
+          173
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-316",
+      "name": "弧长公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "needs_review",
+      "definitionSha256": "329c48bf665137c2479e065069abef88a6ead1c4aa53808dee0aec58697379ae",
+      "legacyPrintedPages": [
+        174
+      ],
+      "evidence": [
+        {
+          "pdfPage": 181,
+          "printedPage": 174,
+          "textSha256": "13a6281e5e5b971fd53d5f70a45d3aa7eadece39199979756e1a2419a6867380",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-181.txt",
+          "quote": "$$ l=\\alpha R\\,; $$",
+          "matchReason": "例 6 给出弧度弧长公式并依据绝对值公式证明。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          174
+        ],
+        "bodyEvidencePrintedPages": [
+          174
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "该页例 6 的明确前提为 0<α<2π；旧定义放宽到 α>0，超过一周时“弧长”的含义需补充累计转过弧长约定，不能静默扩大教材结论。"
+      ]
+    },
+    {
+      "uid": "M-K-02-317",
+      "name": "扇形面积公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "02a8eb08444bd7842ad56dcb1c783ba9dffc059ded482ef46430bdc93f4fbebf",
+      "legacyPrintedPages": [
+        174
+      ],
+      "evidence": [
+        {
+          "pdfPage": 181,
+          "printedPage": 174,
+          "textSha256": "13a6281e5e5b971fd53d5f70a45d3aa7eadece39199979756e1a2419a6867380",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-181.txt",
+          "quote": "$$ S=\\frac{1}{2}\\alpha R^{2} $$",
+          "matchReason": "同一例题给出 S=αR²/2 及 S=lR/2，且限定 0<α<2π。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          174
+        ],
+        "bodyEvidencePrintedPages": [
+          174
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3210",
+      "name": "正切函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "d62e2c11956c8bb041fa67176ee01d550f447d77c25be06c23fe4d4a8ce55622",
+      "legacyPrintedPages": [
+        179
+      ],
+      "evidence": [
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "textSha256": "230ba537e59f4770a4ac055e1ca6d325f6370a605b665491604ca362e808f165",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-185.txt",
+          "quote": "（3）把点 P 的纵坐标与横坐标的比值 $ \\frac{y}{x} $叫做  $ \\alpha $ 的正切，记作  $ \\tan \\alpha $，即",
+          "matchReason": "单位圆点 y/x 定义与 x≠0 限制明确，末段给出排除 π/2+kπ 的定义域。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          179
+        ],
+        "bodyEvidencePrintedPages": [
+          178
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "本页中间 OCR 将 π/2 错作 n/2，但同页末段定义域识别正确；引用后者作为符号约束，不使用错字公式作证。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3211",
+      "name": "三角函数的符号",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "needs_review",
+      "definitionSha256": "b66e95b8ae42bf82638aafa69f1b6c0ab9ec3bf6e5b2bbb7371e5d15d1ed45e7",
+      "legacyPrintedPages": [
+        180
+      ],
+      "evidence": [
+        {
+          "pdfPage": 187,
+          "printedPage": 180,
+          "textSha256": "8042c346199b3cf5076e4b449b52e6ce04a66d892797579c86af9bce3fdb92ce",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-187.txt",
+          "quote": "根据任意角的三角函数定义，先将正弦、余弦、正切函数在弧度制下的定义域填入表5.2-1，再将这三种函数的值在各象限的符号填入图5.2-6中的括号.",
+          "matchReason": "教材让学生填写各象限符号，并只展开第三象限的一个充要条件证明；OCR 图中括号没有完整符号。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          180
+        ],
+        "bodyEvidencePrintedPages": [
+          180
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧定义罗列三个函数的全部象限符号，当前文字只有填写任务和第三象限例证；需原图与学科复核后确认完整符号表，不能把空表当答案。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3212",
+      "name": "同角三角函数平方关系",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "aa8450f081ed6624cddba786194a0ce8a8530aae91423e572076a142397be8f1",
+      "legacyPrintedPages": [
+        183
+      ],
+      "evidence": [
+        {
+          "pdfPage": 190,
+          "printedPage": 183,
+          "textSha256": "399a013dc1d22072ed336b4e37060cda9e0fa28676a36d69c83f1191cebb8c24",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-190.txt",
+          "quote": "$$ \\sin^{2}\\alpha+\\cos^{2}\\alpha=1. $$",
+          "matchReason": "单位圆勾股关系推得同角正弦余弦平方和，文字明确等于 1。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          183
+        ],
+        "bodyEvidencePrintedPages": [
+          183
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3213",
+      "name": "同角三角函数商数关系",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "f343728d90007fe8cc9dc2034a049fc463e72e2b6efae256537667b8b5b1e66f",
+      "legacyPrintedPages": [
+        183
+      ],
+      "evidence": [
+        {
+          "pdfPage": 190,
+          "printedPage": 183,
+          "textSha256": "399a013dc1d22072ed336b4e37060cda9e0fa28676a36d69c83f1191cebb8c24",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-190.txt",
+          "quote": "根据三角函数的定义，当  $ \\alpha \\neq k\\pi + \\frac{\\pi}{2} (k \\in \\mathbf{Z}) $ 时，有",
+          "matchReason": "商数公式与正切有意义的角限制相邻给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          183
+        ],
+        "bodyEvidencePrintedPages": [
+          183
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-328",
+      "name": "正弦函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "bbeb34125995603f44f121ab3fe7608783889df9b039671a738c95c810b1415b",
+      "legacyPrintedPages": [
+        178
+      ],
+      "evidence": [
+        {
+          "pdfPage": 184,
+          "printedPage": 177,
+          "textSha256": "1e83aaa82dbb70ecc73d0629ca17ec5867ab2d185f3547cb47599f3005109b85",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-184.txt",
+          "quote": "设  $ \\alpha $ 是一个任意角， $ \\alpha \\in \\mathbb{R} $，它的终边 OP 与单位圆相交于点  $ P(x, y) $。",
+          "matchReason": "前页设单位圆终边交点，后页以纵坐标定义正弦，与旧定义对象一致。"
+        },
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "textSha256": "230ba537e59f4770a4ac055e1ca6d325f6370a605b665491604ca362e808f165",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-185.txt",
+          "quote": "（1）把点 P 的纵坐标 y 叫做  $ \\alpha $ 的正弦函数（sine function），记作  $ \\sin \\alpha $，即  $ y = \\sin \\alpha $；",
+          "matchReason": "前页设单位圆终边交点，后页以纵坐标定义正弦，与旧定义对象一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          178
+        ],
+        "bodyEvidencePrintedPages": [
+          177,
+          178
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-329",
+      "name": "余弦函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "c5f542f32b6e76766bb3125b68fad0d14f3fd9db230b85d6e23e69e72457fde3",
+      "legacyPrintedPages": [
+        178
+      ],
+      "evidence": [
+        {
+          "pdfPage": 184,
+          "printedPage": 177,
+          "textSha256": "1e83aaa82dbb70ecc73d0629ca17ec5867ab2d185f3547cb47599f3005109b85",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-184.txt",
+          "quote": "设  $ \\alpha $ 是一个任意角， $ \\alpha \\in \\mathbb{R} $，它的终边 OP 与单位圆相交于点  $ P(x, y) $。",
+          "matchReason": "前页设单位圆终边交点，后页以横坐标定义余弦，与旧定义对象一致。"
+        },
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "textSha256": "230ba537e59f4770a4ac055e1ca6d325f6370a605b665491604ca362e808f165",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-185.txt",
+          "quote": "(2) 把点 P 的横坐标 x 叫做  $ \\alpha $ 的余弦函数（cosine function），记作  $ \\cos\\alpha $，即  $ x = \\cos\\alpha $;",
+          "matchReason": "前页设单位圆终边交点，后页以横坐标定义余弦，与旧定义对象一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          178
+        ],
+        "bodyEvidencePrintedPages": [
+          177,
+          178
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3314",
+      "name": "公式一",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "8357baacb5f97bab6a1c5b9030ba0556243dd868eb1673e3a283c7876bb385ec",
+      "legacyPrintedPages": [
+        188
+      ],
+      "evidence": [
+        {
+          "pdfPage": 187,
+          "printedPage": 180,
+          "textSha256": "8042c346199b3cf5076e4b449b52e6ce04a66d892797579c86af9bce3fdb92ce",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-187.txt",
+          "quote": "由三角函数的定义，可以知道：终边相同的角的同一三角函数的值相等.",
+          "matchReason": "同页公式一给出整数周角后的 sin、cos、tan 值不变；并非旧定位 188 页。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          188
+        ],
+        "bodyEvidencePrintedPages": [
+          180
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3315",
+      "name": "公式二",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "06f09b96ee76935f5e88c5b2e29359007318dbf4de1bfc30cf30045512c322bd",
+      "legacyPrintedPages": [
+        189
+      ],
+      "evidence": [
+        {
+          "pdfPage": 196,
+          "printedPage": 189,
+          "textSha256": "4e6a2f82c1c270a4603968e11ff6f5708e3fddc9ce59cc1e30aeaf623bae1bf1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-196.txt",
+          "quote": "$$ \\begin{array}{r}{\\sin(\\pi+\\alpha)=-\\sin\\alpha,}\\\\ {\\cos(\\pi+\\alpha)=-\\cos\\alpha,}\\\\ {\\tan(\\pi+\\alpha)=\\tan\\alpha.}\\end{array} $$",
+          "matchReason": "三条 π+α 公式的符号与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          189
+        ],
+        "bodyEvidencePrintedPages": [
+          189
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3316",
+      "name": "公式三",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "9bf60ee3119cab12727fdb04e90b5163891fd8c93d0f09244fca73c8eb14e225",
+      "legacyPrintedPages": [
+        189
+      ],
+      "evidence": [
+        {
+          "pdfPage": 196,
+          "printedPage": 189,
+          "textSha256": "4e6a2f82c1c270a4603968e11ff6f5708e3fddc9ce59cc1e30aeaf623bae1bf1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-196.txt",
+          "quote": "$$ \\begin{array}{r}{\\sin(-\\alpha)=-\\sin\\alpha,}\\\\ {\\cos(-\\alpha)=\\cos\\alpha,}\\\\ {\\tan(-\\alpha)=-\\tan\\alpha.}\\end{array} $$",
+          "matchReason": "三条 -α 公式与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          189
+        ],
+        "bodyEvidencePrintedPages": [
+          189
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3317",
+      "name": "公式四",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "00cd89d6a04e3bb54a98014b94cdc8bf325a9f1b8a13a20c86f2eba785c8b2c4",
+      "legacyPrintedPages": [
+        190
+      ],
+      "evidence": [
+        {
+          "pdfPage": 196,
+          "printedPage": 189,
+          "textSha256": "4e6a2f82c1c270a4603968e11ff6f5708e3fddc9ce59cc1e30aeaf623bae1bf1",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-196.txt",
+          "quote": "$$ \\begin{array}{r}{\\sin(\\pi-\\alpha)=\\sin\\alpha,}\\\\ {\\cos(\\pi-\\alpha)=-\\cos\\alpha,}\\\\ {\\tan(\\pi-\\alpha)=-\\tan\\alpha.}\\end{array} $$",
+          "matchReason": "三条 π-α 公式与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          190
+        ],
+        "bodyEvidencePrintedPages": [
+          189
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3318",
+      "name": "公式五",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "f0ea5c274bbabd00b06b16858e04ca42e160a99347faa07074711c5d613cee59",
+      "legacyPrintedPages": [
+        191
+      ],
+      "evidence": [
+        {
+          "pdfPage": 199,
+          "printedPage": 192,
+          "textSha256": "1058e361d0c2d1e0139f9359dc625ac8da7d0880419d02d7e9cf0c5a1e285a77",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-199.txt",
+          "quote": "$$ \\sin\\left(\\frac{\\pi}{2}-\\alpha\\right)=\\cos\\alpha, $$",
+          "matchReason": "公式五正余弦互化两式均在本页给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          191
+        ],
+        "bodyEvidencePrintedPages": [
+          192
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3319",
+      "name": "公式六",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "3c545f80f183e306f8605894fea9d1af780ebfb5df3d855384a635d341d701ba",
+      "legacyPrintedPages": [
+        192
+      ],
+      "evidence": [
+        {
+          "pdfPage": 199,
+          "printedPage": 192,
+          "textSha256": "1058e361d0c2d1e0139f9359dc625ac8da7d0880419d02d7e9cf0c5a1e285a77",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-199.txt",
+          "quote": "$$ \\begin{aligned}&\\sin(\\frac{\\pi}{2}+\\alpha)=\\cos\\alpha,\\\\&\\cos(\\frac{\\pi}{2}+\\alpha)=-\\sin\\alpha.\\\\ \\end{aligned} $$",
+          "matchReason": "公式六正余弦互化及负号与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          192
+        ],
+        "bodyEvidencePrintedPages": [
+          192
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3320",
+      "name": "两角差的余弦公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "588e4ba9599057e5794d141f179dbd010e0c98c043df6e1c9377c1e6269d37fa",
+      "legacyPrintedPages": [
+        215
+      ],
+      "evidence": [
+        {
+          "pdfPage": 223,
+          "printedPage": 216,
+          "textSha256": "0d390ac258be3f0246b10f8b645b47165dbfe95843a93436a46fa7d2368107e4",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-223.txt",
+          "quote": "$$ \\cos(\\alpha-\\beta)=\\cos\\alpha\\cos\\beta+\\sin\\alpha\\sin\\beta. $$",
+          "matchReason": "差角余弦完整等式及任意角说明在本页给出。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          215
+        ],
+        "bodyEvidencePrintedPages": [
+          216
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3321",
+      "name": "两角和的余弦公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "21ff5c05b2925ae62e4a9fe0cefef5ef233169570a66de0a263944408cb9c3b5",
+      "legacyPrintedPages": [
+        217
+      ],
+      "evidence": [
+        {
+          "pdfPage": 224,
+          "printedPage": 217,
+          "textSha256": "7960b69e008045bd2b1d59b5d16e230809f936059c22c09d1376fe682a8e899c",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-224.txt",
+          "quote": "$$ \\cos(\\alpha+\\beta)=\\cos\\alpha\\cos\\beta-\\sin\\alpha\\sin\\beta. $$",
+          "matchReason": "和角余弦完整等式与旧定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          217
+        ],
+        "bodyEvidencePrintedPages": [
+          217
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3322",
+      "name": "两角和的正弦公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "85a69d0952cffe76b4eb2ec9b929ed6d8b7499ebabb820d89d85c39a998f4e79",
+      "legacyPrintedPages": [
+        219
+      ],
+      "evidence": [
+        {
+          "pdfPage": 225,
+          "printedPage": 218,
+          "textSha256": "49d47c3654d2a5a7122076f130dfe49e764fba3fb0027525eba69520579a6e8e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-225.txt",
+          "quote": "$$ \\sin(\\alpha+\\beta)=\\sin\\alpha\\cos\\beta+\\cos\\alpha\\sin\\beta, $$",
+          "matchReason": "和角正弦公式中交叉乘积与加号一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          219
+        ],
+        "bodyEvidencePrintedPages": [
+          218
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3323",
+      "name": "两角差的正弦公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "06702535583f1cea7051ec64c0d21613e9f05f88f05a0d462e43af4b0c1fec00",
+      "legacyPrintedPages": [
+        219
+      ],
+      "evidence": [
+        {
+          "pdfPage": 225,
+          "printedPage": 218,
+          "textSha256": "49d47c3654d2a5a7122076f130dfe49e764fba3fb0027525eba69520579a6e8e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-225.txt",
+          "quote": "$$ \\sin(\\alpha-\\beta)=\\sin\\alpha\\cos\\beta-\\cos\\alpha\\sin\\beta. $$",
+          "matchReason": "差角正弦公式中交叉乘积与减号一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          219
+        ],
+        "bodyEvidencePrintedPages": [
+          218
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3324",
+      "name": "两角和的正切公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "21a54831e870d0f97b9402dfc06d3bf386467a1db13980642fa0fdae5f76bf25",
+      "legacyPrintedPages": [
+        220
+      ],
+      "evidence": [
+        {
+          "pdfPage": 225,
+          "printedPage": 218,
+          "textSha256": "49d47c3654d2a5a7122076f130dfe49e764fba3fb0027525eba69520579a6e8e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-225.txt",
+          "quote": "$$ \\tan(\\alpha+\\beta)=\\frac{\\tan\\alpha+\\tan\\beta}{1-\\tan\\alpha\\tan\\beta}, $$",
+          "matchReason": "和角正切分子和、分母 1 减积均一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          220
+        ],
+        "bodyEvidencePrintedPages": [
+          218
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "沿用 183 页教材约定：恒等式仅在两边都有意义时使用，不能忽略原正切及分母限制。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3325",
+      "name": "两角差的正切公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "f0586d587738399a4fdcf496dce4fb20bd8f12cd5b98e85e46d0e5ecf52984b2",
+      "legacyPrintedPages": [
+        220
+      ],
+      "evidence": [
+        {
+          "pdfPage": 225,
+          "printedPage": 218,
+          "textSha256": "49d47c3654d2a5a7122076f130dfe49e764fba3fb0027525eba69520579a6e8e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-225.txt",
+          "quote": "$$ \\tan(\\alpha-\\beta)=\\frac{\\tan\\alpha-\\tan\\beta}{1+\\tan\\alpha\\tan\\beta}. $$",
+          "matchReason": "差角正切分子差、分母 1 加积均一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          220
+        ],
+        "bodyEvidencePrintedPages": [
+          218
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "沿用 183 页两边有意义的恒等式约定。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3326",
+      "name": "辅助角公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "applies",
+      "status": "needs_review",
+      "definitionSha256": "aca518107e3ccd8f97db82ca2a97b4de701d9a32666b6a33057299b13804a25d",
+      "legacyPrintedPages": [
+        223
+      ],
+      "evidence": [
+        {
+          "pdfPage": 234,
+          "printedPage": 227,
+          "textSha256": "21136ace907a8f8485208f264325141fb69a35cc05691bfca0008d94371a8f3a",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-234.txt",
+          "quote": "分析：便于求周期和最大值、最小值的三角函数式是  $ y = A\\sin(x + \\varphi) $，利用和角公式将其展开，可化为  $ y = a\\sin x + b\\cos x $ 的形式。反之，利用和（差）角公式，可将  $ y = a\\sin x + b\\cos x $ 转化为  $ y = A\\sin(x + \\varphi) $ 的形式，进而就可以求得其周期和最值了。",
+          "matchReason": "例 9 确认正余弦线性组合可化为 A sin(x+φ)，但一般系数/相位条件未由该文字完整定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          223
+        ],
+        "bodyEvidencePrintedPages": [
+          227
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "旧定义公式括号排版损坏；仅写 tanφ=b/a 既漏 a=0 情况，也不足以确定正确象限；还须 a²+b²>0 及 sinφ、cosφ 的系数关系。源例 9 给出具体正系数情形，不能替旧定义自动补全。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3327",
+      "name": "降幂公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "8eea0c12140e947f6d7bfe672ee294971ffcd828dd0a825a0b5d8ea0170ea881",
+      "legacyPrintedPages": [
+        221
+      ],
+      "evidence": [
+        {
+          "pdfPage": 232,
+          "printedPage": 225,
+          "textSha256": "652c026ba68d1909fc9585c1b91a91b5f6984014795730c79a32d3d0ecec0ea4",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-232.txt",
+          "quote": "$$ \\sin^{2}\\frac{\\alpha}{2}=\\frac{1-\\cos\\alpha}{2}. $$",
+          "matchReason": "教材推得半角平方公式，令 α 替换为 2α 即为旧定义的降幂两式；同页有余弦平方对应式。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          221
+        ],
+        "bodyEvidencePrintedPages": [
+          225
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "“降幂公式”专名未出现；按等价代换识别语义，不以专名命中作为充分证据。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3328",
+      "name": "二倍角的正弦公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "e8023fdd8aef33543da9180bef233cf7006dac5c942b87d22b31154173d8a6c0",
+      "legacyPrintedPages": [
+        220
+      ],
+      "evidence": [
+        {
+          "pdfPage": 228,
+          "printedPage": 221,
+          "textSha256": "481e8039309453d506c547d926e8c4b9b4d07f6ac0e8f3de22578e295111161e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-228.txt",
+          "quote": "$$ \\sin2\\alpha=2\\sin\\alpha\\cos\\alpha, $$",
+          "matchReason": "二倍角正弦公式正文直接给出，上页要求从和角公式推导。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          220
+        ],
+        "bodyEvidencePrintedPages": [
+          221
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3329",
+      "name": "二倍角的余弦公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "efde7a26925ce39b261aac755bad581f9e73578dff57ac1a8e2c3c37bb1a4512",
+      "legacyPrintedPages": [
+        220
+      ],
+      "evidence": [
+        {
+          "pdfPage": 228,
+          "printedPage": 221,
+          "textSha256": "481e8039309453d506c547d926e8c4b9b4d07f6ac0e8f3de22578e295111161e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-228.txt",
+          "quote": "$$ \\cos2\\alpha=\\cos^{2}\\alpha-\\sin^{2}\\alpha, $$",
+          "matchReason": "本页给出余弦平方差与 1-2sin²、2cos²-1 三种形式。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          220
+        ],
+        "bodyEvidencePrintedPages": [
+          221
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3330",
+      "name": "二倍角的正切公式",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "966c21de244f6d30486ef502b61dc06f7f38d74e09d30493adb3751a65e1dce6",
+      "legacyPrintedPages": [
+        220
+      ],
+      "evidence": [
+        {
+          "pdfPage": 228,
+          "printedPage": 221,
+          "textSha256": "481e8039309453d506c547d926e8c4b9b4d07f6ac0e8f3de22578e295111161e",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-228.txt",
+          "quote": "$$ \\tan2\\alpha=\\frac{2\\tan\\alpha}{1-\\tan^{2}\\alpha}. $$",
+          "matchReason": "二倍角正切完整公式对应，上页给出从和差角公式推导任务。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          220
+        ],
+        "bodyEvidencePrintedPages": [
+          221
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "仍须正切及分母有意义，不把公式视为全实数无条件等式。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3418",
+      "name": "正弦函数的图象",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "23ed7679afdf1a1b8df2af27a0ed606279cbc8ba0dfdb8c6d310b72823b69558",
+      "legacyPrintedPages": [
+        196
+      ],
+      "evidence": [
+        {
+          "pdfPage": 204,
+          "printedPage": 197,
+          "textSha256": "ead9f35874592d058a39cdeb80c345abea2d491d8d5d131cf6bd9e5e0b486e43",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-204.txt",
+          "quote": "正弦函数的图象叫做正弦曲线（sine curve），是一条“波浪起伏”的连续光滑曲线.",
+          "matchReason": "光滑波浪曲线说明及五点画图方法在相邻页；196 页为建模描点起始，完整旧定义跨 196—198。"
+        },
+        {
+          "pdfPage": 205,
+          "printedPage": 198,
+          "textSha256": "5c9d84c4d6526eea3a696c49f44054f6ea231f8e7dc81a3d3d54864dea3d4a1f",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-205.txt",
+          "quote": "在确定图象形状时起关键作用. 描出这五个点, 函数  $ y=\\sin x $,  $ x\\in[0,2\\pi] $ 的图象形状就基本确定了. 因此, 在精确度要求不高时, 常先找出这五个关键点, 再用光滑的曲线将它们连接起来, 得到正弦函数的简图. 这种近似的 “五点（画图）法” 是非常实用的.",
+          "matchReason": "光滑波浪曲线说明及五点画图方法在相邻页；196 页为建模描点起始，完整旧定义跨 196—198。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          196
+        ],
+        "bodyEvidencePrintedPages": [
+          197,
+          198
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3419",
+      "name": "余弦函数的图象",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "68cdbd7ce806e9aee24f4271cc66c85a35bc1769afd15cf3c45f66d3ca2cb3e3",
+      "legacyPrintedPages": [
+        198
+      ],
+      "evidence": [
+        {
+          "pdfPage": 205,
+          "printedPage": 198,
+          "textSha256": "5c9d84c4d6526eea3a696c49f44054f6ea231f8e7dc81a3d3d54864dea3d4a1f",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-205.txt",
+          "quote": "的图象向左平移 $ \\frac{\\pi}{2} $个单位长度而得到. 所以，将正弦函数的图象向左平移 $ \\frac{\\pi}{2} $个单位长度，就得到余弦函数的图象，如图5.4-5所示.",
+          "matchReason": "由 cos x=sin(x+π/2) 引出正弦图象向左平移 π/2 得余弦图象。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": false,
+        "legacyPrintedPages": [
+          198
+        ],
+        "bodyEvidencePrintedPages": [
+          198
+        ],
+        "note": "旧页码在当前证据页中；跨页证据或定义范围仍须查看 notes。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3420",
+      "name": "正切函数的图象",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "c39af28ffa3cbfc49ce7dfd19320cb207f05dd89c739428eb9be89bb74ed7968",
+      "legacyPrintedPages": [
+        207
+      ],
+      "evidence": [
+        {
+          "pdfPage": 218,
+          "printedPage": 211,
+          "textSha256": "0c933b5697b240b67fcdbc78de00fed9f56403a4e3ee0d337a36527c1500a540",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-218.txt",
+          "quote": "从图5.4-11可以看出，正切曲线是被与y轴平行的一系列直线 $ x=\\frac{\\pi}{2}+k\\pi $， $ k\\in\\mathbb{Z} $所隔开的无穷多支形状相同的曲线组成的。",
+          "matchReason": "排除直线 x=π/2+kπ 以及无穷多相同曲线分支明确描述，旧 207 页尚在正余弦习题。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          207
+        ],
+        "bodyEvidencePrintedPages": [
+          211
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3421",
+      "name": "周期函数",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "09ee555bf0cc0202f50f516c6fe919350cb7f799792445c5038920c1aaeae4db",
+      "legacyPrintedPages": [
+        200
+      ],
+      "evidence": [
+        {
+          "pdfPage": 208,
+          "printedPage": 201,
+          "textSha256": "be38835ce32c84721df4a19dafc99ad0bdb460b090eff0a92d4000ea471189f7",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-208.txt",
+          "quote": "一般地，设函数  $ f(x) $ 的定义域为 D，如果存在一个非零常数 T，使得对每一个  $ x \\in D $ 都有  $ x + T \\in D $，且",
+          "matchReason": "非零周期、定义域平移闭合、函数值重复以及存在最小正周期时的定义均在正文。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          200
+        ],
+        "bodyEvidencePrintedPages": [
+          201
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3422",
+      "name": "三角函数y=Asin(ωx+φ)的图象变换",
+      "bookId": "rja-compulsory-1",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "definitionSha256": "152dc581812f3d086ec3c01856afa1b5fbbd67edfde30cae34556fccc3d0f7e1",
+      "legacyPrintedPages": [
+        231
+      ],
+      "evidence": [
+        {
+          "pdfPage": 243,
+          "printedPage": 236,
+          "textSha256": "5c76d6b713dd31b177924aa8d07d01cfad20101dd581aefacfd8c270315bf0d9",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-243.txt",
+          "quote": "一般地，函数  $ y = A \\sin(\\omega x + \\varphi) $ ( $ A > 0 $,  $ \\omega > 0 $) 的图象，可以用下面的方法得到：先画出函数  $ y = \\sin x $ 的图象；再把正弦曲线向左（或右）平移  $ \\left|\\varphi\\right| $ 个单位长度，得到函数  $ y = \\sin(x + \\varphi) $ 的图象；然后把曲线上各点的横坐标变为原来的  $ \\frac{1}{\\omega} $ 倍（纵坐标不变），得到函数  $ y = \\sin(\\omega x + \\varphi) $ 的图象；最后把曲线上各点的纵坐标变为原来的  $ A $ 倍（横坐标不变），这时的曲线就是函数  $ y = A \\sin(\\omega x + \\varphi) $ 的图象。",
+          "matchReason": "236 页完整平移/横伸缩/纵伸缩次序，235 页值域及 243 页周期公式覆盖旧组合定义。"
+        },
+        {
+          "pdfPage": 242,
+          "printedPage": 235,
+          "textSha256": "3c66433f50cb0493fddd97a0fd8c9909bf26d83a8514cff669a604d17df87353",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-242.txt",
+          "quote": "一般地，函数  $ y = A \\sin(\\omega x + \\varphi) $ 的图象，可以看作是把  $ y = \\sin(\\omega x + \\varphi) $ 图象上所有点的纵坐标伸长（当 A > 1 时）或缩短（当 0 < A < 1 时）到原来的 A 倍（横坐标不变）而得到。从而，函数  $ y = A \\sin(\\omega x + \\varphi) $ 的值域是  $ [-A, A] $，最大值是 A，最小值是 -A。",
+          "matchReason": "236 页完整平移/横伸缩/纵伸缩次序，235 页值域及 243 页周期公式覆盖旧组合定义。"
+        },
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "b7597043ccb7b735bc21364341c851a48f416dcc149b4f54ea1582c5c7869a34",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-250.txt",
+          "quote": "这个简谐运动的周期是  $ T=\\frac{2\\pi}{\\omega} $，它是做简谐运动的物体往复运动一次所需要的时间；",
+          "matchReason": "236 页完整平移/横伸缩/纵伸缩次序，235 页值域及 243 页周期公式覆盖旧组合定义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          231
+        ],
+        "bodyEvidencePrintedPages": [
+          236,
+          235,
+          243
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": [
+        "234 页周期表达式 OCR 有明显错误，未以该错式作公式证据；采用 243 页清晰周期式交叉核对。"
+      ]
+    },
+    {
+      "uid": "M-K-02-3423",
+      "name": "简谐运动",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "a4ce4ada55342d54af2d67cc4f0b74c6009fdd50f3bb03227138f117440852e2",
+      "legacyPrintedPages": [
+        242
+      ],
+      "evidence": [
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "b7597043ccb7b735bc21364341c851a48f416dcc149b4f54ea1582c5c7869a34",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-250.txt",
+          "quote": "现实生活中存在大量类似弹簧振子的运动，如钟摆的摆动，水中浮标的上下浮动，琴弦的振动，等等。这些都是物体在某一中心位置附近循环往复的运动。在物理学中，把物体受到的力（总是指向平衡位置）正比于它离开平衡位置的距离的运动称为“简谐运动”。可以证明，在适当的直角坐标系下，简谐运动可以用函数  $ y = A \\sin(\\omega x + \\varphi) $， $ x \\in [0, +\\infty) $ 表示，其中  $ A > 0 $， $ \\omega > 0 $。描述简谐运动的物理量，如振幅、周期和频率等都与这个解析式中的常数有关：",
+          "matchReason": "简谐运动的力学含义与正弦模型、时间定义域和正参数条件均在正文。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          242
+        ],
+        "bodyEvidencePrintedPages": [
+          243
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3424",
+      "name": "振幅",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "05cedee833998335e7a14d9d629d2166b5d0b8e9857a5dd414de19dd781a06c0",
+      "legacyPrintedPages": [
+        244
+      ],
+      "evidence": [
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "b7597043ccb7b735bc21364341c851a48f416dcc149b4f54ea1582c5c7869a34",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-250.txt",
+          "quote": "A 就是这个简谐运动的振幅，它是做简谐运动的物体离开平衡位置的最大距离；",
+          "matchReason": "振幅为离开平衡位置最大距离，与模型 A 参数对应。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          244
+        ],
+        "bodyEvidencePrintedPages": [
+          243
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3425",
+      "name": "周期与频率",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "a84bac89f20c26eed64ac7e7f60f974470261bde3177d4fa00a205224d5e8a93",
+      "legacyPrintedPages": [
+        244
+      ],
+      "evidence": [
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "b7597043ccb7b735bc21364341c851a48f416dcc149b4f54ea1582c5c7869a34",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-250.txt",
+          "quote": "这个简谐运动的周期是  $ T=\\frac{2\\pi}{\\omega} $，它是做简谐运动的物体往复运动一次所需要的时间；",
+          "matchReason": "同页相邻给出周期、频率公式与往复一次/单位时间次数的物理含义。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          244
+        ],
+        "bodyEvidencePrintedPages": [
+          243
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    },
+    {
+      "uid": "M-K-02-3426",
+      "name": "相位与初相",
+      "bookId": "rja-compulsory-1",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "definitionSha256": "7821a5ec6995302a55e3ab7d0244bb808c0b8871071ba79f7e0ae0091026fe93",
+      "legacyPrintedPages": [
+        244
+      ],
+      "evidence": [
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "b7597043ccb7b735bc21364341c851a48f416dcc149b4f54ea1582c5c7869a34",
+          "localTextPath": ".tutor/curriculum/textbooks/rja-compulsory-1/page-250.txt",
+          "quote": "$ \\omega x + \\varphi $ 称为相位；x=0 时的相位  $ \\varphi $ 称为初相.",
+          "matchReason": "相位 ωx+φ 与初相 φ 的时间零点定义一致。"
+        }
+      ],
+      "legacyPageDiscrepancy": {
+        "hasDiscrepancy": true,
+        "legacyPrintedPages": [
+          244
+        ],
+        "bodyEvidencePrintedPages": [
+          243
+        ],
+        "note": "旧页码未覆盖本次直接证据页；以当前教材正文定位为准，不回写旧目录。"
+      },
+      "reviewStatus": "pending_review",
+      "notes": []
+    }
+  ]
+}

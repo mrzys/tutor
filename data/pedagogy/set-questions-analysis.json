@@ -1,0 +1,1697 @@
+{
+  "schemaVersion": 1,
+  "analysisSetId": "pedagogical-set-analysis-18-v1",
+  "description": "针对已核准的18个就绪集合题包的独立教研分析文件；严格分离于原题包存储，支持教学需求与蓝图匹配。",
+  "provenance": {
+    "ledgerPath": "data/question-bank/ledger.json",
+    "questionIndexPath": "data/assembly/question-index.json",
+    "courseContextPath": "data/question-bank/course-context.json",
+    "framework": "ADR-0003: 教学需求收集与确认",
+    "objectivesCatalog": "data/pedagogy/objectives-catalog.json",
+    "auditDate": "2026-10-10"
+  },
+  "summary": {
+    "totalQuestionsAnalyzed": 18,
+    "singlePartCount": 16,
+    "multiPartCount": 2,
+    "verificationStatusCounts": {
+      "source_checked": 18
+    }
+  },
+  "questions": [
+    {
+      "unitId": "ped-tutor-set-001",
+      "questionId": "tutor-set-001",
+      "auditId": "SET-SRC-001",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2
+            ],
+            "locator": "知识点1 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              2
+            ],
+            "locator": "知识点1 例1"
+          }
+        ],
+        "contentVersion": "content-fa414a7883a4415c",
+        "teacherVersion": "teacher-d6ed2cc031d71bdc",
+        "contentSha256": "fa414a7883a4415cab2d55173deb0a336059ccbd14371505dc0baa5a850efaf6",
+        "teacherSha256": "d6ed2cc031d71bdc847c9ca5d2ccf950ba8582d639b173e218190c0c0c471eff",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合元素的确定性",
+        "dependency": "初中代数方程/绝对值/客观标准",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "概念理解与辨析 (concept_discrimination)",
+        "definition": "辨析对象是否具有唯一客观的标准，排除主观修饰语，确认客观确定的集合元素",
+        "evidence": "设问要求判断能否构成集合，题干与选项对比：成集判断：南充高个学生、难题、方程实根、接近π"
+      },
+      "observableAbilities": [
+        {
+          "activity": "对象确定性标准检验",
+          "evidence": "依据确定性判据对各选项逐项比对，识别模糊描述并锁定客观对象"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "从具体事物与语言描述中抽象出数学集合所必需的客观确定属性",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-determinacy-01",
+          "judgment": "supported",
+          "evidence": "题干明确考查'能够构成集合的是'，选项包含3个模糊选项和1个客观确定选项",
+          "unsupportedAspects": "选择题形式不要求提交书面理由",
+          "alternativePaths": [
+            "按集合的确定性逐项判断；通过因式分解求 $x^2-1=0$ 的实根确认 C。",
+            "A、B、D 中个子较高、难题、无限接近没有确定标准。C 中 x²−1=0 等价于 x²=1，用平方根得到 x=±1，实根构成确定集合 {-1,1}，故 C 正确。此路径将教师解答中的求根改用自动注入的初中平方根运算，结论与原解答相同；不依赖可撤销的额外工具。"
+          ],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "negligible",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-002",
+      "questionId": "tutor-set-002",
+      "auditId": "SET-SRC-002",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              2,
+              3
+            ],
+            "locator": "知识点1 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              2,
+              3
+            ],
+            "locator": "知识点1 例2"
+          }
+        ],
+        "contentVersion": "content-52af23e78f044f3d",
+        "teacherVersion": "teacher-15fd9b654735c3a6",
+        "contentSha256": "52af23e78f044f3db4385064e887c9c4f4484b195aa8cfcdba9f66c18cf8b70a",
+        "teacherSha256": "15fd9b654735c3a6c567af2337ef75004d51cdbe425d112506a063bff1593af8",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合元素的确定性",
+        "dependency": "初中代数方程/绝对值/客观标准",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "概念理解与辨析 (concept_discrimination)",
+        "definition": "辨析对象是否具有唯一客观的标准，排除主观修饰语，确认客观确定的集合元素",
+        "evidence": "设问要求判断能否构成集合，题干与选项对比：成集判断：接近0、身高、绝对值5、数学家"
+      },
+      "observableAbilities": [
+        {
+          "activity": "对象确定性标准检验",
+          "evidence": "依据确定性判据对各选项逐项比对，识别模糊描述并锁定客观对象"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "从具体事物与语言描述中抽象出数学集合所必需的客观确定属性",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-determinacy-01",
+          "judgment": "supported",
+          "evidence": "题干明确考查'能够构成集合的是'，选项包含3个模糊选项和1个客观确定选项",
+          "unsupportedAspects": "选择题形式不要求提交书面理由",
+          "alternativePaths": [
+            "利用确定性排除模糊描述，求 $|x|=5$ 得到确定对象 $5$ 与 $-5$。"
+          ],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "negligible",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-003",
+      "questionId": "tutor-set-003",
+      "auditId": "SET-SRC-003",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3
+            ],
+            "locator": "知识点1 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              3
+            ],
+            "locator": "知识点1 跟踪训练1"
+          }
+        ],
+        "contentVersion": "content-a97649e29d74cfad",
+        "teacherVersion": "teacher-50e66cb691de202e",
+        "contentSha256": "a97649e29d74cfad747d780987bce6d9b0f02a4590d307197befa8e273e27b58",
+        "teacherSha256": "50e66cb691de202ea25f0e28ad8e186a7e251d8c9a73140a1074639b8a198051",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合元素的确定性",
+        "dependency": "初中代数方程/绝对值/客观标准",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "概念理解与辨析 (concept_discrimination)",
+        "definition": "辨析对象是否具有唯一客观的标准，排除主观修饰语，确认客观确定的集合元素",
+        "evidence": "设问要求判断能否构成集合，题干与选项对比：成集判断：800米达标女生与模糊描述"
+      },
+      "observableAbilities": [
+        {
+          "activity": "对象确定性标准检验",
+          "evidence": "依据确定性判据对各选项逐项比对，识别模糊描述并锁定客观对象"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "从具体事物与语言描述中抽象出数学集合所必需的客观确定属性",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-determinacy-01",
+          "judgment": "supported",
+          "evidence": "题干明确考查'能够构成集合的是'，选项包含3个模糊选项和1个客观确定选项",
+          "unsupportedAspects": "选择题形式不要求提交书面理由",
+          "alternativePaths": [
+            "依据确定性逐项判断，区分达标的明确标准和主观描述。"
+          ],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "negligible",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-007",
+      "questionId": "tutor-set-007",
+      "auditId": "SET-SRC-007",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              4
+            ],
+            "locator": "知识点2 例1"
+          }
+        ],
+        "contentVersion": "content-e33e9f02de0d2086",
+        "teacherVersion": "teacher-16e96e990b940b07",
+        "contentSha256": "e33e9f02de0d208650436a8cd914e1d40ad2e32e26528d7086324723dfab46bc",
+        "teacherSha256": "16e96e990b940b079b4ca3ac5d454dd415592a583dcfe8c4c438202fe18e3116",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "常用数集记法与元素属于关系",
+        "dependency": "无理数、有理数、负数、绝对值化简",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "符号辨识与概念理解 (symbolic_recognition)",
+        "definition": "准确识记与辨析 N, N*, Z, Q, R 的数学内涵，正确使用 ∈ 与 ∉",
+        "evidence": "题目考查具体数值（分数、根号、绝对值）与各大常用数集的属于关系真假"
+      },
+      "observableAbilities": [
+        {
+          "activity": "数集符号从属辨识",
+          "evidence": "识别数集符号分类，对给定实数逐项判断是否属于对应数集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "将具体数对象与抽象数集符号进行准确映射",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-membership-01",
+          "judgment": "supported",
+          "evidence": "直接考查具体数值与标准数集属于关系的符号判断",
+          "unsupportedAspects": "选择题形式，未要求书面论证属于或不属于的理由",
+          "alternativePaths": [
+            "分别计算两个绝对值，按常用数集的定义判断四个属于关系并计数。"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-008",
+      "questionId": "tutor-set-008",
+      "auditId": "SET-SRC-008",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6
+            ],
+            "locator": "知识点2 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 例2"
+          }
+        ],
+        "contentVersion": "content-7cc507d1679c9ca6",
+        "teacherVersion": "teacher-b77e2e6cafc37bdf",
+        "contentSha256": "7cc507d1679c9ca6606af580433366291e12e5c2c45f4b2d7338d801f06eb6b4",
+        "teacherSha256": "b77e2e6cafc37bdfaf105d1a52a5e3904fa03c791f52d7978baef57cf6829b96",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "常用数集记法与元素属于关系",
+        "dependency": "无理数、有理数、负数、绝对值化简",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "符号辨识与概念理解 (symbolic_recognition)",
+        "definition": "准确识记与辨析 N, N*, Z, Q, R 的数学内涵，正确使用 ∈ 与 ∉",
+        "evidence": "题目考查具体数值（分数、根号、绝对值）与各大常用数集的属于关系真假"
+      },
+      "observableAbilities": [
+        {
+          "activity": "数集符号从属辨识",
+          "evidence": "识别数集符号分类，对给定实数逐项判断是否属于对应数集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "将具体数对象与抽象数集符号进行准确映射",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-membership-01",
+          "judgment": "supported",
+          "evidence": "直接考查具体数值与标准数集属于关系的符号判断",
+          "unsupportedAspects": "选择题形式，未要求书面论证属于或不属于的理由",
+          "alternativePaths": [
+            "根据 $\\mathbb{N}^{*}$、$\\mathbb{R}$、$\\mathbb{Z}$、$\\mathbb{N}$ 的定义直接判断四个属于关系。"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-009",
+      "questionId": "tutor-set-009",
+      "auditId": "SET-SRC-009",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6
+            ],
+            "locator": "知识点2 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 跟踪训练1"
+          }
+        ],
+        "contentVersion": "content-e476c2949b2e1f8a",
+        "teacherVersion": "teacher-894fbaa450a9710a",
+        "contentSha256": "e476c2949b2e1f8a218c893646bbcc42a331cb494fb260905312aab08d49d784",
+        "teacherSha256": "894fbaa450a9710a6e189e46b5457c78046472358b5bfe2e0584b23495807c7c",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "常用数集记法与元素属于关系",
+        "dependency": "无理数、有理数、负数、绝对值化简",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "符号辨识与概念理解 (symbolic_recognition)",
+        "definition": "准确识记与辨析 N, N*, Z, Q, R 的数学内涵，正确使用 ∈ 与 ∉",
+        "evidence": "题目考查具体数值（分数、根号、绝对值）与各大常用数集的属于关系真假"
+      },
+      "observableAbilities": [
+        {
+          "activity": "数集符号从属辨识",
+          "evidence": "识别数集符号分类，对给定实数逐项判断是否属于对应数集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "将具体数对象与抽象数集符号进行准确映射",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-membership-01",
+          "judgment": "supported",
+          "evidence": "直接考查具体数值与标准数集属于关系的符号判断",
+          "unsupportedAspects": "选择题形式，未要求书面论证属于或不属于的理由",
+          "alternativePaths": [
+            "依据数集分类及属于关系逐项检查，确定 $-7.8$ 属于实数集。"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-010",
+      "questionId": "tutor-set-010",
+      "auditId": "SET-SRC-010",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              6,
+              7
+            ],
+            "locator": "知识点2 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 跟踪训练2"
+          }
+        ],
+        "contentVersion": "content-e784c53ecef8d3c6",
+        "teacherVersion": "teacher-93cd41d8b2809e3c",
+        "contentSha256": "e784c53ecef8d3c63a03052afb9e8f3b395573d1f6df3cff891d1d67f0d590c0",
+        "teacherSha256": "93cd41d8b2809e3c3b3a6778b7afa661d5a42d69d6b8978d50c859ca47099359",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "常用数集记法与元素属于关系",
+        "dependency": "无理数、有理数、负数、绝对值化简",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "符号辨识与概念理解 (symbolic_recognition)",
+        "definition": "准确识记与辨析 N, N*, Z, Q, R 的数学内涵，正确使用 ∈ 与 ∉",
+        "evidence": "题目考查具体数值（分数、根号、绝对值）与各大常用数集的属于关系真假"
+      },
+      "observableAbilities": [
+        {
+          "activity": "数集符号从属辨识",
+          "evidence": "识别数集符号分类，对给定实数逐项判断是否属于对应数集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "将具体数对象与抽象数集符号进行准确映射",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-membership-01",
+          "judgment": "supported",
+          "evidence": "直接考查具体数值与标准数集属于关系的符号判断",
+          "unsupportedAspects": "选择题形式，未要求书面论证属于或不属于的理由",
+          "alternativePaths": [
+            "按常用数集定义和列举法逐项判断四个关系，统计正确关系个数。"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-013",
+      "questionId": "tutor-set-013",
+      "auditId": "SET-SRC-013",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8
+            ],
+            "locator": "知识点3 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              6
+            ],
+            "locator": "知识点3 例1"
+          }
+        ],
+        "contentVersion": "content-4edcb45933285995",
+        "teacherVersion": "teacher-51df299835297c72",
+        "contentSha256": "4edcb459332859958b38248368f8000a39aa1431bee6409cda84971e305c9a12",
+        "teacherSha256": "51df299835297c72bc1d3fb6e88646e5571c4c43eb19fda37720bd0b79ba89d6",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合元素的确定性",
+        "dependency": "初中代数方程/绝对值/客观标准",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "概念理解与辨析 (concept_discrimination)",
+        "definition": "辨析对象是否具有唯一客观的标准，排除主观修饰语，确认客观确定的集合元素",
+        "evidence": "设问要求判断能否构成集合，题干与选项对比：游戏妖怪描述的确定性"
+      },
+      "observableAbilities": [
+        {
+          "activity": "对象确定性标准检验",
+          "evidence": "依据确定性判据对各选项逐项比对，识别模糊描述并锁定客观对象"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象",
+        "evidence": "从具体事物与语言描述中抽象出数学集合所必需的客观确定属性",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-concept-determinacy-01",
+          "judgment": "supported",
+          "evidence": "题干明确考查'能够构成集合的是'，选项包含3个模糊选项和1个客观确定选项",
+          "unsupportedAspects": "选择题形式不要求提交书面理由",
+          "alternativePaths": [
+            "依据题面中是否存在确定判断标准逐项检查。"
+          ],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "negligible",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-018",
+      "questionId": "tutor-set-018",
+      "auditId": "SET-SRC-018",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "fill_blank",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ],
+            "locator": "知识点3 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              7
+            ],
+            "locator": "知识点3 跟踪训练4"
+          }
+        ],
+        "contentVersion": "content-927c707069ac3c27",
+        "teacherVersion": "teacher-6752f74631a4bae2",
+        "contentSha256": "927c707069ac3c27b932ff61b4f85d38da36bbe9522b8274c4c8ad5d632f0cb3",
+        "teacherSha256": "6752f74631a4bae28dbc97b9863dd43ec8d2ef6d5589dc704621908e1429b901",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "元素与集合的关系、集合元素的互异性",
+        "dependency": "一元二次方程因式分解与求根",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "分析综合与互异性检验 (analysis_and_verification)",
+        "definition": "分类求参并检验明确的基数约束",
+        "evidence": "由 4 属于集合求出 a=4 或 a=-4，利用两个不同元素条件检验并排除 a=4"
+      },
+      "observableAbilities": [
+        {
+          "activity": "分支建立与互异性反思检验",
+          "evidence": "a=4与a=-4均满足属于条件，只有a=-4满足本修订题的两个不同元素约束。"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "逻辑推理、数学运算",
+        "evidence": "体现严谨的分类讨论与反思检验逻辑，准确执行代数计算",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-distinctness-parameter-01",
+          "judgment": "supported",
+          "evidence": "题面经用户确认补充“两个不同元素”；a=4使基数为1不满足明确约束，a=-4满足基数为2。重复列举不使集合本身非法。",
+          "unsupportedAspects": "填空题只填最终数字-4，未要求提交书面推导证明",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "medium",
+        "strategyDiscovery": "medium",
+        "reasoningLoad": "medium",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-020",
+      "questionId": "tutor-set-020",
+      "auditId": "SET-SRC-020",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              12
+            ],
+            "locator": "知识点4 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              9
+            ],
+            "locator": "知识点4 例1"
+          }
+        ],
+        "contentVersion": "content-87331c85db705bd4",
+        "teacherVersion": "teacher-740083fa2202b18e",
+        "contentSha256": "87331c85db705bd4ea884f68b3062168658e48f1ca8aca03e6eba6b7b478a7ba",
+        "teacherSha256": "740083fa2202b18ec8a552047b5b709f58c8a163cef615cff84139f7a265788b",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合的表示法（描述法与列举法）",
+        "dependency": "一元一次不等式、正整数集约束",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "表征转换与基础应用 (representation_translation)",
+        "definition": "理解描述法代表元素与条件，在数集约束下解不等式并逐项列举",
+        "evidence": "解一元一次不等式并筛选正整数，将描述法转化为列举法集合"
+      },
+      "observableAbilities": [
+        {
+          "activity": "不等式求解与离散元素列举",
+          "evidence": "解不等式并剔除0及负数，完整列出正整数集合"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象、数学运算",
+        "evidence": "准确在描述法与列举法两种不同符号表征体系间进行等价转换",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-representation-roster-01",
+          "judgment": "supported",
+          "evidence": "直接考查正整数约束下的描述法转列举法",
+          "unsupportedAspects": "选择题形式，未要求手写花括号格式",
+          "alternativePaths": [
+            "直接将选项逐一代入检验"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "set_builder_to_roster",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-022",
+      "questionId": "tutor-set-022",
+      "auditId": "SET-SRC-022",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ],
+            "locator": "知识点4 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              9
+            ],
+            "locator": "知识点4 跟踪训练1"
+          }
+        ],
+        "contentVersion": "content-050f197058bb1809",
+        "teacherVersion": "teacher-840f38564ef97f20",
+        "contentSha256": "050f197058bb18097f6c82c20751ef974f8d7b0870ccf4896771ed6c10fd3350",
+        "teacherSha256": "840f38564ef97f20f177cc1e38a69dcd88c77b06f2b0d1bb8b78d8dea3d4405b",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合的表示法（描述法与列举法）",
+        "dependency": "一元一次不等式、正整数集约束",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "表征转换与基础应用 (representation_translation)",
+        "definition": "理解描述法代表元素与条件，在数集约束下解不等式并逐项列举",
+        "evidence": "解一元一次不等式并筛选正整数，将描述法转化为列举法集合"
+      },
+      "observableAbilities": [
+        {
+          "activity": "不等式求解与离散元素列举",
+          "evidence": "解不等式并剔除0及负数，完整列出正整数集合"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学抽象、数学运算",
+        "evidence": "准确在描述法与列举法两种不同符号表征体系间进行等价转换",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-representation-roster-01",
+          "judgment": "supported",
+          "evidence": "直接考查正整数约束下的描述法转列举法",
+          "unsupportedAspects": "选择题形式，未要求手写花括号格式",
+          "alternativePaths": [
+            "直接将选项逐一代入检验"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "set_builder_to_roster",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-034",
+      "questionId": "tutor-set-034",
+      "auditId": "SET-SRC-034",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              19
+            ],
+            "locator": "知识点6 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 例1"
+          }
+        ],
+        "contentVersion": "content-0478f9a415f3c09e",
+        "teacherVersion": "teacher-256ba6dc7c885e0d",
+        "contentSha256": "0478f9a415f3c09e7bbf990ed8f069310aa33e02fdc083e9bb5ea872a5ccce83",
+        "teacherSha256": "256ba6dc7c885e0d109ae74fbd4abf0959e88fc6b2281a6eafad7d8e58c909c0",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "子集、真子集概念与包含关系判定",
+        "dependency": "空集性质、元素逐项比对",
+        "mappedChapter": "1.2",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "关系辨析与逻辑判断 (relation_understanding)",
+        "definition": "判断有限集合之间的包含与真包含关系，区分属于与包含、空集与单元素集",
+        "evidence": "比较两个集合元素，判定子集或真子集关系，辨析空集选项"
+      },
+      "observableAbilities": [
+        {
+          "activity": "包含关系判定与真子集筛选",
+          "evidence": "列举子集或逐项检验元素从属，确认真子集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "逻辑推理、数学抽象",
+        "evidence": "严格区分子集与真子集、元素属于与集合包含的逻辑层级",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-relation-subset-01",
+          "judgment": "supported",
+          "evidence": "设问直接考查真子集判断及子集包含关系",
+          "unsupportedAspects": "选择题只选结论",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "negligible",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-035",
+      "questionId": "tutor-set-035",
+      "auditId": "SET-SRC-035",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ],
+            "locator": "知识点6 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 例2"
+          }
+        ],
+        "contentVersion": "content-f6a8e5ca4396a00c",
+        "teacherVersion": "teacher-23d623300750f174",
+        "contentSha256": "f6a8e5ca4396a00c35c0e7e0a1e395d95465951e441bfd0e9a209411b2ef8dd1",
+        "teacherSha256": "23d623300750f174462377ff28fac648b1259c8867ffc10d69adf3d74c687fec",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "子集、真子集概念与包含关系判定",
+        "dependency": "空集性质、元素逐项比对",
+        "mappedChapter": "1.2",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "关系辨析与逻辑判断 (relation_understanding)",
+        "definition": "判断有限集合之间的包含与真包含关系，区分属于与包含、空集与单元素集",
+        "evidence": "比较两个集合元素，判定子集或真子集关系，辨析空集选项"
+      },
+      "observableAbilities": [
+        {
+          "activity": "包含关系判定与真子集筛选",
+          "evidence": "列举子集或逐项检验元素从属，确认真子集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "逻辑推理、数学抽象",
+        "evidence": "严格区分子集与真子集、元素属于与集合包含的逻辑层级",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-relation-subset-01",
+          "judgment": "supported",
+          "evidence": "设问直接考查真子集判断及子集包含关系",
+          "unsupportedAspects": "选择题只选结论",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "negligible",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-041",
+      "questionId": "tutor-set-041",
+      "auditId": "SET-SRC-041",
+      "isParent": true,
+      "parentQuestionId": null,
+      "partId": null,
+      "questionType": "free_response",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              22
+            ],
+            "locator": "知识点6 跟踪训练5"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              15
+            ],
+            "locator": "知识点6 跟踪训练5"
+          }
+        ],
+        "contentVersion": "content-6c3717c7e65a4d17",
+        "teacherVersion": "teacher-a7d105d53b277eae",
+        "contentSha256": "6c3717c7e65a4d1797ddcfdda21777a8b66e9c227899a7a176b9a50d618e75d2",
+        "teacherSha256": "a7d105d53b277eaea9fcc91b8783534539d3669baacde68b6a7d6339ad8ae6d4",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "二次方程根集合、子集包含关系与非空真子集计数",
+        "dependency": "二次项系数分类讨论（a=0与a≠0）、因式分解、非空真子集公式 2^n-2",
+        "mappedChapter": "1.2",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "分类讨论与综合论证 (branching_and_synthesis)",
+        "definition": "分类讨论二次方程最高次系数，利用包含关系求参数，结合子集基数公式求解",
+        "evidence": "p1求A并B=B即A包含于B的参数值；p2根据并集非空真子集个数为6反推并集元素个数为3并求参数"
+      },
+      "observableAbilities": [
+        {
+          "activity": "方程退化分类讨论（a=0与a≠0）",
+          "evidence": "对二次方程分 a=0（一次方程）和 a≠0（因式分解得根 1 和 1/a）分类讨论"
+        },
+        {
+          "activity": "集合关系转化与子集计数逆向推导",
+          "evidence": "由 A∪B=B 转化为 A⊆B；由 2^n-2=6 推出 |C|=3，分析元素重复与唯一性"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "逻辑推理、数学运算",
+        "evidence": "自主发现最高次项系数退化分类，严密推理并结合代数计数求解",
+        "confidence": "high"
+      },
+      "partAnalyses": [
+        {
+          "partId": "p1",
+          "prompt": "若 A∪B=B，求 a 的取值。",
+          "cognitiveRequirement": "分类讨论与子集包含求解",
+          "abilities": [
+            "a=0与a≠0分类讨论",
+            "因式分解求根",
+            "A⊆B多分支求解 (a=0, 1, 1/4)"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-set-relation-subset-01",
+              "judgment": "supported",
+              "evidence": "由 A∪B=B 转化为 A⊆B，对 a=0 和 a≠0 分别论证",
+              "unsupportedAspects": "空集作为子集在此题中判别式恒有实根1，未涉及空集分支",
+              "alternativePaths": [],
+              "objectiveVersion": 2
+            }
+          ]
+        },
+        {
+          "partId": "p2",
+          "prompt": "记 C=A∪B，若集合 C 的非空真子集有 6 个，求实数 a 的取值范围。",
+          "cognitiveRequirement": "子集计数公式与并集元素分类分析",
+          "abilities": [
+            "非空真子集公式逆用",
+            "并集基数锁定为3",
+            "元素重合与互异性反求参数"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-set-relation-subset-01",
+              "judgment": "supported",
+              "evidence": "利用 2^|C|-2=6 推出 |C|=3，通过并集元素分析求 a 的取值范围",
+              "unsupportedAspects": "无",
+              "alternativePaths": [],
+              "objectiveVersion": 2
+            }
+          ]
+        }
+      ],
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-relation-subset-01",
+          "judgment": "supported",
+          "evidence": "完整考查包含关系转化、方程根集合分析与子集计数",
+          "unsupportedAspects": "无",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-written-derivation-01",
+          "judgment": "supported",
+          "evidence": "解答题要求书写完整的分类讨论与运算步骤",
+          "unsupportedAspects": "设问为求参数取值而非纯证明题",
+          "alternativePaths": [],
+          "objectiveVersion": 1
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "high",
+        "strategyDiscovery": "medium (自主识别a=0分类与计数逆推)",
+        "reasoningLoad": "high",
+        "computationalBurden": "medium",
+        "representationShift": "equation_to_set_and_counting",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "medium"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-045",
+      "questionId": "tutor-set-045",
+      "auditId": "SET-SRC-045",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ],
+            "locator": "知识点7 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 跟踪训练1"
+          }
+        ],
+        "contentVersion": "content-292ea61f83668ab1",
+        "teacherVersion": "teacher-ee61a13a6eceec07",
+        "contentSha256": "292ea61f83668ab19ca9fe6b6498199fc43870f83a7f521a90db4c8ed6800477",
+        "teacherSha256": "ee61a13a6eceec073a01c91c8a0f5fc495ba83f3dccf901a23c68b893b81ee9b",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "有限集合交集运算、绝对值不等式检验",
+        "dependency": "初中绝对值定义与计算",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "法则应用与逐项检验 (operational_execution)",
+        "definition": "对有限集元素逐一代入绝对值不等式检验，求出公共元素交集",
+        "evidence": "A 为 7 个离散整数，B 为 |2x-5|>3，求 A∩B"
+      },
+      "observableAbilities": [
+        {
+          "activity": "绝对值代入计算与交集筛选",
+          "evidence": "将 -1 到 5 共 7 个数代入 |2x-5|>3 验证，筛选出 {-1, 0, 5}"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算",
+        "evidence": "准确执行绝对值计算与集合交集运算",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-finite-inter-01",
+          "judgment": "supported",
+          "evidence": "直接考查有限集与条件集的交集运算",
+          "unsupportedAspects": "选择题形式",
+          "alternativePaths": [
+            "直接解绝对值不等式 2x-5>3 或 2x-5<-3 得 x>4 或 x<1，再与A求交",
+            "逐项代入A中7个整数检验"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-047",
+      "questionId": "tutor-set-047",
+      "auditId": "SET-SRC-047",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "single_choice",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25,
+              26
+            ],
+            "locator": "知识点7 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 跟踪训练3"
+          }
+        ],
+        "contentVersion": "content-c749412c573d0510",
+        "teacherVersion": "teacher-d97e6505785a547e",
+        "contentSha256": "c749412c573d05104b96c47bd51004cbb90ce9cdb6f71f020cec3029de62d33f",
+        "teacherSha256": "d97e6505785a547ef07fc4521c7f10bceb0401db9c630dec46c17945fc06ed2f",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合的补集与并集运算、一元二次不等式解集",
+        "dependency": "因式分解符号判断法、数轴表示",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "运算求解与数轴直观 (operational_execution)",
+        "definition": "求解二次不等式解集，在实数集内求补集，再与给定射线区间求并集",
+        "evidence": "求 B 的实数补集 (-1, 3)，再与 A=(-∞, 2] 求并集得 (-∞, 3)"
+      },
+      "observableAbilities": [
+        {
+          "activity": "连续实数区间补集与并集复合运算",
+          "evidence": "利用数轴确定开闭区间补集与并集重叠区域"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、直观想象",
+        "evidence": "数轴直观与区间运算法则严格结合",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-complement-01",
+          "judgment": "supported",
+          "evidence": "考查连续实数区间补集运算与并集复合",
+          "unsupportedAspects": "选择题单选",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "medium",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "medium",
+        "computationalBurden": "medium",
+        "representationShift": "algebra_to_number_line",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-049",
+      "questionId": "tutor-set-049",
+      "auditId": "SET-SRC-049",
+      "isParent": false,
+      "parentQuestionId": null,
+      "partId": "main",
+      "questionType": "fill_blank",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ],
+            "locator": "知识点7 跟踪训练5"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              18
+            ],
+            "locator": "知识点7 跟踪训练5"
+          }
+        ],
+        "contentVersion": "content-52afcad304da04ec",
+        "teacherVersion": "teacher-ac7890f13f62eef8",
+        "contentSha256": "52afcad304da04ec1fd79f7d19221e87f53fd35b264248c3dc2ff88ec1c72c0f",
+        "teacherSha256": "ac7890f13f62eef8bc9dbd66eadcd7051575d40b28d74f36efd84c85eddb51d9",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "集合补集运算、一元二次不等式与方程根求系数",
+        "dependency": "韦达定理（本次显式前提）、一元二次方程根与系数关系",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "综合运算与逆向推导 (synthesis_and_deduction)",
+        "definition": "由并集或补集边界反推二次方程的两个根，运用韦达定理求解待定系数",
+        "evidence": "由 M 的实数补集为 [-1, 2]，确定二次方程两根为 -1 和 2，由根与系数关系求 a 与 b"
+      },
+      "observableAbilities": [
+        {
+          "activity": "区间端点与方程根逆向转化",
+          "evidence": "将补集区间端点识别为对应二次方程的根，列出韦达定理方程求出 a=b=1"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、逻辑推理",
+        "evidence": "逆向思维与代数恒等式综合推导",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-complement-01",
+          "judgment": "supported",
+          "evidence": "利用补集运算确定边界，并反求参数",
+          "unsupportedAspects": "填空题只填结果",
+          "alternativePaths": [
+            "韦达定理法：两根和为1，两根积为-2，求得 a=1, b=1",
+            "完整代入校验路径：由 M=实数全集中N的补集，且 M 为两侧开区间，得 N=[-1,2]。多项式 ax²−bx−2 在两边界−1、2为0，列 a+b−2=0、4a−2b−2=0，解 a=b=1。代回 x²−x−2=(x+1)(x−2)，分区间检验乘积符号，≤0 的解集恰为[-1,2]，补集与 M 一致，故 a−b=0。这条路径不使用韦达定理，但需 quadratic_basics；分析记录不会自行更改组卷已登记的允许路径。"
+          ],
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "medium",
+        "strategyDiscovery": "medium (端点即方程根)",
+        "reasoningLoad": "medium",
+        "computationalBurden": "medium",
+        "representationShift": "interval_to_equation_roots",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "medium"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    },
+    {
+      "unitId": "ped-tutor-set-050",
+      "questionId": "tutor-set-050",
+      "auditId": "SET-SRC-050",
+      "isParent": true,
+      "parentQuestionId": null,
+      "partId": null,
+      "questionType": "free_response",
+      "sourceContext": {
+        "dataset": "tutor_set_curated_18",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26,
+              27
+            ],
+            "locator": "知识点7 跟踪训练6"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              18
+            ],
+            "locator": "知识点7 跟踪训练6"
+          }
+        ],
+        "contentVersion": "content-58c3b44f7725832a",
+        "teacherVersion": "teacher-6cb93003c2754961",
+        "contentSha256": "58c3b44f7725832a25b1d81f3f8695d18d01601b3b693af66326764e026a9a50",
+        "teacherSha256": "6cb93003c2754961a8a33642da8e6950837e8af500f9d45515dd9085e0313b7c",
+        "verificationBasis": "版本绑定的已核对题包，非本轮逐目标复核"
+      },
+      "verificationStatus": "source_checked",
+      "knowledgeScope": {
+        "primary": "连续实数区间运算、补集与交集、含参空交集与包含关系转化",
+        "dependency": "数轴直观、一元一次不等式组解法、区间端点开闭性判定",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "综合分析与书面论证 (synthesis_and_argumentation)",
+        "definition": "小问1考查确定参数下的区间求补求交运算；小问2考查含参等价条件转化与端点开闭严密论证",
+        "evidence": "解答题包含独立的两问，递进考查具体运算与含参综合论证"
+      },
+      "observableAbilities": [
+        {
+          "activity": "区间求补与求交运算（p1）",
+          "evidence": "将连续开区间的实数补集转化为两侧半开半闭区间，求交并保留端点开闭"
+        },
+        {
+          "activity": "空交集转化为子集包含并论证端点（p2）",
+          "evidence": "说明 N 恒非空，将空交集等价转化为 N⊆M，建立不等式组并论证端点取等"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "逻辑推理、数学运算、直观想象",
+        "evidence": "利用数轴几何直观实现条件等价转化，展现严密的端点闭合性逻辑推理与解答书写规范",
+        "confidence": "high"
+      },
+      "partAnalyses": [
+        {
+          "partId": "p1",
+          "prompt": "当 m=-2 时，求 (∁_R M) ∩ N。",
+          "cognitiveRequirement": "基础运算与区间求解",
+          "abilities": [
+            "连续实数区间补集运算",
+            "区间交集与端点开闭确认"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-set-operation-interval-param-01",
+              "judgment": "partially_supported",
+              "evidence": "仅支持具体参数下的区间补交运算；不覆盖含参求解与包含关系转化。",
+              "unsupportedAspects": "此小问为具体数值代入，不包含参数讨论与子集转化",
+              "alternativePaths": [],
+              "objectiveVersion": 2
+            }
+          ]
+        },
+        {
+          "partId": "p2",
+          "prompt": "若 (∁_R M) ∩ N = ∅，求实数 m 的取值范围。",
+          "cognitiveRequirement": "等价转化与含参分析论证",
+          "abilities": [
+            "非空性检验",
+            "集合关系等价转化",
+            "端点不等式组建立与开闭核验"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-set-operation-interval-param-01",
+              "judgment": "supported",
+              "evidence": "设问要求求出参数范围，作答必须完成空交集向子集转化的论证及端点开闭分析",
+              "unsupportedAspects": "由于区间长度为2恒非空，本题不涉及对 N=∅ 的分支讨论",
+              "alternativePaths": [],
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "unsupported",
+              "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+              "unsupportedAspects": "反证结构与矛盾构造缺失。",
+              "alternativePaths": [],
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题要求完整书写解答步骤，包含等价转化与不等式求解的书面逻辑",
+              "unsupportedAspects": "命题要求为求参数范围而非纯证明题",
+              "alternativePaths": [],
+              "objectiveVersion": 1
+            }
+          ]
+        }
+      ],
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-interval-param-01",
+          "judgment": "supported",
+          "evidence": "完整支持连续区间集合运算、含参空交集向包含关系的等价转化与端点论证",
+          "unsupportedAspects": "N 恒非空，无需讨论 N 为空集的分支",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "本题无自主建立反证假设与矛盾的完整活动；普通求解或分类步骤不等于反证法。",
+          "unsupportedAspects": "反证结构与矛盾构造缺失。",
+          "alternativePaths": [],
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-written-derivation-01",
+          "judgment": "supported",
+          "evidence": "解答题完整提交推导理由与逻辑步骤",
+          "unsupportedAspects": "无",
+          "alternativePaths": [],
+          "objectiveVersion": 1
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "medium",
+        "strategyDiscovery": "medium",
+        "reasoningLoad": "medium",
+        "computationalBurden": "medium",
+        "representationShift": "set_to_number_line_intervals",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "high"
+      },
+      "producerVerificationStatus": "evidence_verified",
+      "review": {
+        "status": "pending_review",
+        "note": "源题包已核对；新增教学目标判定需独立复核，不能继承题包ready。"
+      }
+    }
+  ],
+  "coverage": {
+    "questionIds": [
+      "tutor-set-001",
+      "tutor-set-002",
+      "tutor-set-003",
+      "tutor-set-007",
+      "tutor-set-008",
+      "tutor-set-009",
+      "tutor-set-010",
+      "tutor-set-013",
+      "tutor-set-018",
+      "tutor-set-020",
+      "tutor-set-022",
+      "tutor-set-034",
+      "tutor-set-035",
+      "tutor-set-041",
+      "tutor-set-045",
+      "tutor-set-047",
+      "tutor-set-049",
+      "tutor-set-050"
+    ],
+    "note": "本清单仅声明已生成的18题分析；新增ready题不自动获得教学目标支持。"
+  }
+}

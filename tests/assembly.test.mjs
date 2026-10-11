@@ -38,9 +38,9 @@ test('real default preview and draft use the current 50-unit bank, with ten uniq
   assert.equal(preview.ok, true, JSON.stringify(preview));
   assert.deepEqual(preview.blueprint.plannedStats, { questionCount: 10, points: 100 });
   assert.equal(preview.blueprint.supply.sourceUnits, 50);
-  assert.equal(preview.blueprint.supply.ready, 18);
-  assert.equal(preview.blueprint.supply.pendingCount, 32);
-  assert.equal(preview.blueprint.supply.pending.length, 32);
+  assert.equal(preview.blueprint.supply.ready, 45);
+  assert.equal(preview.blueprint.supply.pendingCount, 5);
+  assert.equal(preview.blueprint.supply.pending.length, 5);
   assert.deepEqual(preview.blueprint.slots.map(slot => slot.points), [8, 8, 8, 8, 8, 8, 10, 10, 14, 18]);
   assert.deepEqual(preview.blueprint.slots.filter(slot => slot.questionType === 'free_response').map(slot => slot.partPoints.map(part => part.points)), [[6, 8], [8, 10]]);
   const generated = await createDraft(preview.blueprint);

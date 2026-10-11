@@ -3,6 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { listQuestions, getQuestion } from '../question-bank/reader.mjs';
+import { normalizeTeachingGoals, compatibleGoal, suggestedGoalIds, goalReview, goalDifferences, unknownGoalSupport } from './teaching-goals.mjs';
+import { selectWithLlm, combineRankings } from './selector.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const types = ['single_choice', 'fill_blank', 'free_response'];
@@ -13,7 +15,7 @@ class AssemblyError extends Error {
 }
 const reject = message => { throw new AssemblyError('invalid_plan', message); };
 const failure = error => ({ ok: false, error: {
-  code: error instanceof AssemblyError ? error.code : 'read_error', message: error.message,
+  code: error instanceof AssemblyError || error.code === 'invalid_plan' ? error.code : 'read_error', message: error.message,
 } });
 
 async function readData(root, name) {
@@ -88,12 +90,24 @@ export function normalizeRequirements(input, config, sourceIds) {
   if (!object(values.counts)) reject('题量设置无效。');
   const counts = Object.fromEntries(types.map(type => [type, number(values.counts[type], `${type} 题量`, 0, 30, true)]));
   if (Object.values(counts).reduce((sum, value) => sum + value, 0) > 60) reject('总题量不能超过 60。');
+  if (values.teacherRequest !== undefined && (typeof values.teacherRequest !== 'string' || values.teacherRequest.length > 2000)) {
+    reject('教师原话需为不超过 2000 字符的文本。');
+  }
+  if (values.automaticFoundation !== undefined && typeof values.automaticFoundation !== 'boolean') reject('基础依赖策略无效。');
+  if (values.purpose !== undefined && !['consolidation', 'diagnostic', 'assessment', 'mock_exam'].includes(values.purpose)) reject('组卷用途无效。');
+  if (values.scoringMode !== undefined && !['none', 'points'].includes(values.scoringMode)) reject('计分方式无效。');
   return {
+    ...(values.scoringMode !== undefined ? { scoringMode: values.scoringMode } : {}),
+    ...(values.automaticFoundation !== undefined ? { automaticFoundation: values.automaticFoundation,
+      foundationPremises: values.automaticFoundation ? ['quadratic_basics', 'absolute_root', 'basic_geometry'].filter(id => config.premises.some(item => item.id === id)) : [] } : {}),
+    ...(values.purpose !== undefined ? { purpose: values.purpose } : {}),
     title: boundedText(values.title, '标题', 120), grade: boundedText(values.grade, '年级', 60),
     goal: boundedText(values.goal, '教学目的', 1000),
+    ...(values.teacherRequest !== undefined ? { teacherRequest: values.teacherRequest } : {}),
     durationMinutes: number(values.durationMinutes, '时长', 1, 300, true),
-    targetScore: number(values.targetScore, '目标总分', 1, 1000, true),
-    targetDifficulty: number(values.targetDifficulty, '目标难度', 0, 1),
+    targetScore: values.scoringMode === 'none' ? 0 : number(values.targetScore, '目标总分', 1, 1000, true),
+    targetDifficulty: values.targetDifficulty === null ? null : number(values.targetDifficulty, '目标难度', 0, 1),
+    teachingGoals: normalizeTeachingGoals(values.teachingGoals, config.chapters.map(item => item.id)),
     mainScope: knownIds(values.mainScope, config.chapters.map(item => item.id), '主考范围'),
     learnedScope: knownIds(values.learnedScope, config.chapters.map(item => item.id), '已学边界'),
     premises: knownIds(values.premises, config.premises.map(item => item.id), '显式前提'),
@@ -151,6 +165,7 @@ function assess(item, slot, requirements, usedIds = new Set(), usedGroups = new 
     notes: Array.isArray(annotation?.notes) ? clone(annotation.notes) : [] };
   if (!result.ok) return { ...base, status: 'read_failed', reasons: [result.error.message], errorCode: result.error.code };
   const question = result.question;
+  const goalSupport = unknownGoalSupport(requirements, slot);
   const reasons = [];
   if (!question.sourceRefs.some(ref => requirements.sourceIds.includes(ref.sourceId))) reasons.push('不在本次来源范围');
   if (!annotation || annotation.contentVersion !== question.contentVersion || annotation.teacherVersion !== question.teacherVersion
@@ -165,11 +180,14 @@ function assess(item, slot, requirements, usedIds = new Set(), usedGroups = new 
     && Array.isArray(solution.requiredSections) && Array.isArray(solution.requiredPremises)
     && typeof solution.basis === 'string' && solution.basis.trim());
   const allowedPaths = completePaths.filter(solution => solution.requiredSections.every(section => requirements.learnedScope.includes(section))
-    && solution.requiredPremises.every(premise => requirements.premises.includes(premise)));
+    && solution.requiredPremises.every(premise => (requirements.premises.includes(premise) || requirements.foundationPremises?.includes(premise))));
   if (!allowedPaths.length) return { ...base, status: 'unknown', reasons: [...reasons, '尚无覆盖全部必要小问且符合本次已学边界的已证实解法'],
     solutionPaths: completePaths.map(({ id, requiredSections, requiredPremises }) => ({ id, requiredSections, requiredPremises })) };
   if (usedIds.has(question.questionId) || usedGroups.has(annotation.duplicateGroup)) reasons.push('本卷已使用同题或重复组');
-  return { ...base, status: reasons.length ? 'related' : 'eligible', reasons,
+  if (goalSupport.some(goal => goal.priority === 'required')) return { ...base, status: 'unknown',
+    reasons: [...reasons, '必须教学目标尚无已复核的题目支持证据'], goalSupport,
+    duplicateGroup: annotation.duplicateGroup, allowedSolutionPath: allowedPaths[0] };
+  return { ...base, status: reasons.length ? 'related' : 'eligible', reasons, goalSupport,
     duplicateGroup: annotation.duplicateGroup, allowedSolutionPath: allowedPaths[0],
   };
 }
@@ -198,11 +216,17 @@ export async function previewBlueprint(requirements = {}, { root = defaultRoot }
     const normalized = normalizeRequirements(requirements, config, config.sources.map(item => item.sourceId));
     const slots = [];
     for (const type of types) {
+      const goals = normalized.teachingGoals;
+      const targeted = config.tasks.filter(task => task.questionType === type
+        && task.sectionIds.some(id => normalized.mainScope.includes(id))
+        && goals.some(goal => compatibleGoal(goal, task)));
+      const taskIds = targeted.length ? targeted.map(task => task.id) : config.defaultTasks[type];
       for (let i = 0; i < normalized.counts[type]; i++) {
-        const taskId = config.defaultTasks[type][i % config.defaultTasks[type].length];
+        const taskId = taskIds[i % taskIds.length];
         const task = config.tasks.find(item => item.id === taskId);
         const number = slots.length + 1;
         slots.push({ slotId: `slot-${number}`, number, questionType: type, taskId, taskLabel: task.label,
+          goalIds: suggestedGoalIds(goals, task),
           points: type === 'single_choice' ? 8 : type === 'fill_blank' ? 10 : (i % 2 ? 18 : 14), partPoints: [] });
       }
     }
@@ -211,7 +235,9 @@ export async function previewBlueprint(requirements = {}, { root = defaultRoot }
     const pool = await loadPool(root);
     return { ok: true, blueprint: { schemaVersion: 1, requirements: normalized, slots,
       plannedStats: { questionCount: slots.length, points: points.reduce((a, b) => a + b, 0) },
-      generation: { mode: 'visible_preset', label: '集合专项预设（可编辑）' }, supply: supplyFor(pool, slots, normalized) } };
+      generation: { mode: normalized.teachingGoals.length ? 'goal_guided_preset' : 'visible_preset',
+        label: normalized.teachingGoals.length ? '按目标章节与作答形式建议题位（需核查，不代表题目支持）' : '集合专项预设（可编辑）' },
+      goalReview: goalReview(normalized, slots, config.tasks), supply: supplyFor(pool, slots, normalized) } };
   } catch (error) { return failure(error); }
 }
 
@@ -226,9 +252,10 @@ function validateBlueprint(blueprint, config) {
     if (slot.number !== index + 1 || !types.includes(slot.questionType)) reject('题号或题型无效。');
     const task = config.tasks.find(item => item.id === slot.taskId && item.questionType === slot.questionType);
     if (!task) reject('题位考查任务与题型不匹配。');
-    const points = number(slot.points, '题位分值', 0, 1000, true);
+    const goalIds = knownIds(slot.goalIds ?? [], requirements.teachingGoals.map(goal => goal.id), '题位教学目标');
+    const points = requirements.scoringMode === 'none' ? 0 : number(slot.points, '题位分值', 0, 1000, true);
     if (!Array.isArray(slot.partPoints)) reject('小问分值需为数组。');
-    const partPoints = slot.partPoints.map(item => ({ partId: item?.partId, points: number(item?.points, '小问分值', 0, 1000, true) }));
+    const partPoints = slot.partPoints.map(item => ({ partId: item?.partId, points: requirements.scoringMode === 'none' ? 0 : number(item?.points, '小问分值', 0, 1000, true) }));
     if (slot.questionType === 'free_response') {
       const expected = (task.partIds ?? ['p1', 'p2']);
       if (partPoints.length !== expected.length || new Set(partPoints.map(item => item.partId)).size !== expected.length
@@ -237,9 +264,23 @@ function validateBlueprint(blueprint, config) {
       }
     } else if (partPoints.length) reject('非解答题不能设置小问分值。');
     counts[slot.questionType]++;
-    return { slotId: slot.slotId, number: slot.number, questionType: slot.questionType, taskId: task.id, taskLabel: task.label, points, partPoints };
+    return { slotId: slot.slotId, number: slot.number, questionType: slot.questionType, taskId: task.id, taskLabel: task.label, points, partPoints, goalIds,
+      ...(slot.targetDifficulty !== undefined ? { targetDifficulty: slot.targetDifficulty === null ? null : number(slot.targetDifficulty, '题位目标难度', 0, 1) } : {}),
+      ...(slot.planningReason !== undefined ? { planningReason: boundedText(slot.planningReason, '原规划理由', 1000) } : {}) };
   });
   if (types.some(type => counts[type] !== requirements.counts[type])) reject('实际题位数量与需求题量不一致。');
+  if (blueprint.generation?.mode === 'llm') {
+    const requiredGoals = requirements.teachingGoals.filter(goal => goal.priority === 'required');
+    for (const slot of slots) {
+      const task = config.tasks.find(task => task.id === slot.taskId);
+      if (slot.goalIds.some(id => !compatibleGoal(requirements.teachingGoals.find(goal => goal.id === id), task))) {
+        reject('AI 蓝图的教学目标与所关联题位不兼容。');
+      }
+    }
+    if (requiredGoals.some(goal => !slots.some(slot => slot.goalIds.includes(goal.id)))) {
+      reject('AI 蓝图的必须教学目标需保留关联题位，不能通过编辑静默省略。');
+    }
+  }
   return { requirements, slots };
 }
 
@@ -251,49 +292,76 @@ export async function recheckBlueprint(blueprint, { root = defaultRoot } = {}) {
     const pool = await loadPool(root);
     return { ok: true, blueprint: { schemaVersion: 1, requirements, slots,
       plannedStats: { questionCount: slots.length, points: slots.reduce((sum, slot) => sum + slot.points, 0) },
-      generation: { mode: 'visible_preset', label: '集合专项预设（已按编辑后的题位重新核查供给）' },
+      generation: blueprint.generation?.mode === 'llm' ? { ...clone(blueprint.generation), edited: true,
+        label: 'AI 蓝图（已按当前题位重新核查供给，理由为原规划说明）' }
+        : { mode: 'visible_preset', label: '集合专项预设（已按编辑后的题位重新核查供给）' },
+      goalReview: goalReview(requirements, slots, loaded.config.tasks),
       supply: supplyFor(pool, slots, requirements) } };
   } catch (error) { return failure(error); }
 }
 
-export async function createDraft(blueprint, { root = defaultRoot } = {}) {
+export async function createDraft(blueprint, { root = defaultRoot, selectionMode = 'rule', gateway, signal } = {}) {
   try {
     const loaded = await getAssemblyConfig({ root });
     if (!loaded.ok) return loaded;
     const { requirements, slots } = validateBlueprint(blueprint, loaded.config);
     const pool = await loadPool(root);
+    if (!['rule', 'llm'].includes(selectionMode)) reject('选题方式无效。');
+    let rankedSelection = null;
+    const initialCandidates = new Map(slots.map(slot => [slot.slotId, slotCandidates(pool, slot, requirements)]));
+    let ruleCombination = null;
+    if (selectionMode === 'llm') {
+      rankedSelection = await selectWithLlm({ slots, requirements, pool, candidatesBySlot: initialCandidates, gateway, signal });
+      if (!rankedSelection.ok) return rankedSelection;
+    } else {
+      const eligible = new Map([...initialCandidates.values()].flat().filter(candidate => candidate.status === 'eligible').map(candidate => [candidate.questionId, candidate]));
+      ruleCombination = combineRankings(slots, slots.map(slot => ({ slotId: slot.slotId,
+        candidates: initialCandidates.get(slot.slotId).filter(candidate => candidate.status === 'eligible') })), eligible);
+    }
     const usedIds = new Set(); const usedGroups = new Set();
     const selectedSlots = slots.map(slot => {
-      const candidates = slotCandidates(pool, slot, requirements, usedIds, usedGroups);
-      const selected = candidates.find(candidate => candidate.status === 'eligible');
+      const candidates = selectionMode === 'llm' ? initialCandidates.get(slot.slotId) : slotCandidates(pool, slot, requirements, usedIds, usedGroups);
+      const match = rankedSelection?.assignments.get(slot.slotId);
+      const identity = match?.questionId ?? ruleCombination?.assignments.get(slot.slotId)?.questionId;
+      const selected = candidates.find(candidate => candidate.questionId === identity);
       const failures = candidates.filter(candidate => candidate.status === 'read_failed');
       if (!selected) return { ...slot, status: failures.length ? 'search_failed' : 'empty', question: null,
         selection: { candidates, selectedReason: null, failures,
-          reasons: [failures.length ? '存在读取失败，不能将本次结果判断为题库无题。' : '没有已证实符合本题位全部条件且未重复使用的候选。'],
+          reasons: [failures.length ? '存在读取失败，不能将本次结果判断为题库无题。' : selectionMode === 'llm' && candidates.some(candidate => candidate.status === 'eligible')
+            ? '合格短名单与其他题位存在重复组竞争，全局去重后本题位留空。' : '没有已证实符合本题位全部条件且未重复使用的候选。'],
           suggestions: candidates.filter(candidate => candidate.status === 'related' || candidate.status === 'unknown') } };
       usedIds.add(selected.questionId); usedGroups.add(selected.duplicateGroup);
       const question = clone(pool.records.find(item => item.entry.questionId === selected.questionId).result.question);
+      const modelEvidence = match ? rankedSelection.selectionGeneration.candidateEvidenceSnapshot.find(item => item.questionId === match.questionId).evidence : null;
       return { ...slot, status: 'selected', question, selection: { candidates, failures,
-        selectedReason: { method: 'deterministic_eligible_identity_order', text: '来源、题型、具体任务及完整允许解法均符合；同卷无重复。合格候选按稳定身份排序选首题。',
-          allowedSolutionPath: selected.allowedSolutionPath, notes: clone(selected.notes) }, reasons: [], suggestions: [] } };
+        selectedReason: { method: match ? 'llm_candidate_ranking_global_assignment' : 'deterministic_eligible_identity_order',
+          text: match?.rationale ?? '来源、题型、具体任务及完整允许解法均符合；按稳定身份偏好进行全局去重组合，先尽可能填满题位，再选择靠前的合格候选。',
+          ...(match ? { rank: match.rank, evidenceRefs: clone(match.evidenceRefs),
+            evidence: match.evidenceRefs.map(ref => ({ ref, text: modelEvidence[ref] })),
+            supportStatus: 'AI 匹配建议，不等于已复核教学目标支持。' } : {}),
+          allowedSolutionPath: selected.allowedSolutionPath, goalSupport: clone(selected.goalSupport), notes: clone(selected.notes) }, reasons: [], suggestions: [] } };
     });
     const selected = selectedSlots.filter(slot => slot.status === 'selected');
     const plannedPoints = slots.reduce((sum, slot) => sum + slot.points, 0);
     const availablePoints = selected.reduce((sum, slot) => sum + slot.points, 0);
     const differences = [];
+    differences.push(...goalDifferences(requirements, selectedSlots, loaded.config.tasks));
     if (plannedPoints !== requirements.targetScore) differences.push({ code: 'planned_score_differs', message: `题位合计 ${plannedPoints} 分，与需求 ${requirements.targetScore} 分不同。`, expected: requirements.targetScore, actual: plannedPoints });
     for (const slot of selectedSlots.filter(item => item.status !== 'selected')) differences.push({ code: slot.status === 'search_failed' ? 'retrieval_failed' : 'missing_question', slotId: slot.slotId, message: `第 ${slot.number} 题未选入题目，保留题位。` });
     differences.push({ code: 'difficulty_unknown', message: '本次实际题目缺少独立难度估计，整卷难度保持未知；目标难度仅作已确认偏好。' });
     const now = new Date().toISOString();
     return { ok: true, draft: { schemaVersion: 1, draftId: randomUUID(), createdAt: now, title: requirements.title,
       baseline: { requirements: clone(requirements), slots: clone(slots), confirmedAt: now, version: 1,
+        ...(blueprint.generation ? { generation: clone(blueprint.generation) } : {}),
         courseContext: clone(loaded.config.courseContext), sourceManifest: clone(loaded.config.sourceManifest),
         taskCatalogSnapshot: clone({ catalogId: loaded.config.catalogId, chapters: loaded.config.chapters,
           premises: loaded.config.premises, tasks: loaded.config.tasks }),
         questionIndexSnapshot: clone(pool.questionIndexSnapshot) },
       slots: selectedSlots, stats: { plannedQuestions: slots.length, selectedQuestions: selected.length, plannedPoints, availablePoints,
         missingQuestions: slots.length - selected.length, difficultyEstimate: null }, differences,
+      ...(rankedSelection ? { selectionGeneration: clone(rankedSelection.selectionGeneration) } : {}),
       retrieval: { ...pool.totals, pendingCount: pool.pending.length, pending: clone(pool.pending), failures: clone(pool.failures), mode: 'real_local_bank',
-        conditions: clone(requirements), candidateOrder: 'questionId ascending', noAutomaticRelaxation: true } } };
+        conditions: clone(requirements), candidateOrder: selectionMode === 'llm' ? 'AI rank; maximum-cardinality global duplicate-group assignment' : 'questionId ascending; maximum-cardinality global duplicate-group assignment',
+        ...(ruleCombination ? { combination: clone(ruleCombination.summary) } : {}), noAutomaticRelaxation: true } } };
   } catch (error) { return failure(error); }
 }

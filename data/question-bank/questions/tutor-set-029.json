@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-029",
+  "auditId": "SET-SRC-029",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025秋·吉林月考）下列集合中，不同于另外三个集合的是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{x\\mid x=2020\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\{y\\mid(y-2020)^2=0\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{x=2020\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{2020\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A、B 都是描述法表示的数集，仅有数2020这一个元素，故都等于 D 的 $\\{2020\\}$。C 按原题列举法的写法，其元素是方程 $x=2020$，不是数2020，因此与其余三个集合不同。不能把 C 擅自改写为带竖线的描述法。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        15
+      ],
+      "locator": "知识点5 例2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        11
+      ],
+      "locator": "知识点5 例2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析集合元素类型与集合相等"
+    ],
+    "requiredKnowledge": [
+      "集合表示法",
+      "集合元素的对象类型",
+      "集合相等"
+    ],
+    "allowedSolution": "A、B 都是描述法表示的数集，仅有数2020这一个元素，故都等于 D 的 $\\{2020\\}$。C 按原题列举法的写法，其元素是方程 $x=2020$，不是数2020，因此与其余三个集合不同。不能把 C 擅自改写为带竖线的描述法。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-7f442bfb283451e5",
+    "teacherVersion": "teacher-bf8425ebadc7d9f6"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          15
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          11
+        ]
+      }
+    ],
+    "differences": [
+      "保留原卷特殊的方程对象集合写法 {x=2020}；不改为 {x|x=2020}。原解析明确说明此意，题面与答案一致。",
+      "原学生版含答案解析，独立 student 已删除教师内容。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-7f442bfb283451e5",
+    "teacherVersion": "teacher-bf8425ebadc7d9f6"
+  },
+  "contentVersion": "content-7f442bfb283451e5",
+  "contentSha256": "7f442bfb283451e50b2ed8057296215c7d403040d3b6b45f8dc33e51e8bf8156",
+  "teacherVersion": "teacher-bf8425ebadc7d9f6",
+  "teacherSha256": "bf8425ebadc7d9f649ca6444efd9a8ef9659940816338fbf196e5de08a51e539"
+}

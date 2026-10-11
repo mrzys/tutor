@@ -2,6 +2,7 @@ import path from 'node:path';
 import { mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { hashContent } from '../question-bank/reader.mjs';
+import { sqliteStorage } from '../storage/sqlite.mjs';
 
 const kinds = ['student', 'teacher'];
 const queues = new Map();
@@ -15,6 +16,8 @@ function directory(paper, outputRoot, kind) {
 }
 
 async function saveManifest(target, value) {
+  const repository = sqliteStorage(path.dirname(path.dirname(target)), 'outputs');
+  if (repository) return repository.put('outputs', `${path.basename(path.dirname(target))}/${value.kind}`, value);
   const temporary = `${target}.${randomUUID()}.tmp`;
   let file;
   try {
@@ -29,10 +32,18 @@ async function saveManifest(target, value) {
   }
 }
 
+async function readManifest(folder, kind, outputRoot) {
+  const repository = sqliteStorage(outputRoot, 'outputs');
+  if (!repository) return JSON.parse(await readFile(path.join(folder, `${kind}.json`), 'utf8'));
+  const value = repository.get('outputs', `${path.basename(folder)}/${kind}`);
+  if (!value) throw Object.assign(new Error('输出未生成。'), { code: 'ENOENT' });
+  return value;
+}
+
 export async function getOutputStatus(paper, kind, { outputRoot }) {
   const folder = directory(paper, outputRoot, kind);
   let manifest;
-  try { manifest = JSON.parse(await readFile(path.join(folder, `${kind}.json`), 'utf8')); }
+  try { manifest = await readManifest(folder, kind, outputRoot); }
   catch (error) {
     if (error.code === 'ENOENT') return { kind, status: 'not_generated', issues: [] };
     return { kind, status: 'failed', message: '输出状态无法读取，成卷内容仍保留。', issues: [], errorCode: 'read_error' };
@@ -99,6 +110,6 @@ export async function readOutputFile(paper, kind, { outputRoot }) {
     throw Object.assign(new Error(status.message ?? '本版尚未生成可下载文件。'), { code: status.errorCode ?? 'not_found' });
   }
   const folder = directory(paper, outputRoot, kind);
-  const manifest = JSON.parse(await readFile(path.join(folder, `${kind}.json`), 'utf8'));
+  const manifest = await readManifest(folder, kind, outputRoot);
   return { bytes: await readFile(path.join(folder, manifest.filename)), filename: `${kind}-${paper.paperId}.pdf` };
 }

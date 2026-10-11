@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-023",
+  "auditId": "SET-SRC-023",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025秋·安溪县期中）已知集合 $M=\\{1,5,9,13,17\\}$，则 $M=$（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{x\\mid x=2n+1,\\ n\\in\\mathbb N,\\ n\\le8\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\{x\\mid x=2n-1,\\ n\\in\\mathbb N,\\ n\\le9\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{x\\mid x=4n+1,\\ n\\in\\mathbb N,\\ n\\le4\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{x\\mid x=4n-3,\\ n\\in\\mathbb N,\\ n\\le5\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "自然数包含0。C 中 $n=0,1,2,3,4$，相应 $x=1,5,9,13,17$，恰好与 M 相同。A 中 n=1 时产生3而 M 无3；B 在 n=0 时产生−1；D 在 n=0 时产生−3，均不相等，故选 C。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        13
+      ],
+      "locator": "知识点4 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        9
+      ],
+      "locator": "知识点4 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "将有限等差数集识别为描述法"
+    ],
+    "requiredKnowledge": [
+      "集合描述法与列举法",
+      "自然数含0",
+      "一次代数式代入"
+    ],
+    "allowedSolution": "自然数包含0。C 中 $n=0,1,2,3,4$，相应 $x=1,5,9,13,17$，恰好与 M 相同。A 中 n=1 时产生3而 M 无3；B 在 n=0 时产生−1；D 在 n=0 时产生−3，均不相等，故选 C。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-60c5cc87ad722b41",
+    "teacherVersion": "teacher-363a62a86edfcafa"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          13
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          9
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-60c5cc87ad722b41",
+    "teacherVersion": "teacher-363a62a86edfcafa"
+  },
+  "contentVersion": "content-60c5cc87ad722b41",
+  "contentSha256": "60c5cc87ad722b417eed44804066f34c68075b0f8983912d8fc2b6846148aaff",
+  "teacherVersion": "teacher-363a62a86edfcafa",
+  "teacherSha256": "363a62a86edfcafa4e8c178f35f36808683caf85c192b1beded2e50df9b638d6"
+}

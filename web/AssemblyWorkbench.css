@@ -1,0 +1,69 @@
+.assembly-workbench { min-width: 0; width: 100%; color: #525252; }
+.assembly-workbench[data-stage="draft"], .assembly-workbench[data-stage="paper"] { max-width: 1120px; margin-inline: auto; }
+.app-main .workspace.product-workspace { max-width: none; padding: 28px 32px 40px; }
+.assembly-workbench-product > div, .assembly-workbench-product .paper { min-width: 0; }
+.assembly-workbench-product .draft-toolbar { margin-top: 0; }
+.assembly-workbench-product .toolbar-intro { display: none; }
+.assembly-workbench-product .toolbar-actions { justify-content: flex-end; }
+.assembly-workbench-product .batch-toolbar { flex-wrap: wrap; }
+.assembly-workbench-product .blueprint-origin { margin-bottom: 18px; }
+.assembly-workbench-product .blueprint-advice-summary { font-size: 13px; line-height: 1.8; }
+.assembly-workbench-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 0 0 24px; }
+.assembly-workbench-heading > div { min-width: 0; }
+.assembly-workbench-stage { display: block; font-size: 12px; color: #737373; margin-bottom: 4px; }
+.assembly-workbench-heading h1 { font-size: 23px; line-height: 1.5; font-weight: 600; color: #000; margin: 0; overflow-wrap: anywhere; }
+.assembly-workbench-heading p { font-size: 13px; margin: 5px 0 0; overflow-wrap: anywhere; }
+.assembly-workbench-heading .assembly-assistant-trigger { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 7px 14px; flex-shrink: 0; border: 1px solid #d4d4d4; border-radius: 9999px; font-size: 13px; background: #fff; color: #000; }
+.assembly-workbench-body { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 28px; min-width: 0; }
+.assembly-workbench-product { min-width: 0; padding-bottom: 40px; }
+.assembly-workbench-product [id] { scroll-margin-top: 90px; }
+/* Keep the existing assistant mounted; its composer belongs to this panel, not the page. */
+.floating-assistant .assembly-assistant-content .composer-intake,
+.floating-assistant .assembly-assistant-content .composer-intake.intake-in-workflow { display: flex; flex: 1; flex-direction: column; width: 100%; max-width: none; min-height: 0; margin: 0; padding: 0; font-size: 13px; }
+.floating-assistant .assembly-assistant-content .intake-conversation { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 4px 12px; }
+.floating-assistant .assembly-assistant-content .chat-composer-dock,
+.floating-assistant .assembly-assistant-content .chat-composer-dock.is-docked { position: static; inset: auto; z-index: auto; flex-shrink: 0; padding: 6px 0 0; border: 0; background: #fff; }
+.floating-assistant .assembly-assistant-content .chat-composer-inner { max-width: none; margin: 0; }
+.floating-assistant .assembly-assistant-content .chat-composer-card .intake-request { padding: 8px 12px; border-radius: 12px; }
+.floating-assistant .assembly-assistant-content .chat-composer-card .intake-request-text { height: 88px; min-height: 88px; max-height: 88px; font-size: 13px; line-height: 1.7; }
+.floating-assistant .assembly-assistant-content .composer-stage-context { display: none; }
+.floating-assistant .assembly-assistant-content .composer-keyboard-hint { font-size: 10px; }
+.floating-assistant .assembly-assistant-content .composer-ai-status { display: none; }
+.floating-assistant .assembly-assistant-content .composer-footnote { margin: 6px 4px 0; font-size: 10px; line-height: 1.6; }
+.floating-assistant .assembly-assistant-content .chat-assistant-turn { margin-bottom: 14px; }
+.floating-assistant .assembly-assistant-content .intake-teacher-turn { font-size: 13px; line-height: 1.7; padding: 10px 12px; margin: 0 0 18px 20px; }
+.floating-assistant .assembly-assistant-content .intake-teacher-turn > span { font-size: 11px; }
+.floating-assistant .assembly-assistant-content .chat-assistant-history { font-size: 13px; margin-bottom: 18px; }
+.floating-assistant .assembly-assistant-content .chat-adjustment { margin: 8px 0; padding: 14px; font-size: 13px; }
+.floating-assistant .assembly-assistant-content .chat-adjustment > strong { font-size: 14px; }
+.floating-assistant .assembly-assistant-content .chat-adjustment .action-row { gap: 10px; }
+.floating-assistant .assembly-assistant-content .chat-adjustment .action-row button { font-size: 12px; padding: 7px 12px; }
+.floating-assistant .assembly-assistant-content .chat-working { flex-wrap: wrap; padding: 12px; font-size: 12px; }
+.floating-assistant .assembly-assistant-content .chat-working strong { font-size: 13px; }
+.floating-assistant .assembly-assistant-content .chat-working p { font-size: 12px; }
+.floating-assistant .assembly-assistant-content .notice { flex-shrink: 0; font-size: 12px; margin: 0 0 8px; }
+/* Keep blueprint planning readable on wide displays and anchored to the viewport. */
+.app-main:has(.assembly-workbench[data-stage="blueprint"]) { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+.app-main:has(.assembly-workbench[data-stage="blueprint"]) > .app-header { flex-shrink: 0; }
+.app-main .workspace.product-workspace:has(.assembly-workbench[data-stage="blueprint"]) { display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%; margin: 0; padding: 20px 28px 0; }
+.app-main .workspace.product-workspace:has(.assembly-workbench[data-stage="blueprint"]) > .notice { flex-shrink: 0; max-height: 20dvh; overflow-y: auto; }
+.assembly-workbench[data-stage="blueprint"] { display: flex; flex-direction: column; height: 100%; max-width: 1120px; margin-inline: auto; }
+.assembly-workbench[data-stage="blueprint"] .assembly-workbench-heading { flex-shrink: 0; margin-bottom: 20px; }
+.assembly-workbench[data-stage="blueprint"] .assembly-workbench-body { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1120px); justify-content: center; }
+.assembly-workbench[data-stage="blueprint"] .assembly-workbench-product { display: flex; flex-direction: column; min-height: 0; height: 100%; padding-bottom: 0; }
+.assembly-workbench[data-stage="blueprint"] .assembly-workbench-product > :not(.blueprint-editor) { flex-shrink: 0; max-height: 24dvh; overflow-y: auto; }
+@media (max-width: 760px) {
+  .app-main .workspace.product-workspace { padding: 20px 16px 32px; }
+  .assembly-workbench-heading { align-items: start; gap: 12px; margin-bottom: 20px; }
+  .assembly-workbench-heading h1 { font-size: 19px; }
+  .assembly-workbench-heading p { font-size: 12px; }
+  .assembly-workbench-heading .assembly-assistant-trigger { min-height: 40px; padding: 8px 10px; font-size: 12px; gap: 5px; }
+  .assembly-workbench-product { padding-bottom: 24px; }
+  .app-main .workspace.product-workspace:has(.assembly-workbench[data-stage="blueprint"]) { padding: 16px 12px 0; }
+  .assembly-workbench[data-stage="blueprint"] .assembly-workbench-heading { margin-bottom: 14px; }
+  .assembly-workbench[data-stage="blueprint"] .assembly-workbench-heading p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .app-main:has(.assembly-workbench[data-stage="blueprint"]) .header-inner { flex-wrap: nowrap; min-height: 64px; padding: 10px 12px; gap: 10px; }
+  .app-main:has(.assembly-workbench[data-stage="blueprint"]) .steps { gap: 10px; }
+  .app-main:has(.assembly-workbench[data-stage="blueprint"]) .steps > span { font-size: 11px; gap: 4px; }
+  .app-main:has(.assembly-workbench[data-stage="blueprint"]) .steps b { width: 24px; min-width: 24px; height: 24px; font-size: 11px; }
+}

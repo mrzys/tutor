@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-005",
+  "auditId": "SET-SRC-005",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2024秋·嘉定区校级月考）下列各对象的全体不能构成集合的有 ______。（填序号）①上大嘉高高一年级全体学生；②与1非常接近的全体实数；③7的正整数倍的全体；④给定的一条长度为1的线段上的所有点。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "②",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              4
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "①学生范围确定；③由正整数乘7所得的数范围确定；④给定线段上的点范围确定，三者都能构成集合。②“非常接近”缺少明确距离标准，不能确定实数是否属于其中，所以不能构成集合。故填②。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              4
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        4
+      ],
+      "locator": "知识点1 跟踪训练3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        3
+      ],
+      "locator": "知识点1 跟踪训练3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析对象能否构成集合并填写序号"
+    ],
+    "requiredKnowledge": [
+      "集合确定性",
+      "有限与无限对象的确定范围"
+    ],
+    "allowedSolution": "①学生范围确定；③由正整数乘7所得的数范围确定；④给定线段上的点范围确定，三者都能构成集合。②“非常接近”缺少明确距离标准，不能确定实数是否属于其中，所以不能构成集合。故填②。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-7b09cc4498427541",
+    "teacherVersion": "teacher-5bf95c463647320e"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          4
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          3
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-7b09cc4498427541",
+    "teacherVersion": "teacher-5bf95c463647320e"
+  },
+  "contentVersion": "content-7b09cc4498427541",
+  "contentSha256": "7b09cc449842754116aeb098b41654ec6d3be1839bbb78620baea932c310d306",
+  "teacherVersion": "teacher-5bf95c463647320e",
+  "teacherSha256": "5bf95c463647320e23869390cb8e9f966f7ea05e4cc237f4237b8aedf3cff416"
+}

@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-027",
+  "auditId": "SET-SRC-027",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2024秋·仁寿县校级期末）方程组 $\\begin{cases}x+y=0,\\\\x^2-4=0\\end{cases}$ 的解组成的集合为 ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$\\{(-2,2),(2,-2)\\}$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              14
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由 $x^2-4=(x-2)(x+2)=0$ 得 x=−2 或 x=2。由 x+y=0 得 y=−x，分别得到 (x,y)=(−2,2) 或 (2,−2)。方程组的解是有序数对，故其解集为 $\\{(-2,2),(2,-2)\\}$，不能把所有坐标拆成无序数集。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              14
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        14
+      ],
+      "locator": "知识点4 跟踪训练1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        10
+      ],
+      "locator": "知识点4 跟踪训练1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "求方程组解并用有序数对列举解集"
+    ],
+    "requiredKnowledge": [
+      "集合列举法",
+      "有序数对",
+      "初中方程组",
+      "平方差因式分解"
+    ],
+    "allowedSolution": "由 $x^2-4=(x-2)(x+2)=0$ 得 x=−2 或 x=2。由 x+y=0 得 y=−x，分别得到 (x,y)=(−2,2) 或 (2,−2)。方程组的解是有序数对，故其解集为 $\\{(-2,2),(2,-2)\\}$，不能把所有坐标拆成无序数集。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-a4012c5adbcb09ea",
+    "teacherVersion": "teacher-c9fcd6e7e1a4e1a4"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          14
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          10
+        ]
+      }
+    ],
+    "differences": [
+      "原局部题号又为“跟踪训练1”，保留独立 auditId 027，不与022并为同题。",
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-a4012c5adbcb09ea",
+    "teacherVersion": "teacher-c9fcd6e7e1a4e1a4"
+  },
+  "contentVersion": "content-a4012c5adbcb09ea",
+  "contentSha256": "a4012c5adbcb09ea620f4cac564007188c81333065be69929d15e310855bbd86",
+  "teacherVersion": "teacher-c9fcd6e7e1a4e1a4",
+  "teacherSha256": "c9fcd6e7e1a4e1a4663e1ee8f20ecbf17c86f217d7e6785f574e5b999beb17d3"
+}

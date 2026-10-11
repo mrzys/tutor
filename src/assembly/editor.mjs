@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { hashContent, getQuestion } from '../question-bank/reader.mjs';
 import { getAssemblyConfig, loadPool, slotCandidates, normalizeRequirements, partAllocation } from './engine.mjs';
+import { goalDifferences, suggestedGoalIds } from './teaching-goals.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const clone = value => structuredClone(value);
@@ -85,16 +86,22 @@ function occupied(draft, excludedSlotId, pool) {
 function candidatesFor(draft, slot, pool) {
   const used = occupied(draft, slot.slotId, pool);
   return slotCandidates(pool, slot, requirementsOf(draft), used.ids, used.groups).map(candidate => {
-    const annotation = pool.records.find(item => item.entry.questionId === candidate.questionId)?.annotation;
+    const record = pool.records.find(item => item.entry.questionId === candidate.questionId);
+    const annotation = record?.annotation;
     const duplicate = used.ids.has(candidate.questionId) || (annotation?.duplicateGroup && used.groups.has(annotation.duplicateGroup));
     const current = slot.question?.questionId === candidate.questionId;
     // Unknown solution evidence must never bypass the independent same-paper duplicate check.
     const reasons = [...candidate.reasons];
     if (duplicate && !reasons.includes('本卷已使用同题或重复组')) reasons.push('本卷已使用同题或重复组');
     if (current) reasons.push('当前题目，不作为换题备选');
+    let allocationCompatible = true;
+    if (record?.result.ok) {
+      try { pointsFor({ ...slot, question: record.result.question }, slot.points, slot.partPoints); }
+      catch { allocationCompatible = false; reasons.push('候选小问与当前赋分不兼容，需先调整题位'); }
+    }
     return { ...candidate, duplicate: Boolean(duplicate), current,
-      canSelect: !duplicate && !current && ['eligible', 'related', 'unknown'].includes(candidate.status),
-      status: candidate.status === 'eligible' && (duplicate || current) ? 'related' : candidate.status,
+      canSelect: !duplicate && !current && allocationCompatible && ['eligible', 'related', 'unknown'].includes(candidate.status),
+      status: candidate.status === 'eligible' && (duplicate || current || !allocationCompatible) ? 'related' : candidate.status,
       reasons };
   });
 }
@@ -124,17 +131,37 @@ export async function previewDraftCandidates(draft, { slotId, expectedRevision }
   } catch (error) { return failure(error); }
 }
 
+// One pool read supplies every slot in this exact draft revision. Reuse the
+// replacement assessment so current questions, occupied IDs and duplicate
+// groups never inflate the availability shown before opening the dialog.
+export async function previewDraftCandidateSupply(draft, { expectedRevision } = {}, { root = defaultRoot } = {}) {
+  try {
+    validateDraft(draft); checkRevision(draft, expectedRevision);
+    const pool = await loadPool(root);
+    return { ok: true, revision: revisionOf(draft), slots: draft.slots.map(slot => {
+      const assessed = candidatesFor(draft, slot, pool);
+      return { slotId: slot.slotId,
+        eligibleCount: assessed.filter(item => item.canSelect && item.status === 'eligible').length,
+        suggestionCount: assessed.filter(item => item.canSelect && ['unknown', 'related'].includes(item.status)).length,
+        readFailureCount: assessed.filter(item => item.status === 'read_failed').length };
+    }) };
+  } catch (error) { return failure(error); }
+}
+
 function scoringStatus(slot) {
   return { status: 'unconfirmed', message: '当前题分及小问分值为本草稿赋分；教师建议仅属该题的引用资料，未自动转换为当前评分细则。',
     questionId: slot.question?.questionId ?? null, points: slot.points, partPoints: clone(slot.partPoints) };
 }
 
 function planSlot(slot) {
-  return Object.fromEntries(['slotId', 'number', 'questionType', 'taskId', 'taskLabel', 'points', 'partPoints', 'targetDifficulty']
+  return Object.fromEntries(['slotId', 'number', 'questionType', 'taskId', 'taskLabel', 'points', 'partPoints', 'targetDifficulty', 'goalIds']
     .filter(key => slot[key] !== undefined).map(key => [key, clone(slot[key])]));
 }
 
 function refreshStats(draft) {
+  if (requirementsOf(draft).scoringMode === 'none') {
+    draft.slots.forEach(slot => { slot.points = 0; slot.partPoints = (slot.partPoints ?? []).map(part => ({ ...part, points: 0 })); delete slot.scoringStatus; });
+  }
   draft.slots.forEach((slot, index) => { slot.number = index + 1; });
   const selected = draft.slots.filter(slot => slot.question);
   draft.stats = { plannedQuestions: draft.slots.length, selectedQuestions: selected.length,
@@ -142,13 +169,14 @@ function refreshStats(draft) {
     missingQuestions: draft.slots.length - selected.length, difficultyEstimate: null };
   const baselineSlots = draft.baseline.slots;
   const differences = [];
-  if (draft.stats.plannedPoints !== draft.baseline.requirements.targetScore) differences.push({ code: 'planned_score_differs',
+  differences.push(...goalDifferences(draft.baseline.requirements, draft.slots, draft.baseline.taskCatalogSnapshot?.tasks ?? []));
+  if (requirementsOf(draft).scoringMode !== 'none' && draft.stats.plannedPoints !== draft.baseline.requirements.targetScore) differences.push({ code: 'planned_score_differs',
     message: `当前题位合计 ${draft.stats.plannedPoints} 分，与需求 ${draft.baseline.requirements.targetScore} 分不同。`,
     expected: draft.baseline.requirements.targetScore, actual: draft.stats.plannedPoints });
   for (const original of baselineSlots) {
     const current = draft.slots.find(slot => slot.slotId === original.slotId);
     if (!current) differences.push({ code: 'slot_deleted', slotId: original.slotId, message: `基线第 ${original.number} 题已删除。` });
-    else if (current.points !== original.points || hashContent(current.partPoints) !== hashContent(original.partPoints)) differences.push({
+    else if (requirementsOf(draft).scoringMode !== 'none' && (current.points !== original.points || hashContent(current.partPoints) !== hashContent(original.partPoints))) differences.push({
       code: 'points_changed', slotId: current.slotId, message: `第 ${current.number} 题赋分与基线不同：${original.points} → ${current.points} 分。` });
   }
   for (const slot of draft.slots) {
@@ -194,19 +222,28 @@ async function replaceOne(draft, slot, operation, pool) {
     selectedReason: { method: explicitDifference && candidate.status !== 'eligible' ? 'explicit_difference_selection' : 'draft_eligible_replacement',
       text: candidate.status === 'eligible' ? '按当前题位与已确认条件检索，候选满足完整允许解法且未重复；保留当前分值。'
         : '用户明确选择差异/未知候选，保留全部提示，不记为已证实符合。',
-      allowedSolutionPath: candidate.allowedSolutionPath ?? null, notes: clone(candidate.notes) },
+      allowedSolutionPath: candidate.allowedSolutionPath ?? null, goalSupport: clone(candidate.goalSupport ?? []), notes: clone(candidate.notes) },
     reasons: clone(candidate.reasons), suggestions: [] };
-  slot.scoringStatus = scoringStatus(slot);
-  return { slotId: slot.slotId, status: 'replaced', message: `已换题，保留 ${slot.points} 分；新题评分细则需核对。`,
+  if (requirementsOf(draft).scoringMode !== 'none') slot.scoringStatus = scoringStatus(slot);
+  return { slotId: slot.slotId, status: 'replaced', message: requirementsOf(draft).scoringMode === 'none' ? '已换题，本次练习不计分。' : `已换题，保留 ${slot.points} 分；新题评分细则需核对。`,
     fromQuestionId: previousId, toQuestionId: newQuestion.questionId, notes: clone(candidate.notes), reasons: clone(candidate.reasons) };
 }
 
-async function correctBaseline(draft, operation, root) {
+async function correctBaseline(draft, operation, root, recheckSlotIds = null) {
   if (!object(operation.requirements) || !Object.keys(operation.requirements).length) reject('请提供更正后的需求。');
   const config = await configFor(root);
   const requirements = normalizeRequirements({ ...requirementsOf(draft), ...operation.requirements }, config, config.sources.map(source => source.sourceId));
+  for (const goal of requirements.teachingGoals) {
+    const prior = requirementsOf(draft).teachingGoals?.find(item => item.id === goal.id);
+    if (prior && hashContent(prior) !== hashContent(goal) && goal.version <= prior.version) reject('更改已有教学目标需递增其版本。');
+  }
   const pool = await loadPool(root);
   draft.baselineHistory = [...(draft.baselineHistory ?? []), clone(draft.baseline)];
+  for (const slot of draft.slots) {
+    if (recheckSlotIds && !recheckSlotIds.includes(slot.slotId)) continue;
+    slot.goalIds = (slot.goalIds ?? []).filter(id => requirements.teachingGoals.some(goal => goal.id === id));
+  }
+  if (requirements.scoringMode === 'none') draft.slots.forEach(slot => { slot.points = 0; slot.partPoints = (slot.partPoints ?? []).map(part => ({ ...part, points: 0 })); delete slot.scoringStatus; });
   draft.baseline = { requirements, slots: draft.slots.map(planSlot), confirmedAt: new Date().toISOString(), version: (draft.baseline.version ?? 1) + 1,
     courseContext: clone(config.courseContext), sourceManifest: clone(config.sourceManifest), questionIndexSnapshot: clone(pool.questionIndexSnapshot),
     taskCatalogSnapshot: clone({ catalogId: config.catalogId, chapters: config.chapters, premises: config.premises, tasks: config.tasks }) };
@@ -215,6 +252,7 @@ async function correctBaseline(draft, operation, root) {
     pendingCount: pool.pending.length, pending: clone(pool.pending), failures: clone(pool.failures) };
   const entries = [];
   for (const slot of draft.slots) {
+    if (recheckSlotIds && !recheckSlotIds.includes(slot.slotId)) continue;
     if (!slot.question) { entries.push({ slotId: slot.slotId, status: 'unchanged', message: '保留未选题位，未自动补题。' }); continue; }
     const read = await getQuestion(slot.question.questionId, { root, contentVersion: slot.question.contentVersion, teacherVersion: slot.question.teacherVersion });
     const candidate = read.ok ? candidatesFor(draft, { ...slot, question: null }, pool).find(item => item.questionId === slot.question.questionId) : null;
@@ -223,6 +261,39 @@ async function correctBaseline(draft, operation, root) {
       message: slot.applicability.status === 'eligible' ? '新基线下已证实符合；保留现题和锁定。' : '新基线下适配尚未证实；保留现题和锁定。', reasons: clone(slot.applicability.reasons) });
   }
   return entries;
+}
+
+async function changeSlotCriteria(draft, operation, root) {
+  const slot = slotById(draft, operation.slotId);
+  const config = await configFor(root);
+  const task = config.tasks.find(item => item.id === operation.taskId);
+  if (!task || task.questionType !== slot.questionType) reject('调整考查任务需保持当前题型。');
+  // A task change must fit the existing allocation, including the exact part identities.
+  pointsFor({ ...slot, question: null, partPoints: partAllocation(task, slot.points) }, slot.points, slot.partPoints);
+  if (operation.teachingGoal !== null && !object(operation.teachingGoal)) reject('教学目标需为对象或明确清除的 null。');
+  const goalId = `slot-goal-${slot.slotId}`;
+  if (draft.slots.some(other => other.slotId !== slot.slotId && (other.goalIds ?? []).includes(goalId))) {
+    reject('本题专属教学目标被其他题位引用，需先解除共享关联。');
+  }
+  const currentGoals = requirementsOf(draft).teachingGoals ?? [];
+  const previousVersions = [draft.baseline, ...(draft.baselineHistory ?? [])]
+    .flatMap(basis => basis.requirements.teachingGoals ?? []).filter(goal => goal.id === goalId).map(goal => goal.version);
+  const teachingGoals = currentGoals.filter(goal => goal.id !== goalId);
+  if (operation.teachingGoal !== null) {
+    const input = operation.teachingGoal;
+    teachingGoals.push({ observable: input.observable, knowledgeScope: input.knowledgeScope, cognition: input.cognition,
+      conditions: input.conditions, priority: input.priority, abilities: input.abilities, literacies: input.literacies,
+      id: goalId, version: Math.max(0, ...previousVersions) + 1, source: { kind: 'teacher', text: input.observable } });
+  }
+  // Validate the per-slot difficulty with the shared requirements contract; the paper-wide target stays unchanged.
+  const validated = normalizeRequirements({ ...requirementsOf(draft), teachingGoals, targetDifficulty: operation.targetDifficulty },
+    config, config.sources.map(source => source.sourceId));
+  slot.taskId = task.id; slot.taskLabel = task.label;
+  slot.goalIds = operation.teachingGoal === null ? [] : [goalId];
+  slot.targetDifficulty = validated.targetDifficulty;
+  const entries = await correctBaseline(draft, { requirements: { teachingGoals: validated.teachingGoals } }, root, [slot.slotId]);
+  return entries.map(entry => ({ ...entry,
+    message: `已保存本题考查要求，保留现题、分值和锁定；请下一步查看候选并确认换题。${entry.message}` }));
 }
 
 export async function applyDraftOperation(input, operation, { root = defaultRoot } = {}) {
@@ -263,9 +334,11 @@ export async function applyDraftOperation(input, operation, { root = defaultRoot
         if (!task) reject('新增题的考查任务无效。');
         const after = operation.afterSlotId === undefined ? null : slotById(draft, operation.afterSlotId);
         const slot = { slotId: `slot-${randomUUID()}`, number: 0, questionType: task.questionType, taskId: task.id, taskLabel: task.label,
+          goalIds: suggestedGoalIds(requirementsOf(draft).teachingGoals ?? [], task),
           partPoints: partAllocation(task, Number.isInteger(operation.points) && operation.points >= 0 ? operation.points : 0),
           status: 'empty', question: null, locked: false, selection: { candidates: [], failures: [], selectedReason: null, reasons: [], suggestions: [] } };
-        Object.assign(slot, pointsFor(slot, operation.points, operation.partPoints ?? slot.partPoints));
+        const points = requirementsOf(draft).scoringMode === 'none' ? 0 : operation.points;
+        Object.assign(slot, pointsFor(slot, points, requirementsOf(draft).scoringMode === 'none' ? partAllocation(task, 0) : operation.partPoints ?? slot.partPoints));
         draft.slots.splice(after ? draft.slots.indexOf(after) + 1 : draft.slots.length, 0, slot);
         const pool = await loadPool(root); const outcome = await replaceOne(draft, slot, { mode: 'direct' }, pool);
         if (!slot.question) {
@@ -275,6 +348,7 @@ export async function applyDraftOperation(input, operation, { root = defaultRoot
         entries = [{ ...outcome, status: 'added', message: slot.question ? '已新增并选入合格未重复题目。' : `已新增空题位。${outcome.message}`, selected: Boolean(slot.question) }]; break;
       }
       case 'points': {
+        if (requirementsOf(draft).scoringMode === 'none') reject('本次练习不计分，不能单独修改分值。');
         const slot = slotById(draft, operation.slotId);
         Object.assign(slot, pointsFor(slot, operation.points, operation.partPoints ?? (slot.questionType === 'free_response' ? undefined : [])));
         slot.scoringStatus = scoringStatus(slot);
@@ -290,6 +364,7 @@ export async function applyDraftOperation(input, operation, { root = defaultRoot
         }); break;
       }
       case 'baseline': entries = await correctBaseline(draft, operation, root); break;
+      case 'criteria': entries = await changeSlotCriteria(draft, operation, root); break;
       default: reject('不支持的草稿操作。');
     }
     refreshStats(draft);

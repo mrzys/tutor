@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-030",
+  "auditId": "SET-SRC-030",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2024春·博湖县期末）下列集合中表示同一集合的是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$M=\\{(3,2)\\},\\ N=\\{(2,3)\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$M=\\{2,3\\},\\ N=\\{3,2\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$M=\\{(x,y)\\mid x+y=1\\},\\ N=\\{y\\mid x+y=1\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$M=\\{2,3\\},\\ N=\\{(2,3)\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "B",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15,
+              16
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A 的两个有序数对不同，所以对应单元素点集不同。B 的数集由同样的2、3组成，元素无序，故相等。C 的 M 是有序数对构成的点集，N 是满足条件的纵坐标构成的数集，元素类型不同，故不相等。D 的 M 是由2、3两个数构成的数集，N 是仅含有序数对 $(2,3)$ 的点集，不相等。故选 B。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15,
+              16
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        15,
+        16
+      ],
+      "locator": "知识点5 跟踪训练1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        11
+      ],
+      "locator": "知识点5 跟踪训练1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析集合元素类型与集合相等"
+    ],
+    "requiredKnowledge": [
+      "集合无序性",
+      "有序数对与数集",
+      "集合相等"
+    ],
+    "allowedSolution": "A 的两个有序数对不同，所以对应单元素点集不同。B 的数集由同样的2、3组成，元素无序，故相等。C 的 M 是有序数对构成的点集，N 是满足条件的纵坐标构成的数集，元素类型不同，故不相等。D 的 M 是由2、3两个数构成的数集，N 是仅含有序数对 $(2,3)$ 的点集，不相等。故选 B。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-08087971ea02fe08",
+    "teacherVersion": "teacher-7676a8ab07051672"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          15,
+          16
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          11
+        ]
+      }
+    ],
+    "differences": [
+      "原教师解析 D 错把 M={2,3} 说成点集；已在 source_adapted 解答更正为两个数的数集，保留原题和原答案 B。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-08087971ea02fe08",
+    "teacherVersion": "teacher-7676a8ab07051672"
+  },
+  "contentVersion": "content-08087971ea02fe08",
+  "contentSha256": "08087971ea02fe08fbf8d76154b248822862814ee02cd49113b36c66be91dd14",
+  "teacherVersion": "teacher-7676a8ab07051672",
+  "teacherSha256": "7676a8ab07051672b443f94a538c8cd028e6b93821ed34271f8e698d2146cedb"
+}

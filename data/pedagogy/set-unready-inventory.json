@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "set-unready-source-inventory-v1",
+  "description": "50个集合源单元中32个未就绪单元的审计清单；记录缺项原因，明确排除在可选题之外，严禁直接作为组卷候选。",
+  "provenance": {
+    "ledgerPath": "data/question-bank/ledger.json",
+    "sourceCatalogPath": "docs/validation/sources/set-source-catalog.json",
+    "auditDate": "2026-10-10"
+  },
+  "summary": {
+    "pendingUnits": 5,
+    "note": "从实时ledger核对；已解除待处理状态的历史记录见set-expansion报告。"
+  },
+  "unreadyUnits": [
+    {
+      "questionId": "tutor-set-015",
+      "auditId": "SET-SRC-015",
+      "questionType": "single_choice",
+      "status": "pending_unready",
+      "isSelectableCandidate": false,
+      "exclusionReason": "尚未完成独立题面结构化与人工视觉核验，或存在待解决的来源/证明疑点，严禁接入自动选题候选池",
+      "taskSummary": "1与{1}、无序性、重复方程根、无限集列举辨析",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            9
+          ],
+          "locator": "知识点3 跟踪训练1"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            7
+          ],
+          "locator": "知识点3 跟踪训练1"
+        }
+      ],
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "reportedIssues": [],
+      "pendingReasons": [
+        "C选项把根集写成{1,1,2}，按通常集合语义重复列举仍表示{1,2}，与B可同时为真；若要求规范不重复的列举写法需要明确题干或改选项，当前单选不唯一。"
+      ],
+      "benchmarkSlotRelation": null
+    },
+    {
+      "questionId": "tutor-set-019",
+      "auditId": "SET-SRC-019",
+      "questionType": "fill_blank",
+      "status": "pending_unready",
+      "isSelectableCandidate": false,
+      "exclusionReason": "尚未完成独立题面结构化与人工视觉核验，或存在待解决的来源/证明疑点，严禁接入自动选题候选池",
+      "taskSummary": "M={-1,3a-1}求参数限制",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            10,
+            11
+          ],
+          "locator": "知识点3 跟踪训练5"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            8
+          ],
+          "locator": "知识点3 跟踪训练5"
+        }
+      ],
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "reportedIssues": [],
+      "pendingReasons": [
+        "原题仅说M={−1,3a−1}，未明写有两个不同元素。a=0时M={−1}仍为集合，原答案a≠0依赖缺失前提，不能静默补条件。"
+      ],
+      "benchmarkSlotRelation": {
+        "role": "partial_alternative",
+        "slot": 7
+      }
+    },
+    {
+      "questionId": "tutor-set-021",
+      "auditId": "SET-SRC-021",
+      "questionType": "single_choice",
+      "status": "pending_unready",
+      "isSelectableCandidate": false,
+      "exclusionReason": "尚未完成独立题面结构化与人工视觉核验，或存在待解决的来源/证明疑点，严禁接入自动选题候选池",
+      "taskSummary": "5x²+4x=0的实根集转列举法",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            12,
+            13
+          ],
+          "locator": "知识点4 例2"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9
+          ],
+          "locator": "知识点4 例2"
+        }
+      ],
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "reportedIssues": [],
+      "pendingReasons": [
+        "双方PDF选项B、C、D均缺集合花括号，源选项C仅为0,−4/5而不是完整集合写法。原解析答案C可定位，但直接补齐选项会改变判定对象，待明确修订。"
+      ],
+      "benchmarkSlotRelation": {
+        "role": "partial_alternative",
+        "slot": 3
+      }
+    },
+    {
+      "questionId": "tutor-set-025",
+      "auditId": "SET-SRC-025",
+      "questionType": "fill_blank",
+      "status": "pending_unready",
+      "isSelectableCandidate": false,
+      "exclusionReason": "尚未完成独立题面结构化与人工视觉核验，或存在待解决的来源/证明疑点，严禁接入自动选题候选池",
+      "taskSummary": "被3除余2的自然数集转描述法",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            13,
+            14
+          ],
+          "locator": "知识点4 跟踪训练4"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            9,
+            10
+          ],
+          "locator": "知识点4 跟踪训练4"
+        }
+      ],
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "reportedIssues": [
+        "原题文字“能被3整除余2”表述不规范，解析实际按“被3除余2”处理"
+      ],
+      "pendingReasons": [
+        "题干“能被3整除余2”同时宣称整除与余2，存在矛盾；原解按“被3除余2”处理。保留原题等待明确笔误修订，不能直接发布矛盾题面。"
+      ],
+      "benchmarkSlotRelation": null
+    },
+    {
+      "questionId": "tutor-set-032",
+      "auditId": "SET-SRC-032",
+      "questionType": "fill_blank",
+      "status": "pending_unready",
+      "isSelectableCandidate": false,
+      "exclusionReason": "尚未完成独立题面结构化与人工视觉核验，或存在待解决的来源/证明疑点，严禁接入自动选题候选池",
+      "taskSummary": "六种表示中等于单点集{(2,1)}的个数",
+      "sourceRefs": [
+        {
+          "sourceId": "set-teacher",
+          "pages": [
+            16,
+            17
+          ],
+          "locator": "知识点5 跟踪训练3"
+        },
+        {
+          "sourceId": "set-student",
+          "pages": [
+            11
+          ],
+          "locator": "知识点5 跟踪训练3"
+        }
+      ],
+      "studentStatus": "pending_structure_and_review",
+      "teacherStatus": "source_recorded_not_verified",
+      "assetsStatus": "not_checked",
+      "boundaryStatus": "within",
+      "boundaryBasis": "s2_catalog_only",
+      "reportedIssues": [
+        "原题A={x=2,y=1}与原解析A={1,2}的对象语义不一致，且公式花括号排版不规范；需数学内容复核，不能按原解析无条件发布",
+        "无独立【答案】块；结论位于【解答】末尾"
+      ],
+      "pendingReasons": [
+        "原题 A={x=2,y=1} 以方程对象列举，而原解析改写成 {1,2}；对象语义冲突且原题括号排版不规范。不能据原答案3直接发布，需明确原作者意图或另建经批准改编题。"
+      ],
+      "benchmarkSlotRelation": null
+    }
+  ]
+}

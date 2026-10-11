@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-048",
+  "auditId": "SET-SRC-048",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025·杨浦区校级模拟）已知集合 $A=(-\\infty,3)$，集合 $B=[0,4]$，则 $A\\cap B=$______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$[0,3)$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "同时属于 A 和 B 的实数必须满足 $x<3$ 且 $0\\le x\\le4$，合并得 $0\\le x<3$。0同时在两集合中，3不在 A 中，所以 $A\\cap B=[0,3)$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        26
+      ],
+      "locator": "知识点7 跟踪训练4"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        17
+      ],
+      "locator": "知识点7 跟踪训练4"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "计算已给区间的交集并判断端点"
+    ],
+    "requiredKnowledge": [
+      "交集",
+      "区间开闭端点"
+    ],
+    "allowedSolution": "同时属于 A 和 B 的实数必须满足 $x<3$ 且 $0\\le x\\le4$，合并得 $0\\le x<3$。0同时在两集合中，3不在 A 中，所以 $A\\cap B=[0,3)$。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-ded433f97fb886e2",
+    "teacherVersion": "teacher-26ac09fab929084f"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          26
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          17
+        ]
+      }
+    ],
+    "differences": [
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-ded433f97fb886e2",
+    "teacherVersion": "teacher-26ac09fab929084f"
+  },
+  "contentVersion": "content-ded433f97fb886e2",
+  "contentSha256": "ded433f97fb886e2ee441eb0bea6f3141e94bedffdb1fb64fb3ef3af5edcb53b",
+  "teacherVersion": "teacher-26ac09fab929084f",
+  "teacherSha256": "26ac09fab929084f00b73f6965803f8e444d03f6a19071f27f07cf819956b5c0"
+}

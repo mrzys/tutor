@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-038",
+  "auditId": "SET-SRC-038",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025春·北京校级期中）已知集合 $A=\\{1,2,3,4,5,\\ldots,2025\\}$ 的子集 $B$ 满足：对任意 $x,y\\in B$，有 $x+y\\notin B$，则集合 $B$ 中元素个数的最大值是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "506"
+      },
+      {
+        "label": "B",
+        "text": "507"
+      },
+      {
+        "label": "C",
+        "text": "1012"
+      },
+      {
+        "label": "D",
+        "text": "1013"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "D",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "先证上界。若 B 为空集，则结论显然成立。若 B 非空，设其最大元素为 m，则 B 的所有元素都在 $\\{1,\\ldots,m\\}$ 中。若 $m=2k+1$，把 $1,\\ldots,m-1$ 分成 k 对 $(1,m-1),\\ldots,(k,k+1)$，每对至多一个元素属于 B，否则两元素之和 m 也在 B，与题意矛盾；加上 m，B 至多有 $k+1\\le1013$ 个元素。若 $m=2k$，因题设“任意 x,y”允许 x=y，数 k 不能在 B 中，否则 $k+k=m\\in B$。其余 $1,\\ldots,m-1$ 分成 k−1 对和为 m 的不同数，每对至多选一个，加上 m，至多有 $k\\le1012$ 个元素。因此 B 总不超过1013个元素。再取 $B=\\{1013,1014,\\ldots,2025\\}$，任意两元素（可相同）之和至少为2026，不在 B 中，且 B 有1013个元素，达到上界。故选 D。",
+        "provenance": "generated",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        21
+      ],
+      "locator": "知识点6 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        14
+      ],
+      "locator": "知识点6 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "用一般最大元素分组论证和不在集内的最大基数"
+    ],
+    "requiredKnowledge": [
+      "有限集合与子集",
+      "集合元素个数",
+      "一般最大元素分类",
+      "整数分组与基本计数"
+    ],
+    "allowedSolution": "先证上界。若 B 为空集，则结论显然成立。若 B 非空，设其最大元素为 m，则 B 的所有元素都在 $\\{1,\\ldots,m\\}$ 中。若 $m=2k+1$，把 $1,\\ldots,m-1$ 分成 k 对 $(1,m-1),\\ldots,(k,k+1)$，每对至多一个元素属于 B，否则两元素之和 m 也在 B，与题意矛盾；加上 m，B 至多有 $k+1\\le1013$ 个元素。若 $m=2k$，因题设“任意 x,y”允许 x=y，数 k 不能在 B 中，否则 $k+k=m\\in B$。其余 $1,\\ldots,m-1$ 分成 k−1 对和为 m 的不同数，每对至多选一个，加上 m，至多有 $k\\le1012$ 个元素。因此 B 总不超过1013个元素。再取 $B=\\{1013,1014,\\ldots,2025\\}$，任意两元素（可相同）之和至少为2026，不在 B 中，且 B 有1013个元素，达到上界。故选 D。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-ade982aab6c8ee76",
+    "teacherVersion": "teacher-7a6f6682d2384ce2"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          21
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          14
+        ]
+      }
+    ],
+    "differences": [
+      "原解析未经论证就假设最大元素为2025；替换为显式生成的完整补证，分别覆盖一般最大元素的奇偶两类。",
+      "题干任意 x,y 允许相等；偶数最大元素时中点不能选，已补足。",
+      "不以抽屉原理名称作为额外前提，使用集合分组后每组至多一个元素的直接计数。",
+      "选择题可通过检验1013元素构造并结合选项（无更大选项）作答，因此不能声称要求学生输出完整上界证明。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-ade982aab6c8ee76",
+    "teacherVersion": "teacher-7a6f6682d2384ce2"
+  },
+  "contentVersion": "content-ade982aab6c8ee76",
+  "contentSha256": "ade982aab6c8ee76a554cd962d827dd1a4260ebdd5745d9d3fa421c20d5d2947",
+  "teacherVersion": "teacher-7a6f6682d2384ce2",
+  "teacherSha256": "7a6f6682d2384ce266b5705986ebe61191c1b97c386f0fe95cbdad33d89a1ad8"
+}

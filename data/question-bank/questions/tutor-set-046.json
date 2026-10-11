@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-046",
+  "auditId": "SET-SRC-046",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·安徽模拟）已知全集 $U=\\mathbb Z$，集合 $A=\\{x\\mid -5<x<2,\\ x\\in\\mathbb Z\\}$，$B=\\{0,1,2,3,4\\}$，则 $(\\complement_U A)\\cup B=$（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\{x\\mid x\\le-5\\text{ 或 }x\\ge0,\\ x\\in\\mathbb Z\\}$"
+      },
+      {
+        "label": "B",
+        "text": "$\\{x\\mid x<-5\\text{ 或 }x>0,\\ x\\in\\mathbb Z\\}$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{x\\mid x\\ge0,\\ x\\in\\mathbb Z\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{x\\mid x>0,\\ x\\in\\mathbb Z\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "A",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "全集限定为整数，$A=\\{-4,-3,-2,-1,0,1\\}$，所以 $\\complement_U A=\\{x\\mid x\\le-5\\text{ 或 }x\\ge2,\\ x\\in\\mathbb Z\\}$。再并入 B，把0、1补入，得到 $\\{x\\mid x\\le-5\\text{ 或 }x\\ge0,\\ x\\in\\mathbb Z\\}$，选 A。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        25
+      ],
+      "locator": "知识点7 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        17
+      ],
+      "locator": "知识点7 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "在整数全集中求补集再与有限集并集"
+    ],
+    "requiredKnowledge": [
+      "整数全集",
+      "补集",
+      "并集",
+      "有限集合列举"
+    ],
+    "allowedSolution": "全集限定为整数，$A=\\{-4,-3,-2,-1,0,1\\}$，所以 $\\complement_U A=\\{x\\mid x\\le-5\\text{ 或 }x\\ge2,\\ x\\in\\mathbb Z\\}$。再并入 B，把0、1补入，得到 $\\{x\\mid x\\le-5\\text{ 或 }x\\ge0,\\ x\\in\\mathbb Z\\}$，选 A。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-85474d78715b5479",
+    "teacherVersion": "teacher-8fc28c536b60727d"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          25
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          17
+        ]
+      }
+    ],
+    "differences": [
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-85474d78715b5479",
+    "teacherVersion": "teacher-8fc28c536b60727d"
+  },
+  "contentVersion": "content-85474d78715b5479",
+  "contentSha256": "85474d78715b54790267b8c7c91a3a34a16b43893964e0573bc58054fb3b6e4d",
+  "teacherVersion": "teacher-8fc28c536b60727d",
+  "teacherSha256": "8fc28c536b60727d7c190d87e4d7c633349e5826a4cebc9ffe3326de2380ddf5"
+}

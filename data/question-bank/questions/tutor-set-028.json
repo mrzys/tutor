@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-028",
+  "auditId": "SET-SRC-028",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·石景山区校级开学）已知集合 $A=\\{x\\mid x=2k,\\ k\\in\\mathbb Z\\}$，$B=\\{x\\mid x=4m+6n,\\ m,n\\in\\mathbb Z\\}$，则（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$A\\cap B=\\varnothing$"
+      },
+      {
+        "label": "B",
+        "text": "$A\\subsetneq B$"
+      },
+      {
+        "label": "C",
+        "text": "$A=B$"
+      },
+      {
+        "label": "D",
+        "text": "$A\\cup B=\\mathbb Z$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "任取 $x\\in B$，则 $x=4m+6n=2(2m+3n)$ 为偶数，故 $B\\subseteq A$。任取 $x=2k\\in A$，取整数 $m=-k,n=k$，有 $4m+6n=2k=x$，故 $A\\subseteq B$，因此 $A=B$。两集合均含0，且均不含1，所以其余选项不成立。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        15
+      ],
+      "locator": "知识点5 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        10
+      ],
+      "locator": "知识点5 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "判断整数线性组合集合与偶数集相等"
+    ],
+    "requiredKnowledge": [
+      "集合相等",
+      "双向包含",
+      "整数与偶数",
+      "整式运算"
+    ],
+    "allowedSolution": "任取 $x\\in B$，则 $x=4m+6n=2(2m+3n)$ 为偶数，故 $B\\subseteq A$。任取 $x=2k\\in A$，取整数 $m=-k,n=k$，有 $4m+6n=2k=x$，故 $A\\subseteq B$，因此 $A=B$。两集合均含0，且均不含1，所以其余选项不成立。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-d9e0a3e4ef2dcd70",
+    "teacherVersion": "teacher-a4be4b663907b263"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          15
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          10
+        ]
+      }
+    ],
+    "differences": [
+      "B 项为真子集符号，规范为 subsetneq；原学生版混入答案和解答，已删除。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-d9e0a3e4ef2dcd70",
+    "teacherVersion": "teacher-a4be4b663907b263"
+  },
+  "contentVersion": "content-d9e0a3e4ef2dcd70",
+  "contentSha256": "d9e0a3e4ef2dcd704affe0c2c43ec832d4b68a586e6d659eed8c4d55cb99b811",
+  "teacherVersion": "teacher-a4be4b663907b263",
+  "teacherSha256": "a4be4b663907b263b5e8f123ef21db67913bc406436c799ad5943d3577404ade"
+}

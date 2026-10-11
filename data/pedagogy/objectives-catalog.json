@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "catalogId": "pedagogical-objectives-catalog-v1",
+  "description": "基于 ADR-0003 草案与高中数学课标整理的可判定教学目标细目；属于项目自定义管理目标，非课标原文等级枚举或封闭题库代码。",
+  "provenance": {
+    "framework": "ADR-0003: 教学需求收集与确认",
+    "courseContext": "data/question-bank/course-context.json",
+    "curriculumBasis": "普通高中数学课程标准（2017年版2020年修订）必修第一册第一章及高考命题实践",
+    "version": "1.1.0-draft",
+    "auditDate": "2026-10-10"
+  },
+  "judgingRules": {
+    "supported": "实际设问与作答条件提供目标全部必要活动的考查机会，各支持判据有经核对的有效证据，并考虑已知的合理替代解法。",
+    "partially_supported": "已证实提供部分活动，但未完整支持目标（如题面直接给出分类提示，仅支持分类后的求解，不支持自主发现分类）。",
+    "insufficient_evidence": "目标含义、关键题面、活动依据或替代解法尚不能核实，无法可靠判定支持程度，保持未知。",
+    "unsupported": "有具体依据表明题目不提供所需活动，或作答条件与该目标不相容（如客观题只选结论无法证明完整书面形式化论证）。",
+    "keyCheckpoints": [
+      "参考解法含证明，不等于题目要求学生提交书面证明；客观选择题不能直接证实完整论证目标。",
+      "题干已给出分类提示，不等于考查自主发现与识别分类讨论。",
+      "空集无关或恒非空的题目，不计为自主空集分支与退化情形讨论训练。",
+      "若存在学生可通过代入选项、数形直观排除绕过目标核心活动的合理替代解法，须如实记录并评估支持程度。"
+    ]
+  },
+  "objectives": [
+    {
+      "objectiveId": "obj-set-concept-determinacy-01",
+      "name": "依据确定性判断对象能否构成集合",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "集合元素的确定性",
+        "dependency": "初中代数方程/简单几何/常识生活语言",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "辨析给定语句或代数条件是否具有客观唯一的判断标准，准确排除带有主观色彩或模糊程度的描述，确认具有确定性的数学对象构成集合。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "single_choice",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "设问直接要求判断能否构成集合，题干与选项中明确设计客观准则与模糊主观描述的对比辨析点。",
+        "partially_supported": "题目涉及集合概念的多种特性（如同时考查无序性与互异性），确定性仅为次要选项之一。",
+        "insufficient_evidence": "题面表述模糊，无法确认命题是否设定了公认的客观边界。",
+        "unsupported": "设问为集合运算、子集包含或不等式解集，未对成集前提与确定性设立辨析机会。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的概念 · 确定性",
+        "cognitiveRequirement": "概念理解与辨析 (concept_discrimination)",
+        "observableAbilities": [
+          "对象确定性检验",
+          "主客观标准辨析"
+        ],
+        "coreLiteracy": "数学抽象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-concept-membership-01",
+      "name": "辨析常用数集符号及元素与集合的属于关系",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "常用数集记法（N, N*, Z, Q, R）与属于/不属于符号",
+        "dependency": "实数分类、负数、有理数、无理数、初中绝对值与平方根",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "正确识别数集符号的数学内涵，对具体数值（如负整数、分数、无理数、绝对值化简值）准确使用 ∈ 或 ∉ 进行属于关系判断与真假命题核查。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "single_choice_or_fill_blank",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "题目直接考查具体实数与标准数集的属于关系，且考查点覆盖常用数集符号的准确含义。",
+        "partially_supported": "题目给出属于符号，但核心考查点为方程根的求解，数集符号仅为解题边界约束。",
+        "insufficient_evidence": "题目印刷不清或数集定义存在符号争议。",
+        "unsupported": "仅出现自然语言描述，未使用属于符号或常用数集符号。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的概念 · 常用数集与元素关系",
+        "cognitiveRequirement": "符号辨识与概念理解 (symbolic_recognition)",
+        "observableAbilities": [
+          "数集符号辨析",
+          "数值性质判断与从属关系识别"
+        ],
+        "coreLiteracy": "数学抽象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-representation-roster-01",
+      "name": "将正整数等约束下的描述法转化为列举法表示",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "集合的描述法与列举法表示",
+        "dependency": "一元一次不等式解法、正整数集/自然数集约束",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "准确理解集合描述法中代表元素与限制条件，解出一元一次不等式并筛选出满足 N* 或 N 约束的离散元素，完整列举出集合的所有元素。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "single_choice_or_fill_blank",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "题干给出带不等式及正整数/自然数范围的描述法集合，明确要求写出或选择对应的列举法形式。",
+        "partially_supported": "仅要求计算集合中元素的个数，未要求完整展示列举法表示。",
+        "insufficient_evidence": "集合代表元素符号或条件边界缺失。",
+        "unsupported": "连续实数区间，无法转化为有限元素列举法。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的表示法 · 描述法与列举法转换",
+        "cognitiveRequirement": "表征转换与基础应用 (representation_translation)",
+        "observableAbilities": [
+          "符号表征转换",
+          "离散解筛选与逐项列举"
+        ],
+        "coreLiteracy": "数学抽象、数学运算"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-relation-subset-01",
+      "name": "辨析有限集合的子集、真子集概念与包含关系",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "子集、真子集概念、空集性质及包含关系记法",
+        "dependency": "元素属于关系与集合包含关系的区分（∈ 与 ⊆/⫋）",
+        "mappedChapter": "1.2",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "根据定义逐一核对集合元素的从属关系，区分元素属于与子集包含，识别真子集对“至少存在一元素不属于”的严格要求，或准确辨析空集在包含关系中的特殊性。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "single_choice_or_fill_blank",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "设问明确考查真子集判断、包含关系符号辨析或子集性质核验。",
+        "partially_supported": "题目考查交集/并集运算，包含关系仅作为结论的一个推论表现。",
+        "insufficient_evidence": "集合间关系条件不完整。",
+        "unsupported": "题目仅涉及同一集合内部的元素关系，无集合与集合间的包含活动。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合间的基本关系 · 子集与真子集",
+        "cognitiveRequirement": "关系理解与辨析 (relation_understanding)",
+        "observableAbilities": [
+          "集合包含关系判定",
+          "空集与真子集边界辨析"
+        ],
+        "coreLiteracy": "逻辑推理、数学抽象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-distinctness-parameter-01",
+      "name": "由元素属于条件求参并检验题面给定的元素个数约束",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "元素与集合的关系、集合元素的互异性",
+        "dependency": "一元二次方程求根、代数式求值",
+        "mappedChapter": "1.1",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "根据元素属于含参集合列出方程，求出参数候选值，再依据题面明确给定的两个不同元素（基数为2）约束排除使基数降为1的候选，核验最终参数。集合列举式重复本身不使集合无效，例如 {4,4}={4}。",
+      "completionConditions": {
+        "scaffolding": "none（题目未直接提示舍去重复根）",
+        "responseFormat": "fill_blank_or_free_response",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "题面明确给定固定元素个数，候选值中存在使元素合并、不能满足该基数约束的值，必须据此检验舍解。",
+        "partially_supported": "题干已直接提示'排除两元素相等的情形'，削弱了自主发现互异性检验的要求。",
+        "insufficient_evidence": "题面没有明确给定元素个数，不能仅因列举式出现相同值就判其非法。",
+        "unsupported": "解出的候选参数值自然全部满足互异性，作答无需发生互异性筛选活动。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的概念 · 元素的互异性与含参问题",
+        "cognitiveRequirement": "分析与综合应用 (analysis_and_verification)",
+        "observableAbilities": [
+          "分支情况列举",
+          "互异性检验与非法解排除"
+        ],
+        "coreLiteracy": "逻辑推理、数学运算"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-operation-finite-inter-01",
+      "name": "提取公共元素或合并元素完成含有限集的交并运算",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "至少一方为有限集合的交集或有限集合并集",
+        "dependency": "有限数集的元素逐项比对、一元二次/三次方程求根",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "准确应用交集（公共元素）或并集（所有元素合并且去重）的运算法则，对两个或多个具体集合的元素进行逐项比对与运算，写出正确的运算结果集合。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "answer_or_written_reasoning",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "题干明确要求求解两个给定集合的交集或并集，包含完整的公共元素提取或合并去重过程。",
+        "partially_supported": "仅由已知交集结果反推其中一个元素，未进行完整交并集计算。",
+        "insufficient_evidence": "集合元素定义不全。",
+        "unsupported": "运算对象为补集或全集，未发生交集/并集运算。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的基本运算 · 交集与并集",
+        "cognitiveRequirement": "法则理解与运算求解 (operational_execution)",
+        "observableAbilities": [
+          "集合运算法则执行",
+          "公共元素提取与合并去重"
+        ],
+        "coreLiteracy": "数学运算"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-operation-complement-01",
+      "name": "在明确全集下确定补集或补集元素个数",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "全集与补集定义、有限元素剔除或实数范围排除",
+        "dependency": "有限正整数集列举、子集元素剔除与计数",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "依据明确的全集与子集范围，确定属于全集而不属于子集的元素，正确给出补集或其元素个数；实数范围注意端点。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "answer_or_written_reasoning",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "实际活动要求依据明确的全集和子集确定补集或其基数；可从给定补集反推原集合边界。",
+        "partially_supported": "全集定义隐含或仅为中间步骤。",
+        "insufficient_evidence": "全集边界不清晰。",
+        "unsupported": "题目未定义全集，仅涉及普通交并运算。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的基本运算 · 补集",
+        "cognitiveRequirement": "法则应用与集合运算 (operational_execution)",
+        "observableAbilities": [
+          "补集运算执行",
+          "余集元素识别与基数计数"
+        ],
+        "coreLiteracy": "数学运算、数学抽象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-set-operation-interval-param-01",
+      "name": "执行连续实数区间集合运算并求解含参空交集/包含关系",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "实数区间表示、区间补集与交集、包含关系转化为不等式组",
+        "dependency": "数轴直观、一元一次不等式组解法、区间端点开闭性判定",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "利用数轴或区间运算法则，完成连续实数区间的求补与求交；在含参条件下，能将空交集条件等价转化为包含关系，建立端点不等式组，并严密核验端点开闭与重合情况，求出参数取值范围。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "free_response",
+        "requiresProofRationale": true,
+        "allowedTools": [
+          "数轴直观"
+        ]
+      },
+      "supportCriteria": {
+        "supported": "解答题要求完整书写区间集合运算步骤，自主将 (∁_R M) ∩ N = ∅ 转化为 N ⊆ M 并建立端点不等式组，论证端点相等时的合理性。",
+        "partially_supported": "仅为选择题或填空题，只要求输出最终参数区间，未要求提交端点论证理由；或题干已直接提示端点关系。",
+        "insufficient_evidence": "区间含参形式未知或解法存在未解决歧义。",
+        "unsupported": "全为离散有限整数集合，无连续区间与端点开闭辨析要求。"
+      },
+      "dimensionMapping": {
+        "knowledge": "集合的基本运算 · 区间运算与含参综合",
+        "cognitiveRequirement": "分析综合与推理论证 (analysis_and_argumentation)",
+        "observableAbilities": [
+          "数形结合表征转换",
+          "等价条件转化",
+          "端点开闭极限分析",
+          "完整书面解题步骤组织"
+        ],
+        "coreLiteracy": "逻辑推理、数学运算、直观想象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-math-modeling-vector-01",
+      "name": "在实际航海风速情境中构建向量合成与分解模型并求解",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "平面向量的实际应用（向量加法平行四边形/三角形法则、相对运动合成）",
+        "dependency": "向量坐标运算、模长计算、蒲福风级查表转换",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "observablePerformance": "从帆船航海物理情境中抽象出视风风速、船行风速与真风风速之间的向量合成关系，通过坐标计算真风风速模长，并查表匹配对应风级。",
+      "completionConditions": {
+        "scaffolding": "图表与坐标系提示",
+        "responseFormat": "single_choice",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "题目提供真实航海图表情境，必须通过物理量到平面向量的抽象，建立向量方程并求解模长判断风级。",
+        "partially_supported": "题目已直接给出向量代数坐标方程，无需自主进行物理情境抽象。",
+        "insufficient_evidence": "图表参数对应关系不清。",
+        "unsupported": "纯几何或纯代数向量运算，无实际情境建模要素。"
+      },
+      "dimensionMapping": {
+        "knowledge": "平面向量 · 向量应用与物理情境建模",
+        "cognitiveRequirement": "实际情境建模与运算 (mathematical_modeling)",
+        "observableAbilities": [
+          "现实情境数学抽象",
+          "向量合成关系建模",
+          "向量模长精确计算"
+        ],
+        "coreLiteracy": "数学建模、数学抽象、数学运算"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-strategy-transcendental-ineq-01",
+      "name": "利用函数性质分析指对关系中的变量排序",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "指数函数与对数函数的性质、函数单调性与交点结构",
+        "dependency": "反函数概念、代数方程同构思想、分类赋值与反证排除",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "observablePerformance": "面对指对连等关系，利用共同参数及指数比值等函数性质分析变量的可能排序，给出完整的不可能性依据。特殊值排除提供排序判断机会，但不能证明完成了全区间函数分析。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "single_choice",
+        "requiresProofRationale": false,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "题目实际要求提交函数性质与排序条件的完整分析，不能通过有限特例直接绕过该分析活动。",
+        "partially_supported": "可通过共同参数和特殊值排除选项，只覆盖排序判断的一部分，不强制完整函数性质论证。",
+        "insufficient_evidence": "题目函数关系存在印刷错误。",
+        "unsupported": "简单同底数比较，无需策略发现或同构构造。"
+      },
+      "dimensionMapping": {
+        "knowledge": "函数性质 · 指数与对数函数单调性综合",
+        "cognitiveRequirement": "策略发现与高阶分析 (strategy_discovery)",
+        "observableAbilities": [
+          "共同参数转化",
+          "指数比值单调性分析",
+          "排序条件的逻辑排除"
+        ],
+        "coreLiteracy": "逻辑推理、直观想象、数学抽象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-proof-formal-argumentation-01",
+      "name": "自主构造反证假设与矛盾并提交完整论证",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "全称命题与特称命题、反证法逻辑结构、高阶不等式放缩与导数极值",
+        "dependency": "依具体命题所需的三角性质、代数变换或函数性质；不能由反证法标签反推知识依赖。",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "observablePerformance": "在无中间提示的情境下，完整组织反证法假设、构造矛盾条件，严密书写数学推导的每一步逻辑依据，给出无可辩驳的形式化论证过程。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "free_response",
+        "requiresProofRationale": true,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "实际设问要求提交存在性或否定性命题的完整论证，且核心活动包含自主建立反证假设、构造矛盾和回扣结论；判断不依赖是否出现“证明”字样。",
+        "partially_supported": "要求书面论证但反证结构已给出，只需补齐部分推导；或只覆盖反证结构的一部分。",
+        "insufficient_evidence": "证明题设问条件存在歧义。",
+        "unsupported": "只要求客观题结论，或只需普通求解步骤而没有反证假设与矛盾活动。"
+      },
+      "dimensionMapping": {
+        "knowledge": "数学论证与证明 · 演绎推理与反证法",
+        "cognitiveRequirement": "形式化推理论证 (formal_argumentation)",
+        "observableAbilities": [
+          "反证法假设与矛盾推导",
+          "严格演绎逻辑组织",
+          "数学语言规范表达"
+        ],
+        "coreLiteracy": "逻辑推理、数学抽象"
+      },
+      "version": 2
+    },
+    {
+      "objectiveId": "obj-written-derivation-01",
+      "name": "组织可核验的书面解题步骤与理由",
+      "isProjectCustom": true,
+      "knowledgeScope": {
+        "primary": "题目所考集合概念、关系或运算",
+        "dependency": "对应完整允许解法",
+        "mappedChapter": "1.1/1.2/1.3",
+        "mappingStatus": "mapped"
+      },
+      "observablePerformance": "在解答题中给出从题设、条件转化、运算或分支分析到结论的连续书面步骤，说明关键等价关系和边界理由。此目标不自动包含反证法。",
+      "completionConditions": {
+        "scaffolding": "none",
+        "responseFormat": "free_response",
+        "requiresProofRationale": true,
+        "allowedTools": []
+      },
+      "supportCriteria": {
+        "supported": "实际作答条件要求完整书面求解过程，且提供组织步骤及关键理由的机会。",
+        "partially_supported": "只需补齐给定推导中的局部步骤。",
+        "insufficient_evidence": "不能确认是否要求过程或关键解法。",
+        "unsupported": "只选选项或填最终答案。"
+      },
+      "dimensionMapping": {
+        "knowledge": "对应集合章节",
+        "cognitiveRequirement": "书面推导与表达",
+        "observableAbilities": [
+          "组织解题步骤",
+          "说明关键理由"
+        ],
+        "coreLiteracy": "逻辑推理"
+      },
+      "version": 1
+    }
+  ]
+}

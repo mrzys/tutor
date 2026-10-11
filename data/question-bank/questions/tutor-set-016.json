@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-016",
+  "auditId": "SET-SRC-016",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025秋·浦东新区校级期中）若集合 $A=\\{x\\mid(a^2-1)x=a-1\\}$，则不论实数 $a$ 取何值，集合 $A$ 不可能是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$\\mathbb R$"
+      },
+      {
+        "label": "B",
+        "text": "$\\varnothing$"
+      },
+      {
+        "label": "C",
+        "text": "$\\{0\\}$"
+      },
+      {
+        "label": "D",
+        "text": "$\\{1\\}$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              9,
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "当 $a=1$ 时方程为 $0x=0$，解集为 $\\mathbb R$。当 $a=-1$ 时为 $0x=-2$，解集为空集。当 $a\\ne\\pm1$ 时，可除以 $(a-1)(a+1)$，解为 $x=1/(a+1)$，不为0，所以解集不可能为 $\\{0\\}$。$a=0$ 时解集为 $\\{1\\}$，故其余三选项都可能，选 C。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              9,
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        9,
+        10
+      ],
+      "locator": "知识点3 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        7
+      ],
+      "locator": "知识点3 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "判断含参一次方程可能的解集"
+    ],
+    "requiredKnowledge": [
+      "集合与方程解集",
+      "含参一次方程",
+      "初中整式因式分解",
+      "空集"
+    ],
+    "allowedSolution": "当 $a=1$ 时方程为 $0x=0$，解集为 $\\mathbb R$。当 $a=-1$ 时为 $0x=-2$，解集为空集。当 $a\\ne\\pm1$ 时，可除以 $(a-1)(a+1)$，解为 $x=1/(a+1)$，不为0，所以解集不可能为 $\\{0\\}$。$a=0$ 时解集为 $\\{1\\}$，故其余三选项都可能，选 C。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-fa86e4635abe05ba",
+    "teacherVersion": "teacher-ba68251704236c10"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          9,
+          10
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          7
+        ]
+      }
+    ],
+    "differences": [
+      "源教师解析 a=-1 分支首句误写 a-1=0，已按方程更正为 a²-1=0、a-1=-2。",
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-fa86e4635abe05ba",
+    "teacherVersion": "teacher-ba68251704236c10"
+  },
+  "contentVersion": "content-fa86e4635abe05ba",
+  "contentSha256": "fa86e4635abe05baa3426c38c0577ded8219217ad034a615ff12041c11d21394",
+  "teacherVersion": "teacher-ba68251704236c10",
+  "teacherSha256": "ba68251704236c106587e6dd5ccd1af26df79676c8604c97b0af58938c72fbb0"
+}

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-017",
+  "auditId": "SET-SRC-017",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025秋·莎车县期中）若一个集合中的三个元素 $a,b,c$ 是 $\\triangle ABC$ 的三边长，则此三角形一定不是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "锐角三角形"
+      },
+      {
+        "label": "B",
+        "text": "直角三角形"
+      },
+      {
+        "label": "C",
+        "text": "钝角三角形"
+      },
+      {
+        "label": "D",
+        "text": "等腰三角形"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "D",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "题干说明 a、b、c 是集合中三个元素，因此三者两两不同。等腰三角形至少有两条边相等，与此矛盾，所以一定不是等腰三角形，选 D。边长两两不同的三角形可以是锐角、直角或钝角，因此不能排除前三种。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        10
+      ],
+      "locator": "知识点3 跟踪训练3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        7
+      ],
+      "locator": "知识点3 跟踪训练3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "由三个集合元素构成边长排除等腰三角形"
+    ],
+    "requiredKnowledge": [
+      "集合三个不同元素",
+      "等腰三角形定义"
+    ],
+    "allowedSolution": "题干说明 a、b、c 是集合中三个元素，因此三者两两不同。等腰三角形至少有两条边相等，与此矛盾，所以一定不是等腰三角形，选 D。边长两两不同的三角形可以是锐角、直角或钝角，因此不能排除前三种。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-a71403556b3ddf3c",
+    "teacherVersion": "teacher-9bb5212b4c91766c"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          10
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          7
+        ]
+      }
+    ],
+    "differences": [
+      "原解析用 a≠b≠c 的非严格连写，本次改为三者两两不同。",
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-a71403556b3ddf3c",
+    "teacherVersion": "teacher-9bb5212b4c91766c"
+  },
+  "contentVersion": "content-a71403556b3ddf3c",
+  "contentSha256": "a71403556b3ddf3c35961fd2745aa9dd978ed68dd9257fd419babff4ebbb8617",
+  "teacherVersion": "teacher-9bb5212b4c91766c",
+  "teacherSha256": "9bb5212b4c91766cc1edcc4ec2c914e3f3a0dbc86b4c619a51d077dacbf0b886"
+}

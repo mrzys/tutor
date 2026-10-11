@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-026",
+  "auditId": "SET-SRC-026",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025秋·牡丹区校级期中）已知集合 $A=\\{x\\mid x(x-1)(x+1)=0\\}$，则 $A=$ ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$\\{-1,0,1\\}$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              14
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "三个因子的乘积为0，当且仅当至少一个因子为0。由 x=0、x−1=0 或 x+1=0 得 x=0、1 或−1，所以 $A=\\{-1,0,1\\}$。只需零乘积性质和一次方程。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              14
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        14
+      ],
+      "locator": "知识点4 跟踪训练5"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        10
+      ],
+      "locator": "知识点4 跟踪训练5"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "将已因式分解方程根集化为列举法"
+    ],
+    "requiredKnowledge": [
+      "集合列举法",
+      "零乘积性质",
+      "初中一次方程"
+    ],
+    "allowedSolution": "三个因子的乘积为0，当且仅当至少一个因子为0。由 x=0、x−1=0 或 x+1=0 得 x=0、1 或−1，所以 $A=\\{-1,0,1\\}$。只需零乘积性质和一次方程。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-4007e97ed8f07d85",
+    "teacherVersion": "teacher-31659e110fc68434"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          14
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          10
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-4007e97ed8f07d85",
+    "teacherVersion": "teacher-31659e110fc68434"
+  },
+  "contentVersion": "content-4007e97ed8f07d85",
+  "contentSha256": "4007e97ed8f07d85a827a747d1b7c16a67e6c5e84c5390ded29a283986be17d7",
+  "teacherVersion": "teacher-31659e110fc68434",
+  "teacherSha256": "31659e110fc68434d665583fecbcd89f968434eeb9084dae57bcd95fd04ee3f2"
+}

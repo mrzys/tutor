@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-044",
+  "auditId": "SET-SRC-044",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025春·汕头校级期中）已知全集 $U=\\mathbb R$，集合 $A=\\{x\\mid |x-1|\\le1\\}$，则 $\\complement_U A=$（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$[0,2]$"
+      },
+      {
+        "label": "B",
+        "text": "$(2,+\\infty)$"
+      },
+      {
+        "label": "C",
+        "text": "$(0,2)$"
+      },
+      {
+        "label": "D",
+        "text": "$(-\\infty,0)\\cup(2,+\\infty)$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "D",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24,
+              25
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "$|x-1|\\le1$ 等价于 $-1\\le x-1\\le1$，即 $0\\le x\\le2$，所以 $A=[0,2]$。在实数全集中去掉 A 的全部元素，得 $\\complement_U A=(-\\infty,0)\\cup(2,+\\infty)$。0和2属于 A，所以补集中不包含这两个端点。选 D。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24,
+              25
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        24,
+        25
+      ],
+      "locator": "知识点7 例3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        17
+      ],
+      "locator": "知识点7 例3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "由绝对值条件求实数区间补集"
+    ],
+    "requiredKnowledge": [
+      "实数全集与补集",
+      "含变量绝对值不等式",
+      "区间端点"
+    ],
+    "allowedSolution": "$|x-1|\\le1$ 等价于 $-1\\le x-1\\le1$，即 $0\\le x\\le2$，所以 $A=[0,2]$。在实数全集中去掉 A 的全部元素，得 $\\complement_U A=(-\\infty,0)\\cup(2,+\\infty)$。0和2属于 A，所以补集中不包含这两个端点。选 D。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-b53be11931b178ac",
+    "teacherVersion": "teacher-9ff74d073891dd40"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          24,
+          25
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          17
+        ]
+      }
+    ],
+    "differences": [
+      "原教师页24为题干及解答、25页续“故选D”；两页视觉核对；原学生版教师内容已删除。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-b53be11931b178ac",
+    "teacherVersion": "teacher-9ff74d073891dd40"
+  },
+  "contentVersion": "content-b53be11931b178ac",
+  "contentSha256": "b53be11931b178acf6d854b0ccdc6fa2783544bc3f420952bae73724d5e76edd",
+  "teacherVersion": "teacher-9ff74d073891dd40",
+  "teacherSha256": "9ff74d073891dd400861f94a1c5a51201fbdc0b72d3f85e9b1f5df465a542294"
+}

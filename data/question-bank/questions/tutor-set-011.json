@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-011",
+  "auditId": "SET-SRC-011",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025春·武威月考）用符号“$\\in$”或“$\\notin$”填空：$\\sqrt5$ ______ $\\mathbb N$，$\\sqrt{16}$ ______ $\\mathbb N$。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "$\\notin$，$\\in$",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              7
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "自然数集 $\\mathbb N$ 为非负整数集。$\\sqrt5$ 不是整数，所以 $\\sqrt5\\notin\\mathbb N$；$\\sqrt{16}=4$ 是自然数，所以 $\\sqrt{16}\\in\\mathbb N$。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              7
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        7
+      ],
+      "locator": "知识点2 跟踪训练3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        5
+      ],
+      "locator": "知识点2 跟踪训练3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "判断常用数集的元素关系并填符号"
+    ],
+    "requiredKnowledge": [
+      "自然数集",
+      "属于与不属于",
+      "平方根基本运算"
+    ],
+    "allowedSolution": "自然数集 $\\mathbb N$ 为非负整数集。$\\sqrt5$ 不是整数，所以 $\\sqrt5\\notin\\mathbb N$；$\\sqrt{16}=4$ 是自然数，所以 $\\sqrt{16}\\in\\mathbb N$。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-7f0ba1a1fb52ac66",
+    "teacherVersion": "teacher-eff1ef0a29f365ab"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          7
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          5
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-7f0ba1a1fb52ac66",
+    "teacherVersion": "teacher-eff1ef0a29f365ab"
+  },
+  "contentVersion": "content-7f0ba1a1fb52ac66",
+  "contentSha256": "7f0ba1a1fb52ac669eba08cc8972b4a15b1ee9b3eef72f92e08e3822d2c50e76",
+  "teacherVersion": "teacher-eff1ef0a29f365ab",
+  "teacherSha256": "eff1ef0a29f365ab99e3121f6e9fb00e4b5b19b8c02e3e0e76c51754f77448e7"
+}

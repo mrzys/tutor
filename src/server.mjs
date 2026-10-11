@@ -5,10 +5,18 @@ import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, previewBlueprint, recheckBlueprint, createDraft } from './assembly/engine.mjs';
 import { listQuestions } from './question-bank/reader.mjs';
 import { saveDraft, readDraft, listDrafts, updateDraft } from './assembly/store.mjs';
-import { applyDraftOperation, previewDraftCandidates } from './assembly/editor.mjs';
+import { applyDraftOperation, previewDraftCandidates, previewDraftCandidateSupply } from './assembly/editor.mjs';
 import { confirmPaper, preparePaperConfirmation, getPaper, listPapers, derivePaperDraft, findPaperForDraft } from './assembly/papers.mjs';
 import { readFeedback, saveFeedback } from './assembly/feedback.mjs';
 import { getPaperOutputs, generateOutput, readOutputFile } from './output/manager.mjs';
+import { createIntakeService } from './intake/service.mjs';
+import { planBlueprint } from './assembly/planner.mjs';
+import { createBlueprintGateway } from './llm/blueprint-gateway.mjs';
+import { createSelectionGateway } from './llm/selection-gateway.mjs';
+import { createAssistantGateway } from './llm/assistant-gateway.mjs';
+import { proposeAssemblyAdjustment } from './assembly/assistant.mjs';
+import { createQuestionImportService } from './question-bank/imports.mjs';
+import { createManualQuestionDraft, listQuestionBankCatalog } from './question-bank/catalog.mjs';
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url));
 const mimeTypes = {
@@ -44,7 +52,13 @@ async function body(request) {
   catch { throw Object.assign(new Error('提交内容不是有效 JSON。'), { code: 'invalid_request', status: 400 }); }
 }
 
-export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '.tutor', 'drafts') } = {}) {
+export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '.tutor', 'drafts'),
+  intakeService, intakeStorage, intakeGateway, blueprintGateway = createBlueprintGateway(),
+  selectionGateway = createSelectionGateway(), assistantGateway = createAssistantGateway(),
+  questionImportService, questionImportGateway } = {}) {
+  const intake = intakeService ?? createIntakeService({ root, storage: intakeStorage, gateway: intakeGateway });
+  const questionImports = questionImportService ?? createQuestionImportService({ root,
+    storeRoot: path.join(path.dirname(storeRoot), 'question-imports'), gateway: questionImportGateway });
   const papersRoot = path.join(path.dirname(storeRoot), 'papers');
   const outputRoot = path.join(path.dirname(storeRoot), 'outputs');
   const feedbackRoot = path.join(path.dirname(storeRoot), 'feedback');
@@ -70,12 +84,99 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
           label: source.sourceId === 'set-teacher' ? '集合汇编 · 解析版' : '集合汇编 · 原卷版（已分离答案）',
         }));
         return json(response, 200, { ok: true, config: { ...config.config, foundation: context.foundation,
-          context, supply: bank.totals, drafts: saved.drafts, draftWarnings: saved.warnings } });
+          context, supply: bank.totals, drafts: saved.drafts, draftWarnings: saved.warnings,
+          intake: intake.publicStatus(), blueprintPlanner: blueprintGateway.publicStatus(),
+          candidateSelector: selectionGateway.publicStatus(), assemblyAssistant: assistantGateway.publicStatus?.() ?? { configured: false },
+          questionImport: questionImports.publicStatus() } });
+      }
+      if (url.pathname === '/api/question-imports' && request.method === 'GET') {
+        return json(response, 200, await questionImports.list());
+      }
+      if (url.pathname === '/api/question-imports' && request.method === 'POST') {
+        const controller = new AbortController();
+        const cancel = () => { if (!response.writableEnded) controller.abort(); };
+        response.once('close', cancel);
+        try {
+          const result = await questionImports.create(request, { signal: controller.signal });
+          if (response.destroyed) return;
+          const status = result.ok ? 201 : ['not_configured', 'model_error', 'timeout'].includes(result.error.code) ? 503
+            : result.error.code === 'cancelled' ? 499 : 400;
+          return json(response, status, result);
+        } finally { response.off('close', cancel); }
+      }
+      const questionImportRoute = url.pathname.match(/^\/api\/question-imports\/([^/]+)$/);
+      if (questionImportRoute && request.method === 'GET') {
+        const result = await questionImports.get(questionImportRoute[1]);
+        return json(response, result.ok ? 200 : result.error.code === 'not_found' ? 404 : 500, result);
+      }
+      if (url.pathname === '/api/question-bank' && request.method === 'GET') {
+        const result = await listQuestionBankCatalog({ root });
+        return json(response, result.ok ? 200 : 500, result);
+      }
+      if (url.pathname === '/api/question-bank/manual-draft' && request.method === 'POST') {
+        const result = await createManualQuestionDraft(await body(request), { root });
+        if (!result.ok) return json(response, result.error.code === 'version_conflict' ? 409 : result.error.code === 'invalid_request' ? 400 : 500, result);
+        await saveDraft(storeRoot, result.draft);
+        return json(response, 201, result);
+      }
+      if (url.pathname === '/api/intake' && request.method === 'POST') {
+        const input = await body(request);
+        const controller = new AbortController();
+        const cancel = () => { if (!response.writableEnded) controller.abort(); };
+        response.once('close', cancel);
+        try {
+          const result = await intake.handle(input, { signal: controller.signal });
+          if (response.destroyed) return;
+          return json(response, result.ok ? 200 : result.error.code === 'revision_conflict'
+            || result.error.code === 'operation_conflict' ? 409
+            : result.error.code === 'not_found' ? 404
+            : ['not_configured', 'model_error', 'timeout'].includes(result.error.code) ? 503 : 400, result);
+        } finally { response.off('close', cancel); }
+      }
+      const intakeRoute = url.pathname.match(/^\/api\/intake\/([^/]+)$/);
+      if (intakeRoute && request.method === 'GET') {
+        const result = await intake.get(intakeRoute[1]);
+        return json(response, result.ok ? 200 : result.error.code === 'not_found' ? 404 : 400, result);
+      }
+      if (url.pathname === '/api/assistant/propose' && request.method === 'POST') {
+        const input = await body(request);
+        if (input?.stage === 'draft' && typeof input.draftId === 'string') {
+          const frozen = await findPaperForDraft(papersRoot, input.draftId);
+          if (!frozen.ok) return json(response, editorStatus(frozen), frozen);
+          if (frozen.paper) return json(response, 409, { ok: false, error: { code: 'finalized_draft', message: '请从成卷派生新草稿后再调整。' } });
+        }
+        const controller = new AbortController();
+        const cancel = () => { if (!response.writableEnded) controller.abort(); };
+        response.once('close', cancel);
+        try {
+          const result = await proposeAssemblyAdjustment(input, { root, storeRoot, gateway: assistantGateway, signal: controller.signal });
+          if (response.destroyed) return;
+          const status = result.ok ? 200 : ['revision_conflict', 'finalized_draft'].includes(result.error.code) ? 409
+            : result.error.code === 'not_found' ? 404 : result.error.code === 'cancelled' ? 499
+            : ['invalid_request', 'invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400 : 503;
+          return json(response, status, result);
+        } finally { response.off('close', cancel); }
       }
       if (url.pathname === '/api/blueprint' && request.method === 'POST') {
         const input = await body(request);
         const result = await previewBlueprint(input.requirements, { root });
         return json(response, result.ok ? 200 : result.error.code === 'invalid_plan' ? 400 : 500, result);
+      }
+      if (url.pathname === '/api/blueprint/plan' && request.method === 'POST') {
+        const input = await body(request);
+        if (!input || !['fixed', 'suggested'].includes(input.countPolicy ?? 'fixed')) {
+          return json(response, 400, { ok: false, error: { code: 'invalid_plan', message: '请选择保留题型数量或允许 AI 建议配比。' } });
+        }
+        const controller = new AbortController();
+        const cancel = () => { if (!response.writableEnded) controller.abort(); };
+        response.once('close', cancel);
+        try {
+          const result = await planBlueprint(input.requirements, { root, gateway: blueprintGateway,
+            signal: controller.signal, countPolicy: input.countPolicy ?? 'fixed' });
+          if (response.destroyed) return;
+          return json(response, result.ok ? 200 : ['invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400
+            : result.error.code === 'cancelled' ? 499 : 503, result);
+        } finally { response.off('close', cancel); }
       }
       if (url.pathname === '/api/blueprint/recheck' && request.method === 'POST') {
         const input = await body(request);
@@ -84,10 +185,22 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
       }
       if (url.pathname === '/api/drafts' && request.method === 'POST') {
         const input = await body(request);
-        const result = await createDraft(input.blueprint, { root });
-        if (!result.ok) return json(response, result.error.code === 'invalid_plan' ? 400 : 500, result);
-        await saveDraft(storeRoot, result.draft);
-        return json(response, 201, result);
+        const selectionMode = input?.selectionMode ?? (input?.blueprint?.generation?.mode === 'llm' ? 'llm' : 'rule');
+        if (!['llm', 'rule'].includes(selectionMode)) {
+          return json(response, 400, { ok: false, error: { code: 'invalid_request', message: '选题方式只能是 AI 比较候选或规则选题。' } });
+        }
+        const controller = new AbortController();
+        const cancel = () => { if (!response.writableEnded) controller.abort(); };
+        response.once('close', cancel);
+        try {
+          const result = await createDraft(input?.blueprint, { root, selectionMode, gateway: selectionGateway, signal: controller.signal });
+          if (controller.signal.aborted || response.destroyed) return;
+          if (!result.ok) return json(response, ['invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400
+            : result.error.code === 'cancelled' ? 499
+            : ['not_configured', 'model_error', 'timeout', 'selection_resource_limit'].includes(result.error.code) ? 503 : 500, result);
+          await saveDraft(storeRoot, result.draft);
+          return json(response, 201, result);
+        } finally { response.off('close', cancel); }
       }
       if (url.pathname === '/api/drafts' && request.method === 'GET') {
         return json(response, 200, { ok: true, ...await listDrafts(storeRoot) });
@@ -101,7 +214,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
         const result = await confirmPaper(storeRoot, confirmationRoute[1], await body(request), { root, papersRoot });
         return json(response, editorStatus(result), result);
       }
-      const editRoute = url.pathname.match(/^\/api\/drafts\/([^/]+)\/(operations|candidates)$/);
+      const editRoute = url.pathname.match(/^\/api\/drafts\/([^/]+)\/(operations|candidates|candidate-supply)$/);
       if (editRoute && request.method === 'POST') {
         const input = await body(request);
         const draftId = editRoute[1];
@@ -114,7 +227,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
             }
             return applyDraftOperation(current, input, { root });
           })
-          : await previewDraftCandidates(await readDraft(storeRoot, draftId), input, { root });
+          : await (editRoute[2] === 'candidate-supply' ? previewDraftCandidateSupply : previewDraftCandidates)(await readDraft(storeRoot, draftId), input, { root });
         return json(response, editorStatus(result), result);
       }
       if (url.pathname.startsWith('/api/drafts/') && request.method === 'GET') {

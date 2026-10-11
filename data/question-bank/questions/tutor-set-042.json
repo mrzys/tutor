@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-042",
+  "auditId": "SET-SRC-042",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·烟台三模）已知集合 $A=\\{x\\mid -3<x<1\\}$，$B=\\{x\\mid x^2\\le3\\}$，则 $A\\cup B=$（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$[-\\sqrt3,1)$"
+      },
+      {
+        "label": "B",
+        "text": "$[-\\sqrt3,\\sqrt3]$"
+      },
+      {
+        "label": "C",
+        "text": "$(-\\infty,\\sqrt3]$"
+      },
+      {
+        "label": "D",
+        "text": "$(-3,\\sqrt3]$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "D",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "由 $x^2\\le3$ 得 $-\\sqrt3\\le x\\le\\sqrt3$，故 $B=[-\\sqrt3,\\sqrt3]$。A 为 $(-3,1)$，与 B 有公共区间，并集左端到−3但不含−3，右端到 $\\sqrt3$ 且包含，所以 $A\\cup B=(-3,\\sqrt3]$。选 D。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        24
+      ],
+      "locator": "知识点7 例1"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        16
+      ],
+      "locator": "知识点7 例1"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "计算平方约束区间与开区间的并集"
+    ],
+    "requiredKnowledge": [
+      "并集",
+      "区间端点",
+      "平方与平方根"
+    ],
+    "allowedSolution": "由 $x^2\\le3$ 得 $-\\sqrt3\\le x\\le\\sqrt3$，故 $B=[-\\sqrt3,\\sqrt3]$。A 为 $(-3,1)$，与 B 有公共区间，并集左端到−3但不含−3，右端到 $\\sqrt3$ 且包含，所以 $A\\cup B=(-3,\\sqrt3]$。选 D。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-fcb01a6e394cdeea",
+    "teacherVersion": "teacher-d102dd4538f9ef0a"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          24
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          16
+        ]
+      }
+    ],
+    "differences": [
+      "原学生版含教师内容，独立 student 仅保留题干选项；本题不需要数轴图片，区间由完整文字条件给定。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-fcb01a6e394cdeea",
+    "teacherVersion": "teacher-d102dd4538f9ef0a"
+  },
+  "contentVersion": "content-fcb01a6e394cdeea",
+  "contentSha256": "fcb01a6e394cdeea47b262229c0be9f1685448f1f1338442a3fcc66b0da0d695",
+  "teacherVersion": "teacher-d102dd4538f9ef0a",
+  "teacherSha256": "d102dd4538f9ef0aadc307484071e7cbd465ee666b1670ab3cf16fa49f5130e5"
+}

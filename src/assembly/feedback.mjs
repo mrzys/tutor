@@ -1,11 +1,14 @@
 import path from 'node:path';
 import { mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { sqliteStorage } from '../storage/sqlite.mjs';
 
 const queues = new Map();
 export async function readFeedback(feedbackRoot, paperId) {
   try {
-    const value = JSON.parse(await readFile(path.join(feedbackRoot, `${paperId}.json`), 'utf8'));
+    const repository = sqliteStorage(feedbackRoot, 'feedback');
+    const value = repository ? repository.get('feedback', paperId) : JSON.parse(await readFile(path.join(feedbackRoot, `${paperId}.json`), 'utf8'));
+    if (!value) return null;
     if (value.schemaVersion !== 1 || value.paperId !== paperId || !Array.isArray(value.records)) throw new Error('Invalid feedback');
     return value.records.at(-1) ?? null;
   } catch (error) {
@@ -23,8 +26,9 @@ export async function saveFeedback(feedbackRoot, paper, input) {
   const target = path.join(feedbackRoot, `${paper.paperId}.json`);
   const previous = queues.get(target) ?? Promise.resolve();
   const transaction = previous.then(async () => {
+    const repository = sqliteStorage(feedbackRoot, 'feedback');
     let records = [];
-    try { records = JSON.parse(await readFile(target, 'utf8')).records; }
+    try { records = repository ? (repository.get('feedback', paper.paperId)?.records ?? []) : JSON.parse(await readFile(target, 'utf8')).records; }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
     const operations = paper.draft.operations ?? [];
     const entries = operations.flatMap(operation => operation.result?.entries ?? []);
@@ -39,6 +43,7 @@ export async function saveFeedback(feedbackRoot, paper, input) {
         baselineCorrections: operations.filter(item => item.operation?.type === 'baseline').length,
         missingQuestions: paper.summary.student.missing.length,
       } };
+    if (repository) { repository.appendFeedback(paper.paperId, feedback); return feedback; }
     const temporary = `${target}.${randomUUID()}.tmp`; let file;
     try {
       await mkdir(feedbackRoot, { recursive: true });

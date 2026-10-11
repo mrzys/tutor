@@ -1,0 +1,1510 @@
+{
+  "schemaVersion": 1,
+  "analysisSetId": "pedagogical-gaokao-2025-analysis-v1",
+  "description": "2025年五套高中数学试卷的原 PDF 来源目录与10道代表题分析；本文件不是100题逐题目录，也不是可直接选入的题库。题面答案源核对与教学目标复核分别记录。",
+  "provenance": {
+    "rawPdfDirectory": "C:\\baidunetdiskdownload\\2026年6月全国高考\\历年高考真题合集\\数学历年高考真题\\【新·PDF版】2008-2025·高考数学真题\\数学（按年份分类）2008-2025\\2025·高考数学真题",
+    "extractedTextDirectory": "tmp/gaokao_extracted/",
+    "framework": "ADR-0003: 教学需求收集与确认",
+    "objectivesCatalog": "data/pedagogy/objectives-catalog.json",
+    "auditDate": "2026-10-10",
+    "repairDate": "2026-10-10",
+    "repairReport": "docs/validation/gaokao-analysis-repair.md"
+  },
+  "paperCatalogs": [
+    {
+      "paperId": "nation-1",
+      "title": "2025年普通高等学校招生全国统一考试（新高考Ⅰ卷）",
+      "blankPdf": "2025年高考数学试卷（全国Ⅰ卷）（空白卷）.pdf",
+      "analysisPdf": "2025年高考数学试卷（全国Ⅰ卷）（解析卷）.pdf",
+      "totalQuestions": 19,
+      "totalScore": 150,
+      "durationMinutes": 120,
+      "structure": "8单选 (40分) + 3多选 (18分) + 3填空 (15分) + 5解答题 (77分)",
+      "catalogScope": "source_summary_only",
+      "sourceEdition": "local_downloaded_analysis_and_blank_pdf; not_official_release_attestation",
+      "sourceAssets": {
+        "blank": {
+          "fileName": "2025年高考数学试卷（全国Ⅰ卷）（空白卷）.pdf",
+          "sha256": "a58e6eeb280faaa314e37538fc2c7277aece3d7597105fe8c812f1347fd6cd25",
+          "pageCount": 4
+        },
+        "analysis": {
+          "fileName": "2025年高考数学试卷（全国Ⅰ卷）（解析卷）.pdf",
+          "sha256": "0e70a893f0e6d59386eacb25298f79ca4a42f87b070a4644d1cdb5d32c48f59e",
+          "pageCount": 31
+        }
+      }
+    },
+    {
+      "paperId": "nation-2",
+      "title": "2025年普通高等学校招生全国统一考试（新高考Ⅱ卷）",
+      "blankPdf": "2025年高考数学试卷（全国Ⅱ卷）（空白卷）.pdf",
+      "analysisPdf": "2025年高考数学试卷（全国Ⅱ卷）（解析卷）.pdf",
+      "totalQuestions": 19,
+      "totalScore": 150,
+      "durationMinutes": 120,
+      "structure": "8单选 (40分) + 3多选 (18分) + 3填空 (15分) + 5解答题 (77分)",
+      "catalogScope": "source_summary_only",
+      "sourceEdition": "local_downloaded_analysis_and_blank_pdf; not_official_release_attestation",
+      "sourceAssets": {
+        "blank": {
+          "fileName": "2025年高考数学试卷（全国Ⅱ卷）（空白卷）.pdf",
+          "sha256": "8d1b41ee8a35244b8c861f86d518f84c17bf3fb378e01e5d501acb1683cdce1e",
+          "pageCount": 4
+        },
+        "analysis": {
+          "fileName": "2025年高考数学试卷（全国Ⅱ卷）（解析卷）.pdf",
+          "sha256": "8fe8b56d64191ccb3d4a0aaa9b119d110fe79b684b8e44c623308a3c19d2a6c5",
+          "pageCount": 18
+        }
+      }
+    },
+    {
+      "paperId": "beijing",
+      "title": "2025年普通高等学校招生全国统一考试（北京卷）",
+      "blankPdf": "2025年高考数学试卷（北京）（空白卷）.pdf",
+      "analysisPdf": "2025年高考数学试卷（北京）（解析卷）.pdf",
+      "totalQuestions": 21,
+      "totalScore": 150,
+      "durationMinutes": 120,
+      "structure": "10单选 (40分) + 5填空 (25分) + 6解答题 (85分)",
+      "catalogScope": "source_summary_only",
+      "sourceEdition": "local_downloaded_analysis_and_blank_pdf; not_official_release_attestation",
+      "sourceAssets": {
+        "blank": {
+          "fileName": "2025年高考数学试卷（北京）（空白卷）.pdf",
+          "sha256": "323a7952a5fd069ee477a6faac1cfc7144bf7148106c29a233a488f3208ddb5b",
+          "pageCount": 4
+        },
+        "analysis": {
+          "fileName": "2025年高考数学试卷（北京）（解析卷）.pdf",
+          "sha256": "ce39c982e3de1f80fb61aef1a74fe0c9f1d14df9ad03859a9e832636885e9f04",
+          "pageCount": 20
+        }
+      }
+    },
+    {
+      "paperId": "tianjin",
+      "title": "2025年普通高等学校招生全国统一考试（天津卷，回忆版）",
+      "blankPdf": "2025年高考数学试卷（天津）（空白卷）.pdf",
+      "analysisPdf": "2025年高考数学试卷（天津）（解析卷）.pdf",
+      "totalQuestions": 20,
+      "totalScore": 150,
+      "durationMinutes": 120,
+      "structure": "9单选 (45分) + 6填空 (30分) + 5解答题 (75分)",
+      "catalogScope": "source_summary_only",
+      "sourceEdition": "recalled_edition_as_labeled_on_source",
+      "sourceAssets": {
+        "blank": {
+          "fileName": "2025年高考数学试卷（天津）（空白卷）.pdf",
+          "sha256": "96f2dc597fbf983bd9067f5d1e7f340d34e6a26de1ea77b403f3c78ae6f931c7",
+          "pageCount": 5
+        },
+        "analysis": {
+          "fileName": "2025年高考数学试卷（天津）（解析卷）.pdf",
+          "sha256": "c296dc3ee811e5a07a49d7b6841d3d04bfc387efb09c853918db27355145b684",
+          "pageCount": 21
+        }
+      }
+    },
+    {
+      "paperId": "shanghai",
+      "title": "2025年普通高等学校招生全国统一考试上海数学试卷",
+      "blankPdf": "2025年高考数学试卷（上海6月）（空白卷）.pdf",
+      "analysisPdf": "2025年高考数学试卷（上海6月）（解析卷）.pdf",
+      "totalQuestions": 21,
+      "totalScore": 150,
+      "durationMinutes": 120,
+      "structure": "12填空 (54分) + 4单选 (18分) + 5解答题 (78分)",
+      "catalogScope": "source_summary_only",
+      "sourceEdition": "local_downloaded_analysis_and_blank_pdf; not_official_release_attestation",
+      "sourceAssets": {
+        "blank": {
+          "fileName": "2025年高考数学试卷（上海6月）（空白卷）.pdf",
+          "sha256": "38aa75e66182e02fe0a127403b123e4d9d18f306c36b077d96805a81d8f7aacd",
+          "pageCount": 4
+        },
+        "analysis": {
+          "fileName": "2025年高考数学试卷（上海6月）（解析卷）.pdf",
+          "sha256": "d9ca32ff1a29477391bd41877541e2197e70e498e64e62fd0b69e3130ac46e3e",
+          "pageCount": 18
+        }
+      }
+    }
+  ],
+  "auditAndRectifications": {
+    "legacyRectifications": [
+      {
+        "targetPaper": "nation-1",
+        "targetQuestion": 8,
+        "legacyIssue": "旧整理脚本 build_gaokao_docs.py 因第6题蒲福风速表中出现'8.0~10.1 劲风'触发正则表达式 \\s*8\\s*[.、] 匹配，导致第8题原题面被截断，混入了第6题后半部分及第7题圆距离直线的题面与解析。",
+        "rectificationAction": "核对空白卷第2页、解析卷第5–6页后重录2+log₂x=3+log₃y=5+log₅z，删除错误指数相加函数族及其推论；保留特值排除与比值单调性直接证明。",
+        "evidenceLocation": "空白卷第2页；解析卷第5–6页"
+      },
+      {
+        "targetPaper": "nation-1",
+        "targetQuestion": 19,
+        "legacyIssue": "旧整理脚本仅凭文本中出现'集合'关键词，将全卷第19题切比雪夫三角导数与极值不等式压轴题错误分类为'集合概念与集合运算'。",
+        "rectificationAction": "推翻旧标签，纠正为主考知识'导数在三角函数单调性与最值中的应用、反证法证明存在性命题、极值不等式综合'，标记所属模块为高阶导数与不等式，并标记为'待映射'。",
+        "evidenceLocation": "空白卷第4页；解析卷第27-31页"
+      },
+      {
+        "targetPaper": "all_papers",
+        "targetQuestion": "全卷宏观规则",
+        "legacyIssue": "旧脚本将所有第1-2题一律定为概念理解，所有多选题第10-11题与解答题17-19题一律定为综合应用；核心素养完全通过关键词匹配（出现向量即标建模，出现概率即标数据分析）。",
+        "rectificationAction": "建立基于设问活动与真实作答条件的四维分析；对选择题不能证明书面形式化论证建立硬性红线；对缺乏情境抽象的纯代数题剔除伪建模标签。",
+        "evidenceLocation": "ADR-0003 决策二与决策三"
+      }
+    ],
+    "repairCorrections": [
+      {
+        "questionId": "gaokao-2025-qg2-q03",
+        "correction": "修复C/D选项与答案D；原分析只算出集合却写错选项。"
+      },
+      {
+        "questionId": "gaokao-2025-qg1-q06",
+        "correction": "船速与船行风速区分；轻风表范围1.1–3.3；已给模型不完整支持自主建模。"
+      },
+      {
+        "questionId": "gaokao-2025-qg1-q08",
+        "correction": "删除虚构a^t+log_a(t)题面；重做策略分析。"
+      },
+      {
+        "questionId": "gaokao-2025-qg1-q19",
+        "correction": "第3问不含绝对值；补全下界与取等证明，去掉切比雪夫必需知识。"
+      },
+      {
+        "questionId": "gaokao-2025-qg2-q14",
+        "correction": "答案改5/2，原错误12−4sqrt5删除；定位空白卷2页、解析卷9页；补可达性。"
+      },
+      {
+        "questionId": "gaokao-2025-qg2-q19",
+        "correction": "删除虚构十一分制、平局最终胜率与长短盘题；按原三问完整重录并证明。"
+      }
+    ]
+  },
+  "summary": {
+    "totalPapers": 5,
+    "totalQuestionsAcrossPapers": 100,
+    "setQuestionsInGaokao": [
+      {
+        "paperId": "nation-1",
+        "qNum": 2,
+        "unitId": "ped-gaokao-2025-qg1-q02"
+      },
+      {
+        "paperId": "nation-2",
+        "qNum": 3,
+        "unitId": "ped-gaokao-2025-qg2-q03"
+      },
+      {
+        "paperId": "beijing",
+        "qNum": 1,
+        "unitId": "ped-gaokao-2025-bj-q01"
+      },
+      {
+        "paperId": "tianjin",
+        "qNum": 1,
+        "unitId": "ped-gaokao-2025-tj-q01"
+      },
+      {
+        "paperId": "shanghai",
+        "qNum": 1,
+        "unitId": "ped-gaokao-2025-sh-q01"
+      }
+    ],
+    "inDepthRepresentativeCount": 10,
+    "verificationStatusCounts": {
+      "pending_review": 10
+    },
+    "paperCatalogScope": "5套来源概览；totalQuestionsAcrossPapers仅为卷面总题数之和，不表示100题均已录入或逐题核对。",
+    "sourceVerifiedQuestionCount": 10,
+    "isSelectableQuestionBank": false
+  },
+  "analyzedQuestions": [
+    {
+      "unitId": "ped-gaokao-2025-qg1-q02",
+      "questionId": "gaokao-2025-qg1-q02",
+      "paperId": "nation-1",
+      "questionNumber": 2,
+      "questionType": "single_choice",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 1,
+        "analysisPage": 1,
+        "sourceLocator": "一、选择题 第2题",
+        "blankPages": [
+          1
+        ],
+        "analysisPages": [
+          1
+        ]
+      },
+      "stem": "设全集 $U=\\{x\\mid x\\text{ 是小于 9 的正整数}\\}$，集合 $A=\\{1,3,5\\}$，则 $\\complement_U A$ 中元素个数为（　）",
+      "options": [
+        {
+          "label": "A",
+          "text": "0"
+        },
+        {
+          "label": "B",
+          "text": "3"
+        },
+        {
+          "label": "C",
+          "text": "5"
+        },
+        {
+          "label": "D",
+          "text": "8"
+        }
+      ],
+      "answer": "C",
+      "analysis": "$U=\\{1,2,3,4,5,6,7,8\\}$，共有 8 个元素。$\\complement_U A = \\{2,4,6,7,8\\}$，元素个数为 $8-3=5$。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "全集与补集运算、有限集元素计数",
+        "dependency": "正整数集认知与基数运算",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "基础运算与计数 (operational_execution_and_counting)",
+        "definition": "明确全集边界，在全集中剔除子集元素并完成元素计数",
+        "evidence": "先确定 $U$ 的 8 个元素，剔除 $A$ 中 3 个元素，统计剩余元素个数 5"
+      },
+      "observableAbilities": [
+        {
+          "activity": "补集元素剔除与有限计数",
+          "evidence": "列举 $U$ 并计算 $|U|-|A|=8-3=5$，选出选项 C"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、数学抽象",
+        "evidence": "将语言描述'小于9的正整数'准确抽象为有限全集并完成补运算",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-complement-01",
+          "judgment": "supported",
+          "evidence": "直接考查指定全集下的补集运算与元素计数",
+          "unsupportedAspects": "选择题，未要求列举出补集的具体元素集合表达式",
+          "alternativePaths": [
+            "直接利用有限集基数性质求元素个数：n(\\complement_U A) = n(U) - n(A) = 8 - 3 = 5"
+          ],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅰ卷）（空白卷）.pdf",
+        "blankPdfSha256": "a58e6eeb280faaa314e37538fc2c7277aece3d7597105fe8c812f1347fd6cd25",
+        "blankPages": [
+          1
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅰ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "0e70a893f0e6d59386eacb25298f79ca4a42f87b070a4644d1cdb5d32c48f59e",
+        "analysisPages": [
+          1
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "3929482cf1431204b1f969f916a04acf758975a985db437a1be626ce9607def4"
+    },
+    {
+      "unitId": "ped-gaokao-2025-qg2-q03",
+      "questionId": "gaokao-2025-qg2-q03",
+      "paperId": "nation-2",
+      "questionNumber": 3,
+      "questionType": "single_choice",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 1,
+        "analysisPage": 1,
+        "sourceLocator": "一、单选题 第3题",
+        "analysisPages": [
+          1,
+          2
+        ],
+        "blankPages": [
+          1
+        ]
+      },
+      "stem": "已知集合 $A=\\{-4,0,1,2,8\\}$，$B=\\{x\\mid x^3=x\\}$，则 $A\\cap B=$（　）",
+      "options": [
+        {
+          "label": "A",
+          "text": "$\\{0,1,2\\}$"
+        },
+        {
+          "label": "B",
+          "text": "$\\{1,2,8\\}$"
+        },
+        {
+          "label": "C",
+          "text": "$\\{2,8\\}$"
+        },
+        {
+          "label": "D",
+          "text": "$\\{0,1\\}$"
+        }
+      ],
+      "answer": "D",
+      "analysis": "解方程 $x^3=x$ 得 $x(x^2-1)=0$，解得 $x=0$ 或 $x=\\pm1$，故 $B=\\{-1,0,1\\}$。与 $A=\\{-4,0,1,2,8\\}$ 取交集得 $A\\cap B=\\{0,1\\}$。故选 D。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "交集运算、三次方程求根与列举法表示",
+        "dependency": "因式分解求解三次方程",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "基础运算与公共元素提取 (operational_execution)",
+        "definition": "求解简单高次方程获取集合元素，执行有限集合交集比对",
+        "evidence": "因式分解 $x^3-x=0$ 求出 $B=\\{-1,0,1\\}$，比对 $A$ 提取公共元素"
+      },
+      "observableAbilities": [
+        {
+          "activity": "方程根求解与交集元素比对",
+          "evidence": "因式分解得到 B={−1,0,1}，公共元素为0和1，选D；亦可逐项代入A中的元素，避免声称完整求根是唯一必需活动。"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算",
+        "evidence": "准确执行代数方程因式分解与集合交集运算",
+        "confidence": "proposed"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-finite-inter-01",
+          "judgment": "supported",
+          "evidence": "直接考查两集合公共元素的提取与交集运算",
+          "unsupportedAspects": "选择题单选",
+          "alternativePaths": [
+            "将A中元素−4、0、1、2、8逐一代入x³=x，只有0和1满足，选D。"
+          ],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "equation_to_set",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅱ卷）（空白卷）.pdf",
+        "blankPdfSha256": "8d1b41ee8a35244b8c861f86d518f84c17bf3fb378e01e5d501acb1683cdce1e",
+        "blankPages": [
+          1
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅱ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "8fe8b56d64191ccb3d4a0aaa9b119d110fe79b684b8e44c623308a3c19d2a6c5",
+        "analysisPages": [
+          1,
+          2
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "72bc5e4a24f146afd90d24ca1abb677660d6f61e2a704815986d99c1117804ec"
+    },
+    {
+      "unitId": "ped-gaokao-2025-bj-q01",
+      "questionId": "gaokao-2025-bj-q01",
+      "paperId": "beijing",
+      "questionNumber": 1,
+      "questionType": "single_choice",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 1,
+        "analysisPage": 1,
+        "sourceLocator": "第一部分选择题 第1题",
+        "blankPages": [
+          1
+        ],
+        "analysisPages": [
+          1
+        ]
+      },
+      "stem": "集合 $M=\\{x\\mid 2x-1>5\\}$，$N=\\{1,2,3\\}$，则 $M\\cap N=$（　）",
+      "options": [
+        {
+          "label": "A",
+          "text": "$\\{1,2,3\\}$"
+        },
+        {
+          "label": "B",
+          "text": "$\\{2,3\\}$"
+        },
+        {
+          "label": "C",
+          "text": "$\\{3\\}$"
+        },
+        {
+          "label": "D",
+          "text": "$\\varnothing$"
+        }
+      ],
+      "answer": "D",
+      "analysis": "由 $2x-1>5$ 得 $2x>6\\implies x>3$，故 $M=(3,+\\infty)$；$N=\\{1,2,3\\}$ 中所有元素均不大于 3，故 $M\\cap N=\\varnothing$。故选 D。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "交集运算、空集概念",
+        "dependency": "一元一次不等式解法",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "概念辨析与基础应用 (concept_discrimination_and_application)",
+        "definition": "求解不等式确定数集区间，辨析区间与离散集合无交集时的空集结论",
+        "evidence": "设问求两集合交集，解出 $x>3$ 与 $\\{1,2,3\\}$ 无公共元素，选出空集 $\\varnothing$"
+      },
+      "observableAbilities": [
+        {
+          "activity": "不等式求解与交集元素比对",
+          "evidence": "将 $2x-1>5$ 转化为 $x>3$，检验 $1,2,3$ 均不满足条件，得出交集为空集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、数学抽象",
+        "evidence": "准确解不等式并将无公共元素抽象为空集符号 $\\varnothing$",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-finite-inter-01",
+          "judgment": "supported",
+          "evidence": "直接考查集合交集运算，且包含空集作为运算结果的判定",
+          "unsupportedAspects": "选择题单选，未要求证明为何无交集",
+          "alternativePaths": [
+            "直接将N中的1,2,3代入2x-1>5逐个检验，均不满足，直接选D"
+          ],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "inequality_to_set",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（北京）（空白卷）.pdf",
+        "blankPdfSha256": "323a7952a5fd069ee477a6faac1cfc7144bf7148106c29a233a488f3208ddb5b",
+        "blankPages": [
+          1
+        ],
+        "analysisPdf": "2025年高考数学试卷（北京）（解析卷）.pdf",
+        "analysisPdfSha256": "ce39c982e3de1f80fb61aef1a74fe0c9f1d14df9ad03859a9e832636885e9f04",
+        "analysisPages": [
+          1
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "cc432db6772f97bb29b283f6cbcc67037ceaa1b2494fa28570cfb133c355652d"
+    },
+    {
+      "unitId": "ped-gaokao-2025-tj-q01",
+      "questionId": "gaokao-2025-tj-q01",
+      "paperId": "tianjin",
+      "questionNumber": 1,
+      "questionType": "single_choice",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 1,
+        "analysisPage": 1,
+        "sourceLocator": "一、选择题 第1题",
+        "blankPages": [
+          1
+        ],
+        "analysisPages": [
+          1
+        ]
+      },
+      "stem": "已知集合 $U=\\{1,2,3,4,5\\}$，$A=\\{1,3\\}$，$B=\\{2,3,5\\}$，则 $\\complement_U (A\\cup B)=$（　）",
+      "options": [
+        {
+          "label": "A",
+          "text": "$\\{1,2,3,4\\}$"
+        },
+        {
+          "label": "B",
+          "text": "$\\{2,3,4\\}$"
+        },
+        {
+          "label": "C",
+          "text": "$\\{2,4\\}$"
+        },
+        {
+          "label": "D",
+          "text": "$\\{4\\}$"
+        }
+      ],
+      "answer": "D",
+      "analysis": "$A\\cup B = \\{1,2,3,5\\}$，全集 $U=\\{1,2,3,4,5\\}$，故 $\\complement_U(A\\cup B)=\\{4\\}$。选 D。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "集合的并集与补集复合运算",
+        "dependency": "有限数集元素去重与剔除",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "基础复合运算 (operational_execution)",
+        "definition": "执行并集合并后在全集中求补集",
+        "evidence": "先求 $A\\cup B=\\{1,2,3,5\\}$，再从 $U$ 中求余集 $\\{4\\}$"
+      },
+      "observableAbilities": [
+        {
+          "activity": "并集与补集复合运算",
+          "evidence": "按括号运算顺序准确求出并集与补集"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算",
+        "evidence": "准确执行集合基本运算法则",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-finite-inter-01",
+          "judgment": "supported",
+          "evidence": "考查并集运算",
+          "unsupportedAspects": "选择题",
+          "alternativePaths": [
+            "德·摩根定律：\\complement_U(A∪B) = (\\complement_U A) ∩ (\\complement_U B) = {2,4,5} ∩ {1,4} = {4}"
+          ],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        },
+        {
+          "objectiveId": "obj-set-operation-complement-01",
+          "judgment": "supported",
+          "evidence": "考查全集下的补集运算",
+          "unsupportedAspects": "选择题",
+          "alternativePaths": [],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "standard_options",
+        "contextFamiliarity": "high"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（天津）（空白卷）.pdf",
+        "blankPdfSha256": "96f2dc597fbf983bd9067f5d1e7f340d34e6a26de1ea77b403f3c78ae6f931c7",
+        "blankPages": [
+          1
+        ],
+        "analysisPdf": "2025年高考数学试卷（天津）（解析卷）.pdf",
+        "analysisPdfSha256": "c296dc3ee811e5a07a49d7b6841d3d04bfc387efb09c853918db27355145b684",
+        "analysisPages": [
+          1
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "48c32ac00d7717c76d72fd312fc3cd9a1dc1e299c1499678a964ce8c74500293"
+    },
+    {
+      "unitId": "ped-gaokao-2025-sh-q01",
+      "questionId": "gaokao-2025-sh-q01",
+      "paperId": "shanghai",
+      "questionNumber": 1,
+      "questionType": "fill_blank",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 1,
+        "analysisPage": 1,
+        "sourceLocator": "一、填空题 第1题",
+        "blankPages": [
+          1
+        ],
+        "analysisPages": [
+          1
+        ]
+      },
+      "stem": "已知全集 $U=\\{x\\mid 2\\le x\\le 5, x\\in\\mathbb{R}\\}$，集合 $A=\\{x\\mid 2\\le x<4, x\\in\\mathbb{R}\\}$，则 $\\complement_U A=$ _________．",
+      "options": [],
+      "answer": "$\\{x\\mid 4\\le x\\le 5, x\\in\\mathbb{R}\\}$（或 $[4,5]$）",
+      "analysis": "全集为闭区间 $[2,5]$，子集为左闭右开区间 $[2,4)$。从 $[2,5]$ 中扣除 $[2,4)$，端点 4 不在 $A$ 中故留在补集中，补集为闭区间 $[4,5]$，即 $\\{x\\mid 4\\le x\\le 5\\}$。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "实数区间补集运算、端点开闭边界判定",
+        "dependency": "实数连续区间、数轴表示",
+        "mappedChapter": "1.3",
+        "mappingStatus": "mapped"
+      },
+      "cognitiveRequirement": {
+        "level": "运算求解与端点辨析 (operational_execution_and_endpoints)",
+        "definition": "在限定连续实数全集中执行求补，精确判定端点开闭性",
+        "evidence": "全集为闭区间 $[2,5]$，子集 $A$ 在 4 处开，补集在 4 处闭"
+      },
+      "observableAbilities": [
+        {
+          "activity": "连续区间补运算与端点开闭辨析",
+          "evidence": "准确写出补集区间为 $[4,5]$，端点 4 处为闭区间"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、逻辑推理",
+        "evidence": "体现对实数连续性、区间开闭端点'去开留闭'逻辑的严密把握",
+        "confidence": "high"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-set-operation-complement-01",
+          "judgment": "supported",
+          "evidence": "直接考查实数区间补集运算与端点开闭确认",
+          "unsupportedAspects": "填空题只填结果",
+          "alternativePaths": [],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "low",
+        "strategyDiscovery": "low",
+        "reasoningLoad": "low",
+        "computationalBurden": "light",
+        "representationShift": "none",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "high"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（上海6月）（空白卷）.pdf",
+        "blankPdfSha256": "38aa75e66182e02fe0a127403b123e4d9d18f306c36b077d96805a81d8f7aacd",
+        "blankPages": [
+          1
+        ],
+        "analysisPdf": "2025年高考数学试卷（上海6月）（解析卷）.pdf",
+        "analysisPdfSha256": "d9ca32ff1a29477391bd41877541e2197e70e498e64e62fd0b69e3130ac46e3e",
+        "analysisPages": [
+          1
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "6363f8699868cb84139bd99619b2924d33a7b6ca99cb6aa3d331ba21de9fe68d"
+    },
+    {
+      "unitId": "ped-gaokao-2025-qg1-q06",
+      "questionId": "gaokao-2025-qg1-q06",
+      "paperId": "nation-1",
+      "questionNumber": 6,
+      "questionType": "single_choice",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 1,
+        "analysisPage": 3,
+        "sourceLocator": "一、选择题 第6题",
+        "blankPages": [
+          1,
+          2
+        ],
+        "analysisPages": [
+          3,
+          4
+        ]
+      },
+      "stem": "帆船比赛中，运动员可借助风力计测定风速的大小和方向，测出的结果在航海学中称为视风风速。视风风速对应的向量，是真风风速对应的向量与船行风速对应的向量之和，其中船行风速对应的向量与船速对应的向量大小相等，方向相反。图1给出了部分风力等级、名称与风速大小的对应关系。已知某帆船运动员在某时刻测得的视风风速对应的向量与船速对应的向量如图2（风速的大小和向量的大小相同），单位（m/s），则真风为（　）。",
+      "options": [
+        {
+          "label": "A",
+          "text": "轻风"
+        },
+        {
+          "label": "B",
+          "text": "微风"
+        },
+        {
+          "label": "C",
+          "text": "和风"
+        },
+        {
+          "label": "D",
+          "text": "劲风"
+        }
+      ],
+      "answer": "A",
+      "analysis": "视风向量为 $(0,2)-(3,3)=(-3,-1)$，船速向量为 $(3,3)-(2,0)=(1,3)$，故船行风速向量为 $(-1,-3)$。利用题干已给关系，真风向量 $=(-3,-1)-(-1,-3)=(-2,2)$，模长为 $2\\sqrt2\\approx2.828$ m/s，属于表中轻风范围1.1–3.3 m/s，选A。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "已给相对速度合成规则的向量坐标运算、模长计算与查表",
+        "dependency": "平面直角坐标系读图、蒲福风力等级查表对照",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "cognitiveRequirement": {
+        "level": "读图、按已给规则求解",
+        "definition": "识别箭头方向，按题干给定的合成规则求真风向量与模长，再查表。",
+        "evidence": "视风＝真风＋船行风已明确给出，不能据此声称必须自主发现该物理模型。"
+      },
+      "observableAbilities": [
+        {
+          "activity": "将已给向量合成规则用于具体图形",
+          "evidence": "由视风＝真风＋船行风改写为真风＝视风−船行风；合成规则并非学生自主提出。"
+        },
+        {
+          "activity": "坐标运算与模长计算",
+          "evidence": "计算 (-3,-1)-(-1,-3)=(-2,2)，模长为 2√2 ≈ 2.828"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、直观想象；情境数学化为部分支持",
+        "evidence": "读箭头、向量反向、坐标相减和模长查表可观察；建模关系已给，不能完整支持自主建模。",
+        "confidence": "proposed"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-math-modeling-vector-01",
+          "judgment": "partially_supported",
+          "evidence": "支持情境读图和已给关系下的向量求解，但核心合成关系由题干提供。",
+          "unsupportedAspects": "没有自主提出视风、真风、船行风的合成规律的活动机会；图片资产尚未独立入库。",
+          "alternativePaths": [
+            "几何三角形定则作图法：平移向量直接由几何直角三角形得出真风向量模长为 2√2"
+          ],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "medium",
+        "strategyDiscovery": "medium (情境信息提取)",
+        "reasoningLoad": "medium",
+        "computationalBurden": "medium",
+        "representationShift": "real_world_context_to_vectors",
+        "guidanceAndPrompt": "table_and_diagram_provided",
+        "contextFamiliarity": "low"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "figureDependency": {
+        "status": "source_pdf_required",
+        "source": "空白卷第2页图1、图2；未建立独立图片资产，不能据纯文本记录直接发布试题。",
+        "tableRows": [
+          {
+            "level": 2,
+            "range": "1.1–3.3",
+            "name": "轻风"
+          },
+          {
+            "level": 3,
+            "range": "3.4–5.4",
+            "name": "微风"
+          },
+          {
+            "level": 4,
+            "range": "5.5–7.9",
+            "name": "和风"
+          },
+          {
+            "level": 5,
+            "range": "8.0–10.1",
+            "name": "劲风"
+          }
+        ],
+        "figureDescription": "图2视风向量从(3,3)指向(0,2)，船速向量从(2,0)指向(3,3)。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅰ卷）（空白卷）.pdf",
+        "blankPdfSha256": "a58e6eeb280faaa314e37538fc2c7277aece3d7597105fe8c812f1347fd6cd25",
+        "blankPages": [
+          1,
+          2
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅰ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "0e70a893f0e6d59386eacb25298f79ca4a42f87b070a4644d1cdb5d32c48f59e",
+        "analysisPages": [
+          3,
+          4
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "9b43ca17e202c2833e008f99ca65e6b836aadb27096452f507ddb7a248ae6898"
+    },
+    {
+      "unitId": "ped-gaokao-2025-qg1-q08",
+      "questionId": "gaokao-2025-qg1-q08",
+      "paperId": "nation-1",
+      "questionNumber": 8,
+      "questionType": "single_choice",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 2,
+        "analysisPage": 5,
+        "sourceLocator": "一、选择题 第8题（单选题压轴）",
+        "analysisPages": [
+          5,
+          6
+        ],
+        "blankPages": [
+          2
+        ]
+      },
+      "stem": "若实数 $x,y,z$ 满足 $2+\\log_2 x=3+\\log_3 y=5+\\log_5 z$，则 $x,y,z$ 的大小关系不可能是（　）。",
+      "options": [
+        {
+          "label": "A",
+          "text": "$x>y>z$"
+        },
+        {
+          "label": "B",
+          "text": "$x>z>y$"
+        },
+        {
+          "label": "C",
+          "text": "$y>x>z$"
+        },
+        {
+          "label": "D",
+          "text": "$y>z>x$"
+        }
+      ],
+      "answer": "B",
+      "analysis": "令共同值为 $m$，则 $x=2^{m-2}$、$y=3^{m-3}$、$z=5^{m-5}$。取 $m=2$，有 $1>1/3>1/125$，A可能；取 $m=5$，有 $9>8>1$，C可能；取 $m=8$，有 $243>125>64$，D可能。单选且仅一项符合，故选B。也可直接证B不可能：$x/z$随$m$严格递减，$m=8$时为$64/125<1$，所以$x>z$必有$m<8$；$z/y$随$m$严格递增，$m=8$时为$125/243<1$，所以$z>y$必有$m>8$，二者矛盾。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "对数式与指数式互化、共同参数取值与大小比较",
+        "dependency": "指数运算、对数定义、特殊值排除；直接证明可用指数比值单调性",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "cognitiveRequirement": {
+        "level": "共同参数转化与特殊值策略",
+        "definition": "令连等式为同一参数，将三个变量写成指数式，选取特殊值验证可能的排序并排除。",
+        "evidence": "原解析第5页给出m=2、5、8的短解，不必构造a^t+log_a(t)函数族或进行全区间严密论证。"
+      },
+      "observableAbilities": [
+        {
+          "activity": "共同参数与指对互化",
+          "evidence": "令共同值m，得到x=2^(m−2)、y=3^(m−3)、z=5^(m−5)。"
+        },
+        {
+          "activity": "构造特例排除或比值单调性反证",
+          "evidence": "用m=2、5、8确认A、C、D可能；可另证B两不等式导致m<8且m>8。"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、逻辑推理",
+        "evidence": "特例计算与单选排除可成立；图象法仅为替代方法，不据此断言所有作答都经历图象转换。",
+        "confidence": "proposed"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-strategy-transcendental-ineq-01",
+          "judgment": "partially_supported",
+          "evidence": "提供共同参数策略与指对转换机会，但特殊值排除可以绕过完整函数单调性分析。",
+          "unsupportedAspects": "题目不强制提交函数性质和排序条件的完整分析；有限特例排除足以作答。",
+          "alternativePaths": [
+            "令共同值m，取m=2、5、8依次验证A、C、D可能，单选排除B。",
+            "转化后比较x/z和z/y的指数比值，证明B导致m<8和m>8。"
+          ],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "moderate",
+        "strategyDiscovery": "moderate",
+        "reasoningLoad": "moderate",
+        "computationalBurden": "light",
+        "representationShift": "logarithm_to_exponential",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "unknown"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅰ卷）（空白卷）.pdf",
+        "blankPdfSha256": "a58e6eeb280faaa314e37538fc2c7277aece3d7597105fe8c812f1347fd6cd25",
+        "blankPages": [
+          2
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅰ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "0e70a893f0e6d59386eacb25298f79ca4a42f87b070a4644d1cdb5d32c48f59e",
+        "analysisPages": [
+          5,
+          6
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "4947f04b944742b41bd60fc0d0991f8bb2c1557fbd60bd5811a9121e7c6526ec"
+    },
+    {
+      "unitId": "ped-gaokao-2025-qg1-q19",
+      "questionId": "gaokao-2025-qg1-q19",
+      "paperId": "nation-1",
+      "questionNumber": 19,
+      "questionType": "free_response",
+      "isParent": true,
+      "partId": null,
+      "sourceLocation": {
+        "blankPage": 4,
+        "analysisPage": 27,
+        "sourceLocator": "解答题 第19题（全卷压轴题 · 17分）",
+        "analysisPages": [
+          27,
+          28,
+          29,
+          30,
+          31
+        ],
+        "blankPages": [
+          4
+        ]
+      },
+      "stem": "设函数 $f(x)=5\\cos x - \\cos 5x$．",
+      "parts": [
+        {
+          "partId": "p1",
+          "prompt": "（1）求 $f(x)$ 在 $[0, \\pi/4]$ 的最大值；"
+        },
+        {
+          "partId": "p2",
+          "prompt": "（2）给定 $\\theta\\in(0,\\pi)$，设 $a$ 为实数，证明：存在 $y\\in[a-\\theta, a+\\theta]$，使得 $\\cos y\\le\\cos\\theta$；"
+        },
+        {
+          "partId": "p3",
+          "prompt": "（3）若存在 $\\varphi$ 使得对任意 $x$，都有 $5\\cos x-\\cos(5x+\\varphi)\\le b$，求 $b$ 的最小值。"
+        }
+      ],
+      "answer": "（1）$3\\sqrt{3}$；（2）证明见解析；（3）$3\\sqrt{3}$。",
+      "analysis": "（1）$f\\prime(x)=10\\cos3x\\sin2x$，在$(0,\\pi/6)$为正，在$(\\pi/6,\\pi/4)$为负，最大值$f(\\pi/6)=3\\sqrt3$。\n（2）集合$\\{y:\\cos y>\\cos\\theta\\}$是互不相交的开区间$(2k\\pi-\\theta,2k\\pi+\\theta)$的并。若闭区间$[a-\\theta,a+\\theta]$中处处有$\\cos y>\\cos\\theta$，由连通性它须包含于其中一个开区间；两区间长度同为$2\\theta$而闭区间不能包含于该开区间，矛盾。因此存在所求$y$。\n（3）任给$\\varphi$，在（2）中取$a=\\varphi$、$\\theta=5\\pi/6$，存在$y\\in[\\varphi-5\\pi/6,\\varphi+5\\pi/6]$使$\\cos y\\le-\\sqrt3/2$。令$x=(y-\\varphi)/5$，则$|x|\\le\\pi/6$，所以$5\\cos x-\\cos(5x+\\varphi)\\ge3\\sqrt3$，必有$b\\ge3\\sqrt3$。取$\\varphi=0$，令$u=\\cos x\\in[-1,1]$，有$f(x)=20u^3-16u^5$。检查端点及驻点$u=0,\\pm\\sqrt3/2$，全域最大值为$3\\sqrt3$，故该下界可取，$b_{\\min}=3\\sqrt3$。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "导数在三角函数单调性与最值中的应用、反证法证明存在性命题、极值不等式综合",
+        "dependency": "三角恒等变换、导数、余弦函数性质、区间性质；不把切比雪夫背景作为必需知识。",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "cognitiveRequirement": {
+        "level": "形式化推理论证与高阶分析创造 (formal_argumentation_and_creation)",
+        "definition": "小问1考查导数求极值；小问2考查构造反证法严格证明存在性；小问3考查利用前问结论进行极值最值综合论证",
+        "evidence": "实际三问分别要求求最值、证明存在性、求统一上界的最小值；题号与17分本身不是认知水平证据。"
+      },
+      "observableAbilities": [
+        {
+          "activity": "三角求导与符号讨论（p1）",
+          "evidence": "导函数因式分解为乘积项，讨论单调性求最值"
+        },
+        {
+          "activity": "反证法架构与矛盾推导（p2）",
+          "evidence": "提出全称反设，利用区间长度与余弦性质推导矛盾"
+        },
+        {
+          "activity": "结构迁移与极值放缩（p3）",
+          "evidence": "将第二问结论转化为下界约束，结合第一问极值完成最小下界证明"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "逻辑推理、数学抽象、数学运算",
+        "evidence": "以三问实际要求的导数符号、存在性证明、统一下界与取等证明为依据；不以压轴位置推定最高素养。",
+        "confidence": "proposed"
+      },
+      "partAnalyses": [
+        {
+          "partId": "p1",
+          "prompt": "（1）求 $f(x)$ 在 $[0, \\pi/4]$ 的最大值；",
+          "cognitiveRequirement": "导数应用与最值求解",
+          "abilities": [
+            "导数零点求解",
+            "单调性判定与极值计算"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "unsupported",
+              "evidence": "此问要求最值求解与步骤推导，不要求自主组织反证假设和矛盾。",
+              "unsupportedAspects": "提供常规书面推导，不完整支持新catalog的自主反证目标。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题全卷作答说明要求文字说明、证明过程或演算步骤；此小问可观察导数与单调性求最值的完整书面步骤。",
+              "unsupportedAspects": "该支持判断仍待目标版本与独立复核。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 1
+            }
+          ]
+        },
+        {
+          "partId": "p2",
+          "prompt": "（2）给定 $\\theta\\in(0,\\pi)$，设 $a$ 为实数，证明：存在 $y\\in[a-\\theta, a+\\theta]$，使得 $\\cos y\\le\\cos\\theta$；",
+          "cognitiveRequirement": "反证法推理论证",
+          "abilities": [
+            "反证假设建立",
+            "区间连续性与矛盾推导"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "partially_supported",
+              "evidence": "存在性命题允许完整反证法证明，支持提出否定假设与导出区间矛盾的路径。",
+              "unsupportedAspects": "题干没有指定反证法；直接按余弦解集构造交点亦可，不能认定所有作答必须组织反证。",
+              "alternativePaths": [
+                "利用余弦函数解集与等长区间性质直接证明交点存在，无需显式反设。"
+              ],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题全卷作答说明要求文字说明、证明过程或演算步骤；此小问可观察存在性命题证明的完整书面步骤。",
+              "unsupportedAspects": "该支持判断仍待目标版本与独立复核。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 1
+            }
+          ]
+        },
+        {
+          "partId": "p3",
+          "prompt": "（3）若存在 $\\varphi$ 使得对任意 $x$，都有 $5\\cos x-\\cos(5x+\\varphi)\\le b$，求 $b$ 的最小值。",
+          "cognitiveRequirement": "高阶综合与策略迁移",
+          "abilities": [
+            "必要条件探路",
+            "前问结论迁移",
+            "下界证明与最值判定"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "unsupported",
+              "evidence": "此问要求最值求解与步骤推导，不要求自主组织反证假设和矛盾。",
+              "unsupportedAspects": "提供常规书面推导，不完整支持新catalog的自主反证目标。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题全卷作答说明要求文字说明、证明过程或演算步骤；此小问可观察下界必要性与取等充分性的完整书面步骤。",
+              "unsupportedAspects": "该支持判断仍待目标版本与独立复核。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 1
+            }
+          ]
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "high",
+        "strategyDiscovery": "high",
+        "reasoningLoad": "high",
+        "computationalBurden": "moderate",
+        "representationShift": "calculus_and_trigonometry",
+        "guidanceAndPrompt": "structured_parts",
+        "contextFamiliarity": "unknown"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅰ卷）（空白卷）.pdf",
+        "blankPdfSha256": "a58e6eeb280faaa314e37538fc2c7277aece3d7597105fe8c812f1347fd6cd25",
+        "blankPages": [
+          4
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅰ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "0e70a893f0e6d59386eacb25298f79ca4a42f87b070a4644d1cdb5d32c48f59e",
+        "analysisPages": [
+          27,
+          28,
+          29,
+          30,
+          31
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "e5c23136de69fc87cb2a9e25196c20a9103523d091d79352c3070828ff5e3745"
+    },
+    {
+      "unitId": "ped-gaokao-2025-qg2-q14",
+      "questionId": "gaokao-2025-qg2-q14",
+      "paperId": "nation-2",
+      "questionNumber": 14,
+      "questionType": "fill_blank",
+      "isParent": false,
+      "partId": "main",
+      "sourceLocation": {
+        "blankPage": 2,
+        "analysisPage": 9,
+        "sourceLocator": "填空题 第14题（填空压轴）",
+        "blankPages": [
+          2
+        ],
+        "analysisPages": [
+          9
+        ]
+      },
+      "stem": "一个底面半径为 4cm，高为 9cm 的封闭圆柱形容器（容器壁厚度忽略不计）内有两个半径相等的铁球，则铁球半径 $r$ 的最大值为 _________ cm．",
+      "options": [],
+      "answer": "$\\dfrac52$ cm",
+      "analysis": "设球半径为$r$。两球心的水平距离至多$8-2r$，竖直距离至多$9-2r$；两球不重叠要求球心距至少$2r$，故$(2r)^2\\le(8-2r)^2+(9-2r)^2$，即$(2r-5)(2r-29)\\ge0$。结合$0<r\\le4$，得$r\\le5/2$。当$r=5/2$，两球心取在同一轴截面中，分别贴上下底与两侧壁即可达到球心距$5$，两球相切，故最大半径$5/2$。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "立体几何中球与圆柱相切空间位置关系、勾股定理与二次方程求极值",
+        "dependency": "三维空间几何投影、直角三角形勾股定理",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "cognitiveRequirement": {
+        "level": "空间表征与代数建模 (spatial_visualization_and_modeling)",
+        "definition": "分析两球相切且分别与圆柱底面和侧面相切的临界状态，建立空间坐标/投影几何方程并求解",
+        "evidence": "将三维立体相切转化为水平投影与垂直投影两分量，建立勾股方程"
+      },
+      "observableAbilities": [
+        {
+          "activity": "三维几何极限相切状态分析",
+          "evidence": "识别半径取最大时两球必相切且分别与上底、下底、侧面相切"
+        },
+        {
+          "activity": "空间距离代数方程建立与求解",
+          "evidence": "列出 $(8-2r)^2+(9-2r)^2=(2r)^2$ 并解出一元二次方程"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "直观想象、数学运算",
+        "evidence": "空间几何立体直观想象力与代数方程精密运算的结合",
+        "confidence": "proposed"
+      },
+      "objectiveSupportEvaluations": [
+        {
+          "objectiveId": "obj-proof-formal-argumentation-01",
+          "judgment": "unsupported",
+          "evidence": "填空题只提交最终数值，不提供自主反证法及完整书面论证的作答要求。",
+          "unsupportedAspects": "临界装配推理存在于参考解法，不等于学生必须提交该推理。",
+          "alternativePaths": [],
+          "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+          "objectiveVersion": 2
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "medium",
+        "strategyDiscovery": "moderate",
+        "reasoningLoad": "medium",
+        "computationalBurden": "medium",
+        "representationShift": "3d_spatial_to_2d_projection",
+        "guidanceAndPrompt": "none",
+        "contextFamiliarity": "unknown"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅱ卷）（空白卷）.pdf",
+        "blankPdfSha256": "8d1b41ee8a35244b8c861f86d518f84c17bf3fb378e01e5d501acb1683cdce1e",
+        "blankPages": [
+          2
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅱ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "8fe8b56d64191ccb3d4a0aaa9b119d110fe79b684b8e44c623308a3c19d2a6c5",
+        "analysisPages": [
+          9
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "9076e6d8da8c95ea3b032eb2ddd3d78e050d131bc67b55f00ab37b4367a5f61e"
+    },
+    {
+      "unitId": "ped-gaokao-2025-qg2-q19",
+      "questionId": "gaokao-2025-qg2-q19",
+      "paperId": "nation-2",
+      "questionNumber": 19,
+      "questionType": "free_response",
+      "isParent": true,
+      "partId": null,
+      "sourceLocation": {
+        "blankPage": 3,
+        "analysisPage": 16,
+        "sourceLocator": "解答题 第19题（全卷压轴题 · 17分）",
+        "blankPages": [
+          3,
+          4
+        ],
+        "analysisPages": [
+          16,
+          17,
+          18
+        ]
+      },
+      "stem": "甲、乙两人进行乒乓球练习，每个球胜者得1分，负者得0分。设每个球甲胜的概率为$p$（$1/2<p<1$），乙胜的概率为$q$，$p+q=1$，且各球的胜负相互独立。对正整数$k\\ge2$，记$p_k$为打完$k$个球后甲比乙至少多得2分的概率，$q_k$为打完$k$个球后乙比甲至少多得2分的概率。",
+      "parts": [
+        {
+          "partId": "p1",
+          "prompt": "（1）求$p_3,p_4$（用$p$表示）。"
+        },
+        {
+          "partId": "p2",
+          "prompt": "（2）若$\\dfrac{p_4-p_3}{q_4-q_3}=4$，求$p$。"
+        },
+        {
+          "partId": "p3",
+          "prompt": "（3）证明：对任意正整数$m$，$p_{2m+1}-q_{2m+1}<p_{2m}-q_{2m}<p_{2m+2}-q_{2m+2}$。"
+        }
+      ],
+      "answer": "（1）$p_3=p^3$，$p_4=p^3(4-3p)$；（2）$p=2/3$；（3）证明见解析。",
+      "analysis": "（1）3球领先至少2分只能3胜，故$p_3=p^3$；4球可以3胜或4胜，故$p_4=4p^3q+p^4=p^3(4-3p)$。\n（2）同理$q_3=q^3$，$q_4=q^3(4-3q)$，于是$(p_4-p_3)/(q_4-q_3)=3p^3q/(3q^3p)=(p/q)^2=4$。因$p,q>0$，得$p=2q$，故$p=2/3$。\n（3）记$D_n=p_n-q_n$。按二项分布阈值或追加一球的状态分类可得$p_{2m}-p_{2m+1}=\\binom{2m}{m-1}p^{m+1}q^m$，$p_{2m+2}-p_{2m+1}=\\binom{2m+1}{m}p^{m+2}q^m$；乙的式子交换$p,q$。因此$D_{2m}-D_{2m+1}=\\binom{2m}{m-1}(pq)^m(p-q)>0$。再相减并用组合数恒等式，得$D_{2m+2}-D_{2m}=\\binom{2m}{m}(pq)^m(p-q)>0$。由$p>q>0$，所求严格不等式成立。",
+      "verificationStatus": "pending_review",
+      "knowledgeScope": {
+        "primary": "独立重复试验、二项分布事件阈值、组合恒等式与概率差比较",
+        "dependency": "组合计数、正数代数运算与有限求和；不需要马尔可夫链、无穷级数或大数定律。",
+        "mappedChapter": "待映射",
+        "mappingStatus": "pending_mapping"
+      },
+      "cognitiveRequirement": {
+        "level": "阈值事件计算与递推比较论证",
+        "definition": "将领先至少2分转成获胜球数阈值，计算小样本概率，利用相邻球数的事件变化证明一般不等式。",
+        "evidence": "三问由p3/p4求解到参数条件，再到偶数/奇数球数的概率差比较，不涉及11分制或长短盘最终胜率。"
+      },
+      "observableAbilities": [
+        {
+          "activity": "二项事件建模（p1）",
+          "evidence": "识别3球须3胜、4球须3或4胜，列出对应有限项。"
+        },
+        {
+          "activity": "对称概率表达式与参数求解（p2）",
+          "evidence": "交换p、q得到乙的式子，化简比值得p/q=2。"
+        },
+        {
+          "activity": "追加球状态分类与概率差证明（p3）",
+          "evidence": "对相邻球数的阈值跨越分类，提取组合项并利用p−q>0证明两段严格不等式。"
+        }
+      ],
+      "coreLiteracy": {
+        "primary": "数学运算、逻辑推理；给定模型下的概率建模应用",
+        "evidence": "球胜概率与独立性由题干明确给定，观察二项阈值事件转化与一般概率差证明，不把所有概率题自动标为数据分析。",
+        "confidence": "proposed"
+      },
+      "partAnalyses": [
+        {
+          "partId": "p1",
+          "prompt": "（1）求$p_3,p_4$（用$p$表示）。",
+          "cognitiveRequirement": "二项事件计算",
+          "abilities": [
+            "二项事件建模（p1）"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "unsupported",
+              "evidence": "此问求概率与计算步骤，不完整提供自主反证假设与矛盾活动。",
+              "unsupportedAspects": "不是catalog中完整自主反证目标。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题作答说明要求文字说明、证明过程或演算步骤，此问提供识别3球须3胜、4球须3或4胜，列出对应有限项。",
+              "unsupportedAspects": "目标版本与独立复核尚待补齐。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 1
+            }
+          ]
+        },
+        {
+          "partId": "p2",
+          "prompt": "（2）若$\\dfrac{p_4-p_3}{q_4-q_3}=4$，求$p$。",
+          "cognitiveRequirement": "代数求参",
+          "abilities": [
+            "对称概率表达式与参数求解（p2）"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "unsupported",
+              "evidence": "此问求参数与代数推导，不完整提供自主反证假设与矛盾活动。",
+              "unsupportedAspects": "不是catalog中完整自主反证目标。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题作答说明要求文字说明、证明过程或演算步骤，此问提供交换p、q得到乙的式子，化简比值得p/q=2。",
+              "unsupportedAspects": "目标版本与独立复核尚待补齐。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 1
+            }
+          ]
+        },
+        {
+          "partId": "p3",
+          "prompt": "（3）证明：对任意正整数$m$，$p_{2m+1}-q_{2m+1}<p_{2m}-q_{2m}<p_{2m+2}-q_{2m+2}$。",
+          "cognitiveRequirement": "有限概率差比较证明",
+          "abilities": [
+            "追加球状态分类与概率差证明（p3）"
+          ],
+          "objectiveEvaluations": [
+            {
+              "objectiveId": "obj-proof-formal-argumentation-01",
+              "judgment": "unsupported",
+              "evidence": "此问可用直接递推比较证明，未指定反证法，不完整提供自主反证假设与矛盾活动。",
+              "unsupportedAspects": "不是catalog中完整自主反证目标。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 2
+            },
+            {
+              "objectiveId": "obj-written-derivation-01",
+              "judgment": "supported",
+              "evidence": "解答题作答说明要求文字说明、证明过程或演算步骤，此问提供对相邻球数的阈值跨越分类，提取组合项并利用p−q>0证明两段严格不等式。",
+              "unsupportedAspects": "目标版本与独立复核尚待补齐。",
+              "alternativePaths": [],
+              "assessmentSource": "Codex source-grounded repair; pending independent objective review",
+              "objectiveVersion": 1
+            }
+          ]
+        }
+      ],
+      "challengeFeatures": {
+        "knowledgeIntegration": "high",
+        "strategyDiscovery": "high",
+        "reasoningLoad": "high",
+        "computationalBurden": "moderate",
+        "representationShift": "score_lead_to_binomial_threshold",
+        "guidanceAndPrompt": "structured_parts",
+        "contextFamiliarity": "unknown"
+      },
+      "isSelectableCandidate": false,
+      "annotationVerification": {
+        "status": "pending_review",
+        "reason": "本轮核对题面、选项、答案并修正明显活动错标；目标支持与新目标版本尚待独立复核，不能由源核对或JSON校验自动晋级。"
+      },
+      "sourceVerification": {
+        "status": "source_checked",
+        "checkedBy": "Codex gaokao repair agent",
+        "checkedOn": "2026-10-10",
+        "method": "Rendered and visually inspected local blank and analysis PDF pages; cross-checked source answer and repaired reasoning.",
+        "blankPdf": "2025年高考数学试卷（全国Ⅱ卷）（空白卷）.pdf",
+        "blankPdfSha256": "8d1b41ee8a35244b8c861f86d518f84c17bf3fb378e01e5d501acb1683cdce1e",
+        "blankPages": [
+          3,
+          4
+        ],
+        "analysisPdf": "2025年高考数学试卷（全国Ⅱ卷）（解析卷）.pdf",
+        "analysisPdfSha256": "8fe8b56d64191ccb3d4a0aaa9b119d110fe79b684b8e44c623308a3c19d2a6c5",
+        "analysisPages": [
+          16,
+          17,
+          18
+        ],
+        "scope": "题面、选项、设问与答案的源一致性；不证明官方版本地位或教学标签正确。"
+      },
+      "analysisContentSha256": "6c64220da51374440b5e9fb782ad9e798b92f74676f524d4e1c16abb061cdd61"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { getQuestion } from '../src/question-bank/reader.mjs';
 import { previewBlueprint, createDraft } from '../src/assembly/engine.mjs';
-import { previewDraftCandidates, applyDraftOperation } from '../src/assembly/editor.mjs';
+import { previewDraftCandidates, previewDraftCandidateSupply, applyDraftOperation } from '../src/assembly/editor.mjs';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const readJson = async file => JSON.parse(await readFile(file, 'utf8'));
@@ -62,8 +62,8 @@ test('real controlled benchmark candidates respect complete task, pending partia
   assert.deepEqual(third.candidates.map(item => item.questionId), ['tutor-set-020']);
   assert.ok(third.candidates[0].question.student.stem);
   assert.equal(third.candidates[0].canSelect, true);
-  assert.equal(third.supply.ready, 18);
-  assert.equal(third.pending.length, 32);
+  assert.equal(third.supply.ready, 45);
+  assert.equal(third.pending.length, 5);
   const seventh = await preview('slot-7');
   assert.equal(seventh.candidates.length, 0);
   const partial = seventh.suggestions.find(item => item.questionId === 'tutor-set-019');
@@ -78,6 +78,59 @@ test('real controlled benchmark candidates respect complete task, pending partia
   const forbidden = await apply(draft, 'replace', { slotIds: ['slot-9'], mode: 'direct', candidateId: 'tutor-set-041', allowDifference: true });
   assert.equal(forbidden.result.entries[0].status, 'unchanged');
   assert.deepEqual(forbidden.draft.slots, draft.slots);
+});
+
+test('whole-draft availability matches selectable candidates, excludes occupied duplicates and follows revisions', async () => {
+  const draft = await baseline(); const before = structuredClone(draft);
+  const supply = await previewDraftCandidateSupply(draft, { expectedRevision: 0 });
+  assert.equal(supply.ok, true);
+  assert.equal(supply.revision, 0);
+  assert.deepEqual(supply.slots.map(slot => slot.slotId), draft.slots.map(slot => slot.slotId));
+  for (const slot of draft.slots) {
+    const preview = await previewDraftCandidates(draft, { slotId: slot.slotId, expectedRevision: 0 });
+    const count = supply.slots.find(item => item.slotId === slot.slotId);
+    assert.equal(count.eligibleCount, preview.candidates.filter(item => item.canSelect).length);
+    assert.equal(count.suggestionCount, preview.suggestions.filter(item => item.canSelect).length);
+    assert.equal(count.readFailureCount, preview.failures.length);
+  }
+  assert.equal(supply.slots.find(slot => slot.slotId === 'slot-3').eligibleCount, 1);
+  assert.equal(supply.slots.find(slot => slot.slotId === 'slot-9').eligibleCount, 0);
+  assert.deepEqual(draft, before, 'Availability must not mutate the saved paper');
+  const changed = (await apply(draft, 'replace', { slotIds: ['slot-3'], mode: 'direct' })).draft;
+  assert.equal((await previewDraftCandidateSupply(changed, { expectedRevision: 0 })).error.code, 'revision_conflict');
+  const refreshed = await previewDraftCandidateSupply(changed, { expectedRevision: changed.revision });
+  assert.equal(refreshed.revision, changed.revision);
+  assert.equal((await previewDraftCandidateSupply(changed, {})).ok, false);
+});
+
+test('whole-draft availability exposes question read failures and fails on unreadable pool', async t => {
+  const options = await fixture(t); const draft = await baseline(options);
+  await writeFile(path.join(options.root, 'data/question-bank/questions/tutor-set-020.json'), '{INJECTED_READ_FAILURE');
+  const supply = await previewDraftCandidateSupply(draft, { expectedRevision: 0 }, options);
+  assert.equal(supply.ok, true);
+  const third = supply.slots.find(slot => slot.slotId === 'slot-3');
+  assert.equal(third.eligibleCount, 0);
+  assert.equal(third.readFailureCount, 1);
+  await writeFile(path.join(options.root, 'data/assembly/question-index.json'), '{INJECTED_POOL_FAILURE');
+  const failed = await previewDraftCandidateSupply(draft, { expectedRevision: 0 }, options);
+  assert.equal(failed.ok, false);
+  assert.equal(failed.slots, undefined);
+});
+
+test('availability excludes a different candidate ID in an already occupied duplicate group', async t => {
+  const options = await fixture(t); const draft = await baseline(options);
+  const filename = path.join(options.root, 'data/assembly/question-index.json');
+  const index = await readJson(filename);
+  index.entries.find(item => item.questionId === 'tutor-set-020').duplicateGroup =
+    index.entries.find(item => item.questionId === 'tutor-set-001').duplicateGroup;
+  await writeJson(filename, index);
+  const supply = await previewDraftCandidateSupply(draft, { expectedRevision: 0 }, options);
+  assert.equal(supply.ok, true);
+  assert.equal(supply.slots.find(slot => slot.slotId === 'slot-3').eligibleCount, 0);
+  const preview = await previewDraftCandidates(draft, { slotId: 'slot-3', expectedRevision: 0 }, options);
+  const duplicate = preview.suggestions.find(item => item.questionId === 'tutor-set-020');
+  assert.equal(duplicate.duplicate, true);
+  assert.equal(duplicate.canSelect, false);
 });
 
 test('batch replace keeps success, unsupported original, unrelated content and locks unchanged', async () => {
@@ -270,4 +323,85 @@ test('preview is read-only and malformed operations never mutate caller input', 
     assert.equal(failed.error.code, 'invalid_operation');
   }
   assert.deepEqual(draft, before);
+});
+
+const slotGoal = overrides => ({ observable: '独立判断集合的确定性并给出判断', knowledgeScope: ['1.1'], cognition: 'understand',
+  conditions: { prompt: 'independent', response: 'answer' }, priority: 'required', abilities: ['辨析概念'], literacies: ['数学抽象'], ...overrides });
+
+test('single-slot criteria retain question, allocation and locks, isolate shared goals and archive the baseline', async () => {
+  let original = await baseline();
+  original = (await apply(original, 'baseline', { requirements: { teachingGoals: [{ ...slotGoal(), id: 'shared-goal', version: 1,
+    source: { kind: 'teacher', text: '全卷共用教学目标' } }] } })).draft;
+  for (const slot of original.slots) slot.goalIds = ['shared-goal'];
+  original.slots[0].locked = true;
+  const before = structuredClone(original);
+  const result = await apply(original, 'criteria', { slotId: 'slot-1', taskId: 'number_membership',
+    teachingGoal: slotGoal(), targetDifficulty: 0.6 });
+  const changed = result.draft;
+  assert.deepEqual(original, before);
+  assert.deepEqual(changed.slots.slice(1), original.slots.slice(1));
+  assert.deepEqual(changed.slots[0].question, original.slots[0].question);
+  assert.equal(changed.slots[0].locked, true);
+  assert.equal(changed.slots[0].points, original.slots[0].points);
+  assert.deepEqual(changed.slots[0].partPoints, original.slots[0].partPoints);
+  assert.equal(changed.slots[0].taskId, 'number_membership');
+  assert.deepEqual(changed.slots[0].goalIds, ['slot-goal-slot-1']);
+  assert.equal(changed.slots[0].targetDifficulty, 0.6);
+  assert.equal(changed.baseline.requirements.targetDifficulty, original.baseline.requirements.targetDifficulty);
+  assert.equal(changed.baseline.version, original.baseline.version + 1);
+  assert.deepEqual(changed.baselineHistory.at(-1), original.baseline);
+  assert.deepEqual(changed.baseline.requirements.teachingGoals[0], original.baseline.requirements.teachingGoals[0]);
+  assert.deepEqual(changed.baseline.requirements.teachingGoals[1].source, { kind: 'teacher', text: slotGoal().observable });
+  assert.equal(changed.slots[0].applicability.status, 'unknown');
+  assert.equal(changed.slots[0].applicability.goalSupport[0].status, 'unknown');
+  assert.match(result.result.entries[0].message, /查看候选并确认换题/);
+  const candidates = await previewDraftCandidates(changed, { slotId: 'slot-1', expectedRevision: changed.revision });
+  assert.equal(candidates.candidates.length, 0);
+  assert.ok(candidates.suggestions.some(item => item.goalSupport?.some(support => support.goalId === 'slot-goal-slot-1' && support.status === 'unknown')));
+});
+
+test('single-slot goal revisions stay stable and increase across edits, clearing and re-creation', async () => {
+  let draft = await baseline();
+  const fields = { slotId: 'slot-1', taskId: 'set_determinacy', teachingGoal: slotGoal({ priority: 'preferred' }), targetDifficulty: null };
+  draft = (await apply(draft, 'criteria', fields)).draft;
+  assert.equal(draft.slots[0].applicability.status, 'eligible');
+  assert.equal(draft.baseline.requirements.teachingGoals[0].version, 1);
+  draft = (await apply(draft, 'criteria', fields)).draft;
+  assert.equal(draft.baseline.requirements.teachingGoals[0].version, 2);
+  const cleared = (await apply(draft, 'criteria', { ...fields, teachingGoal: null })).draft;
+  assert.deepEqual(cleared.slots[0].goalIds, []);
+  assert.equal(cleared.baseline.requirements.teachingGoals.some(goal => goal.id === 'slot-goal-slot-1'), false);
+  assert.equal(cleared.slots[0].targetDifficulty, null);
+  const recreated = (await apply(cleared, 'criteria', fields)).draft;
+  assert.equal(recreated.baseline.requirements.teachingGoals[0].version, 3);
+  assert.equal(recreated.stats.difficultyEstimate, null);
+});
+
+test('single-slot criteria validate inputs and task allocation before changing caller data', async t => {
+  const options = await fixture(t);
+  const original = await baseline(options);
+  const configPath = path.join(options.root, 'data', 'assembly', 'task-catalog.json');
+  const config = await readJson(configPath);
+  config.tasks.push({ id: 'three_parts', label: '三小问测试任务', questionType: 'free_response', sectionIds: ['1.3'],
+    partIds: ['p1', 'p2', 'p3'], partWeights: [1, 1, 1] });
+  await writeJson(configPath, config);
+  const before = structuredClone(original);
+  const fields = { slotId: 'slot-1', taskId: 'set_determinacy', teachingGoal: slotGoal(), targetDifficulty: null };
+  const cases = [{ taskId: 'missing' }, { slotId: 'missing' }, { taskId: 'interval_complement_parameter' },
+    { teachingGoal: undefined }, { teachingGoal: [] }, { targetDifficulty: undefined }, { targetDifficulty: -0.1 },
+    { targetDifficulty: '0.5' }, { teachingGoal: slotGoal({ cognition: 'expert' }) },
+    { teachingGoal: slotGoal({ knowledgeScope: ['unknown-section'] }) },
+    { teachingGoal: slotGoal({ conditions: { prompt: 'independent' } }) },
+    { teachingGoal: slotGoal({ abilities: ['重复', '重复'] }) },
+    { slotId: 'slot-9', taskId: 'three_parts' }];
+  for (const invalidFields of cases) {
+    const payload = Object.fromEntries(Object.entries({ ...fields, ...invalidFields }).filter(([, value]) => value !== undefined));
+    const result = await applyDraftOperation(original, operation(original, 'criteria', payload), options);
+    assert.equal(result.ok, false, JSON.stringify(invalidFields));
+    assert.ok(['invalid_operation', 'invalid_plan'].includes(result.error.code), JSON.stringify({ invalidFields, result }));
+    assert.deepEqual(original, before);
+  }
+  const compatible = await apply(original, 'criteria', { ...fields, slotId: 'slot-9', taskId: 'root_set_subset_count' }, options);
+  assert.deepEqual(compatible.draft.slots[8].partPoints, original.slots[8].partPoints);
+  assert.deepEqual(compatible.draft.slots[8].question, original.slots[8].question);
 });

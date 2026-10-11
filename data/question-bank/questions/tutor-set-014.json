@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-014",
+  "auditId": "SET-SRC-014",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2024秋·安康期末）有4根火柴棒的长度可以构成一个四元数集，将这4根火柴棒首尾相接连成一个平面四边形，则这个平面四边形可能是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "梯形"
+      },
+      {
+        "label": "B",
+        "text": "矩形"
+      },
+      {
+        "label": "C",
+        "text": "菱形"
+      },
+      {
+        "label": "D",
+        "text": "等腰梯形"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "A",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8,
+              9
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "四种长度构成四元数集，表示4根火柴棒的长度两两不同。矩形有相等的对边，菱形四边相等，等腰梯形两腰相等，均不满足。普通梯形可以四边两两不同，例如顶点为 $(0,0),(5,0),(4,2),(0,2)$ 的梯形，四边长为 $5,\\sqrt5,4,2$，两两不同，故可能为梯形，选 A。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8,
+              9
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        8,
+        9
+      ],
+      "locator": "知识点3 例2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        7
+      ],
+      "locator": "知识点3 例2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "由四元长度集合判断可能的四边形"
+    ],
+    "requiredKnowledge": [
+      "集合四个不同元素",
+      "四边形边长性质",
+      "初中平面几何"
+    ],
+    "allowedSolution": "四种长度构成四元数集，表示4根火柴棒的长度两两不同。矩形有相等的对边，菱形四边相等，等腰梯形两腰相等，均不满足。普通梯形可以四边两两不同，例如顶点为 $(0,0),(5,0),(4,2),(0,2)$ 的梯形，四边长为 $5,\\sqrt5,4,2$，两两不同，故可能为梯形，选 A。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-00a1d61e363ade3d",
+    "teacherVersion": "teacher-39eb2ae54734f51b"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          8,
+          9
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          7
+        ]
+      }
+    ],
+    "differences": [
+      "原题“四元数集”明确元素数为4，不依赖未明写互异条件。",
+      "补充梯形存在性例子，属于 source_adapted 教师解答；不在学生题面增加条件。",
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-00a1d61e363ade3d",
+    "teacherVersion": "teacher-39eb2ae54734f51b"
+  },
+  "contentVersion": "content-00a1d61e363ade3d",
+  "contentSha256": "00a1d61e363ade3d94493f25540d16b90bcdfd9282528b5721071d01fe060a26",
+  "teacherVersion": "teacher-39eb2ae54734f51b",
+  "teacherSha256": "39eb2ae54734f51be73f5a17076c63867907fc052620abe004f2a953aff7bb39"
+}

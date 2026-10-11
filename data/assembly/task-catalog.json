@@ -25,17 +25,22 @@
     {
       "id": "vieta",
       "label": "韦达定理",
-      "description": "由二次方程两根求系数；本次显式允许，不代表整章已学。049 的已记录完整解法使用此工具。"
+      "description": "由一元二次方程的两根求系数；本次允许使用此工具，不代表已学完整章节。"
     },
     {
       "id": "quadratic_basics",
       "label": "二次方程因式分解与初步图象",
-      "description": "一次、二次函数初步图象、二次方程因式分解及根的判别式；047 采用因式符号判断，未要求高中二次不等式通法。"
+      "description": "允许借助一次、二次函数的初步图象、因式分解及判别式处理含参方程，并用因式符号判断大小。"
     },
     {
       "id": "absolute_root",
       "label": "绝对值不等式工具",
       "description": "只管理含变量的绝对值不等式等符号工具；绝对值的定义、基本计算及平方根运算作为初中基础自动注入，不由此选项撤销。有限集逐项代入检查绝对值条件不需本工具。"
+    },
+    {
+      "id": "basic_geometry",
+      "label": "初中三角形与四边形性质",
+      "description": "允许使用三角形和四边形的边长性质、等腰三角形定义及勾股定理。须本次明确允许，不自动视为基础运算。"
     }
   ],
   "tasks": [
@@ -157,6 +162,252 @@
         8,
         10
       ]
+    },
+    {
+      "id": "set_integer_combination_equality",
+      "label": "判断整数线性组合集合与偶数集相等",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "set_object_equality",
+      "label": "辨析集合元素类型与集合相等",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1",
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "set_statement_equality",
+      "label": "辨析数集、点集、空集与描述法中的集合相等",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1",
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "empty_proper_root_parameter",
+      "label": "由空集为根集的真子集求参数",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "intersection_subset_count",
+      "label": "计算有限集与区间交集的子集数",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.2",
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "sum_free_maximum",
+      "label": "确定满足两元素之和不在集内条件的最大基数",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "enumerated_event_subset",
+      "label": "从已枚举的二人组合中筛选满足条件的子集",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "defined_quotient_subset_count",
+      "label": "按商集新定义求并集并计算真子集数",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1",
+        "1.2",
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "interval_union",
+      "label": "计算平方约束区间与开区间的并集",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "interval_intersection",
+      "label": "由因式符号求区间并取交集",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "absolute_interval_complement",
+      "label": "由绝对值条件求实数区间补集",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "integer_complement_union",
+      "label": "在整数全集中求补集再与有限集并集",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "interval_intersection_fill",
+      "label": "计算已给区间的交集并判断端点",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.3"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "set_property_judgement",
+      "label": "辨析确定性、无序性和重复元素计数",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "set_determinacy_fill",
+      "label": "辨析对象能否构成集合并填写序号",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "number_membership_fill",
+      "label": "判断常用数集的元素关系并填符号",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "membership_subset_judgement_fill",
+      "label": "辨析元素关系、真子集和常用数集",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1",
+        "1.2"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "distinct_lengths_quadrilateral",
+      "label": "由四元长度集合判断可能的四边形",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "parameter_linear_solution_set",
+      "label": "判断含参一次方程可能的解集",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "distinct_lengths_triangle",
+      "label": "由三个集合元素构成边长排除等腰三角形",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "finite_progression_description",
+      "label": "将有限等差数集识别为描述法",
+      "questionType": "single_choice",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "natural_integer_listing_fill",
+      "label": "将自然数描述集合化为列举法",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "factored_root_listing_fill",
+      "label": "将已因式分解方程根集化为列举法",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
+    },
+    {
+      "id": "system_pair_listing_fill",
+      "label": "求方程组解并用有序数对列举解集",
+      "questionType": "fill_blank",
+      "sectionIds": [
+        "1.1"
+      ],
+      "partIds": [],
+      "partWeights": []
     }
   ],
   "defaultTasks": {

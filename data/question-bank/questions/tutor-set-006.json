@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-006",
+  "auditId": "SET-SRC-006",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025秋·浦东新区期末）请将下列各组对象能组成集合的序号填在横线上 ______。①上海市2022年入学的全体高一年级新生；②在平面直角坐标系中，到定点 $(0,0)$ 的距离等于1的所有点；③影响力比较大的中国数学家；④不等式 $3x-10<0$ 的所有正整数解。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "①②④",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              4,
+              5
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "①入学时间、地域和年级明确，对象确定。②定点及距离条件明确，对象确定；无需求点的坐标或写圆方程。③“影响力比较大”没有明确标准，对象不确定。④解一次不等式得 $x<10/3$，正整数解为 $\\{1,2,3\\}$，对象确定。因此能组成集合的是①②④。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              4,
+              5
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        4,
+        5
+      ],
+      "locator": "知识点1 跟踪训练4"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        3,
+        4
+      ],
+      "locator": "知识点1 跟踪训练4"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析对象能否构成集合并填写序号"
+    ],
+    "requiredKnowledge": [
+      "集合确定性",
+      "正整数",
+      "一次不等式",
+      "给定距离条件"
+    ],
+    "allowedSolution": "①入学时间、地域和年级明确，对象确定。②定点及距离条件明确，对象确定；无需求点的坐标或写圆方程。③“影响力比较大”没有明确标准，对象不确定。④解一次不等式得 $x<10/3$，正整数解为 $\\{1,2,3\\}$，对象确定。因此能组成集合的是①②④。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-c80a6142019d5d56",
+    "teacherVersion": "teacher-b201f9559c1301de"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          4,
+          5
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          3,
+          4
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-c80a6142019d5d56",
+    "teacherVersion": "teacher-b201f9559c1301de"
+  },
+  "contentVersion": "content-c80a6142019d5d56",
+  "contentSha256": "c80a6142019d5d56ec94ac1984505935a0369e6e846850066c8698cf3169c8d9",
+  "teacherVersion": "teacher-b201f9559c1301de",
+  "teacherSha256": "b201f9559c1301deed6f825c87cf70fbbb0de32b1b8a33b27182059851073919"
+}

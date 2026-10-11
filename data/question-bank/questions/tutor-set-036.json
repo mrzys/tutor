@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-036",
+  "auditId": "SET-SRC-036",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025秋·敖汉旗校级月考）若 $\\varnothing$ 是集合 $M=\\{x\\mid x^2-ax+1=0,\\ a\\in\\mathbb R\\}$ 的真子集，则 $a$ 的取值范围是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$-2<a<2$"
+      },
+      {
+        "label": "B",
+        "text": "$a<-2\\text{ 或 }a>2$"
+      },
+      {
+        "label": "C",
+        "text": "$-2\\le a\\le2$"
+      },
+      {
+        "label": "D",
+        "text": "$a\\le-2\\text{ 或 }a\\ge2$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "D",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "空集是 M 的真子集，等价于 $M\\ne\\varnothing$，即二次方程 $x^2-ax+1=0$ 有实数根。由根的判别式得 $\\Delta=a^2-4\\ge0$，所以 $a\\le-2$ 或 $a\\ge2$。当 $a=\\pm2$ 时，M 为单元素集，空集仍是真子集，故不能去掉端点。选 D。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        20
+      ],
+      "locator": "知识点6 例3"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        14
+      ],
+      "locator": "知识点6 例3"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "由空集为根集的真子集求参数"
+    ],
+    "requiredKnowledge": [
+      "空集与真子集",
+      "二次方程判别式",
+      "平方与大小比较"
+    ],
+    "allowedSolution": "空集是 M 的真子集，等价于 $M\\ne\\varnothing$，即二次方程 $x^2-ax+1=0$ 有实数根。由根的判别式得 $\\Delta=a^2-4\\ge0$，所以 $a\\le-2$ 或 $a\\ge2$。当 $a=\\pm2$ 时，M 为单元素集，空集仍是真子集，故不能去掉端点。选 D。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-915a6bac920207f8",
+    "teacherVersion": "teacher-be08d64a2f09a75e"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          20
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          14
+        ]
+      }
+    ],
+    "differences": [
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-915a6bac920207f8",
+    "teacherVersion": "teacher-be08d64a2f09a75e"
+  },
+  "contentVersion": "content-915a6bac920207f8",
+  "contentSha256": "915a6bac920207f826d8b7f377c4e902d484b4423bc180ffc73150569f6a826b",
+  "teacherVersion": "teacher-be08d64a2f09a75e",
+  "teacherSha256": "be08d64a2f09a75e82b9104fe8228d1dc6d255d6a0e2ef5323f118159b4ab34a"
+}

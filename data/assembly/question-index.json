@@ -160,6 +160,141 @@
       "notes": []
     },
     {
+      "questionId": "tutor-set-004",
+      "contentVersion": "content-baa6798875ea5c4e",
+      "teacherVersion": "teacher-c30f74fdcc73c0b8",
+      "tasks": [
+        "set_property_judgement"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "A 所述五个常任理事国对象确定，能组成集合。B“年龄较小”没有明确标准，不能确定对象。C 两集合含相同的1、2、3，排列顺序不同不改变集合。D 去除重复列举后为 $\\{0,1,2,5\\}$，只有4个元素。故选 A。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-004",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3,
+              4
+            ],
+            "locator": "知识点1 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              3
+            ],
+            "locator": "知识点1 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-005",
+      "contentVersion": "content-7b09cc4498427541",
+      "teacherVersion": "teacher-5bf95c463647320e",
+      "tasks": [
+        "set_determinacy_fill"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "①学生范围确定；③由正整数乘7所得的数范围确定；④给定线段上的点范围确定，三者都能构成集合。②“非常接近”缺少明确距离标准，不能确定实数是否属于其中，所以不能构成集合。故填②。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-005",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              4
+            ],
+            "locator": "知识点1 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              3
+            ],
+            "locator": "知识点1 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-006",
+      "contentVersion": "content-c80a6142019d5d56",
+      "teacherVersion": "teacher-b201f9559c1301de",
+      "tasks": [
+        "set_determinacy_fill"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "①入学时间、地域和年级明确，对象确定。②定点及距离条件明确，对象确定；无需求点的坐标或写圆方程。③“影响力比较大”没有明确标准，对象不确定。④解一次不等式得 $x<10/3$，正整数解为 $\\{1,2,3\\}$，对象确定。因此能组成集合的是①②④。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-006",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              4,
+              5
+            ],
+            "locator": "知识点1 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              3,
+              4
+            ],
+            "locator": "知识点1 跟踪训练4"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
       "questionId": "tutor-set-007",
       "contentVersion": "content-e33e9f02de0d2086",
       "teacherVersion": "teacher-16e96e990b940b07",
@@ -337,6 +472,98 @@
       "notes": []
     },
     {
+      "questionId": "tutor-set-011",
+      "contentVersion": "content-7f0ba1a1fb52ac66",
+      "teacherVersion": "teacher-eff1ef0a29f365ab",
+      "tasks": [
+        "number_membership_fill"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "自然数集 $\\mathbb N$ 为非负整数集。$\\sqrt5$ 不是整数，所以 $\\sqrt5\\notin\\mathbb N$；$\\sqrt{16}=4$ 是自然数，所以 $\\sqrt{16}\\in\\mathbb N$。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-011",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              7
+            ],
+            "locator": "知识点2 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-012",
+      "contentVersion": "content-aa04d1ba2c987203",
+      "teacherVersion": "teacher-b78c2aa6e349760c",
+      "tasks": [
+        "membership_subset_judgement_fill"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "①0是自然数，错误。②空集是非空集合 $\\{0\\}$ 的真子集，正确。③ $\\pi$ 是无理数，不属于有理数集，错误。④ $\\{0,1\\}$ 的元素是数0和数1，不是集合 $\\{1\\}$，所以 $\\{1\\}\\notin\\{0,1\\}$，错误。故填②。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-012",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              7
+            ],
+            "locator": "知识点2 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              5
+            ],
+            "locator": "知识点2 跟踪训练4"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原真子集符号规范转写为 subsetneq，不改变包含关系含义。"
+      ]
+    },
+    {
       "questionId": "tutor-set-013",
       "contentVersion": "content-4edcb45933285995",
       "teacherVersion": "teacher-51df299835297c72",
@@ -379,6 +606,151 @@
       },
       "difficultyEstimate": null,
       "notes": []
+    },
+    {
+      "questionId": "tutor-set-014",
+      "contentVersion": "content-00a1d61e363ade3d",
+      "teacherVersion": "teacher-39eb2ae54734f51b",
+      "tasks": [
+        "distinct_lengths_quadrilateral"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [
+            "basic_geometry"
+          ],
+          "basis": "四种长度构成四元数集，表示4根火柴棒的长度两两不同。矩形有相等的对边，菱形四边相等，等腰梯形两腰相等，均不满足。普通梯形可以四边两两不同，例如顶点为 $(0,0),(5,0),(4,2),(0,2)$ 的梯形，四边长为 $5,\\sqrt5,4,2$，两两不同，故可能为梯形，选 A。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-014",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              8,
+              9
+            ],
+            "locator": "知识点3 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              7
+            ],
+            "locator": "知识点3 例2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原题“四元数集”明确元素数为4，不依赖未明写互异条件。",
+        "补充梯形存在性例子，属于 source_adapted 教师解答；不在学生题面增加条件。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-016",
+      "contentVersion": "content-fa86e4635abe05ba",
+      "teacherVersion": "teacher-ba68251704236c10",
+      "tasks": [
+        "parameter_linear_solution_set"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "当 $a=1$ 时方程为 $0x=0$，解集为 $\\mathbb R$。当 $a=-1$ 时为 $0x=-2$，解集为空集。当 $a\\ne\\pm1$ 时，可除以 $(a-1)(a+1)$，解为 $x=1/(a+1)$，不为0，所以解集不可能为 $\\{0\\}$。$a=0$ 时解集为 $\\{1\\}$，故其余三选项都可能，选 C。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-016",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              9,
+              10
+            ],
+            "locator": "知识点3 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              7
+            ],
+            "locator": "知识点3 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "源教师解析 a=-1 分支首句误写 a-1=0，已按方程更正为 a²-1=0、a-1=-2。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-017",
+      "contentVersion": "content-a71403556b3ddf3c",
+      "teacherVersion": "teacher-9bb5212b4c91766c",
+      "tasks": [
+        "distinct_lengths_triangle"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [
+            "basic_geometry"
+          ],
+          "basis": "题干说明 a、b、c 是集合中三个元素，因此三者两两不同。等腰三角形至少有两条边相等，与此矛盾，所以一定不是等腰三角形，选 D。边长两两不同的三角形可以是锐角、直角或钝角，因此不能排除前三种。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-017",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              10
+            ],
+            "locator": "知识点3 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              7
+            ],
+            "locator": "知识点3 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原解析用 a≠b≠c 的非严格连写，本次改为三者两两不同。"
+      ]
     },
     {
       "questionId": "tutor-set-018",
@@ -515,6 +887,422 @@
       "notes": []
     },
     {
+      "questionId": "tutor-set-023",
+      "contentVersion": "content-60c5cc87ad722b41",
+      "teacherVersion": "teacher-363a62a86edfcafa",
+      "tasks": [
+        "finite_progression_description"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "自然数包含0。C 中 $n=0,1,2,3,4$，相应 $x=1,5,9,13,17$，恰好与 M 相同。A 中 n=1 时产生3而 M 无3；B 在 n=0 时产生−1；D 在 n=0 时产生−3，均不相等，故选 C。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-023",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ],
+            "locator": "知识点4 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              9
+            ],
+            "locator": "知识点4 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-024",
+      "contentVersion": "content-ce4cff172fe7e632",
+      "teacherVersion": "teacher-66410667d7c00c0e",
+      "tasks": [
+        "natural_integer_listing_fill"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "自然数是非负整数。在−2至2（含端点）的范围内，自然数只有0、1、2，所以集合为 $\\{0,1,2\\}$。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-024",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              13
+            ],
+            "locator": "知识点4 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              9
+            ],
+            "locator": "知识点4 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-026",
+      "contentVersion": "content-4007e97ed8f07d85",
+      "teacherVersion": "teacher-31659e110fc68434",
+      "tasks": [
+        "factored_root_listing_fill"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "三个因子的乘积为0，当且仅当至少一个因子为0。由 x=0、x−1=0 或 x+1=0 得 x=0、1 或−1，所以 $A=\\{-1,0,1\\}$。只需零乘积性质和一次方程。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-026",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              14
+            ],
+            "locator": "知识点4 跟踪训练5"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              10
+            ],
+            "locator": "知识点4 跟踪训练5"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-027",
+      "contentVersion": "content-a4012c5adbcb09ea",
+      "teacherVersion": "teacher-c9fcd6e7e1a4e1a4",
+      "tasks": [
+        "system_pair_listing_fill"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1"
+          ],
+          "requiredPremises": [],
+          "basis": "由 $x^2-4=(x-2)(x+2)=0$ 得 x=−2 或 x=2。由 x+y=0 得 y=−x，分别得到 (x,y)=(−2,2) 或 (2,−2)。方程组的解是有序数对，故其解集为 $\\{(-2,2),(2,-2)\\}$，不能把所有坐标拆成无序数集。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-027",
+      "basis": {
+        "path": "docs/validation/set-expansion-a.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              14
+            ],
+            "locator": "知识点4 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              10
+            ],
+            "locator": "知识点4 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原局部题号又为“跟踪训练1”，保留独立 auditId 027，不与022并为同题。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-028",
+      "contentVersion": "content-d9e0a3e4ef2dcd70",
+      "teacherVersion": "teacher-a4be4b663907b263",
+      "tasks": [
+        "set_integer_combination_equality"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "任取 $x\\in B$，则 $x=4m+6n=2(2m+3n)$ 为偶数，故 $B\\subseteq A$。任取 $x=2k\\in A$，取整数 $m=-k,n=k$，有 $4m+6n=2k=x$，故 $A\\subseteq B$，因此 $A=B$。两集合均含0，且均不含1，所以其余选项不成立。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-028",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15
+            ],
+            "locator": "知识点5 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              10
+            ],
+            "locator": "知识点5 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "B 项为真子集符号，规范为 subsetneq；原学生版混入答案和解答，已删除。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-029",
+      "contentVersion": "content-7f442bfb283451e5",
+      "teacherVersion": "teacher-bf8425ebadc7d9f6",
+      "tasks": [
+        "set_object_equality"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "A、B 都是描述法表示的数集，仅有数2020这一个元素，故都等于 D 的 $\\{2020\\}$。C 按原题列举法的写法，其元素是方程 $x=2020$，不是数2020，因此与其余三个集合不同。不能把 C 擅自改写为带竖线的描述法。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-029",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15
+            ],
+            "locator": "知识点5 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              11
+            ],
+            "locator": "知识点5 例2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "保留原卷特殊的方程对象集合写法 {x=2020}；不改为 {x|x=2020}。原解析明确说明此意，题面与答案一致。",
+        "原学生版含答案解析，独立 student 已删除教师内容。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-030",
+      "contentVersion": "content-08087971ea02fe08",
+      "teacherVersion": "teacher-7676a8ab07051672",
+      "tasks": [
+        "set_object_equality"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "A 的两个有序数对不同，所以对应单元素点集不同。B 的数集由同样的2、3组成，元素无序，故相等。C 的 M 是有序数对构成的点集，N 是满足条件的纵坐标构成的数集，元素类型不同，故不相等。D 的 M 是由2、3两个数构成的数集，N 是仅含有序数对 $(2,3)$ 的点集，不相等。故选 B。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-030",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              15,
+              16
+            ],
+            "locator": "知识点5 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              11
+            ],
+            "locator": "知识点5 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原教师解析 D 错把 M={2,3} 说成点集；已在 source_adapted 解答更正为两个数的数集，保留原题和原答案 B。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-031",
+      "contentVersion": "content-8383460904faf4c8",
+      "teacherVersion": "teacher-e178b11bd6fb1829",
+      "tasks": [
+        "set_object_equality"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "A 中 $|-\\sqrt3|=\\sqrt3$，两集合的元素完全相同，无序性使排列顺序无关，故相等。B 中 $\\pi\\ne3.14159$，故不同。C 的数集与点集元素类型不同，故不同。D 中 $P=\\{0,1\\}$（自然数含0），而 $Q=\\{-1,1\\}$，故不同。故选 A。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-031",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              16
+            ],
+            "locator": "知识点5 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              11
+            ],
+            "locator": "知识点5 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-033",
+      "contentVersion": "content-8552445ac637e32c",
+      "teacherVersion": "teacher-623568a6a261b039",
+      "tasks": [
+        "set_statement_equality"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1",
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "① 有序数对 $(1,2)\\ne(2,1)$，故错误。② 只改变数集元素的排列顺序，不改变集合，故正确。③ 所有不含元素的集合都有完全相同的元素，均为空集，故空集唯一。④ 两集合都由“某个实数的平方加1”所得的数构成；将 M 中的自变量 x 改名为 t，元素变量 y 改名为 x，得到 N 的相同描述。因此 M=N，不必使用高中函数值域方法。故正确的序号为②③④。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-033",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              17
+            ],
+            "locator": "知识点5 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              11
+            ],
+            "locator": "知识点5 跟踪训练4"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原卷没有独立【答案】块；②③④ 位于教师第17页解答末尾，视觉核对后作为 source 结论保存。"
+      ]
+    },
+    {
       "questionId": "tutor-set-034",
       "contentVersion": "content-0478f9a415f3c09e",
       "teacherVersion": "teacher-256ba6dc7c885e0d",
@@ -609,6 +1397,246 @@
       ]
     },
     {
+      "questionId": "tutor-set-036",
+      "contentVersion": "content-915a6bac920207f8",
+      "teacherVersion": "teacher-be08d64a2f09a75e",
+      "tasks": [
+        "empty_proper_root_parameter"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.2"
+          ],
+          "requiredPremises": [
+            "quadratic_basics"
+          ],
+          "basis": "空集是 M 的真子集，等价于 $M\\ne\\varnothing$，即二次方程 $x^2-ax+1=0$ 有实数根。由根的判别式得 $\\Delta=a^2-4\\ge0$，所以 $a\\le-2$ 或 $a\\ge2$。当 $a=\\pm2$ 时，M 为单元素集，空集仍是真子集，故不能去掉端点。选 D。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-036",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ],
+            "locator": "知识点6 例3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 例3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-037",
+      "contentVersion": "content-316bf8071a0c5f58",
+      "teacherVersion": "teacher-c55ed85254824298",
+      "tasks": [
+        "intersection_subset_count"
+      ],
+      "primarySections": [
+        "1.2",
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.2",
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "逐个检查 A 中元素是否满足 $-1<x<4$，得到 $A\\cap B=\\{0,2\\}$。其子集为 $\\varnothing,\\{0\\},\\{2\\},\\{0,2\\}$，共4个。等价地，由两个元素各有选或不选两种情况，得 $2^2=4$。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-037",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              20
+            ],
+            "locator": "知识点6 跟踪训练1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 跟踪训练1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-038",
+      "contentVersion": "content-ade982aab6c8ee76",
+      "teacherVersion": "teacher-7a6f6682d2384ce2",
+      "tasks": [
+        "sum_free_maximum"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "先证上界。若 B 为空集，则结论显然成立。若 B 非空，设其最大元素为 m，则 B 的所有元素都在 $\\{1,\\ldots,m\\}$ 中。若 $m=2k+1$，把 $1,\\ldots,m-1$ 分成 k 对 $(1,m-1),\\ldots,(k,k+1)$，每对至多一个元素属于 B，否则两元素之和 m 也在 B，与题意矛盾；加上 m，B 至多有 $k+1\\le1013$ 个元素。若 $m=2k$，因题设“任意 x,y”允许 x=y，数 k 不能在 B 中，否则 $k+k=m\\in B$。其余 $1,\\ldots,m-1$ 分成 k−1 对和为 m 的不同数，每对至多选一个，加上 m，至多有 $k\\le1012$ 个元素。因此 B 总不超过1013个元素。再取 $B=\\{1013,1014,\\ldots,2025\\}$，任意两元素（可相同）之和至少为2026，不在 B 中，且 B 有1013个元素，达到上界。故选 D。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-038",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21
+            ],
+            "locator": "知识点6 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14
+            ],
+            "locator": "知识点6 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原解析未经论证就假设最大元素为2025；替换为显式生成的完整补证，分别覆盖一般最大元素的奇偶两类。",
+        "题干任意 x,y 允许相等；偶数最大元素时中点不能选，已补足。",
+        "不以抽屉原理名称作为额外前提，使用集合分组后每组至多一个元素的直接计数。",
+        "选择题可通过检验1013元素构造并结合选项（无更大选项）作答，因此不能声称要求学生输出完整上界证明。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-039",
+      "contentVersion": "content-92bf7f422f360fb0",
+      "teacherVersion": "teacher-b462ad33f4a87e83",
+      "tasks": [
+        "enumerated_event_subset"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.2"
+          ],
+          "requiredPremises": [],
+          "basis": "题面已完整列出六种二人组合。AB 是两男，CD 是两女，排除这两个元素；AC、AD、BC、BD 都各含一男一女，保留。因此所求子集为 $\\{AC,AD,BC,BD\\}$。无需计算概率或另用排列组合公式。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-039",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21
+            ],
+            "locator": "知识点6 跟踪训练3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              14,
+              15
+            ],
+            "locator": "知识点6 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "保留原题样本空间、事件术语，但完整解法仅用已给六个元素筛选，不依赖概率知识。",
+        "教师版无独立答案块；结论在第21页解答末尾，已视觉核对。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-040",
+      "contentVersion": "content-1c258f170048878c",
+      "teacherVersion": "teacher-3ef3d1a5ef22f652",
+      "tasks": [
+        "defined_quotient_subset_count"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2",
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.1",
+            "1.2",
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "由 $k\\in\\{2,4\\}$，得 $B=\\{0,1\\}$。按题设新定义逐项计算，$0/2=0,0/4=0,1/2=1/2,1/4=1/4$，故 $B/A=\\{0,1/4,1/2\\}$。与 B 取并集得 $\\{0,1/4,1/2,1\\}$，共有4个不同元素。每个元素可以选或不选，子集共 $2^4=16$ 个，去掉集合本身后真子集有15个。A 中无0，所有商均有定义。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-040",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              21,
+              22
+            ],
+            "locator": "知识点6 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              15
+            ],
+            "locator": "知识点6 跟踪训练4"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原PDF商集定义外层花括号缺失；仅补齐集合描述法的排版括号，不改变商式、m/n归属或约束。"
+      ]
+    },
+    {
       "questionId": "tutor-set-041",
       "contentVersion": "content-6c3717c7e65a4d17",
       "teacherVersion": "teacher-a7d105d53b277eae",
@@ -656,6 +1684,151 @@
       "difficultyEstimate": null,
       "notes": [
         "完整父题包含两个小问，主考根集合关系与真子集计数；并集是完整解法依赖。计数可用集合小规模列举核对，不扩展到未确认的高中计数章节。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-042",
+      "contentVersion": "content-fcb01a6e394cdeea",
+      "teacherVersion": "teacher-d102dd4538f9ef0a",
+      "tasks": [
+        "interval_union"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "由 $x^2\\le3$ 得 $-\\sqrt3\\le x\\le\\sqrt3$，故 $B=[-\\sqrt3,\\sqrt3]$。A 为 $(-3,1)$，与 B 有公共区间，并集左端到−3但不含−3，右端到 $\\sqrt3$ 且包含，所以 $A\\cup B=(-3,\\sqrt3]$。选 D。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-042",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24
+            ],
+            "locator": "知识点7 例1"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              16
+            ],
+            "locator": "知识点7 例1"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原学生版含教师内容，独立 student 仅保留题干选项；本题不需要数轴图片，区间由完整文字条件给定。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-043",
+      "contentVersion": "content-4a5f6aa883cdbbdc",
+      "teacherVersion": "teacher-afc7532e17485cb6",
+      "tasks": [
+        "interval_intersection"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.3"
+          ],
+          "requiredPremises": [
+            "quadratic_basics"
+          ],
+          "basis": "因式分解 $x^2-x=x(x-1)$。当 $x<0$ 时两个因子都负，乘积正；当 $0<x<1$ 时两因子异号，乘积负；当 $x>1$ 时两因子都正，乘积正；x=0或1时乘积为0，不符合严格大于0。因此 $A=(-\\infty,0)\\cup(1,+\\infty)$，而 $B=(-1,+\\infty)$，取交集得 $(-1,0)\\cup(1,+\\infty)$。选 C。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-043",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24
+            ],
+            "locator": "知识点7 例2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              16,
+              17
+            ],
+            "locator": "知识点7 例2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "使用因式分解后分区间讨论积的符号，不预设高中二次不等式通法；与已允许 quadratic_basics 绑定。",
+        "原学生版含教师内容，已删除。"
+      ]
+    },
+    {
+      "questionId": "tutor-set-044",
+      "contentVersion": "content-b53be11931b178ac",
+      "teacherVersion": "teacher-9ff74d073891dd40",
+      "tasks": [
+        "absolute_interval_complement"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.3"
+          ],
+          "requiredPremises": [
+            "absolute_root"
+          ],
+          "basis": "$|x-1|\\le1$ 等价于 $-1\\le x-1\\le1$，即 $0\\le x\\le2$，所以 $A=[0,2]$。在实数全集中去掉 A 的全部元素，得 $\\complement_U A=(-\\infty,0)\\cup(2,+\\infty)$。0和2属于 A，所以补集中不包含这两个端点。选 D。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-044",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24,
+              25
+            ],
+            "locator": "知识点7 例3"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 例3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": [
+        "原教师页24为题干及解答、25页续“故选D”；两页视觉核对；原学生版教师内容已删除。"
       ]
     },
     {
@@ -716,6 +1889,50 @@
       "notes": []
     },
     {
+      "questionId": "tutor-set-046",
+      "contentVersion": "content-85474d78715b5479",
+      "teacherVersion": "teacher-8fc28c536b60727d",
+      "tasks": [
+        "integer_complement_union"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "全集限定为整数，$A=\\{-4,-3,-2,-1,0,1\\}$，所以 $\\complement_U A=\\{x\\mid x\\le-5\\text{ 或 }x\\ge2,\\ x\\in\\mathbb Z\\}$。再并入 B，把0、1补入，得到 $\\{x\\mid x\\le-5\\text{ 或 }x\\ge0,\\ x\\in\\mathbb Z\\}$，选 A。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-046",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              25
+            ],
+            "locator": "知识点7 跟踪训练2"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 跟踪训练2"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
       "questionId": "tutor-set-047",
       "contentVersion": "content-c749412c573d0510",
       "teacherVersion": "teacher-d97e6505785a547e",
@@ -756,6 +1973,50 @@
               17
             ],
             "locator": "知识点7 跟踪训练3"
+          }
+        ],
+        "scopeEvidenceStatus": "within"
+      },
+      "difficultyEstimate": null,
+      "notes": []
+    },
+    {
+      "questionId": "tutor-set-048",
+      "contentVersion": "content-ded433f97fb886e2",
+      "teacherVersion": "teacher-26ac09fab929084f",
+      "tasks": [
+        "interval_intersection_fill"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "solutionPaths": [
+        {
+          "id": "reviewed-expansion-path",
+          "requiredSections": [
+            "1.3"
+          ],
+          "requiredPremises": [],
+          "basis": "同时属于 A 和 B 的实数必须满足 $x<3$ 且 $0\\le x\\le4$，合并得 $0\\le x<3$。0同时在两集合中，3不在 A 中，所以 $A\\cap B=[0,3)$。"
+        }
+      ],
+      "duplicateGroup": "same-source-unit-SET-SRC-048",
+      "basis": {
+        "path": "docs/validation/set-expansion-b.json",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              26
+            ],
+            "locator": "知识点7 跟踪训练4"
+          },
+          {
+            "sourceId": "set-student",
+            "pages": [
+              17
+            ],
+            "locator": "知识点7 跟踪训练4"
           }
         ],
         "scopeEvidenceStatus": "within"

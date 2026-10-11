@@ -1,0 +1,5350 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "legacy-kp-7049861cbd21c754",
+  "bookId": "rja-compulsory-2",
+  "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+  "semantics": "Codex逐UID正文语义核对；text_evidence_matched不表示教师复核完成。原文quote保持文本层真实连续子串，关键符号另附PDF视觉记录。",
+  "items": [
+    {
+      "uid": "M-K-03-111",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 9,
+          "printedPage": 2,
+          "textSha256": "2745d0e176d3305dd0292776050db312a4adb686b91bb73ddd37179aa6a07521",
+          "quote": "在数学中，我们把既有大小又有方向的量叫做向量\n（ｖｅｃｔｏｒ），而把只有大小没有方向的量称为数量，如年龄、\n身高、长度、面积、体积、质量等都是数量．",
+          "matchReason": "明确以“既有大小又有方向”作为概念定义，符合旧definition的两个属性。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 2,
+        "evidencePrintedPages": [
+          2
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "acdca5d35913d5de497fe1f8847ebc2e33a08ab68597381a05a451ed3ca7a85a"
+    },
+    {
+      "uid": "M-K-03-112",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "405885249395bc6c57ef90aaa46425310a5cd795144a9f2bb469fa4aaf749d31",
+          "quote": "通常，在线段犃犅的两个端点中，规定一个顺序，假设\n　　表示有向线段时，起\n点一定要写在终点的前面．\n犃为起点，犅为终点，我们就说线段犃犅具有方向，具有方\nA὆ᡑག὇\nB὆ጼག὇\n图６．１３\n向的线段叫做有向线段（ｄｉｒｅｃｔｅｄｌｉｎｅｓｅｇｍｅｎｔ）（图６．１３）．\n通常在有向线段的终点处画上箭头表示它的方向．",
+          "matchReason": "正文直接定义有向线段；同页另外明确起点、方向、长度三个要素。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "405885249395bc6c57ef90aaa46425310a5cd795144a9f2bb469fa4aaf749d31",
+          "quote": "有向线段包含三个要素：起点、方向、长度．知道了有\n向线段的起点、方向和长度，它的终点就唯一确定了．",
+          "matchReason": "三个要素文字与旧definition对应，不依靠图形猜测。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 3,
+        "evidencePrintedPages": [
+          3
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "da6a0fa0fe3845b9ab933ca06d4d463f5e2cc56daab6af1a969ed0bebca96468"
+    },
+    {
+      "uid": "M-K-03-113",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "405885249395bc6c57ef90aaa46425310a5cd795144a9f2bb469fa4aaf749d31",
+          "quote": "长度为０的向量叫做零向量（ｚｅｒｏｖｅｃｔｏｒ），记作０．\n长度等于１个单位长度的向量，叫做单位向量（ｕｎｉｔｖｅｃｔｏｒ）．",
+          "matchReason": "长度为0的定义直接支持零向量概念；不核准抽取中向量粗体排版。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 3,
+        "evidencePrintedPages": [
+          3
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "72ec13e5382c6040e6666d42c707bc24e799ac3401b647e2ac5b76f54b4a65f6"
+    },
+    {
+      "uid": "M-K-03-114",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "405885249395bc6c57ef90aaa46425310a5cd795144a9f2bb469fa4aaf749d31",
+          "quote": "长度等于１个单位长度的向量，叫做单位向量（ｕｎｉｔｖｅｃｔｏｒ）．",
+          "matchReason": "明确长度为一个单位长度，而非任意方向或同向条件。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 3,
+        "evidencePrintedPages": [
+          3
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "69e9129d3daf7fa94540df025439ca6fae899a9c6cc9673cd8c2a065eeda92a7"
+    },
+    {
+      "uid": "M-K-03-115",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 10,
+          "printedPage": 3,
+          "textSha256": "405885249395bc6c57ef90aaa46425310a5cd795144a9f2bb469fa4aaf749d31",
+          "quote": "方向相同或相反的非零向量叫做平行向量（ｐａｒａｌｌｅｌｖｅｃｔｏｒｓ）．\n如图６．１５，用有向线段表示的向量犪与犫是两个平行向量．\n向量犪与犫平行，记作犪∥犫．\n我们规定：零向量与任意向量平行，即对于任意向量犪，都有０∥犪．",
+          "matchReason": "正文给出非零方向相同/相反定义，并明确零向量与任意向量平行的约定。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 3,
+        "evidencePrintedPages": [
+          3
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c98e7afbc5014fc7e8439a24ca13b36a741cf1a53d5603c06dc26fe9e208c293"
+    },
+    {
+      "uid": "M-K-03-116",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 11,
+          "printedPage": 4,
+          "textSha256": "5dff9c2f1d91e519b664d13bdbcc3defb8132fdba54dd4091f6db0e480180a2e",
+          "quote": "长度相等且方向相同的向量叫做相等向量（ｅｑｕａｌｖｅｃｔｏｒｓ）．如图\n６．１６，用有向线段表示的向量犪与犫相等，记作犪＝犫．",
+          "matchReason": "长度与方向两个条件同时出现，支持旧definition。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 4,
+        "evidencePrintedPages": [
+          4
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "2cd9e238204309841badda47b165b02095712ff17bea496aa21a9393be24c874"
+    },
+    {
+      "uid": "M-K-03-117",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 11,
+          "printedPage": 4,
+          "textSha256": "5dff9c2f1d91e519b664d13bdbcc3defb8132fdba54dd4091f6db0e480180a2e",
+          "quote": "任一组平行向量\n都可以平移到同一条直线上，因此，平行向量也叫做共线向量（ｃｏｌｌｉｎｅａｒｖｅｃｔｏｒｓ）．",
+          "matchReason": "正文解释平移到同一直线后把平行向量又称共线向量，并非由几何图自行推断。",
+          "sectionId": "rja-compulsory-2:6.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 4,
+        "evidencePrintedPages": [
+          4
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "90952dd50c2e94bcdf84f4164b351929f7187d11e51f3fa535b7c0d2f70e3b2d"
+    },
+    {
+      "uid": "M-K-03-1210",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 18,
+          "printedPage": 11,
+          "textSha256": "6ce26a9fd3af1e91092b9a144962b122c950560c2699b269eed975a7d9e030a1",
+          "quote": "与数狓的相反数是－狓类似，我们规定，与向量犪长度相等，方向相反的向量，叫\n做犪的相反向量，记作－犪．由于方向反转两次仍回到原来的方向，因此犪和－犪互为相\n反向量，于是\n－（－犪）＝犪．\n我们规定，零向量的相反向量仍是零向量．",
+          "matchReason": "长度相等、方向相反及零向量约定均明确。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 11,
+        "evidencePrintedPages": [
+          11
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "61ab114b61165a09a143c6c972ccddda1936cab21a65529184cd5035cf2ed994"
+    },
+    {
+      "uid": "M-K-03-1211",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 20,
+          "printedPage": 13,
+          "textSha256": "48596a0a9d5a807f7713751bb445a70b75a08174357279422c1766906bce75ba",
+          "quote": "一般地，我们规定实数λ与向量犪的积是一个向量，\n这种运算叫做向量的数乘（ｓｃａｌａｒｍｕｌｔｉｐｌｉｃａｔｉｏｎｏｆ\nｖｅｃｔｏｒｓ），记作λ犪，它的长度与方向规定如下：\n　　你对零向量、相反向\n量有什么新的认识？\n（１）λ犪＝λ 犪；\n（２）当λ＞０时，λ犪的方向与犪的方向相同；当λ＜０\n时，λ犪的方向与犪的方向相反．\n由（１）可知，当λ＝０时，λ犪＝０．\n由（１）（２）可知，（－１）犪＝－犪．",
+          "matchReason": "数乘定义、正负方向规则以及模长乘积关系与旧definition对应；文本层丢失的模长竖线已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "语义位置明确；需对原PDF核验 |λa|=|λ||a| 的模长符号，文本层丢失竖线。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF清楚显示 |λa|=|λ||a| 和正负λ的方向规则。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 13,
+        "evidencePrintedPages": [
+          13
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 20,
+          "printedPage": 13,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-013.png",
+          "renderSha256": "b8c3ee0c5ad1475032ea8cce8f3a541cae8dce65c7ffbfd4854731e3ab5ae0e6",
+          "check": "原PDF清楚显示 |λa|=|λ||a| 和正负λ的方向规则。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "56c13cef160440efc9abcc2d71e98ddf82a191678a3efd2ccb60ca79ce05003c"
+    },
+    {
+      "uid": "M-K-03-1212",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 22,
+          "printedPage": 15,
+          "textSha256": "09854f47512cb7bc65d95f8d9e5c570623b55546ec129ba3d12825ad7044250b",
+          "quote": "向量犪（犪≠０）与犫共线的充要条件是：存在唯一一个实数λ，使犫＝λ犪．",
+          "matchReason": "非零前提、充要条件及实数λ唯一性都在定理原句中，不因旧页14无定理而漏记。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 14,
+        "evidencePrintedPages": [
+          15
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c579f216c272f271f7cf1a21d30be799832d62aff6c0eadb094eb3b864fbb4e9"
+    },
+    {
+      "uid": "M-K-03-1213",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 24,
+          "printedPage": 17,
+          "textSha256": "ac3377c59b09daaaea023f1365af927ef727fb244a3507102e48f6343719a921",
+          "quote": "已知两个非零向量犪，犫（图６．２１９），犗是平面上的任意\n一点，作犗犃→\n＝犪，犗犅→\n＝犫，则∠犃犗犅＝θ （０≤θ≤π）叫做向量\n犪与犫的夹角．",
+          "matchReason": "非零前提、同起点构造和0≤θ≤π范围与旧定义相符。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 17,
+        "evidencePrintedPages": [
+          17
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "ed01e3caeb0bce6eba8b6ddeac8af6113dc142192c22d94a460d701cacdf1a44"
+    },
+    {
+      "uid": "M-K-03-1214",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 24,
+          "printedPage": 17,
+          "textSha256": "ac3377c59b09daaaea023f1365af927ef727fb244a3507102e48f6343719a921",
+          "quote": "已知两个非零向量犪与犫，它们的夹角为θ，我们把数\n量犪犫ｃｏｓθ叫做向量犪与犫的数量积（或内积（ｉｎｎｅｒ\nｐｒｏｄｕｃｔ）），记作犪·犫，即\n犪·犫＝犪犫ｃｏｓθ．\n规定：零向量与任一向量的数量积为０．",
+          "matchReason": "数量积非零前提、|a||b|cosθ公式及零向量规则完整；模长符号已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "文字证实数量积概念；抽取将|a||b|连写为“犪犫”，不自动核准完整公式。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF清楚显示 a·b=|a||b|cosθ；非零条件、零向量约定齐全。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 17,
+        "evidencePrintedPages": [
+          17
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 24,
+          "printedPage": 17,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-017.png",
+          "renderSha256": "fa6d97d29052b7d6931490a0300767d2de38f152c1ec29ce575d9f8bf40e672e",
+          "check": "原PDF清楚显示 a·b=|a||b|cosθ；非零条件、零向量约定齐全。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "7a735e22101eff8ee97e0a455d2420173c4604306cf5f79849d8783211ede719"
+    },
+    {
+      "uid": "M-K-03-1215",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 25,
+          "printedPage": 18,
+          "textSha256": "a66b37b830aac203c8e42ae2502b23e0062383087f699154d90c926914f10ad9",
+          "quote": "过犃犅→\n的起点犃和终点犅，分别作犆犇→\n所在直线的垂线，垂足分别为犃１，犅１，得到\n犃１犅１→\n，我们称上述变换为向量犪向向量犫投影（ｐｒｏｊｅｃｔ），犃１犅１→\n叫做向量犪在向量犫上\n的投影向量．",
+          "matchReason": "文字明确从起点、终点向另一向量所在直线作垂线，得到的有向线段作为投影向量。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 18,
+        "evidencePrintedPages": [
+          18
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "5109dadeafb7f8111d04b768e5a5faccb51cf961c1c921a18b3d4fd7659bc122"
+    },
+    {
+      "uid": "M-K-03-1216",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 27,
+          "printedPage": 20,
+          "textSha256": "87e3c241c1999ff5c1b4279011736ed03e80871291e102470253f158b0cf7e0f",
+          "quote": "对于向量犪，犫，犮和实数λ，有\n（１）犪·犫＝犫·犪；\n（２）（λ犪）·犫＝λ（犪·犫）＝犪·（λ犫）；\n（３）（犪＋犫）·犮＝犪·犮＋犫·犮．",
+          "matchReason": "三条公式逐项包含交换、数乘相容及加法分配；抽取可辨运算结构，支持旧definition列出的三律。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 20,
+        "evidencePrintedPages": [
+          20
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "1970fbc1ec688e23c6e9bdc10814d7b99d1dc2fdf437e51ee73b3f7b2d35bb91"
+    },
+    {
+      "uid": "M-K-03-128",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 15,
+          "printedPage": 8,
+          "textSha256": "bde855a93c827ee51749861b390521970534c7d2efe010536292eb47e94942a7",
+          "quote": "求两个向量和的运算，叫做向量的加法．这种求向量和的方法，称为向量加法的三角\n形法则．位移的合成可以看作向量加法三角形法则的物理模型．",
+          "matchReason": "明确求和运算与三角形法则，后文同页定义平行四边形法则。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 15,
+          "printedPage": 8,
+          "textSha256": "bde855a93c827ee51749861b390521970534c7d2efe010536292eb47e94942a7",
+          "quote": "我们\n把这种作两个向量和的方法叫做向量加法的平行四边形法\n则．力的合成可以看作向量加法平行四边形法则的物理模型．",
+          "matchReason": "补充定义中第二种作图法则的文字证据。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 16,
+          "printedPage": 9,
+          "textSha256": "ffc323ba581226c14d61930af682eff298b8f1f5a460b546fd8a8bfbe4e7715a",
+          "quote": "综上所述，向量的加法满足交换律和结合律．",
+          "matchReason": "补充旧definition中的交换律与结合律，不仅映射求和名称。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 7,
+        "evidencePrintedPages": [
+          8,
+          9
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "99772b9a7e7c093128eb59bfb46eda99c7007e8f26d32be98ad1908aca90771f"
+    },
+    {
+      "uid": "M-K-03-129",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 18,
+          "printedPage": 11,
+          "textSha256": "6ce26a9fd3af1e91092b9a144962b122c950560c2699b269eed975a7d9e030a1",
+          "quote": "向量犪加上犫的相反向量，叫做犪与犫的差，即\n犪－犫＝犪＋（－犫）．\n求两个向量差的运算叫做向量的减法．",
+          "matchReason": "减法定义及a-b=a+(-b)等式明确；同页构造BA为差向量。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 19,
+          "printedPage": 12,
+          "textSha256": "fbf1fe9367a6781fbf7f4e5479ac705ff5a0d7d317a12f73e60b71433dee7557",
+          "quote": "即犪－犫可以表示为从向量犫的终点指向向量犪的终点\n的向量，这是向量减法的几何意义．",
+          "matchReason": "差向量几何方向的附加文字需实际同起点构造支持。",
+          "sectionId": "rja-compulsory-2:6.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 11,
+        "evidencePrintedPages": [
+          11,
+          12
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "4efca66baebadeac165344d1519c4847e51e38974cfcfe215a5ede83f8ae284b"
+    },
+    {
+      "uid": "M-K-03-1317",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 33,
+          "printedPage": 26,
+          "textSha256": "c69780a23fb750bcedc22b5d921befdb37400fb53a5ccf3bf931b25a4a443f64",
+          "quote": "平面向量基本定理　如果犲１，犲２是同一平面内的两个不共线向量，那么对于这一平\n面内的任一向量犪，有且只有一对实数λ１，λ２，使\n犪＝λ１犲１＋λ２犲２．",
+          "matchReason": "同平面、不共线、任意向量及唯一实数对四项条件齐全。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 26,
+        "evidencePrintedPages": [
+          26
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "1ff5d6a2c7243554cf1524348fffc0dbe58dbaf2e4969aed3675d2c23861685f"
+    },
+    {
+      "uid": "M-K-03-1318",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 33,
+          "printedPage": 26,
+          "textSha256": "c69780a23fb750bcedc22b5d921befdb37400fb53a5ccf3bf931b25a4a443f64",
+          "quote": "若犲１，犲２不共线，我们把犲１，犲２\n｛\n｝叫做表示这一平面内所有向量的一个基底（ｂａｓｅ）．",
+          "matchReason": "正文明确两不共线向量构成表示全平面的基底。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 26,
+        "evidencePrintedPages": [
+          26
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "0c26dd7e5b1c4af7f6ae26225fce2ff3166e6879fff88d952cbae0a541f0df3d"
+    },
+    {
+      "uid": "M-K-03-1319",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 35,
+          "printedPage": 28,
+          "textSha256": "01fb97cee50c310ccd69a6eef098ff716022876301d9b26a4cda93ac5fc68b4f",
+          "quote": "把一个向量分解为两个互相垂直的向\n量，叫做把向量作正交分解．",
+          "matchReason": "定义强调两个分向量互相垂直，符合旧definition；旧27页只是节开始。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 27,
+        "evidencePrintedPages": [
+          28
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "9493a64eb16248f9b35433397deec8f15b07cdde1fe9ef399f6ea231ec0eace8"
+    },
+    {
+      "uid": "M-K-03-1320",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 35,
+          "printedPage": 28,
+          "textSha256": "01fb97cee50c310ccd69a6eef098ff716022876301d9b26a4cda93ac5fc68b4f",
+          "quote": "对\n于平面内的任意一个向量犪，由平面向量基本定理可知，有\n且只有一对实数狓，狔，使得\n犪＝狓犻＋狔犼．\n这样，平面内的任一向量犪都可由狓，狔唯一确定，我\n们把有序数对（狓，狔）叫做向量犪的坐标，记作\n犪＝（狓，狔）．\n①\n其中，狓叫做犪在狓轴上的坐标，狔叫做犪在狔轴上的坐\n标，①叫做向量犪的坐标表示．",
+          "matchReason": "文字和a=xi+yj、a=(x,y)将单位正交基底与唯一有序实数对联系，支持坐标定义。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 28,
+        "evidencePrintedPages": [
+          28
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e918d011d8b68b56b2e52f459013f4006ebc7f6219b1bfdbfe092eefe409cf3d"
+    },
+    {
+      "uid": "M-K-03-1321",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 36,
+          "printedPage": 29,
+          "textSha256": "6ba949ac94dae0ecf0364a79024cecdd3ca962be2d1df19ef7a4c8f503334e33",
+          "quote": "犪＋犫＝（狓１＋狓２，狔１＋狔２）．\n同理可得\n犪－犫＝（狓１－狓２，狔１－狔２）．\n这就是说，两个向量和（差）的坐标分别等于这两个向量相应坐标的和（差）．",
+          "matchReason": "加法对应分量相加的等式及总结句均明确。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 29,
+        "evidencePrintedPages": [
+          29
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "072774350cb814cdedfda04d10e98485b71083c8d0145f916673e133a0944a64"
+    },
+    {
+      "uid": "M-K-03-1322",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 36,
+          "printedPage": 29,
+          "textSha256": "6ba949ac94dae0ecf0364a79024cecdd3ca962be2d1df19ef7a4c8f503334e33",
+          "quote": "犪－犫＝（狓１－狓２，狔１－狔２）．\n这就是说，两个向量和（差）的坐标分别等于这两个向量相应坐标的和（差）．",
+          "matchReason": "减法对应分量相减的等式明确；终点减起点补在下一页。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 37,
+          "printedPage": 30,
+          "textSha256": "a8070ee9e3098c0104016a184fb6ca9f059a57eda415b03b0216b531b1937f7d",
+          "quote": "因此，一个向量的坐标等于表示此向量的有向线段的终\n点的坐标减去起点的坐标．",
+          "matchReason": "补充旧definition中终点坐标减起点坐标的叙述。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 29,
+        "evidencePrintedPages": [
+          29,
+          30
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "3cddfc100c1c7e78d0401198284ee00430fd440f2d1fbf74be137624a515a88f"
+    },
+    {
+      "uid": "M-K-03-1323",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 38,
+          "printedPage": 31,
+          "textSha256": "9a3553f24bc2b6a51044e438cc9c9507748b2c10b3fc0daaae8c71a9bd3e317d",
+          "quote": "λ犪＝（λ狓，λ狔）．\n这就是说，实数与向量的积的坐标等于用这个实数乘原来向量的相应坐标．",
+          "matchReason": "数乘分别乘每一坐标，不是乘向量模或逐项相加。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 31,
+        "evidencePrintedPages": [
+          31
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "81c9b52f2ba4f4222c0fd1b0d6583b22fe76674ed3cd6925f2295b607de84ff0"
+    },
+    {
+      "uid": "M-K-03-1324",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 38,
+          "printedPage": 31,
+          "textSha256": "9a3553f24bc2b6a51044e438cc9c9507748b2c10b3fc0daaae8c71a9bd3e317d",
+          "quote": "这就是说，向量犪，犫共线的充要条件是\n狓１狔２－狓２狔１＝０．",
+          "matchReason": "明确给出二维行列式为0的充要条件，与旧definition一致。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 31,
+        "evidencePrintedPages": [
+          31
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b5833848a654501a27d5748e9d039c0f6ba32d0b1e2ace5d3e92dd894ca119d2"
+    },
+    {
+      "uid": "M-K-03-1325",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 39,
+          "printedPage": 32,
+          "textSha256": "10b864f9f8368310139bef8cfdde668fefed9deff0e11aed60f7334ef12618eb",
+          "quote": "若点犘１，犘２的坐标\n分别为（狓１，狔１），（狓２，\n狔２），线段犘１犘２的中点犘\n的坐标为（狓，狔），则\n狓＝狓１＋狓２\n２，\n狔＝狔１＋狔２\n２．\n烅\n烄\n烆此公式为线段犘１犘２\n的中点坐标公式．",
+          "matchReason": "旁注及例9(1)明确中点两坐标是两端对应坐标和的一半；分式已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "旧33页是三等分续文与练习4；实际公式在32页。分数排版未核准。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF旁注明确中点两坐标分别为两端对应坐标和的一半。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 33,
+        "evidencePrintedPages": [
+          32
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 39,
+          "printedPage": 32,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-032.png",
+          "renderSha256": "4ba9b98ff23b831eeed70eb26dd56674748adf008de2ca10718c031a015d87ef",
+          "check": "原PDF旁注明确中点两坐标分别为两端对应坐标和的一半。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "8f5699a045967a8971c3ff01ace7c1fb2e2d19fec2fad3a1602120959462446e"
+    },
+    {
+      "uid": "M-K-03-1326",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "textSha256": "68bcf00128d08890325a3081dc9517a949f430876ab5b4e27eecdb3da8ae9b51",
+          "quote": "所以　犪·犫＝狓１狓２＋狔１狔２．\n这就是说，两个向量的数量积等于它们对应坐标的乘积的和．",
+          "matchReason": "清晰文字和等式表明数量积为对应分量乘积之和。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 34,
+        "evidencePrintedPages": [
+          34
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c418268d7b7b87abb4131b7f1a505dc930f1c074411f6e3b172b37c16ca5239b"
+    },
+    {
+      "uid": "M-K-03-1327",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "textSha256": "68bcf00128d08890325a3081dc9517a949f430876ab5b4e27eecdb3da8ae9b51",
+          "quote": "（２）设犪，犫是非零向量，犪＝（狓１，狔１），犫＝（狓２，狔２），则\n犪⊥犫狓１狓２＋狔１狔２＝０．",
+          "matchReason": "正文确实给出非零向量垂直坐标条件，但等价连接符抽取为私有字形，旧definition未写非零前提。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "需教师确认旧知识定义是否补入非零向量前提，并复核原公式连接符；未改旧知识树。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF明确设a、b非零，再给出垂直与分量乘积和为0的充要条件；旧definition漏此前提。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 35,
+        "evidencePrintedPages": [
+          34
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-034.png",
+          "renderSha256": "6424e0bc796eb3fb6e6f953d3104f50ae271d1b2458a70b12f62dcaae99cd5be",
+          "check": "原PDF明确设a、b非零，再给出垂直与分量乘积和为0的充要条件；旧definition漏此前提。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "b4cb3f39abfb353b4bdb7b8056ddacf0efe714f71af95a2416cbeeea1e294447"
+    },
+    {
+      "uid": "M-K-03-1328",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "textSha256": "68bcf00128d08890325a3081dc9517a949f430876ab5b4e27eecdb3da8ae9b51",
+          "quote": "（１）若犪＝（狓，狔），则犪２＝狓２＋狔２，或犪＝　狓２＋狔\n槡\n２．\n如果表示向量犪的有向线段的起点和终点的坐标分别为（狓１，狔１），（狓２，狔２），那么\n犪＝（狓２－狓１，狔２－狔１），\n犪＝　（狓２－狓１）２＋（狔２－狔１）\n槡\n２．\n（２）设犪，犫是非零向量，犪＝（狓１，狔１），犫＝（狓２，狔２），则\n犪⊥犫狓１狓２＋狔１狔２＝０．",
+          "matchReason": "同段包含向量模及由起终点坐标求模两式；根号作用域与模长竖线抽取损坏。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "旧definition自身LaTeX根号也损坏；正文位置证实但不能把抽取公式当已修复表达。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF根号完整覆盖x²+y²及坐标差平方和；旧definition的LaTeX根号作用域损坏。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 34,
+        "evidencePrintedPages": [
+          34
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-034.png",
+          "renderSha256": "6424e0bc796eb3fb6e6f953d3104f50ae271d1b2458a70b12f62dcaae99cd5be",
+          "check": "原PDF根号完整覆盖x²+y²及坐标差平方和；旧definition的LaTeX根号作用域损坏。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "7872f954885ea55ddd901f967f1ad269c5b36741ebc94e733e209d1828e37f42"
+    },
+    {
+      "uid": "M-K-03-1329",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "textSha256": "68bcf00128d08890325a3081dc9517a949f430876ab5b4e27eecdb3da8ae9b51",
+          "quote": "设犪，犫都是非零向量，犪＝（狓１，狔１），犫＝（狓２，狔２），θ是犪与犫的夹角，根据向量\n数量积的定义及坐标表示可得\nｃｏｓθ＝犪·犫\n犪犫＝狓１狓２＋狔１狔２\n狓２１＋狔２\n槡\n１狓２２＋狔２\n槡\n２．",
+          "matchReason": "非零向量前提和cosθ数量积表达位于此段；分母根号/模长范围不清，待核对完整公式。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:6.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF夹角公式分母是两个向量模的积，设a、b非零；旧definition漏非零条件且LaTeX损坏。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 35,
+        "evidencePrintedPages": [
+          34
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 41,
+          "printedPage": 34,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-034.png",
+          "renderSha256": "6424e0bc796eb3fb6e6f953d3104f50ae271d1b2458a70b12f62dcaae99cd5be",
+          "check": "原PDF夹角公式分母是两个向量模的积，设a、b非零；旧definition漏非零条件且LaTeX损坏。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "d1d9955322e90a488c6a92e8f5ced1bc6ac565e630ebf774a35248dc646994b9"
+    },
+    {
+      "uid": "M-K-03-1430",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 50,
+          "printedPage": 43,
+          "textSha256": "af6bd2ccf8738ff93eb9c324cb39151e041fa83ea4d1b54f3b5a712d15f50911",
+          "quote": "余弦定理（ｃｏｓｉｎｅｔｈｅｏｒｅｍ）　三角形中任何一边的平\n方，等于其他两边平方的和减去这两边与它们夹角的余弦的\n积的两倍．",
+          "matchReason": "文字明确一边平方等于另两边平方和减去其夹角余弦项的两倍。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 50,
+          "printedPage": 43,
+          "textSha256": "af6bd2ccf8738ff93eb9c324cb39151e041fa83ea4d1b54f3b5a712d15f50911",
+          "quote": "由余弦定理，可以得到如下推论：\nｃｏｓ犃＝犫２＋犮２－犪２\n２犫犮\n，\nｃｏｓ犅＝犮２＋犪２－犫２\n２犮犪\n，\nｃｏｓ犆＝犪２＋犫２－犮２\n２犪犫．\n利用推论，可以由三角形的三边直接计算出三角形的三个角．",
+          "matchReason": "旧definition包含推论，另给推论原始文本；分式排版只作定位，教师仍待审。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 42,
+        "evidencePrintedPages": [
+          43
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "d681df682bf81c26d07dc03801f62a73261efff2a718794c6c8d2ebb2b4c0670"
+    },
+    {
+      "uid": "M-K-03-1431",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 53,
+          "printedPage": 46,
+          "textSha256": "1e8a0ebd4be20044e94d494182dbd87026af081a8058cc75ff1e2409588e6158",
+          "quote": "正弦定理（ｓｉｎｅｔｈｅｏｒｅｍ）在一个三角形中，各边和它\n所对角的正弦的比相等，即\n犪\nｓｉｎ犃＝犫\nｓｉｎ犅＝犮\nｓｉｎ犆．",
+          "matchReason": "正文明确三角形各边与对角正弦之比相等，不只是定理标题。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 46,
+        "evidencePrintedPages": [
+          46
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "5f098936997697d76f93ea05f7ce1a5eb6936bc5824291985577849d2455dbf2"
+    },
+    {
+      "uid": "M-K-03-1432",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 50,
+          "printedPage": 43,
+          "textSha256": "af6bd2ccf8738ff93eb9c324cb39151e041fa83ea4d1b54f3b5a712d15f50911",
+          "quote": "一般地，三角形的三个角犃，犅，犆和它们的对边犪，犫，犮叫做三角形的元素．已知\n三角形的几个元素求其他元素的过程叫做解三角形（ｓｏｌｖｉｎｇａｔｒｉａｎｇｌｅ）．",
+          "matchReason": "三角形元素及已知部分元素求其他元素的过程均明确。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 43,
+        "evidencePrintedPages": [
+          43
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "1a3f4fa7d615b2d31c2b448330d33e35d82e76b6b5889af361260ea3363b219c"
+    },
+    {
+      "uid": "M-K-03-1433",
+      "bookId": "rja-compulsory-2",
+      "relation": "applies",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 60,
+          "printedPage": 53,
+          "textSha256": "437ad302303b167295ce2a81033a953cc0ddebae2c78adfab07e669d743175cc",
+          "quote": "１０．你能用三角形的边和角的正弦表示三角形的面积吗？",
+          "matchReason": "实际是习题10要求学生推导，不能证明旧definition三种面积等式已在教材直接给出。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "applies"
+        },
+        {
+          "pdfPage": 61,
+          "printedPage": 54,
+          "textSha256": "74c74a7b793018645b9d34a6fdcb767fc603a4465fc8e0135101f1939eb53df2",
+          "quote": "１８．利用第１０题的结论，证明三角形的面积公式\n犛＝１２犪２ｓｉｎ犅ｓｉｎ犆\nｓｉｎ犃．",
+          "matchReason": "习题18继续应用面积结论，抽取中的分式排版不明；只证明应用关联。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "applies"
+        }
+      ],
+      "notes": [
+        "全册第六章检索面积段；旧49页只做测距。第54页习题18应用第10题结论，但没有旧定义的完整三式。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 49,
+        "evidencePrintedPages": [
+          53,
+          54
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "11c430ecc062d141535730bc7cbbed1acd85f6c3db4aac62eb645f1740b6156a"
+    },
+    {
+      "uid": "M-K-03-1434",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 62,
+          "printedPage": 55,
+          "textSha256": "4cb697ba985727a58e66aaa9a2bafb123722949fbc2abe5f755324f46fd70d76",
+          "quote": "他得到了公式\n犛＝狆（狆－犪）（狆－犫）（狆－犮\n槡\n），\n这里狆＝１２（犪＋犫＋犮）．",
+          "matchReason": "阅读材料给出三边求面积和半周长公式；根号覆盖范围在文本抽取中不清，旧definition的根号也损坏。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "位置与背景解释明确；需原PDF核准根号覆盖p(p-a)(p-b)(p-c)，不按名称自动确认公式。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF根号覆盖整个p(p-a)(p-b)(p-c)，半周长为三边和的一半；旧definition仅把p置于根号内。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 55,
+        "evidencePrintedPages": [
+          55
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 62,
+          "printedPage": 55,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-055.png",
+          "renderSha256": "d5ff870eba494ffec4d69536f91206c5ca8b4a4bcba6cef0133a27aad160d684",
+          "check": "原PDF根号覆盖整个p(p-a)(p-b)(p-c)，半周长为三边和的一半；旧definition仅把p置于根号内。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "3220b11099440b8a7d19a4215d71a291d9add2a3cf4f05e2b422484e908092a9"
+    },
+    {
+      "uid": "M-K-03-1435",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 62,
+          "printedPage": 55,
+          "textSha256": "4cb697ba985727a58e66aaa9a2bafb123722949fbc2abe5f755324f46fd70d76",
+          "quote": "我国南宋著名数学家秦九韶（约１２０２—约１２６１）也发现了与海伦公式等价\n的从三角形三边求面积的公式，他把这种方法称为“三斜求积”．",
+          "matchReason": "阅读材料明确秦九韶得到与海伦等价的三边面积公式；具体根号/分数见同页末式但抽取不完整。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 62,
+          "printedPage": 55,
+          "textSha256": "4cb697ba985727a58e66aaa9a2bafb123722949fbc2abe5f755324f46fd70d76",
+          "quote": "如果把以上这段文字写成公式，就是\n犛＝１４［犮２犪２－（犮２＋犪２－犫２\n２\n）\n２］\n槡\n．",
+          "matchReason": "秦九韶三斜求积的具体公式位置；根号作用域以原PDF视觉证据说明，旧definition仍需修正。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:6.4",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "需复核原PDF末尾公式根号和1/4覆盖范围；不改旧definition的损坏LaTeX。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF根号覆盖1/4[c²a²-((c²+a²-b²)/2)²]；旧definition的LaTeX根号损坏。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 55,
+        "evidencePrintedPages": [
+          55
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 62,
+          "printedPage": 55,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-055.png",
+          "renderSha256": "d5ff870eba494ffec4d69536f91206c5ca8b4a4bcba6cef0133a27aad160d684",
+          "check": "原PDF根号覆盖1/4[c²a²-((c²+a²-b²)/2)²]；旧definition的LaTeX根号损坏。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "a32219ff6e1f0f1c8f70e4e86be446a2b60d1e15d531483db939899f33d3f2d9"
+    },
+    {
+      "uid": "M-K-03-211",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 75,
+          "printedPage": 68,
+          "textSha256": "950da49eb59e5b2070bf6997fd98be8a0941b03c87279d66b2396a48ced6f37a",
+          "quote": "我们设想引入一个新数ｉ，使得狓＝ｉ是方\n程狓２＋１＝０的解，即使得ｉ２＝－１．",
+          "matchReason": "明确引入满足i²=-1的新数，名称在69页定义补充。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "其中ｉ叫做虚数单\n位（ｉｍａｇｉｎａｒｙｕｎｉｔ）．",
+          "matchReason": "直接给出虚数单位名称；不是仅依靠i字形推断。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 68,
+        "evidencePrintedPages": [
+          68,
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "da70df081391a943c83b8d3897d6dfe42c83588e2a59f1c8339bdc85bc701d2b"
+    },
+    {
+      "uid": "M-K-03-2110",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 78,
+          "printedPage": 71,
+          "textSha256": "dfd0714e4ee4de623756dcee4d97694db02847fd55e788d09540ae67f5fed9d7",
+          "quote": "图７．１３中向量犗犣→\n的模叫做复数狕＝犪＋犫ｉ的模（ｍｏｄｕ\nｌｕｓｏｆａｃｏｍｐｌｅｘｎｕｍｂｅｒ）或绝对值，记作狕或犪＋犫ｉ．即\n狕＝犪＋犫ｉ＝犪２＋犫\n槡\n２，\n其中犪，犫∈犚．",
+          "matchReason": "明确模由对应向量的模定义，但|z|和根号抽取损坏，完整旧definition待原PDF复核。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF模长竖线和sqrt(a²+b²)清晰；旧definition的LaTeX根号写法损坏。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 71,
+        "evidencePrintedPages": [
+          71
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 78,
+          "printedPage": 71,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-071.png",
+          "renderSha256": "c41c3ec66014bc5095508c9e7e71f846af0fb669c3a44bc56251ad8217ebae2d",
+          "check": "原PDF模长竖线和sqrt(a²+b²)清晰；旧definition的LaTeX根号写法损坏。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "9ac557eb3556c74022852f00bb0d18e1056a8b9864abc375d0a26625fad558bf"
+    },
+    {
+      "uid": "M-K-03-2111",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 79,
+          "printedPage": 72,
+          "textSha256": "6b435743e27ba83272d0e85e79d7453688ac4084a21d2c3d9a984dec7c6dc4d4",
+          "quote": "一般地，当两个复数的实部相等，虚部互为相反数时，这两个复数叫做互为共轭复数\n（ｃｏｎｊｕｇａｔｅｃｏｍｐｌｅｘｎｕｍｂｅｒ）．虚部不等于０的两个共轭复数也叫做共轭虚数．复数狕的共\n轭复数用狕－表示，即如果狕＝犪＋犫ｉ，那么狕－＝犪－犫ｉ．",
+          "matchReason": "实部相等、虚部互为相反及a-bi形式齐全。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 72,
+        "evidencePrintedPages": [
+          72
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e59423c8701f369c05e655499c8afe89f193984ed7e668cd19cd7f52ef3ce93a"
+    },
+    {
+      "uid": "M-K-03-212",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "我们把形如犪＋犫ｉ（犪，犫∈犚）的数叫做复数（ｃｏｍｐｌｅｘｎｕｍｂｅｒ），其中ｉ叫做虚数单\n位（ｉｍａｇｉｎａｒｙｕｎｉｔ）．",
+          "matchReason": "a,b为实数的代数形式在定义中明确。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "a8aedbfba2a47b88d064fd938b0de35e1a371d01833756cfd8cde10f2c2ec67a"
+    },
+    {
+      "uid": "M-K-03-213",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "其中的犪与犫分别叫做复数狕的实部（ｒｅａｌｐａｒｔ）与虚部（ｉｍａｇｉｎａｒｙ\nｐａｒｔ）．",
+          "matchReason": "实部对应a、虚部对应b的成对定义，不把bi误当虚部。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "13d417474cf596fcc1bfef521cc70efd0cc94512b72df082eafbc09afe61a229"
+    },
+    {
+      "uid": "M-K-03-214",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "其中的犪与犫分别叫做复数狕的实部（ｒｅａｌｐａｒｔ）与虚部（ｉｍａｇｉｎａｒｙ\nｐａｒｔ）．",
+          "matchReason": "明确虚部是b而不是bi，支持旧definition。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "9f5c5d460ed7760010459ba3dd0c866e1c9a4976e2662c3165733b21e02c175f"
+    },
+    {
+      "uid": "M-K-03-215",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "当犫≠０时，它叫做虚数（ｉｍａｇｉｎａｒｙｎｕｍｂｅｒ）；当犪＝０且犫≠０时，它叫做\n纯虚数．",
+          "matchReason": "虚部不为0的判定与纯虚数相区分。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "a3c964007ebe1febcd4120535bfda456d48c04f0b2091c7bf5036fb90e625387"
+    },
+    {
+      "uid": "M-K-03-216",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "当犪＝０且犫≠０时，它叫做\n纯虚数．",
+          "matchReason": "明确实部为0且虚部非0两个条件。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c83c9cfbc2b80460f58e7a7f215a74c823acd7b5da9504bda3caa736d57341f1"
+    },
+    {
+      "uid": "M-K-03-217",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "犪＋犫ｉ与犮＋犱ｉ相等当且仅当犪＝犮且犫＝犱．",
+          "matchReason": "实部与虚部对应相等的充要条件明确。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "d67e52fc7f867f14117d8becd52e81b85f210e2dc4c591176d6dec81246ddeaa"
+    },
+    {
+      "uid": "M-K-03-218",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "全体复数构成的集合犆＝犪＋犫ｉ｜犪，犫∈犚\n｛\n｝叫做复数集（ｓｅｔｏｆｃｏｍ\nｐｌｅｘｎｕｍｂｅｒｓ）．",
+          "matchReason": "定义全体a+bi构成的集合，不把虚数集误当复数集。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 76,
+          "printedPage": 69,
+          "textSha256": "bae8c1a555c7692df36a508f7178792cb473aa504b2e67884a50b10846e64a28",
+          "quote": "显然，实数集犚是复数集犆的真子集，即犚犆．",
+          "matchReason": "补充旧definition中的R是C真子集的明确文字。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 69,
+        "evidencePrintedPages": [
+          69
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "81bfd5883e5d72b7dfa05377d0a33cba7e490bb9622c21a56caa67bcb934d396"
+    },
+    {
+      "uid": "M-K-03-219",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 77,
+          "printedPage": 70,
+          "textSha256": "b1e17fef26c190925d789c9a50a9d22ea49da4644cd5bb5ba5e1bc5917921ef9",
+          "quote": "复数狕＝犪＋犫ｉ\n可用点犣（犪，犫）表示．这个建立了直角坐标系来表示复数的平面\n叫做复平面，狓轴叫做实轴，狔轴叫做虚轴．显然，实轴上的点都\n表示实数；除了原点外，虚轴上的点都表示纯虚数．",
+          "matchReason": "正文建立复数与(a,b)点对应，定义复平面和实轴/虚轴。",
+          "sectionId": "rja-compulsory-2:7.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 70,
+        "evidencePrintedPages": [
+          70
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "acfeb6de197d2b5e4c13865e83087b051a06d3c2beaa4e84f1635be11958677c"
+    },
+    {
+      "uid": "M-K-03-2212",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 82,
+          "printedPage": 75,
+          "textSha256": "670eadb6443e3dd48ebda1c0fd98a7498c7ab257152ddc19ba157823993dbdf9",
+          "quote": "我们规定，复数的加法法则如下：\n设狕１＝犪＋犫ｉ，狕２＝犮＋犱ｉ（犪，犫，犮，犱∈犚）是任意两个复数，那么它们的和\n（犪＋犫ｉ）＋（犮＋犱ｉ）＝（犪＋犮）＋（犫＋犱）ｉ．",
+          "matchReason": "正文明确和的实部、虚部各自相加。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 82,
+          "printedPage": 75,
+          "textSha256": "670eadb6443e3dd48ebda1c0fd98a7498c7ab257152ddc19ba157823993dbdf9",
+          "quote": "容易得到，对任意狕１，狕２，狕３∈犆，有\n狕１＋狕２＝狕２＋狕１，\n（狕１＋狕２）＋狕３＝狕１＋（狕２＋狕３）．",
+          "matchReason": "补充加法交换律和结合律。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 75,
+        "evidencePrintedPages": [
+          75
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "573096ee3096cc97e03988691237169bd84a843955ef7069b6db5f73d71bff29"
+    },
+    {
+      "uid": "M-K-03-2213",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 83,
+          "printedPage": 76,
+          "textSha256": "5576f7ff13e030d5449dac53906ec9f83638a5541b1feeeddcccc283d2f93607",
+          "quote": "即\n（犪＋犫ｉ）－（犮＋犱ｉ）＝（犪－犮）＋（犫－犱）ｉ．\n这就是复数的减法法则．",
+          "matchReason": "明确差的实部与虚部分别相减，旧77页仅应用。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 77,
+        "evidencePrintedPages": [
+          76
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "2cc2cf789f4f6c92b76496d111b913e591a0b8c2d78b718caaea40de8b32dd1b"
+    },
+    {
+      "uid": "M-K-03-2214",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 84,
+          "printedPage": 77,
+          "textSha256": "f42c4115ab597b8e5c9a20c5aefc826a0f1a32c18b281a0ce50aef5a7cbde241",
+          "quote": "我们规定，复数的乘法法则如下：\n设狕１＝犪＋犫ｉ，狕２＝犮＋犱ｉ（犪，犫，犮，犱∈犚）是任意两个复数，那么它们的积\n（犪＋犫ｉ）（犮＋犱ｉ）＝犪犮＋犫犮ｉ＋犪犱ｉ＋犫犱ｉ２\n＝（犪犮－犫犱）＋（犪犱＋犫犮）ｉ．",
+          "matchReason": "乘法展开并利用i²=-1合并实虚部，实际定义在77页。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 85,
+          "printedPage": 78,
+          "textSha256": "40622528c1d0cac226ea2dccca6b0369ddaf0f019a2df381ed46a1f99cc624da",
+          "quote": "容易得到，对于任意狕１，狕２，狕３∈犆，有\n狕１狕２＝狕２狕１，\n（狕１狕２）狕３＝狕１（狕２狕３），\n狕１（狕２＋狕３）＝狕１狕２＋狕１狕３．",
+          "matchReason": "补充旧definition的交换律、结合律、分配律。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 78,
+        "evidencePrintedPages": [
+          77,
+          78
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "15d8435fea7e25fd35a3f2b2fe0033ee844c9c693e64d87c2c6c82a852555594"
+    },
+    {
+      "uid": "M-K-03-2215",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 85,
+          "printedPage": 78,
+          "textSha256": "40622528c1d0cac226ea2dccca6b0369ddaf0f019a2df381ed46a1f99cc624da",
+          "quote": "复数除法的法则是：\n（犪＋犫ｉ）÷（犮＋犱ｉ）＝犪犮＋犫犱\n犮２＋犱２＋犫犮－犪犱\n犮２＋犱２ｉ（犪，犫，犮，犱∈犚，且犮＋犱ｉ≠０）．\n由此可见，两个复数相除（除数不为０），所得的商是一个确定的复数．\n在进行复数除法运算时，通常先把（犪＋犫ｉ）÷（犮＋犱ｉ）写成犪＋犫ｉ\n犮＋犱ｉ的形式，再把分子\n与分母都乘分母的共轭复数犮－犱ｉ，化简后就可得到上面的结果．这里分子、分母都乘分\n母的“实数化因式”（共轭复数），从而使分母“实数化”．",
+          "matchReason": "除数非零、同乘分母共轭和完整商的实部/虚部分式已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "正文文字能解释除法，但旧商公式各分子/分母排版需原PDF复核。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF分式实部(ac+bd)/(c²+d²)，虚部(bc-ad)/(c²+d²)，除数非零明确。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 80,
+        "evidencePrintedPages": [
+          78
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 85,
+          "printedPage": 78,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-078.png",
+          "renderSha256": "dab6c8ecc21497fcd48458af2b9bcecab92b31117d5c16d120c9cfb430a2ff28",
+          "check": "原PDF分式实部(ac+bd)/(c²+d²)，虚部(bc-ad)/(c²+d²)，除数非零明确。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "e6ef237022f1ce46825e5e3e6c68c215f5785bfe9af6d8630af5c36b4d9ee52f"
+    },
+    {
+      "uid": "M-K-03-2216",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 88,
+          "printedPage": 81,
+          "textSha256": "a261b3c64ce131919523ae5678707c3f302ebeb65a14dd47181cf00ddffc7c9e",
+          "quote": "代数基本定理（ｆｕｎｄａｍｅｎｔａｌｔｈｅｏｒｅｍｏｆａｌｇｅｂｒａ）　任何一元狀（狀∈犖）次\n复系数多项式方程犳（狓）＝０至少有一个复数根．",
+          "matchReason": "阅读材料明确n次复系数多项式至少有一个复根，非标题命中。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 89,
+          "printedPage": 82,
+          "textSha256": "088168afc3418c68fc30cf7ff3fd329d93b6334f1865c36be2cd2319a192e1b1",
+          "quote": "由代数基本定理可以得到：任何一元狀（狀∈犖）次复系数多项式犳（狓）在复\n数集中可以分解为狀个一次因式的乘积．进而，一元狀次多项式方程有狀个复数\n根（重根按重数计）．",
+          "matchReason": "补充旧definition的按重数计n个根推论。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 81,
+        "evidencePrintedPages": [
+          81,
+          82
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "566bd44695debc3fbacc23551f1f4c42cba0748fbc6b2f3f98e6bec781b33e4c"
+    },
+    {
+      "uid": "M-K-03-2217",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 89,
+          "printedPage": 82,
+          "textSha256": "088168afc3418c68fc30cf7ff3fd329d93b6334f1865c36be2cd2319a192e1b1",
+          "quote": "下面我们从代数基本定理出发，看看一元多项式方程的根与系数之间的关系．\n设实系数一元二次方程\n犪２狓２＋犪１狓＋犪０＝０（犪２≠０）\n在复数集犆内的根为狓１，狓２，容易得到\n狓１＋狓２＝－犪１犪２，\n狓１狓２＝犪０犪２．",
+          "matchReason": "正文实际推导二次根与系数关系（并未使用韦达名称），二次及三次关系分式已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 89,
+          "printedPage": 82,
+          "textSha256": "088168afc3418c68fc30cf7ff3fd329d93b6334f1865c36be2cd2319a192e1b1",
+          "quote": "比较①②可以得到\n狓１＋狓２＋狓３＝－犪２犪３，\n狓１狓２＋狓１狓３＋狓２狓３＝犪１犪３，\n狓１狓２狓３＝－犪０犪３．",
+          "matchReason": "三次方程根和、两两乘积和、三根乘积关系也实际出现，分式需复核。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:7.2",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "教材未在此段使用“韦达定理”名称；映射依据实际根与系数推导，不凭同名检索。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF二次和三次根与系数的三个分式关系清楚，与旧definition对应。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 82,
+        "evidencePrintedPages": [
+          82
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 89,
+          "printedPage": 82,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-082.png",
+          "renderSha256": "ee48cdb97006f75a7ba28219ea5b4c1e790468594e8613934409846fd075a115",
+          "check": "原PDF二次和三次根与系数的三个分式关系清楚，与旧definition对应。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "f82753747e28d4e0cca32a133827e1b8abea504411d36c9b5a8e5ec04ea867b3"
+    },
+    {
+      "uid": "M-K-03-2316",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 91,
+          "printedPage": 84,
+          "textSha256": "0ef766172768308f24a5bfb86770a50e8c4fa8a53356c2e86073377fc23bd701",
+          "quote": "一般地，任何一个复数狕＝犪＋犫ｉ都可以表示成\n狉（ｃｏｓθ＋ｉｓｉｎθ）\n的形式．其中，狉是复数狕的模；θ是以狓轴的非负半轴为始边，向量犗犣→\n所在射线（射线\n犗犣）为终边的角，叫做复数狕＝犪＋犫ｉ的辐角（ａｒｇｕｍｅｎｔｏｆａｃｏｍｐｌｅｘｎｕｍｂｅｒ）．\n狉（ｃｏｓθ＋ｉｓｉｎθ）叫做复数狕＝犪＋犫ｉ的三角表示式，简称三角形式．",
+          "matchReason": "明确r(cosθ+isinθ)为三角形式，r为模，θ为辐角。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 84,
+        "evidencePrintedPages": [
+          84
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "9f2e32928276d18dab7f6e5a35125ff0f0bed2684418a86268cd75589b532dd4"
+    },
+    {
+      "uid": "M-K-03-2317",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 91,
+          "printedPage": 84,
+          "textSha256": "0ef766172768308f24a5bfb86770a50e8c4fa8a53356c2e86073377fc23bd701",
+          "quote": "θ是以狓轴的非负半轴为始边，向量犗犣→\n所在射线（射线\n犗犣）为终边的角，叫做复数狕＝犪＋犫ｉ的辐角（ａｒｇｕｍｅｎｔｏｆａｃｏｍｐｌｅｘｎｕｍｂｅｒ）．",
+          "matchReason": "始边及对应向量射线终边的定义明确；0的特殊约定同页另述。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 84,
+        "evidencePrintedPages": [
+          84
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "746c970d57c34241029ff5ffbf4ac4932a6758c785b084b3491be91edaa59abb"
+    },
+    {
+      "uid": "M-K-03-2318",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 91,
+          "printedPage": 84,
+          "textSha256": "0ef766172768308f24a5bfb86770a50e8c4fa8a53356c2e86073377fc23bd701",
+          "quote": "我们规定在０≤θ＜２π范围内的\n辐角θ的值为辐角的主值．通常记作ａｒｇ狕，即０≤ａｒｇ狕＜２π．",
+          "matchReason": "主值区间和arg记号明确；旧85页是应用。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 85,
+        "evidencePrintedPages": [
+          84
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "ce814cf00357994675d798f706501a5f8b502d3e90c4ed6def000323d81cab6a"
+    },
+    {
+      "uid": "M-K-03-2319",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 94,
+          "printedPage": 87,
+          "textSha256": "1c3a8237b5943fcbfb9434081e758baf3a7bdc7a08ac4c29302531f4572d47c5",
+          "quote": "这就是说，两个复数相乘，积的模等于各复数的模的积，积的辐角等于各复数的辐角\n的和．",
+          "matchReason": "明确积的模为模之积、辐角为辐角之和；86页推导补充。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 93,
+          "printedPage": 86,
+          "textSha256": "d21b98e212450556d054a8446188a91dad24dc4f73adc5331ccda089938fdeb6",
+          "quote": "即\n狉１（ｃｏｓθ１＋ｉｓｉｎθ１）·狉２（ｃｏｓθ２＋ｉｓｉｎθ２）\n＝狉１狉２［ｃｏｓ（θ１＋θ２）＋ｉｓｉｎ（θ１＋θ２）］．",
+          "matchReason": "补充对应三角形式乘法等式的实际原文。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 86,
+        "evidencePrintedPages": [
+          86,
+          87
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "5a438e5eabbc0b2c64ff67f2f68ee4579f634c227de9a5bb363c21e302dc2e5a"
+    },
+    {
+      "uid": "M-K-03-2320",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 95,
+          "printedPage": 88,
+          "textSha256": "127fdce6560e30686ce6af6e6df0db6b5ddff2e91498d800335b047edaf62ddc",
+          "quote": "这就是说，两个复数相除，商的模等于被除数的模除以除数的模所得的商，商的辐角\n等于被除数的辐角减去除数的辐角所得的差．",
+          "matchReason": "明确商的模为模之商、辐角为差，符合旧definition；除数非零在前段给出。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 88,
+        "evidencePrintedPages": [
+          88
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "96a8b40fb48963473a3e60071a0ac667dac0553c34170c571b46c0e84713a323"
+    },
+    {
+      "uid": "M-K-03-2321",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 98,
+          "printedPage": 91,
+          "textSha256": "bea04297d5050d9bb42204747b860048d428a70dac136115976efad9c3e48e52",
+          "quote": "这就是说，复数的狀（狀∈犖）次幂的模等于这\n个复数的模的狀次幂，它的辐角等于这个复数的辐角\n的狀倍，这个结论叫做棣莫弗定理．",
+          "matchReason": "n次幂的模与辐角规律完整描述，不仅标题。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 91,
+        "evidencePrintedPages": [
+          91
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e86cb77618560269b7f73a4d205fb4e01b441c4bcac812bd6965201477d3fa9e"
+    },
+    {
+      "uid": "M-K-03-2322",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 99,
+          "printedPage": 92,
+          "textSha256": "0c9fd78d63146445edf7329527af3813021dfa12ecf4361cf37e48b41c2161ec",
+          "quote": "根据三角函数的周期性可得，１的３次方根为ω犽＝ｃｏｓ２犽π３＋ｉｓｉｎ２犽π３（犽＝０，\n１，２），即ω０＝ｃｏｓ０＋ｉｓｉｎ０＝１，ω１＝ｃｏｓ２π３＋ｉｓｉｎ２π３＝－１２＋槡３２ｉ，ω２＝ｃｏｓ４π３＋\nｉｓｉｎ４π３＝－１２－槡３２ｉ．",
+          "matchReason": "正文只明确1的三次根公式；旧definition直接扩展为一般n次公式，本段不能证明一般公式已被教材给出。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 99,
+          "printedPage": 92,
+          "textSha256": "0c9fd78d63146445edf7329527af3813021dfa12ecf4361cf37e48b41c2161ec",
+          "quote": "ω０，ω１，ω２所对应的点\n犣０，犣１，犣２都在以原点犗为圆心的单位圆上．因为ω０，\nω１，ω２的辐角依次相差２π３，所以犣０，犣１，犣２是单位圆\n的三等分点（也可以看成单位圆的内接正三角形的顶点），\n且分点犣０恰为单位圆与实轴的正半轴的交点．",
+          "matchReason": "三次根的几何解释仅证实正三角形特例。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 99,
+          "printedPage": 92,
+          "textSha256": "0c9fd78d63146445edf7329527af3813021dfa12ecf4361cf37e48b41c2161ec",
+          "quote": "类比上述研究方法，请你自己探求１的４次方根，５次方根……狀次方根．你\n能解释它们的几何意义，并探求它们的性质吗？",
+          "matchReason": "明确一般n次根是留给学生的探究要求，不是已展示的完整结论。",
+          "sectionId": "rja-compulsory-2:7.3",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "第91页标题提出n次根研究，第92页末要求学生自己探求4、5、n次根；仅有三次根及其正三角形解释，不能自动升为一般n完整覆盖。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 91,
+        "evidencePrintedPages": [
+          92
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "d57afa5c4ca28af1e26bc1fc5b4fb58137fbbf16a581f8b816fa2a73765aba68"
+    },
+    {
+      "uid": "M-K-03-311",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 104,
+          "printedPage": 97,
+          "textSha256": "26276e0ef68261501a507bd6a2106837164f0d121fdcbdf8a7a5a75d3bde39d8",
+          "quote": "一般地，由若干个平面多边形围成的几何体叫做多面体\n（ｐｏｌｙｈｅｄｒｏｎ）（图８．１２）．围成多面体的各个多边形叫做多\n面体的面，如面犃犅犈，面犅犃犉；两个面的公共边叫做多面",
+          "matchReason": "以平面多边形围成和面概念明确定义多面体。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 105,
+          "printedPage": 98,
+          "textSha256": "ffcd6062b95950aee9ae2c9a83a3ecf1e1308d2289a58cca60fc8f135d108300",
+          "quote": "体的棱，如棱犃犈，棱犈犆；棱与棱的公共点叫做多面体的顶点，如顶点犈，顶点犆．",
+          "matchReason": "跨页补充公共边为棱、公共点为顶点，97页尾开始。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "多面体面/棱定义跨97–98页，两个quote按实际页断开保存，97页末“多面”在98页续“体的棱”。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 97,
+        "evidencePrintedPages": [
+          97,
+          98
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "843029c689b4f22de2d9823fdb9a69dffe85d776d2ee198ff112a095afc2a6af"
+    },
+    {
+      "uid": "M-K-03-3110",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 107,
+          "printedPage": 100,
+          "textSha256": "2ea8362ec1e3253cc45cae25ddcdcebc5a4c8c42f62272a17f124de262cce751",
+          "quote": "用一个平行于棱锥底面的平面去截棱锥，\n我们把底面和截面之间那部分多面体叫做棱台（ｆｒｕｓｔｕｍｏｆ\nａｐｙｒａｍｉｄ）．",
+          "matchReason": "平行截面和原底面之间的部分定义清楚。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 100,
+        "evidencePrintedPages": [
+          100
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "26211b02274f276742a5e660e2b181ee0b0b10585135252d8dfde8b27b0bed7e"
+    },
+    {
+      "uid": "M-K-03-3111",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 108,
+          "printedPage": 101,
+          "textSha256": "65d87956eadfeff807721eedfd5c464cc1d22ee585b3b8ead4a559fef69b1a51",
+          "quote": "以矩形的一边所在直线为旋转轴，其余三边旋转一周形成的面所围成\n的旋转体叫做圆柱（ｃｉｒｃｕｌａｒｃｙｌｉｎｄｅｒ）．",
+          "matchReason": "矩形绕一边一周所得旋转体的定义明确。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 101,
+        "evidencePrintedPages": [
+          101
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "522a6a02319a901f8e3c168e3a3eeca4d68c4a88b967b7f45a231c9b507bc038"
+    },
+    {
+      "uid": "M-K-03-3112",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 109,
+          "printedPage": 102,
+          "textSha256": "6f62a163a54d9b4efcfaaba9b42b3b9af001c41af37a6d5a52ef7dcfe10ae244",
+          "quote": "以直角三角形\n的一条直角边所在直线为旋转轴，其余两边旋转一周形成的面所围成的旋转体叫做圆锥\n（ｃｉｒｃｕｌａｒｃｏｎｅ）．",
+          "matchReason": "直角三角形绕直角边的构造条件与旧definition一致。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 102,
+        "evidencePrintedPages": [
+          102
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "ea5973cac8f6d0e1e6ad9231022cdf7b8347cf4ea29655a9e6829e9497a75cdd"
+    },
+    {
+      "uid": "M-K-03-3113",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 109,
+          "printedPage": 102,
+          "textSha256": "6f62a163a54d9b4efcfaaba9b42b3b9af001c41af37a6d5a52ef7dcfe10ae244",
+          "quote": "用平行于圆锥底面的平面去截圆锥，底面与截面之间的\n部分叫做圆台（ｃｉｒｃｕｌａｒｔｒｕｎｃａｔｅｄｃｏｎｅ）．",
+          "matchReason": "圆锥平行截取得到圆台，与棱台区分。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 102,
+        "evidencePrintedPages": [
+          102
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "51a6a2aab31ce593e332ed7e67215eef4c95f40513bc74e0e2f9f1afc9dafe78"
+    },
+    {
+      "uid": "M-K-03-3114",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 109,
+          "printedPage": 102,
+          "textSha256": "6f62a163a54d9b4efcfaaba9b42b3b9af001c41af37a6d5a52ef7dcfe10ae244",
+          "quote": "半圆以它的直径所在直线为旋转轴，旋转一周形成的曲面叫做球面，\n球面所围成的旋转体叫做球体（ｓｐｈｅｒｏｉｄ），简称球．",
+          "matchReason": "明确球面与其围成球体的区别、旋转构造。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 102,
+        "evidencePrintedPages": [
+          102
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "4cc60d051f997cd11d81596cef78b7dfd17438887bf06b67426c694ab3b1c702"
+    },
+    {
+      "uid": "M-K-03-3115",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 110,
+          "printedPage": 103,
+          "textSha256": "b4f75052a5979cc5b39da92d2bb41387afbf722dc3993f13aff69aa9bcdd610a",
+          "quote": "现实世界中的物体表示的几何体，除柱体、锥体、台体和球等简单几何体外，还有大\n量的几何体是由简单几何体组合而成的，这些几何体称作简单组合体．",
+          "matchReason": "由简单体组合的整体定义明确。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 110,
+          "printedPage": 103,
+          "textSha256": "b4f75052a5979cc5b39da92d2bb41387afbf722dc3993f13aff69aa9bcdd610a",
+          "quote": "简单组合体的构成有两种基本形式：一种是由简单几何\n体拼接而成，如图８．１１４（１）（２）中物体表示的几何体；\n一种是由简单几何体截去或挖去一部分而成，如图８．１１４\n（３）（４）中的几何体．",
+          "matchReason": "拼接与截去/挖去两种构成形式补充。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 103,
+        "evidencePrintedPages": [
+          103
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "440f7c990845e31f93b4a59c18722ed8f4f41552a0b744e770aace28f70a9301"
+    },
+    {
+      "uid": "M-K-03-312",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 105,
+          "printedPage": 98,
+          "textSha256": "ffcd6062b95950aee9ae2c9a83a3ecf1e1308d2289a58cca60fc8f135d108300",
+          "quote": "一条平面曲线（包括直线）绕它所在平面内的一条定直线旋转所形成的曲面叫做旋转\n面，封闭的旋转面围成的几何体叫做旋转体（ｓｏｌｉｄｏｆｒｏｔａｔｉｏｎ）．这条定直线叫做旋转体的\n轴．",
+          "matchReason": "平面曲线绕同平面定直线旋转构成面、封闭旋转面围体、轴三项齐全。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 98,
+        "evidencePrintedPages": [
+          98
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "9907ba573da6cf0980be833b794c1bd0dec88c057f68f62fcafa03c3023cb656"
+    },
+    {
+      "uid": "M-K-03-313",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 105,
+          "printedPage": 98,
+          "textSha256": "ffcd6062b95950aee9ae2c9a83a3ecf1e1308d2289a58cca60fc8f135d108300",
+          "quote": "一般地，有两个面互相平行，其余各面都是四边形，并且相邻两个四边\n形的公共边都互相平行，由这些面所围成的多面体叫做棱柱（ｐｒｉｓｍ）．",
+          "matchReason": "底面平行、其余四边形及相邻公共边平行的结构条件全部给出。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 98,
+        "evidencePrintedPages": [
+          98
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "abd32ee0b46e9a12a6e06b13613c72f25dd561bf89367cf3c1d9abbdc9eaf67f"
+    },
+    {
+      "uid": "M-K-03-314",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 106,
+          "printedPage": 99,
+          "textSha256": "8d67ee578b44f61eba67ee91be88887703151a60757e8c4761402a5397283982",
+          "quote": "我们把侧棱垂直于底面的棱柱叫做直棱柱（图\n８．",
+          "matchReason": "侧棱垂直于底面定义明确。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 99,
+        "evidencePrintedPages": [
+          99
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "4b58cf244b30e00c62be695bdab0bd689e458473144a0a2cef0976c95c9925dd"
+    },
+    {
+      "uid": "M-K-03-315",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 106,
+          "printedPage": 99,
+          "textSha256": "8d67ee578b44f61eba67ee91be88887703151a60757e8c4761402a5397283982",
+          "quote": "侧棱不垂直于底面的棱柱叫做斜棱柱（图８．",
+          "matchReason": "侧棱不垂直于底面定义明确。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 99,
+        "evidencePrintedPages": [
+          99
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "276e1d746e02d76b4b892fbc4a7a09fd45b3ff4b2915dc8312c082f21d0af249"
+    },
+    {
+      "uid": "M-K-03-316",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 106,
+          "printedPage": 99,
+          "textSha256": "8d67ee578b44f61eba67ee91be88887703151a60757e8c4761402a5397283982",
+          "quote": "底面是正多边\n形的直棱柱叫做正棱柱（图８．",
+          "matchReason": "正多边形底面和直棱柱两个条件明确。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 99,
+        "evidencePrintedPages": [
+          99
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "458d933a9f5b0b7dbcc839eb3c1b32578fa0e9f7cc40fcb036d3c59ca5f90e61"
+    },
+    {
+      "uid": "M-K-03-317",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 106,
+          "printedPage": 99,
+          "textSha256": "8d67ee578b44f61eba67ee91be88887703151a60757e8c4761402a5397283982",
+          "quote": "底面是平行四边形的四棱柱也叫做平行六面体\n（图８．",
+          "matchReason": "底面平行四边形与四棱柱结构明确。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 99,
+        "evidencePrintedPages": [
+          99
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "a007ef002346c3c77a18d60600db17b85042463722333b189bc244927e16e891"
+    },
+    {
+      "uid": "M-K-03-318",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 106,
+          "printedPage": 99,
+          "textSha256": "8d67ee578b44f61eba67ee91be88887703151a60757e8c4761402a5397283982",
+          "quote": "一般地，有一个面是多边形，其余各面都是有一个公共顶点的三角形，\n由这些面所围成的多面体叫做棱锥（ｐｙｒａｍｉｄ）．",
+          "matchReason": "底面多边形、其余三角形有公共顶点的定义齐全。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 107,
+          "printedPage": 100,
+          "textSha256": "2ea8362ec1e3253cc45cae25ddcdcebc5a4c8c42f62272a17f124de262cce751",
+          "quote": "其中三棱锥又叫四面体．底面是正多边形，并且顶点与底\n面中心的连线垂直于底面的棱锥叫做正棱锥．",
+          "matchReason": "补充三棱锥/四面体的旧definition同义名。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 99,
+        "evidencePrintedPages": [
+          99,
+          100
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b248ed7cf256c7176b51c127eb14376a136496ce8e849cc17ea6212e25ade262"
+    },
+    {
+      "uid": "M-K-03-319",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 107,
+          "printedPage": 100,
+          "textSha256": "2ea8362ec1e3253cc45cae25ddcdcebc5a4c8c42f62272a17f124de262cce751",
+          "quote": "底面是正多边形，并且顶点与底\n面中心的连线垂直于底面的棱锥叫做正棱锥．",
+          "matchReason": "正多边形底面和顶点—中心垂线条件明确，不泛指所有正底面的锥。",
+          "sectionId": "rja-compulsory-2:8.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 100,
+        "evidencePrintedPages": [
+          100
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b9042bdf0776402906c26a04aa908013d4d69e17eb46293a64d87ac5b8e5494a"
+    },
+    {
+      "uid": "M-K-03-3216",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 115,
+          "printedPage": 108,
+          "textSha256": "4836d79fcdcf5eed0d27aacc86e53b9417ba9f1a14c54333d0773b1f4d8f38c8",
+          "quote": "于点犗′，且使∠狓′犗′狔′＝４５°（或１３５°），它们确定的平面表示水平面．\n（２）已知图形中平行于狓轴或狔轴的线段，在直观图中分别画成平行于狓′轴或狔′轴\n的线段．\n（３）已知图形中平行于狓轴的线段，在直观图中保持原长度不变，平行于狔轴的线\n段，在直观图中长度为原来的一半．",
+          "matchReason": "步骤明确x/y对应平行方向、x长度不变、y半长；角度还允许135°，旧定义仅列45°。",
+          "sectionId": "rja-compulsory-2:8.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 114,
+          "printedPage": 107,
+          "textSha256": "b0b58524458f90b50db709de126017e9ee9b31a472ee61e3793c9d8403859d19",
+          "quote": "利用平行投影，人们获得了画直观图的斜二测画法．利用\n这种画法画水平放置的平面图形的直观图，其步骤是：\n（１）在已知图形中取互相垂直的狓轴和狔轴，两轴相交于\n点犗．",
+          "matchReason": "补充斜二测与平行投影的联系；跨页完整步骤在108页。",
+          "sectionId": "rja-compulsory-2:8.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "旧definition是45°的常用特例，教材同段还允许135°；不把旧定义当穷举。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 108,
+        "evidencePrintedPages": [
+          107,
+          108
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "6bdd6879567bacf388679fcb2977af5393379bd1d4c8e195725838030ca37162"
+    },
+    {
+      "uid": "M-K-03-3217",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 121,
+          "printedPage": 114,
+          "textSha256": "95bb632682d7798909177caf912d2d7b9541f43037f8cad6fb5d8bee188f56d9",
+          "quote": "一般地，如果棱柱的底面积是犛，高是犺，那么这个棱\n柱的体积\n犞棱柱＝犛犺．",
+          "matchReason": "底面积乘高及变量意义明确。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 114,
+        "evidencePrintedPages": [
+          114
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b767eb62c5f868520b3b058be19763f2107d0b31c2ab22f71b80f49cc7086a39"
+    },
+    {
+      "uid": "M-K-03-3218",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 121,
+          "printedPage": 114,
+          "textSha256": "95bb632682d7798909177caf912d2d7b9541f43037f8cad6fb5d8bee188f56d9",
+          "quote": "一般地，如果\n棱锥的底面面积为犛，高为犺，那么该棱锥的体积",
+          "matchReason": "底面积与高条件在114页，115页续体积Sh/3；1/3已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 122,
+          "printedPage": 115,
+          "textSha256": "5b49fe7e390f17d6711c0c54df435b4a2726d90c08af7742f9510eb1d95b3933",
+          "quote": "犞棱锥＝１３犛犺．",
+          "matchReason": "系数抽取为连写13，需对原PDF复核1/3。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF棱锥体积系数明确为1/3。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 115,
+        "evidencePrintedPages": [
+          114,
+          115
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 122,
+          "printedPage": 115,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-115.png",
+          "renderSha256": "3b451cf7dd946bebebc9aa2d371a8a128909000475a5b825bc41e4a92bfc796b",
+          "check": "原PDF棱锥体积系数明确为1/3。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "bd2651302b1dfc22695f48276e0fc138816ca64e92314d93f1426a4b528a344f"
+    },
+    {
+      "uid": "M-K-03-3219",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 122,
+          "printedPage": 115,
+          "textSha256": "5b49fe7e390f17d6711c0c54df435b4a2726d90c08af7742f9510eb1d95b3933",
+          "quote": "由于棱台是由棱锥截成的，因此可以利用两个棱锥的体\n积差，得到棱台的体积公式\n犞棱台＝１３犺（犛′＋槡犛′犛＋犛），\n其中犛′，犛分别为棱台的上、下底面面积，犺为棱台的高．",
+          "matchReason": "由两锥体积差导出，上下底面积、高及体积h(S′+sqrt(S′S)+S)/3已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF棱台体积为h(S′+sqrt(S′S)+S)/3，S′和S为上下底面积。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 115,
+        "evidencePrintedPages": [
+          115
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 122,
+          "printedPage": 115,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-115.png",
+          "renderSha256": "3b451cf7dd946bebebc9aa2d371a8a128909000475a5b825bc41e4a92bfc796b",
+          "check": "原PDF棱台体积为h(S′+sqrt(S′S)+S)/3，S′和S为上下底面积。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "9fa6e0de2965fbe14b77b5181e4d9c88fcd6c2c73f3bbc017fa2d9fc26c3fc1b"
+    },
+    {
+      "uid": "M-K-03-3220",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 123,
+          "printedPage": 116,
+          "textSha256": "762137b497b78da37f63a85454d9894b1780f839655bc69460a00803ffe139f7",
+          "quote": "犛圆柱＝２π狉（狉＋犾）（狉是底面半径，犾是母线长），\n犛圆锥＝π狉（狉＋犾）（狉是底面半径，犾是母线长），\n犛圆台＝π（狉′２＋狉２＋狉′犾＋狉犾）（狉′，狉分别是上、下底面半径，犾是母线长）．",
+          "matchReason": "2πr(r+l)和变量说明完整且文本结构可辨。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 116,
+        "evidencePrintedPages": [
+          116
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e15cd54387545e61b46f74458790466916c72b1e5e5592ce724ea9390f14d741"
+    },
+    {
+      "uid": "M-K-03-3221",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 123,
+          "printedPage": 116,
+          "textSha256": "762137b497b78da37f63a85454d9894b1780f839655bc69460a00803ffe139f7",
+          "quote": "犛圆锥＝π狉（狉＋犾）（狉是底面半径，犾是母线长），\n犛圆台＝π（狉′２＋狉２＋狉′犾＋狉犾）（狉′，狉分别是上、下底面半径，犾是母线长）．",
+          "matchReason": "πr(r+l)和变量说明完整，区别圆柱系数2。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 116,
+        "evidencePrintedPages": [
+          116
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c8f13b212f226d5cbac6810dafbcf5d6f8599ff0d10349ec83d780cd40a9b9db"
+    },
+    {
+      "uid": "M-K-03-3222",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 123,
+          "printedPage": 116,
+          "textSha256": "762137b497b78da37f63a85454d9894b1780f839655bc69460a00803ffe139f7",
+          "quote": "犛圆台＝π（狉′２＋狉２＋狉′犾＋狉犾）（狉′，狉分别是上、下底面半径，犾是母线长）．",
+          "matchReason": "四项r′²+r²+r′l+rl和变量意义完整；上标虽为文本连写但代数项可辨。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 116,
+        "evidencePrintedPages": [
+          116
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "07cb7876c2ad79498dfc343a9abaa6db2cf7aa49ab418a2e2c62602bcc4ca17b"
+    },
+    {
+      "uid": "M-K-03-3223",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "犞圆柱＝π狉２犺（狉是底面半径，犺是高），\n犞圆锥＝１３π狉２犺（狉是底面半径，犺是高）．",
+          "matchReason": "底面半径与高对应πr²h明确。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 117,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "612092bc5dde6f5336d7eaf28a434198dd7f13ea43b1ce326983bccc5f438ab1"
+    },
+    {
+      "uid": "M-K-03-3224",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "犞圆锥＝１３π狉２犺（狉是底面半径，犺是高）．",
+          "matchReason": "圆锥体积πr²h/3及半径、高变量已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF圆锥体积为πr²h/3。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 117,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-117.png",
+          "renderSha256": "64420cd718c392b0d2cbd340daea4900f4e0be009a4dd73747df0835fc6d95b9",
+          "check": "原PDF圆锥体积为πr²h/3。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "a4f2862358881396c5213ebcb50e02950f671b276a8dd1112b6f47fd4456d86f"
+    },
+    {
+      "uid": "M-K-03-3225",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "犞圆台＝１３π犺（狉′２＋狉′狉＋狉２）（狉′，狉分别是上、下底面半径，犺是高）．",
+          "matchReason": "圆台体积πh(r′²+r′r+r²)/3及变量意义已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF圆台体积为πh(r′²+r′r+r²)/3。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 117,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-117.png",
+          "renderSha256": "64420cd718c392b0d2cbd340daea4900f4e0be009a4dd73747df0835fc6d95b9",
+          "check": "原PDF圆台体积为πh(r′²+r′r+r²)/3。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "485808e2d54624916049e5f369d774cd4e76753ce8232e92267e4d81b768de88"
+    },
+    {
+      "uid": "M-K-03-3226",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "事实上，如果球的半径为犚，那么它的表面积是\n犛球＝４π犚２．",
+          "matchReason": "半径和4πR²表面积公式完整，旧118页是浮标应用。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 118,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "8b3d1ba3f6049a0729647ebfd2178bc19aa9cccb9428dbead0a23d102151f262"
+    },
+    {
+      "uid": "M-K-03-3227",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 125,
+          "printedPage": 118,
+          "textSha256": "546ad6f1bdafb6b05d36680bcc121824f2d9b6feffe5d85fef0589d4e8187d48",
+          "quote": "由此，我们得到球的体积公式\n犞球＝４３π犚３．",
+          "matchReason": "球体积4πR³/3在118页推导末，分式系数已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF球体积明确为4πR³/3。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 119,
+        "evidencePrintedPages": [
+          118
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 125,
+          "printedPage": 118,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-118.png",
+          "renderSha256": "aca142fc43a239f39d25003ebaad351718926e03209f48e91312645df2ed086e",
+          "check": "原PDF球体积明确为4πR³/3。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "b748fcb5e3c1c90db37d50731dfc03cbb854e872c0c5b4e45322ac2020cae64e"
+    },
+    {
+      "uid": "M-K-03-3228",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 128,
+          "printedPage": 121,
+          "textSha256": "61cb523936f98c08dffecec8ba2d88cbbf612a6379426cb1d38af5a431b0feab",
+          "quote": "夹在两个平行平面之间的两个几何体，被平行于这两个平面的任意平面所\n截，如果截得的两个截面的面积总相等，那么这两个几何体的体积相等．",
+          "matchReason": "等高、任意平行截面面积等则体积等的完整文字条件；标题罕见字抽取成!不影响该原理正文对应。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "标题及人名“暅”抽取为!；本映射依据完整体积原理文字，不修写quote中的原字形。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 121,
+        "evidencePrintedPages": [
+          121
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e3bdffd4ff84eaa7a93aca58246bea0d21b3b8ab1f905237d5cafacd9b536384"
+    },
+    {
+      "uid": "M-K-03-3229",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "犞锥体＝１３犛犺（犛为底面积，犺为锥体高）；\n犞台体＝１３（犛′＋槡犛′犛＋犛）犺（犛′，犛分别为上、下底面面积，犺为台体高）．",
+          "matchReason": "柱锥台统一公式明确锥体体积Sh/3，分式系数已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF归纳锥体体积Sh/3。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 117,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-117.png",
+          "renderSha256": "64420cd718c392b0d2cbd340daea4900f4e0be009a4dd73747df0835fc6d95b9",
+          "check": "原PDF归纳锥体体积Sh/3。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "eb0eb42050b9d894ab92c66b3338a1498a030dbc92aac81bafd51649c73b6402"
+    },
+    {
+      "uid": "M-K-03-3230",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "犞台体＝１３（犛′＋槡犛′犛＋犛）犺（犛′，犛分别为上、下底面面积，犺为台体高）．",
+          "matchReason": "统一公式明确上下底面积、高及台体体积h(S′+sqrt(S′S)+S)/3，原PDF已视觉核验。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "当犛′＝犛时，台体变为柱体，台体的体积公式也就是柱体的体积公式；当犛′＝０\n时，台体变为锥体，台体的体积公式也就是锥体的体积公式．",
+          "matchReason": "补充S′=S退化为柱体、S′=0退化为锥体两个特例，不只有公式名称。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF归纳台体体积h(S′+sqrt(S′S)+S)/3以及柱体、锥体两特例。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 117,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-117.png",
+          "renderSha256": "64420cd718c392b0d2cbd340daea4900f4e0be009a4dd73747df0835fc6d95b9",
+          "check": "原PDF归纳台体体积h(S′+sqrt(S′S)+S)/3以及柱体、锥体两特例。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "9751e9e8bacabc62aafe26dd6c44ca31312d3bf36a65d41e9ed2e76c2e00f1fe"
+    },
+    {
+      "uid": "M-K-03-3231",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 124,
+          "printedPage": 117,
+          "textSha256": "d73247b2975744aad22146c014db4d170fc81a9fc5cb0ddeaa033eb9f2a2f045",
+          "quote": "犞柱体＝犛犺（犛为底面积，犺为柱体高）；\n犞锥体＝１３犛犺（犛为底面积，犺为锥体高）；\n犞台体＝１３（犛′＋槡犛′犛＋犛）犺（犛′，犛分别为上、下底面面积，犺为台体高）．",
+          "matchReason": "统一公式明确柱体为底面积乘高。",
+          "sectionId": "rja-compulsory-2:8.3",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 117,
+        "evidencePrintedPages": [
+          117
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "0ad5a0bf99687c635e56739361b8623505ecea15b78383ab9f73f439f75942e0"
+    },
+    {
+      "uid": "M-K-03-3331",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 136,
+          "printedPage": 129,
+          "textSha256": "678f1ff964d8fc54629fa2d73312263cc771444543a9626772e9d0cd1b8f8d25",
+          "quote": "我们把不同在任何一个平面内的两条直线叫做异面直线．",
+          "matchReason": "不共面的严格定义明确，不把无公共点等同异面；旧131页为例题续解。",
+          "sectionId": "rja-compulsory-2:8.4",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 131,
+        "evidencePrintedPages": [
+          129
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c2de5ebbc0c293f7049c77b19b658b0c1e82f8475f883db2bebb914f9f1f37cb"
+    },
+    {
+      "uid": "M-K-03-3432",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 140,
+          "printedPage": 133,
+          "textSha256": "b4ce6f7c47bd4c1793c0dff46de0930efc25767de9534aaffdc751ee7340a806",
+          "quote": "基本事实４　平行于同一条直线的两条直线平行．\n基本事实４表明，空间中平行于同一条直线的所\n有直线都互相平行．它给出了判断空间两条直线平行\n的依据．基本事实４表述的性质通常叫做平行线的传\n递性．",
+          "matchReason": "基本事实明确两条线都平行同一线则彼此平行，后句给传递性名称。",
+          "sectionId": "rja-compulsory-2:8.5",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 135,
+        "evidencePrintedPages": [
+          133
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "398e0fb07e6d06822988878c4fd31f15954702d88b70aff4945120a7f818c8b9"
+    },
+    {
+      "uid": "M-K-03-3433",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 142,
+          "printedPage": 135,
+          "textSha256": "4a34783a652584d44fee7724a7e012d815136a23fc49b2fd25de09d84f48e7a4",
+          "quote": "如果空间中两个角的两条边分别对应平行，那么这两个角相等或互补．",
+          "matchReason": "两个角的边对应平行与相等/互补结论完整；不只角度题应用。",
+          "sectionId": "rja-compulsory-2:8.5",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 137,
+        "evidencePrintedPages": [
+          135
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b0eeddcade2424d76f3f331698392ab6f9757af46eb12479109c055fc7fb5a66"
+    },
+    {
+      "uid": "M-K-03-3434",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 143,
+          "printedPage": 136,
+          "textSha256": "627e3c95fa60635c0b26356ecf7c25b9070a42492718eb888f642dd482543208",
+          "quote": "定理　如果平面外一条直线与此平面内的一条直线平\n行，那么该直线与此平面平行．",
+          "matchReason": "平面外、平面内及两线平行前提全出现，旧140页已是面面平行。",
+          "sectionId": "rja-compulsory-2:8.5",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 140,
+        "evidencePrintedPages": [
+          136
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "f3e18fb18ebac1abf2a3d70cd05aad29f000d2445d2e5a276c544be20ac6624a"
+    },
+    {
+      "uid": "M-K-03-3435",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 145,
+          "printedPage": 138,
+          "textSha256": "bc2d0632a84022091db42906536990d8996bd0e26e2eabf01f14f98ced5ebbe1",
+          "quote": "定理　一条直线与一个平面平行，如果过该直线的平面与此平面相交，那么该直线与\n交线平行．",
+          "matchReason": "过该直线的平面相交及交线平行结论完整。",
+          "sectionId": "rja-compulsory-2:8.5",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 143,
+        "evidencePrintedPages": [
+          138
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "0c2b404acc0ecbb5dec758182e0dfd2d8f8ff14968254d4f79481f1e1bc15de5"
+    },
+    {
+      "uid": "M-K-03-3436",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 147,
+          "printedPage": 140,
+          "textSha256": "74d06aa06f3ae5f945e1ca1fd9533f3f3f52a8cb99f713675f94e2df7fe0c95a",
+          "quote": "定理　如果一个平面内的两条相交直线与另一个平面平行，那么这两个平面平行．",
+          "matchReason": "关键两线相交及都平行另一面条件完整。",
+          "sectionId": "rja-compulsory-2:8.5",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 146,
+        "evidencePrintedPages": [
+          140
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "57ec678d66db53ab4d99631302a7415f7ccbbc4bb04b929f06faefbc5be5412f"
+    },
+    {
+      "uid": "M-K-03-3437",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 148,
+          "printedPage": 141,
+          "textSha256": "7aa0e29d6b2ac8084f0df1ba65c7156723b57e929d73bb85f0dd5a78889fb35d",
+          "quote": "定理　两个平面平行，如果另一个平面与这两个平面相交，那么两条交线平行．",
+          "matchReason": "第三面与两平行面相交、交线平行的完整命题。",
+          "sectionId": "rja-compulsory-2:8.5",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 148,
+        "evidencePrintedPages": [
+          141
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b9629b9ddcd845fddb7a13cad2bcfab653c4a276f7047507ef08c420350b6098"
+    },
+    {
+      "uid": "M-K-03-3538",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "needs_review",
+      "evidence": [
+        {
+          "pdfPage": 154,
+          "printedPage": 147,
+          "textSha256": "164a08c0182afdb9f42c9362de64f3b2c697dbff07476b27ebe096521d6f33dd",
+          "quote": "犗分别作直线犪′∥犪，犫′∥犫，我们把直线犪′与犫′所成的角\n叫做异面直线犪与犫所成的角（或夹角）．",
+          "matchReason": "平移到同点作平行线定义角；范围同段针对空间两线含平行0°，需要区分异面严格正角。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 153,
+          "printedPage": 146,
+          "textSha256": "f230e52f14c1e9564ffe783c0d700c2ba8dff1c27f0c3aec225b341b8e97077a",
+          "quote": "其中不大\n于９０°的角称为这两条直线所成的角（或夹角），它刻画了一\n条直线相对于另一条直线倾斜的程度．",
+          "matchReason": "补充两相交直线取不大于90°角的约定。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "旧definition给异面角0°<θ≤90°，正文147页范围0°≤α≤90°针对空间两线含平行；需教师确认对象区别，不直接套用范围。",
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF该段范围0°≤α≤90°指空间两直线，包含平行情形；异面直线的严格正角范围需要区分对象。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 147,
+        "evidencePrintedPages": [
+          146,
+          147
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 154,
+          "printedPage": 147,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-147.png",
+          "renderSha256": "6e430c34571639c2c9578178ae65c24b29b28b747a9aa9c039b7f165e17faaa9",
+          "check": "原PDF该段范围0°≤α≤90°指空间两直线，包含平行情形；异面直线的严格正角范围需要区分对象。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "7255dc00d01ae611716160a815c0e06b936efdd6a9351c9b86d6578584385c85"
+    },
+    {
+      "uid": "M-K-03-3539",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 156,
+          "printedPage": 149,
+          "textSha256": "a13cc7e74796b64b83572f5fb8f8e540caab54b69af426f7ce1bf9b53add2768",
+          "quote": "一般地，如果直线犾与平面α内的任意一条直线都垂直，我\n们就说直线犾与平面α互相垂直，记作犾⊥α．",
+          "matchReason": "任意线而非仅交于垂足的线，定义条件明确。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 150,
+        "evidencePrintedPages": [
+          149
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "f43cece6e4700571f4f48fe6670ce10cc97d0022e42fb4ab9d156469da2b096f"
+    },
+    {
+      "uid": "M-K-03-3540",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 157,
+          "printedPage": 150,
+          "textSha256": "3946cfecd00b50ece2f49a48f2aec9e61cba320665713d6601c022730b92d2bd",
+          "quote": "定理　如果一条直线与一个平面内的两条相交直线垂\n直，那么该直线与此平面垂直．",
+          "matchReason": "两条相交直线都垂直是判定前提，旧153页是性质研究。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 153,
+        "evidencePrintedPages": [
+          150
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "05ad13ce9837946f00e2a318f200f15cb774fbdba7b3f421eb77c9fcee98555d"
+    },
+    {
+      "uid": "M-K-03-3541",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 158,
+          "printedPage": 151,
+          "textSha256": "1797f2a4e4cccbb5f9ec964a27141f51b2ed8095273ebcf2fbdc61a6c9dd8f29",
+          "quote": "平面的一条斜线和它在平面上的射影所成的\n角，叫做这条直线和这个平面所成的角．",
+          "matchReason": "斜线与射影定义明确，152页补垂直/平行极端及全范围。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 159,
+          "printedPage": 152,
+          "textSha256": "dd6193ab584e156b422f039d1e4d1faedf39f24049d60b00f151653f7e29d0ca",
+          "quote": "一条直线垂直于平面，我们说它们所成的角是９０°；一条直线和平面平行，或在平面\n内，我们说它们所成的角是０°．直线与平面所成的角θ的取值范围是０°≤θ≤９０°．",
+          "matchReason": "补充垂直90°、平行或面内0°及总体角度范围。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 154,
+        "evidencePrintedPages": [
+          151,
+          152
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "7f00e20e18a213a9c6ffe233ff1f54b775dad1e596766343c2f569486b9c0819"
+    },
+    {
+      "uid": "M-K-03-3542",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 161,
+          "printedPage": 154,
+          "textSha256": "7c164075e068629736904c34b86c69af8b98ac67c0ba64084d1e2692a90c4482",
+          "quote": "定理　垂直于同一个平面的两条直线平行．",
+          "matchReason": "两条线垂直同一面的平行结论明确，非153页反证过程或155页例题。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 155,
+        "evidencePrintedPages": [
+          154
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "8adb9d24d2eb05122d28ae93baa49853a8ccc8808abe44f96f3aaba7557c3368"
+    },
+    {
+      "uid": "M-K-03-3543",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 157,
+          "printedPage": 150,
+          "textSha256": "3946cfecd00b50ece2f49a48f2aec9e61cba320665713d6601c022730b92d2bd",
+          "quote": "过一点作垂直于已知平面的直线，则该点与垂足间的线\n段，叫做这个点到该平面的垂线段，垂线段的长度叫做这个\n点到该平面的距离．",
+          "matchReason": "垂线段与其长度作为点面距离的定义明确。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 151,
+        "evidencePrintedPages": [
+          150
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "4a4c17672c2c047f4e5a653e4eda82b1ed8a54c881c4098f1fd1602eae810e9a"
+    },
+    {
+      "uid": "M-K-03-3544",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 163,
+          "printedPage": 156,
+          "textSha256": "db7fde7457a4f7683b8922247ddabf9cf036b76897f722d240e59d6f1fdbb739",
+          "quote": "从一条直线出发的两个半平面所组成的图形叫做二面角（ｄｉｈｅｄｒａｌａｎ\nｇｌｅ）．这条直线叫做二面角的棱，这两个半平面叫做二面角的面．",
+          "matchReason": "二半平面共同边构图、棱/面名称全部给出。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 156,
+        "evidencePrintedPages": [
+          156
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "2b1a740ef893c3983a889098148bdd1f7497cd97d454c3a8857ad94ccc12eb0d"
+    },
+    {
+      "uid": "M-K-03-3545",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 163,
+          "printedPage": 156,
+          "textSha256": "db7fde7457a4f7683b8922247ddabf9cf036b76897f722d240e59d6f1fdbb739",
+          "quote": "在二面角α犾β的棱犾上任取一点犗，以点犗为垂足，在半平面α和β\n内分别作垂直于棱犾的射线犗犃和犗犅，则射线犗犃和犗犅构成的∠犃犗犅叫做二面角的平\n面角．",
+          "matchReason": "共同棱上一点、两半平面内作垂棱射线及夹角定义明确。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 163,
+          "printedPage": 156,
+          "textSha256": "db7fde7457a4f7683b8922247ddabf9cf036b76897f722d240e59d6f1fdbb739",
+          "quote": "二面角的平面角α的取值范围是０°≤\nα≤１８０°．",
+          "matchReason": "补充0°到180°范围，旧157页已经转面面垂直。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 157,
+        "evidencePrintedPages": [
+          156
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "feeb1f53a5b97d675bc647a25966216a469d7f0a1de2166c14c49de00e9f1fd9"
+    },
+    {
+      "uid": "M-K-03-3546",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 164,
+          "printedPage": 157,
+          "textSha256": "ed0839b7da5a9971caaaac0ddc706019aa1e8075471c2b180d33ff21197efb4b",
+          "quote": "定理　如果一个平面过另一个平面的垂线，那么这两个平\n面垂直．",
+          "matchReason": "一面经过另一面的垂线是充分条件，旧159页为性质探究。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 159,
+        "evidencePrintedPages": [
+          157
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "d41213188c501f1b0d251d45e76941883a10963ba5d0ce7a5e22aebb166ac7ef"
+    },
+    {
+      "uid": "M-K-03-3547",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 167,
+          "printedPage": 160,
+          "textSha256": "3330dbaf3f65b69fb579785446085a193e3073a624caad6c9a70a299889a344b",
+          "quote": "定理　两个平面垂直，如果一个平面内有一直线垂直于这两个平面的交线，那么这条\n直线与另一个平面垂直．",
+          "matchReason": "一面内直线垂直交线则垂直另一面的完整前提及结论。",
+          "sectionId": "rja-compulsory-2:8.6",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 161,
+        "evidencePrintedPages": [
+          160
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "44f6ccf1bb559a0e6294f40a0bf6ef0c0b8105cfe5915a0672e6396fc46e06e7"
+    },
+    {
+      "uid": "M-K-04-111",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "e3cb6066c0caed9307a64faa297ab7d39262d2a98a739c57ae1eb49cc34760d8",
+          "quote": "在一\n个调查中，我们把调查对象的全体称为总体（ｐｏｐｕｌａｔｉｏｎ），\n组成总体的每一个调查对象称为个体（ｉｎｄｉｖｉｄｕａｌ）．",
+          "matchReason": "调查对象全体与个体的直接定义明确。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 173,
+        "evidencePrintedPages": [
+          173
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "2b73909bc5c1539b5cf3638db2a5a3461e6492136c7614caf9eb553bffd87372"
+    },
+    {
+      "uid": "M-K-04-1110",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "textSha256": "411ad00e0c6b09c6edc3d42b9ecbe1d3769d19bd92a90ae27c37ec9e49c31bbb",
+          "quote": "如果从总体中抽取一个容量为狀的样本，它们的变量值分别\n为狔１，狔２，…，狔狀，则称\n狔＝狔１＋狔２＋…＋狔狀\n狀\n＝１狀∑\n狀\n犻＝１狔犻\n为样本均值（ｓａｍｐｌｅｍｅａｎ），又称样本平均数．在简单随机\n抽样中，我们常用样本平均数狔去估计总体平均数犢．",
+          "matchReason": "样本变量、n个变量之和除以n的均值公式、估计总体用途完整；分式已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 228,
+          "printedPage": 221,
+          "textSha256": "e003c148b767692ca258206d4c5527f7fd644e8f4ece7b17ed1df4c7978f3474",
+          "quote": "展示数据分析的全过程：首先要明确所关心的问题是什么，说明数据蕴含的信息；根\n据数据分析的需要，说明如何选择合适的图表描述和表达数据；从样本数据中提取能刻画\n其特征的量，如均值、方差等，用于比较男、女员工在肥胖状况上的差异；通过样本估计\n总体的统计规律，分析公司员工胖瘦程度的整体情况．",
+          "matchReason": "9.3要求提取均值/方差，比较男女并据样本估计总体；此为应用任务证据，未声称案例报告已经完成。",
+          "relation": "applies",
+          "sectionId": "rja-compulsory-2:9.3"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF样本均值是n个样本变量之和除以n，并说明用来估计总体均值。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 180,
+        "evidencePrintedPages": [
+          178,
+          221
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-178.png",
+          "renderSha256": "e0c7145605f9dd1dc02206f1e1add84d2284bc0bdd4acd4585c967cc2f0f0317",
+          "check": "原PDF样本均值是n个样本变量之和除以n，并说明用来估计总体均值。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "24dcb94e25d7743977b7c5838ca62e8f6ce23e505bc0bc4f9f31eec1153098a3"
+    },
+    {
+      "uid": "M-K-04-1111",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "e3cb6066c0caed9307a64faa297ab7d39262d2a98a739c57ae1eb49cc34760d8",
+          "quote": "样本中包含的个体数\n称为样本容量，简称样本量．",
+          "matchReason": "直接定义容量为样本个体数，不把观测数据值误作容量。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 174,
+        "evidencePrintedPages": [
+          173
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "52e515423e5dfab21e23578847f6ea4e5eca5d81315d778165058a235661be2a"
+    },
+    {
+      "uid": "M-K-04-1112",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 189,
+          "printedPage": 182,
+          "textSha256": "7e6f3bc9854eb06f99dd6f081d46cc3c9619c8daff51bd464e6ac27aded2c5f8",
+          "quote": "一般地，按一个或多个变量把总体划分成若干个子总\n体，每个个体属于且仅属于一个子总体，在每个子总体中独立地进行简单随机抽样，再把\n所有子总体中抽取的样本合在一起作为总样本，这样的抽样方法称为分层随机抽样\n（ｓｔｒａｔｉｆｉｅｄｒａｎｄｏｍｓａｍｐｌｉｎｇ），每一个子总体称为层．",
+          "matchReason": "子总体互斥划分、各层独立简单随机抽样及合并总样本的条件完整。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 227,
+          "printedPage": 220,
+          "textSha256": "c01824da49a81551564eb4b7f40efc3a61b6c0258244f7b8d54b767d2284b68d",
+          "quote": "为了解某公司员工的身体肥胖情况，研究人员从公司员工体检数据中，采用比例分配\n的分层随机抽样方法抽取了９０名男员工、５０名女员工的身高和体重数据，计算得到他们\n的ＢＭＩ值如下：\n男员工　２３．",
+          "matchReason": "9.3真实案例用分层随机抽样抽取90男50女，不仅引用方法名称。",
+          "relation": "applies",
+          "sectionId": "rja-compulsory-2:9.3"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 186,
+        "evidencePrintedPages": [
+          182,
+          220
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "8aa1c08c1f8f154123b01aeaff1a81615c1bed4657076c3da626156ed9cd40c8"
+    },
+    {
+      "uid": "M-K-04-1113",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 189,
+          "printedPage": 182,
+          "textSha256": "7e6f3bc9854eb06f99dd6f081d46cc3c9619c8daff51bd464e6ac27aded2c5f8",
+          "quote": "在分层随机抽样中，如果每层样本\n量都与层的大小成比例，那么称这种样本量的分配方式为比例分配．",
+          "matchReason": "样本量与层大小成比例的条件明确，区别于任意分层分配。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 227,
+          "printedPage": 220,
+          "textSha256": "c01824da49a81551564eb4b7f40efc3a61b6c0258244f7b8d54b767d2284b68d",
+          "quote": "为了解某公司员工的身体肥胖情况，研究人员从公司员工体检数据中，采用比例分配\n的分层随机抽样方法抽取了９０名男员工、５０名女员工的身高和体重数据，计算得到他们\n的ＢＭＩ值如下：\n男员工　２３．",
+          "matchReason": "9.3正文明确采用比例分配，作为本方法的案例应用。",
+          "relation": "applies",
+          "sectionId": "rja-compulsory-2:9.3"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 186,
+        "evidencePrintedPages": [
+          182,
+          220
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "572b18ce7e28b791df74a63c98f7a0b77f290266e3daa8202971639e0797f293"
+    },
+    {
+      "uid": "M-K-04-112",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "e3cb6066c0caed9307a64faa297ab7d39262d2a98a739c57ae1eb49cc34760d8",
+          "quote": "组成总体的每一个调查对象称为个体（ｉｎｄｉｖｉｄｕａｌ）．为了强\n调调查目的，也可以把调查对象的某些指标的全体作为总\n体，每一个调查对象的相应指标作为个体．",
+          "matchReason": "前句直接定义个体，后句引出按指标定义的等价表述。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 173,
+        "evidencePrintedPages": [
+          173
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "6a1ffe986d0b84aa9ce35d918391927396f501534bb96076303bbb4da37a4cf4"
+    },
+    {
+      "uid": "M-K-04-113",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "e3cb6066c0caed9307a64faa297ab7d39262d2a98a739c57ae1eb49cc34760d8",
+          "quote": "像人口普查这样，对每一个调\n查对象都进行调查的方法，称为全面调查，又称普查．",
+          "matchReason": "对每一个调查对象调查是定义要点，不只人口普查举例。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 173,
+        "evidencePrintedPages": [
+          173
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "efb359226a20e11236a277d1d1ec5819853d82475f2857303095ffaefe98698f"
+    },
+    {
+      "uid": "M-K-04-114",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "e3cb6066c0caed9307a64faa297ab7d39262d2a98a739c57ae1eb49cc34760d8",
+          "quote": "像这样，根据一定目的，从总体中抽取一部分个体进行调\n查，并以此为依据对总体的情况作出估计和推断的调查方\n法，称为抽样调查（ｓａｍｐｌｉｎｇｓｕｒｖｅｙ）．",
+          "matchReason": "抽取一部分调查并据此估计/推断总体两个环节完整。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 174,
+        "evidencePrintedPages": [
+          173
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "d68f4abdf3b62dd32054aeeb89a9e72b44e5c7bc55f06cdc1f0da3b36fd56824"
+    },
+    {
+      "uid": "M-K-04-115",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 180,
+          "printedPage": 173,
+          "textSha256": "e3cb6066c0caed9307a64faa297ab7d39262d2a98a739c57ae1eb49cc34760d8",
+          "quote": "我们把从总体中抽\n取的那部分个体称为样本（ｓａｍｐｌｅ），样本中包含的个体数\n称为样本容量，简称样本量．",
+          "matchReason": "样本与其包含个体数的容量直接定义。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 174,
+        "evidencePrintedPages": [
+          173
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c1549b092266d3f009928b5fcc047fec9abb00cf41b8d073fe3025ba94cd32ee"
+    },
+    {
+      "uid": "M-K-04-116",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 181,
+          "printedPage": 174,
+          "textSha256": "1f159d073fef4f4dbd8bece8d6e21c081897ae6c5f3337fd4ef82966f063b2b8",
+          "quote": "一般地，设一个总体含有犖（犖为正整数）个个体，从\n中逐个抽取狀（１≤狀＜犖）个个体作为样本，如果抽取是放\n回的，且每次抽取时总体内的各个个体被抽到的概率都相\n等，我们把这样的抽样方法叫做放回简单随机抽样；如果抽\n取是不放回的，且每次抽取时总体内未进入样本的各个个体\n被抽到的概率都相等，我们把这样的抽样方法叫做不放回简",
+          "matchReason": "两种逐个抽样及各次等概率条件在页末定义，下一页继续统称。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 182,
+          "printedPage": 175,
+          "textSha256": "1d32ee46c505fd64ac94a5fd304df8cf6d3c4494d8bd6f1f2874519e64ae7d20",
+          "quote": "单随机抽样．放回简单随机抽样和不放回简单随机抽样统称为简单随机抽样（ｓｉｍｐｌｅｒａｎ\nｄｏｍｓａｍｐｌｉｎｇ）．通过简单随机抽样获得的样本称为简单随机样本．",
+          "matchReason": "跨页结束完整定义并给出统称。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "不放回简单随机抽样定义跨174–175页，保留页末断句与下一页接续。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 175,
+        "evidencePrintedPages": [
+          174,
+          175
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c79a3f05d92a4fd1c88077fa83ee0ce76da3d2800741a21662898c6983fe5344"
+    },
+    {
+      "uid": "M-K-04-117",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 182,
+          "printedPage": 175,
+          "textSha256": "1d32ee46c505fd64ac94a5fd304df8cf6d3c4494d8bd6f1f2874519e64ae7d20",
+          "quote": "先给７１２名学生编号，例如按１～７１２进行编号．然后\n把所有编号写在外观、质地等无差别的小纸片（也可以是卡\n片、小球等）上作为号签，并将这些小纸片放在一个不透明\n的盒里，充分搅拌．最后从盒中不放回地逐个抽取号签，使\n与号签上的编号对应的学生进入样本，直到抽足样本所需要\n　　比较随机数法与抽签\n法，它们各有什么优点和\n缺点？\n的人数．\n抽签法简单易行，但当总体较大时，操作起来比较麻\n烦．因此，抽签法一般适用于总体中个体数不多的情形．",
+          "matchReason": "例子完整展示编号、无差别号签、不透明盒、搅拌、不放回抽取及适用规模，语义支持旧定义。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 176,
+        "evidencePrintedPages": [
+          175
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b85267a11985879520d4cfbbdfcd510958acfe16e57b155d1a476a051c15db46"
+    },
+    {
+      "uid": "M-K-04-118",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 182,
+          "printedPage": 175,
+          "textSha256": "1d32ee46c505fd64ac94a5fd304df8cf6d3c4494d8bd6f1f2874519e64ae7d20",
+          "quote": "用随\n机数工具产生１～７１２范围内的整数随机数，把产生的随机\n数作为抽中的编号，使与编号对应的学生进入样本．重复上\n述过程，直到抽足样本所需要的人数．\n如果生成的随机数有重复，即同一编号被多次抽到，可\n以剔除重复的编号并重新产生随机数，直到产生的不同编号\n个数等于样本所需要的人数．",
+          "matchReason": "按编号范围生成随机数、纳入样本及重复编号剔除过程完整。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 176,
+        "evidencePrintedPages": [
+          175
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "72b506b47a795da3208c497899f52b92aa740ee9607113416af4a1052218fb75"
+    },
+    {
+      "uid": "M-K-04-119",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "textSha256": "411ad00e0c6b09c6edc3d42b9ecbe1d3769d19bd92a90ae27c37ec9e49c31bbb",
+          "quote": "一般地，总体中有犖个个体，它们的变量值分别为\n犢１，犢２，…，犢犖，则称\n犢＝犢１＋犢２＋…＋犢犖\n犖\n＝１犖∑\n犖\n犻＝１犢犻\n　　很多科学型计算器都\n具有求平均数的功能．只\n要输入数据，按相应的键，\n就可以快速求出平均数．\n为总体均值（ｐｏｐｕｌａｔｉｏｎｍｅａｎ），又称总体平均数．",
+          "matchReason": "N个总体变量之和除以N的均值公式已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:9.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF总体均值是N个变量之和除以N。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 180,
+        "evidencePrintedPages": [
+          178
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 185,
+          "printedPage": 178,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-178.png",
+          "renderSha256": "e0c7145605f9dd1dc02206f1e1add84d2284bc0bdd4acd4585c967cc2f0f0317",
+          "check": "原PDF总体均值是N个变量之和除以N。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "46d5895dd8b2e30d37e8351f82d9a740a5bf82e34535d300cf6b6c8002a81845"
+    },
+    {
+      "uid": "M-K-04-1214",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 202,
+          "printedPage": 195,
+          "textSha256": "75329c40c8764f285812d037fb879516aaa49c4ce5ae50c65bcd6e13acb7bad5",
+          "quote": "４列频率分布表\n计算各小组的频率，例如第一小组的频率是\n第一组频数\n样本量＝２３\n１００＝０．２３．\n作出频率分布表（表９．２１）．",
+          "matchReason": "过程明确以频数/样本量计算各组频率并制表；表内各组频数和频率补充可核验数值。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 202,
+          "printedPage": 195,
+          "textSha256": "75329c40c8764f285812d037fb879516aaa49c4ce5ae50c65bcd6e13acb7bad5",
+          "quote": "分组\n频数累计\n频数\n频率\n［１．２，４．２）\n正正正正\n２３\n０．２３\n［４．２，７．２）\n正正正正正正\n３２\n０．３２\n［７．２，１０．２）\n正正\n１３\n０．１３\n［１０．２，１３．２）\n正\n９\n０．０９\n［１３．２，１６．２）\n正\n９\n０．０９\n［１６．２，１９．２）\n正\n５\n０．０５\n［１９．２，２２．２）\n３\n０．０３\n［２２．２，２５．２）\n４\n０．０４\n［２５．２，２８．２］\n２\n０．０２\n合计\n１００\n１．００\n　　频率分布直方图与频\n数分布直方图有什么区别？",
+          "matchReason": "实际频率分布表含9组频数、频率及合计，支持表结构，而非仅章节名称。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 195,
+        "evidencePrintedPages": [
+          195
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "ba6d027ffeb10af855950bc137a9ee181d1ef5f0aae6c57fe16c57d17a004f39"
+    },
+    {
+      "uid": "M-K-04-1215",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 203,
+          "printedPage": 196,
+          "textSha256": "0e2201ddfb6e8bacfac3b8e2a97819b84e8128acdda4090bec98f2dccb0c13b1",
+          "quote": "在图９．２１中，横轴表示月均用水量，纵轴表示频率\n组距．\n这里，频率\n组距实际上就是频率分布直方图中各小长方形的高\n度，它反映了各组样本观测数据的疏密程度．因为\n小长方形的面积＝组距×频率\n组距＝频率，\n所以各小长方形的面积表示相应各组的频率．这样，频率分\n布直方图就以面积的形式反映了数据落在各个小组的频率的\n大小．容易知道，在频率分布直方图中，各小长方形的面积\n的总和等于１，即样本数据落在整个区间的频率为１．",
+          "matchReason": "文字解释高度为频率/组距、面积为对应频率及所有面积之和为1，语义足以支持旧定义。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 195,
+        "evidencePrintedPages": [
+          196
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "3728917f8ccc4df8f0a26883ccefd8d0faba1bc4fecef570e47213413a2738ec"
+    },
+    {
+      "uid": "M-K-04-1216",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 201,
+          "printedPage": 194,
+          "textSha256": "0d2da192ef6b55b3a27b81ad09da3c5f30a7ad6ce66dd30c0589a5c2c216493b",
+          "quote": "极差为一组数据中最大值与最小值的差．样本观测数据的最小值是１．３ｔ，最大值是\n２８．０ｔ，极差为\n２８．０－１．３＝２６．７，\n　　数据分组可以是等距\n的，也可以是不等距的，\n要根据数据的特点而定．\n有时为了方便，往往按等\n距分组，或者除了第一和\n最后的两段，其他各段按\n等距分组．\n这说明样本观测数据的变化范围是２６．７ｔ．",
+          "matchReason": "直接定义及最大最小值之差的例子明确。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 196,
+        "evidencePrintedPages": [
+          194
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e463fa128203d275e8609384e26c4634fcbc3e4abae7a5222f15e905313dc0d5"
+    },
+    {
+      "uid": "M-K-04-1217",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 214,
+          "printedPage": 207,
+          "textSha256": "28226b8c1795d1d9061cd2f706a49afcf1d1d9c2fa1e12083d891d56c0477958",
+          "quote": "众数只利用了出现次数最多的那个值的信息．众数只能告诉我们它比其他值出现的次\n数多，但并未告诉我们它比别的数值多的程度．因此，众数只能传递数据中的信息的很少\n一部分，对极端值也不敏感．",
+          "matchReason": "解释明确众数为出现次数最多的那个值，不只是名词引用。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 213,
+          "printedPage": 206,
+          "textSha256": "60f7a58c08cd0422d65d6d1aaea8ad73c24ba591dcf8438903512001cf4e0804",
+          "quote": "可\n以发现，选择校服规格为“１６５”的女生的频数最高，所以用众数１６５作为该校高一年级\n女生校服的规格比较合适．",
+          "matchReason": "实际按最高频数选择众数165，支持解释对应。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 205,
+        "evidencePrintedPages": [
+          206,
+          207
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "f1e8d6411d1d171f83dc9c8005e32dca9c79e413892a010a85e9ffe6c94cce57"
+    },
+    {
+      "uid": "M-K-04-1218",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 212,
+          "printedPage": 205,
+          "textSha256": "cdf91ff45f9b81868277f2c0e4c258f525654150ce968211ba95353f7dfe360d",
+          "quote": "将样本数据按从小到大排序，得第５０个数和第５１个数\n均为６．８，由中位数的定义，可得１００户居民的月均用水量\n的中位数是６．８ｔ．",
+          "matchReason": "排序后取第50/51位置，配合后段一般性解释支持中间位置概念。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 212,
+          "printedPage": 205,
+          "textSha256": "cdf91ff45f9b81868277f2c0e4c258f525654150ce968211ba95353f7dfe360d",
+          "quote": "但中位数只利用了样本数据中间位置的一个或两个值，并未利用其\n他数据，所以不是任何一个样本数据的改变都会引起中位数的改变．",
+          "matchReason": "解释明确中间一个或两个值；不把偶数数据仅取其中一个当通用规则。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 205,
+        "evidencePrintedPages": [
+          205
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "6e8b4d34bd8662679e423316cdf7c8c4862e1b6f73b72fc6506961a1a8d7101a"
+    },
+    {
+      "uid": "M-K-04-1219",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 212,
+          "printedPage": 205,
+          "textSha256": "cdf91ff45f9b81868277f2c0e4c258f525654150ce968211ba95353f7dfe360d",
+          "quote": "解：根据９．２．１节中１００户居民用户月均用水量的数据，由样本平均数的定义，可得\n狔＝狔１＋狔２＋…＋狔１００\n１００\n＝８．７９，\n　　假设某个居民小区有\n２０００户，你能估计该小\n区的月用水总量吗？\n即１００户居民的月均用水量的平均数为８．７９ｔ．",
+          "matchReason": "样本平均数例4明确100个变量之和除以100，分式已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 212,
+          "printedPage": 205,
+          "textSha256": "cdf91ff45f9b81868277f2c0e4c258f525654150ce968211ba95353f7dfe360d",
+          "quote": "在初中的学习中我们已经了解到，平均数、中位数和众数等都是刻画“中心位置”的\n量，它们从不同角度刻画了一组数据的集中趋势．",
+          "matchReason": "补充平均数是集中趋势特征数的正文解释。 原PDF视觉复核记录见本条visualEvidence。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "explains"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF100个数据之和除以100，是例4平均数计算式。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 206,
+        "evidencePrintedPages": [
+          205
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 212,
+          "printedPage": 205,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-205.png",
+          "renderSha256": "a58c11453542e7e729a270af37bd95432c3a658293bf7a561734bc4a7b670ee7",
+          "check": "原PDF100个数据之和除以100，是例4平均数计算式。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "8c1940520638fc7f4d897bb97e7a36fad917d90b6ee0aac8248083ea7342a5d2"
+    },
+    {
+      "uid": "M-K-04-1220",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 219,
+          "printedPage": 212,
+          "textSha256": "52028da368e8af3c62843ae4539c75ca1735ac1c455a4ce58f9c4e5fb802ec5d",
+          "quote": "为了避免式中含有绝对值，通常改用平方来代替，即\n１狀∑\n狀\n犻＝１（狓犻－狓）２．\n（１）\n我们称（１）式为这组数据的方差（ｖａｒｉａｎｃｅ）．",
+          "matchReason": "平方差求平均的方差定义实际存在，1/n及平方作用域已通过原PDF视觉核验。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 228,
+          "printedPage": 221,
+          "textSha256": "e003c148b767692ca258206d4c5527f7fd644e8f4ece7b17ed1df4c7978f3474",
+          "quote": "展示数据分析的全过程：首先要明确所关心的问题是什么，说明数据蕴含的信息；根\n据数据分析的需要，说明如何选择合适的图表描述和表达数据；从样本数据中提取能刻画\n其特征的量，如均值、方差等，用于比较男、女员工在肥胖状况上的差异；通过样本估计\n总体的统计规律，分析公司员工胖瘦程度的整体情况．",
+          "matchReason": "9.3要求提取均值/方差，比较男女并据样本估计总体；此为应用任务证据，未声称案例报告已经完成。",
+          "relation": "applies",
+          "sectionId": "rja-compulsory-2:9.3"
+        }
+      ],
+      "notes": [
+        "原PDF关键公式已由Codex视觉核对；仅解除抽取符号歧义，不构成教师复核。原PDF方差为1/n乘各偏差平方之和，区别于侧栏1/(n-1)计算器结果。",
+        "初读文本层的分式/模长疑点已由原PDF解决；原文quote仍保留文本层原样。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 209,
+        "evidencePrintedPages": [
+          212,
+          221
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "visualEvidence": [
+        {
+          "pdfPage": 219,
+          "printedPage": 212,
+          "sourcePath": "C:/Users/mrzys/Downloads/普通高中教科书·数学（A版）必修 第二册.pdf",
+          "sourceSha256": "966ddd6474ee901d1aab9455c11ecd76c3ce79189b4d6ee65b2e9f2de0c95054",
+          "renderPath": ".tutor/curriculum/body-map-review/printed-212.png",
+          "renderSha256": "6544626fcafc6fbf65bcf613b773d99018fb274f62c317cea461fc01711d1dc4",
+          "check": "原PDF方差为1/n乘各偏差平方之和，区别于侧栏1/(n-1)计算器结果。",
+          "checkedBy": "codex"
+        }
+      ],
+      "definitionSha256": "f80946801dff5cb30c41e101a1e7ffbb2e9948395c83ab0fced87330c3cee528"
+    },
+    {
+      "uid": "M-K-04-1221",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 219,
+          "printedPage": 212,
+          "textSha256": "52028da368e8af3c62843ae4539c75ca1735ac1c455a4ce58f9c4e5fb802ec5d",
+          "quote": "由于方差的单位是原始数据的单位的平方，与原始数据\n不一致．为了使二者单位一致，我们对方差开平方，取它的\n算术平方根，即\n　１狀∑\n狀\n犻＝１（狓犻－狓）\n槡\n２．\n（２）\n我们称（２）式为这组数据的标准差（ｓｔａｎｄａｒｄｄｅｖｉａｔｉｏｎ）．",
+          "matchReason": "文字直接定义为方差的算术平方根，且解释与原始数据单位一致；不依赖损坏根号推断。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 209,
+        "evidencePrintedPages": [
+          212
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "9f532568baa95955a441ed69cfdf57066a88057a8d8172455de8e85b54ba60dd"
+    },
+    {
+      "uid": "M-K-04-1222",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 210,
+          "printedPage": 203,
+          "textSha256": "8e30b5fcfa5b0a46f80c2a8f54508fc166826cbb4b893a5a66fde788f3bb4dfa",
+          "quote": "一般地，一组数据的第狆百分位数是这样一个值，它使得这组数据中至少有狆％的\n数据小于或等于这个值，且至少有（１００－狆）％的数据大于或等于这个值．",
+          "matchReason": "两个至少比例的定义条件完整。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 202,
+        "evidencePrintedPages": [
+          203
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "1cecc7ab1653e8a30e37ae673f6be59ce191e5e97f43246c2afbd9b760ff2264"
+    },
+    {
+      "uid": "M-K-04-1223",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 210,
+          "printedPage": 203,
+          "textSha256": "8e30b5fcfa5b0a46f80c2a8f54508fc166826cbb4b893a5a66fde788f3bb4dfa",
+          "quote": "我们在初中学过的中位数，相当于是第５０百分位数．\n在实际应用中，除了中位数外，常用的分位数还有第２５百\n分位数，第７５百分位数．这三个分位数把一组由小到大排列后的数据分成四等份，因此\n称为四分位数．其中第２５百分位数也称为第一四分位数或下四分位数等，第７５百分位数\n也称为第三四分位数或上四分位数等．",
+          "matchReason": "50百分位数为中位数，25/50/75四等份及第一/第三名称明确。",
+          "sectionId": "rja-compulsory-2:9.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "教材未在此句另列“第二四分位数”名称，但50分位即中位数的对应已明确。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 203,
+        "evidencePrintedPages": [
+          203
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e8c9c7955b771da58ef56d5b08e613a1c7931714be45e3e22dcda95f1a89033f"
+    },
+    {
+      "uid": "M-K-04-211",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 235,
+          "printedPage": 228,
+          "textSha256": "9b032fb030717fe7f1fe585636b9fa576546bd37778f1c259a498d79e5dcaa0a",
+          "quote": "我们把随机试验犈的每个可能的基本结果称为样本点，\n全体样本点的集合称为试验犈的样本空间（ｓａｍｐｌｅｓｐａｃｅ）．\n一般地，我们用Ω 表示样本空间，用ω表示样本点．",
+          "matchReason": "每个基本结果与ω表示法明确。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 229,
+        "evidencePrintedPages": [
+          228
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "e8cb26e76c1bef4567fa9b9f2df5266dd007e94dc3b0923cd911bb3dbecce790"
+    },
+    {
+      "uid": "M-K-04-2110",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 240,
+          "printedPage": 233,
+          "textSha256": "c73bb1a7914ea5d8af36a1fd6abdb6692aa68cd057a458beec66806929995bca",
+          "quote": "一般地，如果事件犃与事件犅不能同时发生，也就是说\n犃∩犅是一个不可能事件，即犃∩犅＝，则称事件犃与事件犅\n互斥（或互不相容）．",
+          "matchReason": "不能同时发生、交集是不可能事件两个等价条件直接定义。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 233,
+        "evidencePrintedPages": [
+          233
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b08426d9483e951a545dbddfbb957e77a3b7bd24799af133629c0826a653aa4e"
+    },
+    {
+      "uid": "M-K-04-2111",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 240,
+          "printedPage": 233,
+          "textSha256": "c73bb1a7914ea5d8af36a1fd6abdb6692aa68cd057a458beec66806929995bca",
+          "quote": "一般地，如果事件犃和事件犅在任何一次试验中有且仅有一\n个发生，即犃∪犅＝Ω，且犃∩犅＝，那么称事件犃与事件犅\n互为对立．",
+          "matchReason": "有且仅有一个发生，并/交集合条件完整。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 233,
+        "evidencePrintedPages": [
+          233
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c7019740d10d716b276ee888f4d595922f705061a1812f3b6e2b1db8141ee20d"
+    },
+    {
+      "uid": "M-K-04-2112",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 243,
+          "printedPage": 236,
+          "textSha256": "49580f8f4118e76cd519bc1b4ee6e8c3d8b03913a18c18dc39c4fbaff1932baa",
+          "quote": "（１）有限性：样本空间的样本点只有有限个；\n（２）等可能性：每个样本点发生的可能性相等．\n我们将具有以上两个特征的试验称为古典概型试验，其数学模型称为古典概率模型，\n简称古典概型．",
+          "matchReason": "有限性与样本点等可能性并列，随后明确两特征试验及数学模型。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 236,
+        "evidencePrintedPages": [
+          236
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "731a85b6b0bdf729a23615821d855a97500cdb6a9945eae36fde88923c303cec"
+    },
+    {
+      "uid": "M-K-04-2113",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 243,
+          "printedPage": 236,
+          "textSha256": "49580f8f4118e76cd519bc1b4ee6e8c3d8b03913a18c18dc39c4fbaff1932baa",
+          "quote": "一般地，设试验犈是古典概型，样本空间Ω包含狀个样本\n点，事件犃包含其中的犽个样本点，则定义事件犃的概率\n犘（犃）＝犽狀＝狀（犃）\n狀（Ω）\n?．\n其中，狀（犃）和狀（Ω）分别表示事件犃和样本空间Ω包含的\n样本点个数．",
+          "matchReason": "n个样本点中事件含k个的概率定义明确；文本分式排版损坏但前段比值文字明确支持公式。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        },
+        {
+          "pdfPage": 243,
+          "printedPage": 236,
+          "textSha256": "49580f8f4118e76cd519bc1b4ee6e8c3d8b03913a18c18dc39c4fbaff1932baa",
+          "quote": "因此，可以用事件包含的样本点数与样本空间包含的样本点数的比值来度\n量．",
+          "matchReason": "明确分子事件样本点数/分母空间样本点数，不凭熟悉公式猜测分式。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 237,
+        "evidencePrintedPages": [
+          236
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "6d24e29b590f41a2c677d0fad04413ed08be08d6aa01b412bb74914d1b6a44ad"
+    },
+    {
+      "uid": "M-K-04-2115",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 263,
+          "printedPage": 256,
+          "textSha256": "ec146a7761df5db9d22059c414513b0c7f31547997500d38cd761388cd3820a6",
+          "quote": "大量试验表明，在任何确定次数的随机试验中，一个随\n机事件犃发生的频率具有随机性．一般地，随着试验次数狀\n的增大，频率偏离概率的幅度会缩小，即事件犃发生的频率\n犳狀（犃）会逐渐稳定于事件犃发生的概率犘（犃）．我们称频率\n的这个性质为频率的稳定性．因此，我们可以用频率犳狀（犃）\n估计概率犘（犃）．",
+          "matchReason": "频率随机性、次数增加逐渐稳定及估计概率用途明确。",
+          "sectionId": "rja-compulsory-2:10.3",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [
+        "同页提醒波动幅度并非随次数单调缩小；不把稳定性解读为每次均更接近。"
+      ],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 254,
+        "evidencePrintedPages": [
+          256
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c952eec60f66e2f5bd86723590cb8d01e07d890b2d7627c1f0a500030bdc6c25"
+    },
+    {
+      "uid": "M-K-04-2116",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 265,
+          "printedPage": 258,
+          "textSha256": "0a22d0b566ac4c025955a7ceb5ea7bc6af87268f983696679927bcda0107162d",
+          "quote": "用频率估计概率，需要做大量的重复试验．有没有其他\n方法可以替代试验呢？\n我们知道，利用计算器或计算机软件可以产生随机数．\n实际上，我们也可以根据不同的随机试验构建相应的随机数\n模拟试验，这样就可以快速地进行大量重复试验了．",
+          "matchReason": "提出构造随机数模拟试验代替大量重复试验，支持旧定义过程。",
+          "sectionId": "rja-compulsory-2:10.3",
+          "relation": "explains"
+        },
+        {
+          "pdfPage": 266,
+          "printedPage": 259,
+          "textSha256": "1fa6dd41b9c1c1e7512cde7848ee966375825cfe319f7d2e9dc7f93d35955da0",
+          "quote": "我们称利用随机模拟解决问题的方法为蒙特卡洛\n（ＭｏｎｔｅＣａｒｌｏ）方法．",
+          "matchReason": "明确Monte Carlo同义方法名，不只人物背景。",
+          "sectionId": "rja-compulsory-2:10.3",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 263,
+        "evidencePrintedPages": [
+          258,
+          259
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "f7cab9aebbac2cc3e68d3145afcfdd4192a8f5d9334e6f12126fdddf6492397b"
+    },
+    {
+      "uid": "M-K-04-2117",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 248,
+          "printedPage": 241,
+          "textSha256": "b7f4fd604334e587c4f4adfc09e84fd6c54903c48e2d5d9ba774ad0c5baa23a4",
+          "quote": "性质１　对任意的事件犃，都有\n犘（犃）≥０．",
+          "matchReason": "对任意事件的非负结论明确。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 250,
+        "evidencePrintedPages": [
+          241
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "a8bd0252b3e0061077c7e77959fffbda904cba1497212365977b7bc53d2d9eb0"
+    },
+    {
+      "uid": "M-K-04-2118",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 248,
+          "printedPage": 241,
+          "textSha256": "b7f4fd604334e587c4f4adfc09e84fd6c54903c48e2d5d9ba774ad0c5baa23a4",
+          "quote": "性质２　必然事件的概率为１，不可能事件的概率为０，即\n犘（Ω）＝１，犘（）＝０．",
+          "matchReason": "必然1/不可能0的文字与公式均明确。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 250,
+        "evidencePrintedPages": [
+          241
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "85e0251d1508c5c7bb0873d153605cdcbf73ce0230144ea1312a60ddc517334b"
+    },
+    {
+      "uid": "M-K-04-2119",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 249,
+          "printedPage": 242,
+          "textSha256": "399192ffca62c5c5a87a7a19f2476cc50828ae678ca11b3ff77c58264c723ace",
+          "quote": "性质３　如果事件犃与事件犅互斥，那么犘（犃∪犅）＝犘（犃）＋犘（犅）．\n互斥事件的概率加法公式可以推广到多个事件的情况．如果事件犃１，犃２，…，犃犿两\n两互斥，那么事件犃１∪犃２∪…∪犃犿发生的概率等于这犿个事件分别发生的概率之\n和，即\n犘（犃１∪犃２∪…∪犃犿）＝犘（犃１）＋犘（犃２）＋…＋犘（犃犿）．",
+          "matchReason": "两互斥加法及多个两两互斥推广完整。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 250,
+        "evidencePrintedPages": [
+          242
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "8ecbd8532a928400b55456ecf95c17f326e194ef390ebce4aea85596c9ac8bea"
+    },
+    {
+      "uid": "M-K-04-212",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 235,
+          "printedPage": 228,
+          "textSha256": "9b032fb030717fe7f1fe585636b9fa576546bd37778f1c259a498d79e5dcaa0a",
+          "quote": "全体样本点的集合称为试验犈的样本空间（ｓａｍｐｌｅｓｐａｃｅ）．\n一般地，我们用Ω 表示样本空间，用ω表示样本点．在本\n书中，我们只讨论Ω为有限集的情况．如果一个随机试验有\n狀个可能结果ω１，ω２，…，ω狀，则称样本空间Ω＝｛ω１，\nω２，…，ω狀｝为有限样本空间．",
+          "matchReason": "样本空间定义、Ω表示、n个有限样本点集合定义完整。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 229,
+        "evidencePrintedPages": [
+          228
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "a0000364865d9b7221368c2c8cbae04ee42cf467c83ac3fece9dcf488fa03531"
+    },
+    {
+      "uid": "M-K-04-2120",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "bfd770d0d14bb4a15a9b0463b53f096fceb346b99674e3f24a35ed215bbd105e",
+          "quote": "一般地，对于事件犃与事件犅，如果犃犅，即事件犃发生，则事件犅一定发生，\n那么事件犃的概率不超过事件犅的概率．于是我们有概率的单调性：\n性质５　如果犃犅，那么犘（犃）≤犘（犅）．",
+          "matchReason": "包含关系的文字含义及概率不超过/单调性性质完整，私有字形不需猜包含符号。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 250,
+        "evidencePrintedPages": [
+          243
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "b0b67189dcde309c34a79d437392aa6c156a472af37bc9b1f99812936526c6cd"
+    },
+    {
+      "uid": "M-K-04-2121",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 249,
+          "printedPage": 242,
+          "textSha256": "399192ffca62c5c5a87a7a19f2476cc50828ae678ca11b3ff77c58264c723ace",
+          "quote": "性质４　如果事件犃与事件犅互为对立事件，那么犘（犅）＝１－犘（犃），犘（犃）＝１－\n犘（犅）．",
+          "matchReason": "互为对立的前提与互补概率公式明确。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 250,
+        "evidencePrintedPages": [
+          242
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "f214b901d2b04793ac7ded3c96c9a590828bead313b730e776f141f2b09158b5"
+    },
+    {
+      "uid": "M-K-04-2122",
+      "bookId": "rja-compulsory-2",
+      "relation": "explains",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 250,
+          "printedPage": 243,
+          "textSha256": "bfd770d0d14bb4a15a9b0463b53f096fceb346b99674e3f24a35ed215bbd105e",
+          "quote": "性质６　设犃，犅是一个随机试验中的两个事件，我们有\n犘（犃∪犅）＝犘（犃）＋犘（犅）－犘（犃∩犅）．",
+          "matchReason": "任意两事件的和减交公式完整，区别于只互斥情形。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "explains"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 250,
+        "evidencePrintedPages": [
+          243
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "3078dff9b5c67e4e77250ab842e780ed4c4f38117a55e6a9fb16e908161ca34d"
+    },
+    {
+      "uid": "M-K-04-213",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 236,
+          "printedPage": 229,
+          "textSha256": "c236c7000285f7c256ad5e2ea87db324c9cdf88de81d1d2d9b20c4bee201a373",
+          "quote": "一般地，随机试验中的每个随机事件都可以用这个试验的样本空间的子集来表示．为\n了叙述方便，我们将样本空间Ω的子集称为随机事件（ｒａｎｄｏｍｅｖｅｎｔ），简称事件，并把\n只包含一个样本点的事件称为基本事件（ｅｌｅｍｅｎｔａｒｙｅｖｅｎｔ）．随机事件一般用大写字母\n犃，犅，犆，…表示．",
+          "matchReason": "样本空间子集及大写字母表示的定义完整。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 229,
+        "evidencePrintedPages": [
+          229
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "fb1a39e69ac0caafc4027ce6167f6fa6746c3b8fa756f68a6650d95dba3b1c49"
+    },
+    {
+      "uid": "M-K-04-214",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 236,
+          "printedPage": 229,
+          "textSha256": "c236c7000285f7c256ad5e2ea87db324c9cdf88de81d1d2d9b20c4bee201a373",
+          "quote": "只包含一个样本点的事件称为基本事件（ｅｌｅｍｅｎｔａｒｙｅｖｅｎｔ）．随机事件一般用大写字母\n犃，犅，犆，…表示．",
+          "matchReason": "直接定义为恰含一个样本点。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 229,
+        "evidencePrintedPages": [
+          229
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c8b4200b63051e5f8d325d05d358693e4d9a68a789b73f215408d5261530135e"
+    },
+    {
+      "uid": "M-K-04-215",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 237,
+          "printedPage": 230,
+          "textSha256": "63733a0301c4b1de3a153981d9462c43d10432066539d52ce9c1a54b090899bc",
+          "quote": "Ω作为自身的子集，包含了所有的样本点，在每次试验中总有一个样本点发生，所\n以Ω总会发生，我们称Ω为必然事件．",
+          "matchReason": "全体样本点与每次总会发生的定义相对应。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 230,
+        "evidencePrintedPages": [
+          230
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "c49931348b26f0ca58d2df20b05b7a49f5abde8f01a16848c6032b18a2d944bb"
+    },
+    {
+      "uid": "M-K-04-216",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 237,
+          "printedPage": 230,
+          "textSha256": "63733a0301c4b1de3a153981d9462c43d10432066539d52ce9c1a54b090899bc",
+          "quote": "而空集不包含任何样本点，在每次试验中都不\n会发生，我们称为不可能事件．",
+          "matchReason": "空集、无样本点、每次不发生的定义明确。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 230,
+        "evidencePrintedPages": [
+          230
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "67e1566f36834b531b089020b726b4ab2166b0b777d705ac1caa94bc2b054a74"
+    },
+    {
+      "uid": "M-K-04-217",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 239,
+          "printedPage": 232,
+          "textSha256": "a171cc5d880231d279fe750b9478a3c98994419c082039bdf9152746da2db5d6",
+          "quote": "一般地，若事件犃发生，则事件犅一定发生，我们就称事件\n犅包含事件犃（或事件犃包含于事件犅），记作犅犃（或犃\n犅）．可以用图１０．１４表示．\n特别地，如果事件犅包含事件犃，事件犃也包含事件犅，即犅犃且犃犅，则称\n事件犃与事件犅相等，记作犃＝犅．",
+          "matchReason": "发生蕴含的包含关系及双方包含的相等关系完整。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 231,
+        "evidencePrintedPages": [
+          232
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "113e0d700e7804d5e3edf784cc639f0d46c0234536d5a7e98ab58aa15fcec3c2"
+    },
+    {
+      "uid": "M-K-04-218",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 239,
+          "printedPage": 232,
+          "textSha256": "a171cc5d880231d279fe750b9478a3c98994419c082039bdf9152746da2db5d6",
+          "quote": "一般地，事件犃与事件犅至少有一个发生，这样的一个事件\n中的样本点或者在事件犃中，或者在事件犅中，我们称这个事件\n为事件犃与事件犅的并事件（或和事件），记作犃∪犅（或犃＋\n犅）．",
+          "matchReason": "至少一个发生的集合语义、和事件同义名及记号齐全。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 232,
+        "evidencePrintedPages": [
+          232
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "2432fe4491a317edea7626eb7dee72de53d16d725e32a8e1765e0f20eb90b958"
+    },
+    {
+      "uid": "M-K-04-219",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 239,
+          "printedPage": 232,
+          "textSha256": "a171cc5d880231d279fe750b9478a3c98994419c082039bdf9152746da2db5d6",
+          "quote": "一般地，事件犃与事件犅同时发生，这样的一个事件中的样\n本点既在事件犃中，也在事件犅中，我们称这样的一个事件为事\n件犃与事件犅的交事件（或积事件），记作犃∩犅（或犃犅）．",
+          "matchReason": "同时发生/两事件共有样本点的定义与积事件同义名齐全。",
+          "sectionId": "rja-compulsory-2:10.1",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 232,
+        "evidencePrintedPages": [
+          232
+        ],
+        "differs": false,
+        "reason": "至少一处实际正文语义证据页与旧source_page相同；其余证据可为解释或后续应用。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "fec01c829d6b43b8f38ddfa98ae28acf4730577544fcac15a82171a7af9b5e6a"
+    },
+    {
+      "uid": "M-K-04-2217",
+      "bookId": "rja-compulsory-2",
+      "relation": "introduces",
+      "status": "text_evidence_matched",
+      "evidence": [
+        {
+          "pdfPage": 257,
+          "printedPage": 250,
+          "textSha256": "38d122f5f28feac045ff7ac69a8f539af6c66813264d115d8e7ac33a9e96507d",
+          "quote": "对任意两个事件犃与犅，如果\n犘（犃犅）＝犘（犃）犘（犅）\n成立，则称事件犃与事件犅相互独立，简称为独立．",
+          "matchReason": "一般定义P(AB)=P(A)P(B)明确，不只依靠硬币试验案例。",
+          "sectionId": "rja-compulsory-2:10.2",
+          "relation": "introduces"
+        }
+      ],
+      "notes": [],
+      "legacyPageDiscrepancy": {
+        "legacySourcePage": 249,
+        "evidencePrintedPages": [
+          250
+        ],
+        "differs": true,
+        "reason": "实际正文语义证据定位不同于旧source_page，保留旧页码以供追溯。"
+      },
+      "reviewStatus": "pending_review",
+      "definitionSha256": "83e26e8d1b464db9952e9030c41cce589148003e9afed1148328bcb74806d405"
+    }
+  ],
+  "sectionCoverageGaps": [
+    {
+      "sectionId": "rja-compulsory-2:8.4",
+      "status": "legacy_catalog_gap",
+      "topics": [
+        "平面的无限延展及表示",
+        "不共线三点确定平面",
+        "两点在面内则整线在面内",
+        "两不重合平面有公共点则有唯一公共直线",
+        "确定平面的三个推论"
+      ],
+      "evidence": [
+        {
+          "pdfPage": 132,
+          "printedPage": 125,
+          "textSha256": "df75cebb4e8582801051d2573adfccbe96d31f4e31c3f812f00e6af4ff9d0c05",
+          "quote": "基本事实１　过不在一条直线上的三个点，有且只有一个平\n面（图８．４３）．\n基本事实１给出了确定一个平面的依据．它也可以简单说成\n“不共线的三点确定一个平面”．",
+          "matchReason": "旧本册叶目录只有异面直线，未为这些平面基本事实提供独立UID。",
+          "sectionId": "rja-compulsory-2:8.4"
+        },
+        {
+          "pdfPage": 133,
+          "printedPage": 126,
+          "textSha256": "e790de18275b6728e3a00a78a2151f9cec7dc12720458f0a741697ac9c378a5d",
+          "quote": "基本事实３　如果两个不重合的平面有一个公共点，那么它们有且只有一条过该点的\n公共直线（图８．４７）．",
+          "matchReason": "正文明确基本事实3，与异面直线不同，不能用同UID替代。",
+          "sectionId": "rja-compulsory-2:8.4"
+        },
+        {
+          "pdfPage": 134,
+          "printedPage": 127,
+          "textSha256": "aa813c0b340e603d35b6ad8799d92f7724f70e6619d6b05e6557bb2898dc3546",
+          "quote": "推论１　经过一条直线和这条直线外一点，有且只有一个平面．\n推论２　经过两条相交直线，有且只有一个平面．\n推论３　经过两条平行直线，有且只有一个平面．",
+          "matchReason": "三个确定平面的推论实际存在而旧树未建叶。",
+          "sectionId": "rja-compulsory-2:8.4"
+        }
+      ],
+      "notes": [
+        "保留缺口，不编造UID或把异面直线UID视为整个8.4节所有知识的覆盖。"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:9.3",
+      "status": "legacy_catalog_gap",
+      "topics": [
+        "从实际问题提出统计调查问题",
+        "选择图表并形成完整统计分析报告",
+        "基于统计分析提出建议"
+      ],
+      "evidence": [
+        {
+          "pdfPage": 228,
+          "printedPage": 221,
+          "textSha256": "e003c148b767692ca258206d4c5527f7fd644e8f4ece7b17ed1df4c7978f3474",
+          "quote": "根据上面的数据，写一份该公司员工肥胖情况的统计分析报告．要求：\n１．选择合适的图表展示数据；\n２．比较男、女员工在肥胖状况上的差异；\n３．分析公司员工胖瘦程度的整体情况；\n４．提出控制体重的建议．",
+          "matchReason": "案例要求统计分析报告，旧树有抽样/均值/方差节点但没有报告过程专门UID。",
+          "sectionId": "rja-compulsory-2:9.3"
+        }
+      ],
+      "notes": [
+        "已有均值、方差、比例分配和分层随机抽样追加应用证据；缺少的完整调查分析过程另列，不擅自当作能力/素养已确认。"
+      ]
+    }
+  ],
+  "sectionCoverage": [
+    {
+      "sectionId": "rja-compulsory-2:6.1",
+      "title": "平面向量的概念",
+      "uidCount": 7,
+      "uids": [
+        "M-K-03-111",
+        "M-K-03-112",
+        "M-K-03-113",
+        "M-K-03-114",
+        "M-K-03-115",
+        "M-K-03-116",
+        "M-K-03-117"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:6.2",
+      "title": "平面向量的运算",
+      "uidCount": 9,
+      "uids": [
+        "M-K-03-1210",
+        "M-K-03-1211",
+        "M-K-03-1212",
+        "M-K-03-1213",
+        "M-K-03-1214",
+        "M-K-03-1215",
+        "M-K-03-1216",
+        "M-K-03-128",
+        "M-K-03-129"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:6.3",
+      "title": "平面向量基本定理及坐标表示",
+      "uidCount": 13,
+      "uids": [
+        "M-K-03-1317",
+        "M-K-03-1318",
+        "M-K-03-1319",
+        "M-K-03-1320",
+        "M-K-03-1321",
+        "M-K-03-1322",
+        "M-K-03-1323",
+        "M-K-03-1324",
+        "M-K-03-1325",
+        "M-K-03-1326",
+        "M-K-03-1327",
+        "M-K-03-1328",
+        "M-K-03-1329"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:6.4",
+      "title": "平面向量的应用",
+      "uidCount": 6,
+      "uids": [
+        "M-K-03-1430",
+        "M-K-03-1431",
+        "M-K-03-1432",
+        "M-K-03-1433",
+        "M-K-03-1434",
+        "M-K-03-1435"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:7.1",
+      "title": "复数的概念",
+      "uidCount": 11,
+      "uids": [
+        "M-K-03-211",
+        "M-K-03-2110",
+        "M-K-03-2111",
+        "M-K-03-212",
+        "M-K-03-213",
+        "M-K-03-214",
+        "M-K-03-215",
+        "M-K-03-216",
+        "M-K-03-217",
+        "M-K-03-218",
+        "M-K-03-219"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:7.2",
+      "title": "复数的四则运算",
+      "uidCount": 6,
+      "uids": [
+        "M-K-03-2212",
+        "M-K-03-2213",
+        "M-K-03-2214",
+        "M-K-03-2215",
+        "M-K-03-2216",
+        "M-K-03-2217"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:7.3",
+      "title": "复数的三角表示",
+      "uidCount": 7,
+      "uids": [
+        "M-K-03-2316",
+        "M-K-03-2317",
+        "M-K-03-2318",
+        "M-K-03-2319",
+        "M-K-03-2320",
+        "M-K-03-2321",
+        "M-K-03-2322"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:8.1",
+      "title": "基本立体图形",
+      "uidCount": 15,
+      "uids": [
+        "M-K-03-311",
+        "M-K-03-3110",
+        "M-K-03-3111",
+        "M-K-03-3112",
+        "M-K-03-3113",
+        "M-K-03-3114",
+        "M-K-03-3115",
+        "M-K-03-312",
+        "M-K-03-313",
+        "M-K-03-314",
+        "M-K-03-315",
+        "M-K-03-316",
+        "M-K-03-317",
+        "M-K-03-318",
+        "M-K-03-319"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:8.2",
+      "title": "立体图形的直观图",
+      "uidCount": 1,
+      "uids": [
+        "M-K-03-3216"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:8.3",
+      "title": "简单几何体的表面积与体积",
+      "uidCount": 15,
+      "uids": [
+        "M-K-03-3217",
+        "M-K-03-3218",
+        "M-K-03-3219",
+        "M-K-03-3220",
+        "M-K-03-3221",
+        "M-K-03-3222",
+        "M-K-03-3223",
+        "M-K-03-3224",
+        "M-K-03-3225",
+        "M-K-03-3226",
+        "M-K-03-3227",
+        "M-K-03-3228",
+        "M-K-03-3229",
+        "M-K-03-3230",
+        "M-K-03-3231"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:8.4",
+      "title": "空间点、直线、平面之间的位置关系",
+      "uidCount": 1,
+      "uids": [
+        "M-K-03-3331"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:8.5",
+      "title": "空间直线、平面的平行",
+      "uidCount": 6,
+      "uids": [
+        "M-K-03-3432",
+        "M-K-03-3433",
+        "M-K-03-3434",
+        "M-K-03-3435",
+        "M-K-03-3436",
+        "M-K-03-3437"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:8.6",
+      "title": "空间直线、平面的垂直",
+      "uidCount": 10,
+      "uids": [
+        "M-K-03-3538",
+        "M-K-03-3539",
+        "M-K-03-3540",
+        "M-K-03-3541",
+        "M-K-03-3542",
+        "M-K-03-3543",
+        "M-K-03-3544",
+        "M-K-03-3545",
+        "M-K-03-3546",
+        "M-K-03-3547"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:9.1",
+      "title": "随机抽样",
+      "uidCount": 13,
+      "uids": [
+        "M-K-04-111",
+        "M-K-04-1110",
+        "M-K-04-1111",
+        "M-K-04-1112",
+        "M-K-04-1113",
+        "M-K-04-112",
+        "M-K-04-113",
+        "M-K-04-114",
+        "M-K-04-115",
+        "M-K-04-116",
+        "M-K-04-117",
+        "M-K-04-118",
+        "M-K-04-119"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:9.2",
+      "title": "用样本估计总体",
+      "uidCount": 10,
+      "uids": [
+        "M-K-04-1214",
+        "M-K-04-1215",
+        "M-K-04-1216",
+        "M-K-04-1217",
+        "M-K-04-1218",
+        "M-K-04-1219",
+        "M-K-04-1220",
+        "M-K-04-1221",
+        "M-K-04-1222",
+        "M-K-04-1223"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:9.3",
+      "title": "统计案例 公司员工的肥胖情况调查分析",
+      "uidCount": 4,
+      "uids": [
+        "M-K-04-1110",
+        "M-K-04-1112",
+        "M-K-04-1113",
+        "M-K-04-1220"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:10.1",
+      "title": "随机事件与概率",
+      "uidCount": 19,
+      "uids": [
+        "M-K-04-211",
+        "M-K-04-2110",
+        "M-K-04-2111",
+        "M-K-04-2112",
+        "M-K-04-2113",
+        "M-K-04-2117",
+        "M-K-04-2118",
+        "M-K-04-2119",
+        "M-K-04-212",
+        "M-K-04-2120",
+        "M-K-04-2121",
+        "M-K-04-2122",
+        "M-K-04-213",
+        "M-K-04-214",
+        "M-K-04-215",
+        "M-K-04-216",
+        "M-K-04-217",
+        "M-K-04-218",
+        "M-K-04-219"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:10.2",
+      "title": "事件的相互独立性",
+      "uidCount": 1,
+      "uids": [
+        "M-K-04-2217"
+      ]
+    },
+    {
+      "sectionId": "rja-compulsory-2:10.3",
+      "title": "频率与概率",
+      "uidCount": 2,
+      "uids": [
+        "M-K-04-2115",
+        "M-K-04-2116"
+      ]
+    }
+  ],
+  "summary": {
+    "total": 152,
+    "statusCounts": {
+      "text_evidence_matched": 143,
+      "needs_review": 9,
+      "not_found": 0
+    },
+    "legacyPageDiscrepancyCount": 58,
+    "sectionsWithEvidence": 19,
+    "sectionCount": 19,
+    "visualCheckedItems": 23
+  }
+}

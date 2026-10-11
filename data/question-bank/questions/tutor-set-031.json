@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-031",
+  "auditId": "SET-SRC-031",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2024秋·郧阳区校级期末）下列各组中的集合 $P$ 与 $Q$，表示同一个集合的是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$P$ 是由元素 $1,\\sqrt3,\\pi$ 构成的集合，$Q$ 是由元素 $\\pi,1,|-\\sqrt3|$ 构成的集合。"
+      },
+      {
+        "label": "B",
+        "text": "$P$ 是由 $\\pi$ 构成的集合，$Q$ 是由 $3.14159$ 构成的集合。"
+      },
+      {
+        "label": "C",
+        "text": "$P$ 是由 $2,3$ 构成的集合，$Q$ 是由有序数对 $(2,3)$ 构成的集合。"
+      },
+      {
+        "label": "D",
+        "text": "$P$ 是满足不等式 $-1\\le x\\le1$ 的自然数构成的集合，$Q$ 是方程 $x^2=1$ 的解集。"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "A",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              16
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A 中 $|-\\sqrt3|=\\sqrt3$，两集合的元素完全相同，无序性使排列顺序无关，故相等。B 中 $\\pi\\ne3.14159$，故不同。C 的数集与点集元素类型不同，故不同。D 中 $P=\\{0,1\\}$（自然数含0），而 $Q=\\{-1,1\\}$，故不同。故选 A。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              16
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        16
+      ],
+      "locator": "知识点5 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        11
+      ],
+      "locator": "知识点5 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析集合元素类型与集合相等"
+    ],
+    "requiredKnowledge": [
+      "集合相等",
+      "集合无序性",
+      "常用数集",
+      "绝对值基本运算",
+      "有序数对"
+    ],
+    "allowedSolution": "A 中 $|-\\sqrt3|=\\sqrt3$，两集合的元素完全相同，无序性使排列顺序无关，故相等。B 中 $\\pi\\ne3.14159$，故不同。C 的数集与点集元素类型不同，故不同。D 中 $P=\\{0,1\\}$（自然数含0），而 $Q=\\{-1,1\\}$，故不同。故选 A。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-8383460904faf4c8",
+    "teacherVersion": "teacher-e178b11bd6fb1829"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          16
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          11
+        ]
+      }
+    ],
+    "differences": [
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-8383460904faf4c8",
+    "teacherVersion": "teacher-e178b11bd6fb1829"
+  },
+  "contentVersion": "content-8383460904faf4c8",
+  "contentSha256": "8383460904faf4c80b9d1228417b658e126717262bd8f01b936cb23e1d48a9dd",
+  "teacherVersion": "teacher-e178b11bd6fb1829",
+  "teacherSha256": "e178b11bd6fb1829a66bc64b9f2caba40103a7b34dc63a90564017f152b5a2c5"
+}

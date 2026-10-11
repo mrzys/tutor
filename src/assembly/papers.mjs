@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hashContent } from '../question-bank/reader.mjs';
 import { readDraft, updateDraft } from './store.mjs';
+import { sqliteStorage } from '../storage/sqlite.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const validId = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -39,6 +40,7 @@ export function studentProblem(slot) {
 
 export function preparePaperConfirmation(draft) {
   validateDraft(draft);
+  const scored = draft.baseline.requirements.scoringMode !== 'none';
   const missing = []; const teacherIssues = []; const unknown = []; const scoringIssues = [];
   const available = [];
   for (const slot of draft.slots) {
@@ -61,7 +63,7 @@ export function preparePaperConfirmation(draft) {
         }
       }
     }
-    if (!Array.isArray(slot.question.teacher?.scoringSuggestions) || !slot.question.teacher.scoringSuggestions.some(entry => typeof entry.text === 'string' && entry.text.trim())) {
+    if (scored && (!Array.isArray(slot.question.teacher?.scoringSuggestions) || !slot.question.teacher.scoringSuggestions.some(entry => typeof entry.text === 'string' && entry.text.trim()))) {
       teacherIssues.push({ ...location, code: 'rubric_missing', message: '缺少此题建议评分资料；保留当前题分与小问赋分，不补写原卷评分细则。' });
     }
     const applicability = slot.applicability;
@@ -70,14 +72,14 @@ export function preparePaperConfirmation(draft) {
     else if (!slot.selection?.selectedReason?.allowedSolutionPath && slot.selection?.selectedReason?.method !== 'controlled_benchmark_fixture') {
       unknown.push({ ...location, status: 'unknown', reasons: ['缺少本次选入所依据的完整允许解法记录。'] });
     }
-    scoringIssues.push({ ...location, message: slot.scoringStatus?.message
+    if (scored) scoringIssues.push({ ...location, message: slot.scoringStatus?.message
       ?? '当前题分及小问分值为本次组卷赋分；引用建议不代表已按当前分值核定的完整评分细则。' });
   }
   const stats = { plannedQuestions: draft.slots.length, selectedQuestions: available.length,
     plannedPoints: sum(draft.slots.map(slot => slot.points)), availablePoints: sum(available.map(slot => slot.points)),
     missingQuestions: missing.length, difficultyEstimate: null };
   const differences = clone(draft.differences ?? []);
-  return { schemaVersion: 1, revision: revisionOf(draft), title: draft.title, stats,
+  return { schemaVersion: 1, revision: revisionOf(draft), title: draft.title, stats, scoringMode: scored ? 'points' : 'none',
     student: { complete: !missing.length, questionCount: available.length, points: stats.availablePoints, missing },
     teacher: { complete: !teacherIssues.length, issues: teacherIssues }, unknown, scoringIssues, differences,
     difficulty: { target: draft.baseline.requirements.targetDifficulty, estimate: null, message: '目标难度仅是偏好，现有材料缺少独立难度估计。' },
@@ -85,6 +87,9 @@ export function preparePaperConfirmation(draft) {
 }
 
 async function writeOnce(directory, id, payload) {
+  const kind = payload.paper ? 'papers' : 'drafts';
+  const repository = sqliteStorage(directory, kind);
+  if (repository) return repository.put(kind, id, payload, { immutable: true });
   const target = path.join(directory, `${id}.json`);
   const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
   let file;
@@ -106,8 +111,12 @@ export async function getPaper(papersRoot, paperId) {
   try {
     if (!validId.test(paperId)) throw error('not_found', '没有找到该成卷。');
     let saved;
-    try { saved = JSON.parse(await readFile(path.join(papersRoot, `${paperId}.json`), 'utf8')); }
-    catch (cause) { throw error(cause.code === 'ENOENT' ? 'not_found' : 'read_error', '成卷文件无法读取，未重新选题或覆盖。'); }
+    try {
+      const repository = sqliteStorage(papersRoot, 'papers');
+      saved = repository ? repository.get('papers', paperId) : JSON.parse(await readFile(path.join(papersRoot, `${paperId}.json`), 'utf8'));
+      if (!saved) throw error('ENOENT', '成卷不存在。');
+    }
+    catch (cause) { throw error(cause.code === 'ENOENT' ? 'not_found' : cause.code === 'integrity_error' ? 'integrity_error' : 'read_error', '成卷内容无法读取，未重新选题或覆盖。'); }
     const paper = saved.paper;
     if (saved.schemaVersion !== 1 || paper?.schemaVersion !== 1 || paper.paperId !== paperId
         || saved.sha256 !== hashContent(paper) || paper.snapshotSha256 !== hashContent(paper.draft)
@@ -121,12 +130,13 @@ export async function getPaper(papersRoot, paperId) {
 export async function listPapers(papersRoot) {
   try {
     let names;
-    try { names = await readdir(papersRoot); }
+    const repository = sqliteStorage(papersRoot, 'papers');
+    try { names = repository ? repository.list('papers').map(id => `${id}.json`) : await readdir(papersRoot); }
     catch (cause) {
       if (cause.code === 'ENOENT') return { ok: true, papers: [], warnings: [] };
       throw error('read_error', '无法读取成卷目录。');
     }
-    const papers = []; const warnings = [];
+    const papers = []; const warnings = (repository?.warnings('papers') ?? []).map(item => ({ ...item, paperId: item.id }));
     for (const filename of names.filter(name => name.endsWith('.json'))) {
       const paperId = filename.slice(0, -5); const result = await getPaper(papersRoot, paperId);
       if (result.ok) {

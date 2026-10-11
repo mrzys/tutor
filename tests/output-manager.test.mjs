@@ -32,7 +32,9 @@ test('isolated renderer failure preserves the other output and retries the same 
   assert.equal(retry.output.status, 'incomplete');
   assert.deepEqual((await readOutputFile(paper, 'student', options)).bytes, student.bytes);
   await generateOutput(paper, 'student', options);
-  assert.deepEqual(calls, ['student', 'teacher', 'teacher'], 'Successful output reuses its verified file');
+  // Initial renderers run concurrently; their start order is unspecified.
+  assert.deepEqual(calls.slice(0, 2).sort(), ['student', 'teacher']);
+  assert.deepEqual(calls.slice(2), ['teacher'], 'Successful output reuses its verified file');
   assert.deepEqual(paper, before);
 });
 

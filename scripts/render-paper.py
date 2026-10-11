@@ -141,12 +141,13 @@ def main():
         return RichText(text, formulas, size=size, **kw)
     def add(text, size=10.5, **kw):
         story.append(rich(text, size, **kw))
+    scored = model.get('scoringMode') != 'none'
     title = model['title']
     add(title, 19)
     add('教师参考版' if teacher else '学生试卷', 12)
-    add(f"考试时间：{model['durationMinutes']} 分钟    实际可用：{model['questionCount']} 题 / {model['points']} 分", 10.5)
+    add(f"用时：{model['durationMinutes']} 分钟    实际可用：{model['questionCount']} 题" + (f" / {model['points']} 分" if scored else ''), 10.5)
     if any(s['missing'] for s in model['slots']):
-        add(f"未完整卷：计划 {model['plannedQuestions']} 题 / {model['plannedPoints']} 分；缺题位置保留题号，不计入有效分值。", 10.5)
+        add(f"未完整卷：计划 {model['plannedQuestions']} 题" + (f" / {model['plannedPoints']} 分；缺题位置保留题号，不计入有效分值。" if scored else '；缺题位置保留题号。'), 10.5)
     if teacher and model['status'] == 'incomplete':
         add('教师材料未完整：' + '；'.join(model['issues']), 9)
     if not teacher:
@@ -162,11 +163,11 @@ def main():
             heading = rich(type_labels.get(last_type,last_type), 13)
             heading.keepWithNext = True
             story.append(heading)
-        header = rich(f"第 {slot['number']} 题（{slot['points']} 分）", 11.5)
+        header = rich(f"第 {slot['number']} 题" + (f"（{slot['points']} 分）" if scored else ''), 11.5)
         header.keepWithNext = True
         story.append(header)
         if slot['missing']:
-            add('【题面缺失，此题位留空，不计入有效分值】')
+            add('【题面缺失，此题位留空】' if not scored else '【题面缺失，此题位留空，不计入有效分值】')
             story.append(Spacer(1, 24))
             continue
         student = slot['student']
@@ -183,7 +184,7 @@ def main():
             story.append(image)
         for i, part in enumerate(student['parts']):
             point = next((x['points'] for x in slot['partPoints'] if x['partId'] == part['partId']), None)
-            add(f"（{i+1}）{part['prompt']}" + (f"（{point} 分）" if point is not None else ''))
+            add(f"（{i+1}）{part['prompt']}" + (f"（{point} 分）" if scored and point is not None else ''))
             if not teacher:
                 story.append(Spacer(1, 60))
         if not teacher:
@@ -192,8 +193,10 @@ def main():
             continue
         material = slot['teacher']
         story[question_start:] = [KeepTogether(story[question_start:])]
-        add(f"本卷赋分：{slot['points']} 分" + ('；小问 ' + '、'.join(f"{i+1}：{p['points']} 分" for i,p in enumerate(slot['partPoints'])) if slot['partPoints'] else ''), 9)
+        if scored: add(f"本卷赋分：{slot['points']} 分" + ('；小问 ' + '、'.join(f"{i+1}：{p['points']} 分" for i,p in enumerate(slot['partPoints'])) if slot['partPoints'] else ''), 9)
         for key, label in [('answers','参考答案'),('solutions','参考解析'),('scoringSuggestions','评分建议')]:
+            if key == 'scoringSuggestions' and not scored:
+                continue
             items = material.get(key, [])
             if not items:
                 add(f"【{label}缺失】", 9)
@@ -203,7 +206,7 @@ def main():
                 material_heading.keepWithNext = True
                 story.append(material_heading)
                 add(item.get('text','【内容缺失】'))
-        add('建议评分仅为材料参考，未自动套用于本卷赋分；请按本卷题位和小问分值确认评分。', 9)
+        if scored: add('建议评分仅为材料参考，未自动套用于本卷赋分；请按本卷题位和小问分值确认评分。', 9)
         refs = '；'.join(f"{r.get('sourceId','未知来源')} 第 {','.join(str(p) for p in r.get('pages',[]))} 页" for r in slot['sourceRefs'])
         add('来源：' + (refs or '缺失'), 8)
         v = slot['versions']

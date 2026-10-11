@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-043",
+  "auditId": "SET-SRC-043",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025·西城区校级三模）已知集合 $A=\\{x\\mid x^2-x>0\\}$，$B=\\{x\\mid x+1>0\\}$，那么 $A\\cap B=$（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "$(-1,+\\infty)$"
+      },
+      {
+        "label": "B",
+        "text": "$(-1,1)$"
+      },
+      {
+        "label": "C",
+        "text": "$(-1,0)\\cup(1,+\\infty)$"
+      },
+      {
+        "label": "D",
+        "text": "$(1,+\\infty)$"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "C",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "因式分解 $x^2-x=x(x-1)$。当 $x<0$ 时两个因子都负，乘积正；当 $0<x<1$ 时两因子异号，乘积负；当 $x>1$ 时两因子都正，乘积正；x=0或1时乘积为0，不符合严格大于0。因此 $A=(-\\infty,0)\\cup(1,+\\infty)$，而 $B=(-1,+\\infty)$，取交集得 $(-1,0)\\cup(1,+\\infty)$。选 C。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              24
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        24
+      ],
+      "locator": "知识点7 例2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        16,
+        17
+      ],
+      "locator": "知识点7 例2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "由因式符号求区间并取交集"
+    ],
+    "requiredKnowledge": [
+      "交集",
+      "因式分解",
+      "积的符号",
+      "一次不等式",
+      "区间端点"
+    ],
+    "allowedSolution": "因式分解 $x^2-x=x(x-1)$。当 $x<0$ 时两个因子都负，乘积正；当 $0<x<1$ 时两因子异号，乘积负；当 $x>1$ 时两因子都正，乘积正；x=0或1时乘积为0，不符合严格大于0。因此 $A=(-\\infty,0)\\cup(1,+\\infty)$，而 $B=(-1,+\\infty)$，取交集得 $(-1,0)\\cup(1,+\\infty)$。选 C。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-4a5f6aa883cdbbdc",
+    "teacherVersion": "teacher-afc7532e17485cb6"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          24
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          16,
+          17
+        ]
+      }
+    ],
+    "differences": [
+      "使用因式分解后分区间讨论积的符号，不预设高中二次不等式通法；与已允许 quadratic_basics 绑定。",
+      "原学生版含教师内容，已删除。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-4a5f6aa883cdbbdc",
+    "teacherVersion": "teacher-afc7532e17485cb6"
+  },
+  "contentVersion": "content-4a5f6aa883cdbbdc",
+  "contentSha256": "4a5f6aa883cdbbdc18f31dbf559636b195ef294ca3373a51fc89d96c2620205a",
+  "teacherVersion": "teacher-afc7532e17485cb6",
+  "teacherSha256": "afc7532e17485cb603568fd5c57d7b4fa83ecb2ee8b3a9a19da1521f3cb835c5"
+}

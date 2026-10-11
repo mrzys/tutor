@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-004",
+  "auditId": "SET-SRC-004",
+  "questionType": "single_choice",
+  "student": {
+    "stem": "（2025秋·北碚区校级月考）下列说法中正确的是（　）。",
+    "options": [
+      {
+        "label": "A",
+        "text": "联合国所有常任理事国（共5个）组成一个集合。"
+      },
+      {
+        "label": "B",
+        "text": "朝阳中学年龄较小的学生组成一个集合。"
+      },
+      {
+        "label": "C",
+        "text": "$\\{1,2,3\\}$ 与 $\\{2,1,3\\}$ 是不同的集合。"
+      },
+      {
+        "label": "D",
+        "text": "由1、0、5、1、2、5组成的集合有六个元素。"
+      }
+    ],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "A",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3,
+              4
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "A 所述五个常任理事国对象确定，能组成集合。B“年龄较小”没有明确标准，不能确定对象。C 两集合含相同的1、2、3，排列顺序不同不改变集合。D 去除重复列举后为 $\\{0,1,2,5\\}$，只有4个元素。故选 A。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              3,
+              4
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        3,
+        4
+      ],
+      "locator": "知识点1 跟踪训练2"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        3
+      ],
+      "locator": "知识点1 跟踪训练2"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析确定性、无序性和重复元素计数"
+    ],
+    "requiredKnowledge": [
+      "集合的确定性",
+      "集合的无序性",
+      "重复列举不重复计数"
+    ],
+    "allowedSolution": "A 所述五个常任理事国对象确定，能组成集合。B“年龄较小”没有明确标准，不能确定对象。C 两集合含相同的1、2、3，排列顺序不同不改变集合。D 去除重复列举后为 $\\{0,1,2,5\\}$，只有4个元素。故选 A。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-baa6798875ea5c4e",
+    "teacherVersion": "teacher-c30f74fdcc73c0b8"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          3,
+          4
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          3
+        ]
+      }
+    ],
+    "differences": [
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-baa6798875ea5c4e",
+    "teacherVersion": "teacher-c30f74fdcc73c0b8"
+  },
+  "contentVersion": "content-baa6798875ea5c4e",
+  "contentSha256": "baa6798875ea5c4e3e87b235ebc81338b724b9bdef2e14ab11f7cf3e211a0517",
+  "teacherVersion": "teacher-c30f74fdcc73c0b8",
+  "teacherSha256": "c30f74fdcc73c0b8c1e2f9ff515abc16eb27576c7bc41548c49350aac2c90576"
+}

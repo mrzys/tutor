@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-033",
+  "auditId": "SET-SRC-033",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "判断以下说法，填写正确说法的序号：① $M=\\{(1,2)\\}$ 与 $N=\\{(2,1)\\}$ 表示同一个集合；② $M=\\{1,2\\}$ 与 $N=\\{2,1\\}$ 表示同一个集合；③ 空集是唯一的；④ 若 $M=\\{y\\mid y=x^2+1,\\ x\\in\\mathbb R\\}$，$N=\\{x\\mid x=t^2+1,\\ t\\in\\mathbb R\\}$，则集合 $M=N$。正确的序号为 ______。",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "②③④",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              17
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "① 有序数对 $(1,2)\\ne(2,1)$，故错误。② 只改变数集元素的排列顺序，不改变集合，故正确。③ 所有不含元素的集合都有完全相同的元素，均为空集，故空集唯一。④ 两集合都由“某个实数的平方加1”所得的数构成；将 M 中的自变量 x 改名为 t，元素变量 y 改名为 x，得到 N 的相同描述。因此 M=N，不必使用高中函数值域方法。故正确的序号为②③④。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              17
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        17
+      ],
+      "locator": "知识点5 跟踪训练4"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        11
+      ],
+      "locator": "知识点5 跟踪训练4"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析数集、点集、空集与描述法中的集合相等"
+    ],
+    "requiredKnowledge": [
+      "集合相等",
+      "有序数对",
+      "集合无序性",
+      "空集",
+      "描述法变量改名"
+    ],
+    "allowedSolution": "① 有序数对 $(1,2)\\ne(2,1)$，故错误。② 只改变数集元素的排列顺序，不改变集合，故正确。③ 所有不含元素的集合都有完全相同的元素，均为空集，故空集唯一。④ 两集合都由“某个实数的平方加1”所得的数构成；将 M 中的自变量 x 改名为 t，元素变量 y 改名为 x，得到 N 的相同描述。因此 M=N，不必使用高中函数值域方法。故正确的序号为②③④。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-8552445ac637e32c",
+    "teacherVersion": "teacher-623568a6a261b039"
+  },
+  "verification": {
+    "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          17
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          11
+        ]
+      }
+    ],
+    "differences": [
+      "原卷没有独立【答案】块；②③④ 位于教师第17页解答末尾，视觉核对后作为 source 结论保存。",
+      "逐页核对题面、选项、答案、解答及题目边界；没有必需图形资产。",
+      "删除相邻题目、知识梳理和版式装饰；student不含答案解析；不赋题库固定分值或虚构难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_b)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-8552445ac637e32c",
+    "teacherVersion": "teacher-623568a6a261b039"
+  },
+  "contentVersion": "content-8552445ac637e32c",
+  "contentSha256": "8552445ac637e32c13cdaf2fa6611f36c5bf0b7e87d903fadc05fcbf550d716e",
+  "teacherVersion": "teacher-623568a6a261b039",
+  "teacherSha256": "623568a6a261b03933a13edc6f336a054601632d1260ccfb1909631892755a1c"
+}

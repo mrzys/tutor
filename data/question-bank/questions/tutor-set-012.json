@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "questionId": "tutor-set-012",
+  "auditId": "SET-SRC-012",
+  "questionType": "fill_blank",
+  "student": {
+    "stem": "（2025秋·虹口区校级期中）在下列表达式中，① $0\\notin\\mathbb N$；② $\\varnothing\\subsetneq\\{0\\}$；③ $\\pi\\in\\mathbb Q$；④ $\\{1\\}\\in\\{0,1\\}$，其中正确的为 ______。（填写所有正确的序号）",
+    "options": [],
+    "parts": [],
+    "assets": []
+  },
+  "teacher": {
+    "answers": [
+      {
+        "partId": "main",
+        "text": "②",
+        "provenance": "source",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              7
+            ]
+          }
+        ]
+      }
+    ],
+    "solutions": [
+      {
+        "partId": "main",
+        "text": "①0是自然数，错误。②空集是非空集合 $\\{0\\}$ 的真子集，正确。③ $\\pi$ 是无理数，不属于有理数集，错误。④ $\\{0,1\\}$ 的元素是数0和数1，不是集合 $\\{1\\}$，所以 $\\{1\\}\\notin\\{0,1\\}$，错误。故填②。",
+        "provenance": "source_adapted",
+        "sourceRefs": [
+          {
+            "sourceId": "set-teacher",
+            "pages": [
+              7
+            ]
+          }
+        ]
+      }
+    ],
+    "scoringSuggestions": []
+  },
+  "sourceRefs": [
+    {
+      "sourceId": "set-teacher",
+      "pages": [
+        7
+      ],
+      "locator": "知识点2 跟踪训练4"
+    },
+    {
+      "sourceId": "set-student",
+      "pages": [
+        5
+      ],
+      "locator": "知识点2 跟踪训练4"
+    }
+  ],
+  "scopeEvidence": {
+    "status": "within",
+    "primaryTopics": [
+      "辨析元素关系、真子集和常用数集"
+    ],
+    "requiredKnowledge": [
+      "自然数集",
+      "有理数集",
+      "元素与集合关系",
+      "空集与真子集"
+    ],
+    "allowedSolution": "①0是自然数，错误。②空集是非空集合 $\\{0\\}$ 的真子集，正确。③ $\\pi$ 是无理数，不属于有理数集，错误。④ $\\{0,1\\}$ 的元素是数0和数1，不是集合 $\\{1\\}$，所以 $\\{1\\}\\notin\\{0,1\\}$，错误。故填②。",
+    "courseBasis": "s201-sets-v1",
+    "contentVersion": "content-aa04d1ba2c987203",
+    "teacherVersion": "teacher-b78c2aa6e349760c"
+  },
+  "verification": {
+    "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+    "checkedSourcePages": [
+      {
+        "sourceId": "set-teacher",
+        "pages": [
+          7
+        ]
+      },
+      {
+        "sourceId": "set-student",
+        "pages": [
+          5
+        ]
+      }
+    ],
+    "differences": [
+      "原真子集符号规范转写为 subsetneq，不改变包含关系含义。",
+      "保留原命题来源与完整题面，删除教学栏目、相邻题和局部题号，公式规范转写为LaTeX。",
+      "独立 student 不包含原学生版中混入的答案和解析；没有必需图形资产。",
+      "teacher 按原答案独立核算并整理允许解法，source_adapted 不代表原卷逐字文字；不赋固定分值或估造难度。"
+    ],
+    "result": "pass",
+    "checkedBy": "Codex (expand_set_bank_a)",
+    "checkedOn": "2026-10-10",
+    "contentVersion": "content-aa04d1ba2c987203",
+    "teacherVersion": "teacher-b78c2aa6e349760c"
+  },
+  "contentVersion": "content-aa04d1ba2c987203",
+  "contentSha256": "aa04d1ba2c98720387b6899fc45877f0849f64769d0b12fc700b98383d5e563b",
+  "teacherVersion": "teacher-b78c2aa6e349760c",
+  "teacherSha256": "b78c2aa6e349760ca090f39a3b7ef81ff4fa85e35826f575ce7bd51816a65288"
+}
