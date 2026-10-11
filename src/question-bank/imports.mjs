@@ -6,6 +6,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createQuestionImportGateway } from '../llm/question-import-gateway.mjs';
+import { sqliteStorage } from '../storage/sqlite.mjs';
 
 const exec = promisify(execFile);
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -236,6 +237,7 @@ export function createQuestionImportService({ root = defaultRoot,
   storeRoot = path.join(root, '.tutor', 'question-imports'), gateway = createQuestionImportGateway(), extractor = extractQuestionDocument } = {}) {
   const recordsRoot = path.join(storeRoot, 'records');
   const filesRoot = path.join(storeRoot, 'files');
+  const repository = sqliteStorage(storeRoot, 'question-imports');
   return {
     publicStatus() { return { ...gateway.publicStatus(), acceptedExtensions: [...allowed.keys()], maxUploadBytes, publication: 'staging_only' }; },
     async create(request, { signal } = {}) {
@@ -268,7 +270,11 @@ export function createQuestionImportService({ root = defaultRoot,
               : ['纯文本不包含原试卷版式与图片，需人工核查题目边界。'] },
           llmRun: result.run,
         };
-        await atomicJson(path.join(recordsRoot, `${importId}.json`), record);
+        if (repository) {
+          repository.putQuestionImport(record, { bytes: upload.bytes, sha256: record.source.sha256,
+            filename: upload.filename, mimeType: upload.mimeType });
+          await rm(sourcePath, { force: true });
+        } else await atomicJson(path.join(recordsRoot, `${importId}.json`), record);
         return { ok: true, import: record };
       } catch (cause) {
         await rm(sourcePath, { force: true }).catch(() => {});
@@ -277,6 +283,13 @@ export function createQuestionImportService({ root = defaultRoot,
     },
     async get(importId) {
       if (!idPattern.test(importId)) return { ok: false, error: { code: 'not_found', message: '未找到该试卷导入记录。' } };
+      if (repository) {
+        try {
+          const record = repository.getQuestionImport(importId);
+          return record ? { ok: true, import: record }
+            : { ok: false, error: { code: 'not_found', message: '未找到该试卷导入记录。' } };
+        } catch { return { ok: false, error: { code: 'read_error', message: '暂存记录无法读取。' } }; }
+      }
       try { return { ok: true, import: JSON.parse(await readFile(path.join(recordsRoot, `${importId}.json`), 'utf8')) }; }
       catch (cause) {
         if (cause.code === 'ENOENT') return { ok: false, error: { code: 'not_found', message: '未找到该试卷导入记录。' } };
@@ -284,6 +297,14 @@ export function createQuestionImportService({ root = defaultRoot,
       }
     },
     async list() {
+      if (repository) {
+        try {
+          return { ok: true, imports: repository.listQuestionImports().map(item => ({
+            importId: item.importId, status: item.status, title: item.title, createdAt: item.createdAt,
+            source: item.source, questionCount: item.questions?.length ?? 0, publicationBlocked: true,
+          })) };
+        } catch { return { ok: false, error: { code: 'read_error', message: '暂存记录无法读取。' } }; }
+      }
       let names;
       try { names = await readdir(recordsRoot); } catch (cause) { if (cause.code === 'ENOENT') return { ok: true, imports: [] }; throw cause; }
       const imports = [];

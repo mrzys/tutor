@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { listQuestions, getQuestion } from '../question-bank/reader.mjs';
 import { normalizeTeachingGoals, compatibleGoal, suggestedGoalIds, goalReview, goalDifferences, unknownGoalSupport } from './teaching-goals.mjs';
 import { selectWithLlm, combineRankings } from './selector.mjs';
+import { questionBankStorage } from '../storage/registry.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const types = ['single_choice', 'fill_blank', 'free_response'];
@@ -23,7 +24,9 @@ async function readData(root, name) {
 }
 
 async function loadConfig(root) {
-  const config = await readData(root, 'task-catalog.json');
+  const fileConfig = await readData(root, 'task-catalog.json');
+  const repository = questionBankStorage(root);
+  const config = repository ? { ...fileConfig, chapters: repository.getQuestionBankChapters() } : fileConfig;
   if (config.schemaVersion !== 1 || !Array.isArray(config.chapters) || !Array.isArray(config.premises)
       || !Array.isArray(config.tasks) || !object(config.defaultTasks) || !object(config.defaultRequirements)) {
     throw new AssemblyError('config_error', '组卷预设数据不完整。');
@@ -142,7 +145,9 @@ export function partAllocation(task, points) {
 export async function loadPool(root) {
   const listed = await listQuestions({ root });
   if (!listed.ok) throw new AssemblyError(listed.error.code, listed.error.message);
-  const index = await readData(root, 'question-index.json');
+  const repository = questionBankStorage(root);
+  const index = repository ? repository.getQuestionBankIndex() : await readData(root, 'question-index.json');
+  if (repository && !index) throw new AssemblyError('integrity_error', 'SQLite 选题依据清单缺失。');
   if (index.schemaVersion !== 1 || !Array.isArray(index.entries)) throw new AssemblyError('config_error', '选题依据清单无效。');
   const annotations = new Map();
   for (const item of index.entries) {

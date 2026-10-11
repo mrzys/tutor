@@ -2,26 +2,14 @@ import { createHash } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { canonicalJson, hashContent } from './integrity.mjs';
+import { questionBankStorage } from '../storage/registry.mjs';
+
+export { canonicalJson, hashContent } from './integrity.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const idPattern = /^tutor-set-\d{3}$/;
 const shaPattern = /^[a-f0-9]{64}$/;
-
-export function canonicalJson(value) {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  if (value !== null && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
-  }
-  const encoded = JSON.stringify(value);
-  if (encoded === undefined || (typeof value === 'number' && !Number.isFinite(value))) {
-    throw new TypeError('Canonical JSON requires finite JSON values.');
-  }
-  return encoded;
-}
-
-export function hashContent(value) {
-  return createHash('sha256').update(canonicalJson(value), 'utf8').digest('hex');
-}
 
 class BankError extends Error {
   constructor(code, message) { super(message); this.code = code; }
@@ -65,7 +53,9 @@ function failure(error) {
 
 async function readLedger(root) {
   const bankRoot = path.join(path.resolve(root), 'data', 'question-bank');
-  const ledger = await readJson(bankRoot, 'ledger.json');
+  const repository = questionBankStorage(root);
+  const ledger = repository ? repository.getQuestionBankLedger() : await readJson(bankRoot, 'ledger.json');
+  if (repository && !ledger) invalid('SQLite question-bank ledger is missing.');
   if (!isObject(ledger) || ledger.schemaVersion !== 1) invalid('Unsupported ledger schema.');
   requireArray(ledger.entries, 'ledger.entries');
   const ids = new Set();
@@ -187,7 +177,9 @@ export async function getQuestion(questionId, { contentVersion, teacherVersion, 
     const entry = ledger.entries.find(item => item.questionId === questionId);
     if (!entry) throw new BankError('not_found', `Question not found: ${questionId}.`);
     if (entry.status !== 'ready') throw new BankError('not_ready', `Question is pending: ${entry.pendingReasons.join('; ')}`);
-    const record = await readJson(bankRoot, entry.contentPath);
+    const repository = questionBankStorage(root);
+    const record = repository ? repository.getQuestionBankQuestion(questionId) : await readJson(bankRoot, entry.contentPath);
+    if (repository && !record) invalid('SQLite ready question package is missing.');
     if (!isObject(record) || record.schemaVersion !== 1 || record.questionId !== questionId || record.auditId !== entry.auditId
         || record.questionType !== entry.questionType) invalid('Question identity does not match the ledger.');
     for (const versionField of ['contentVersion', 'teacherVersion']) {

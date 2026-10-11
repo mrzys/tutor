@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, loadPool, normalizeRequirements } from '../assembly/engine.mjs';
+import { questionBankStorage } from '../storage/registry.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const clone = value => structuredClone(value);
@@ -17,10 +18,10 @@ async function loadCatalog(root) {
   if (!configured.ok) throw new CatalogError(configured.error.code, configured.error.message);
   const annotations = new Map(pool.questionIndexSnapshot.entries.map(item => [item.questionId, item]));
   const ready = pool.records.filter(item => item.result.ok && item.annotation);
-  return { config: configured.config, pool, annotations, ready };
+  return { config: configured.config, pool, annotations, ready, repository: questionBankStorage(root) };
 }
 
-function publicQuestion(record) {
+function publicQuestion(record, repository) {
   const question = record.result.question;
   const annotation = record.annotation;
   return {
@@ -29,6 +30,7 @@ function publicQuestion(record) {
     contentVersion: question.contentVersion,
     teacherVersion: question.teacherVersion,
     chapters: clone(annotation.primarySections),
+    sectionIds: repository?.getQuestionSectionIds(question.questionId) ?? [],
     tasks: clone(annotation.tasks),
     taskSummary: record.entry.taskSummary,
     student: clone(question.student),
@@ -40,10 +42,12 @@ function publicQuestion(record) {
 
 export async function listQuestionBankCatalog({ root = defaultRoot } = {}) {
   try {
-    const { config, pool, ready } = await loadCatalog(root);
-    const questions = ready.map(publicQuestion).sort((a, b) => a.questionId.localeCompare(b.questionId));
+    const { config, pool, ready, repository } = await loadCatalog(root);
+    const questions = ready.map(record => publicQuestion(record, repository))
+      .sort((a, b) => a.questionId.localeCompare(b.questionId));
     return { ok: true,
       chapters: config.chapters.map(chapter => ({ ...clone(chapter), questionCount: questions.filter(item => item.chapters.includes(chapter.id)).length })),
+      textbooks: repository?.getQuestionBankTextbooks() ?? [],
       questions,
       totals: clone(pool.totals),
       limits: { teacherContentIncluded: false, difficultyAvailable: false },
