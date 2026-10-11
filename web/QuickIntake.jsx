@@ -187,7 +187,7 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
   const scored = (proposed.scoringMode || answers.scoringMode || 'points') === 'points';
   const working = busy === 'prepare' || workflowStage === 'planning' || disabled;
   function focusComposer() { document.getElementById('quick-goal')?.focus({ preventScroll: true }); }
-  return <section className={`quick-intake composer-intake ${inWorkflow ? 'intake-in-workflow' : ''}`} aria-label="组卷助手对话">
+  return <section className={`quick-intake composer-intake ${inWorkflow ? 'intake-in-workflow' : 'intake-empty'}`} aria-label="组卷助手对话">
     {!inWorkflow ? <div className="quick-heading"><h1>今天想组一份什么练习？</h1><span>选好范围和用途，其他要求直接告诉组卷助手。</span></div> : null}
     {error ? <p className="notice error" role="alert">{error}{!session ? <button type="button" disabled={Boolean(busy)} onClick={() => setRetryKey(value => value + 1)}>重新连接</button> : null}</p> : null}
     {busy === 'loading' ? <p role="status"><LoaderCircle size={18} className="spinning"/>正在恢复需求…</p> : null}

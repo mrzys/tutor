@@ -478,3 +478,10 @@ html:has(.question-bank-shell),body:has(.question-bank-shell),.question-bank-she
 @media(max-width:1000px){.bank-dimension-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.bank-reset-filters{grid-column:1/-1;justify-self:end;padding-block:4px;min-height:32px}}
 @media(max-width:760px){.auth-card{padding:24px;max-width:400px}.auth-card input{font-size:16px}.bank-dimension-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.bank-dimension-filters .tutor-select-trigger{min-height:44px}.bank-reset-filters{grid-column:auto;min-height:44px}.bank-annotation-note{font-size:13px}.bank-sidebar-toggle{top:12px}.question-bank-shell .app-main .workspace{padding-top:16px}}
 @media(max-width:760px){.bank-tree-panel{max-height:none;padding:0 8px}.bank-tree-heading{display:none}.bank-tree-mobile-toggle{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;border:0;border-radius:9999px;padding:10px 8px;text-align:left;font-size:14px}.bank-tree-mobile-toggle>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bank-tree-mobile-toggle>svg{flex-shrink:0}.bank-tree-mobile-toggle[aria-expanded=true]>svg:last-child{transform:rotate(180deg)}.bank-tree[data-mobile-open=false]{display:none}.bank-tree[data-mobile-open=true]{display:block;flex:none;max-height:240px;overflow-y:auto}.bank-results-panel{margin-top:12px}}
+
+/* Center the new-assembly entry within the space below the workspace header. */
+.app-main:has(.intake-empty){min-height:100dvh;display:flex;flex-direction:column}
+.app-main:has(.intake-empty)>.app-header{flex-shrink:0}
+.app-main .workspace.chat-workspace:has(.intake-empty){flex:1;display:flex;align-items:center;width:100%;padding-block:24px}
+.chat-workspace .composer-intake.intake-empty{width:100%;padding:0}
+.intake-empty .quick-heading{width:100%;max-width:800px;margin:0 auto 22px;text-align:center}
