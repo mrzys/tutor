@@ -68,6 +68,10 @@ export class SqliteRepository {
         kind TEXT PRIMARY KEY CHECK(kind IN ('ledger','question_index')),
         payload TEXT NOT NULL, sha256 TEXT NOT NULL, synced_at TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS question_bank_config(
+        kind TEXT PRIMARY KEY CHECK(kind IN ('task_catalog','course_context','source_manifest')),
+        payload TEXT NOT NULL, sha256 TEXT NOT NULL, synced_at TEXT NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS question_bank_questions(
         question_id TEXT PRIMARY KEY, payload TEXT NOT NULL, sha256 TEXT NOT NULL,
         content_version TEXT NOT NULL, teacher_version TEXT NOT NULL, synced_at TEXT NOT NULL
@@ -164,6 +168,7 @@ export class SqliteRepository {
     }
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(3, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(4, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
+    this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(5, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     const queues = new Map();
     this.intakeStorage = {
       get: async id => {
@@ -264,6 +269,14 @@ export class SqliteRepository {
 
   getQuestionBankLedger() { return this.#readHashed('question_bank_state', 'kind', 'ledger'); }
   getQuestionBankIndex() { return this.#readHashed('question_bank_state', 'kind', 'question_index'); }
+  getQuestionBankConfig(kind) { return this.#readHashed('question_bank_config', 'kind', kind); }
+  getQuestionBankSummary() {
+    const count = table => this.database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count;
+    return { readyQuestions: count('question_bank_questions'),
+      annotations: this.getQuestionBankIndex()?.entries.length ?? 0, chapters: count('question_bank_chapters'),
+      textbooks: count('curriculum_textbooks'), curriculumChapters: count('curriculum_chapters'),
+      curriculumSections: count('curriculum_sections'), questionSectionMappings: count('question_section_mappings') };
+  }
   getQuestionBankQuestion(questionId) { return this.#readHashed('question_bank_questions', 'question_id', questionId); }
   getQuestionBankChapters() {
     return this.database.prepare('SELECT chapter_id FROM question_bank_chapters ORDER BY position').all()
@@ -462,7 +475,7 @@ function questionSectionAliases(config, textbooks) {
 export async function syncQuestionBank(root, repository) {
   const resolvedRoot = path.resolve(root);
   if (questionBankStorage(resolvedRoot)) throw storageError('storage_in_use', '此题库根目录已注册，不能从另一数据库混合刷新。');
-  const [ledger, index, config, listed, textbooks, knowledge, catalogMap, bodyMap] = await Promise.all([
+  const [ledger, index, config, listed, textbooks, knowledge, catalogMap, bodyMap, courseContext, sourceManifest] = await Promise.all([
     readVersionedJson(path.join(resolvedRoot, 'data', 'question-bank', 'ledger.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'assembly', 'question-index.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'assembly', 'task-catalog.json')),
@@ -471,6 +484,8 @@ export async function syncQuestionBank(root, repository) {
     readVersionedJson(path.join(resolvedRoot, 'data', 'curriculum', 'knowledge-points.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'curriculum', 'textbook-knowledge-map.json')),
     readVersionedJson(path.join(resolvedRoot, 'data', 'curriculum', 'textbook-body-knowledge-map.json')),
+    readVersionedJson(path.join(resolvedRoot, 'data', 'question-bank', 'course-context.json')),
+    readVersionedJson(path.join(resolvedRoot, 'data', 'question-bank', 'sources.json')),
   ]);
   if (!listed.ok) throw storageError(listed.error.code, listed.error.message);
   if (ledger?.schemaVersion !== 1 || !Array.isArray(ledger.entries)
@@ -499,6 +514,11 @@ export async function syncQuestionBank(root, repository) {
       VALUES(?,?,?,?) ON CONFLICT(kind) DO UPDATE SET payload=excluded.payload,sha256=excluded.sha256,synced_at=excluded.synced_at`);
     putState.run('ledger', JSON.stringify(ledger), hashContent(ledger), syncedAt);
     putState.run('question_index', JSON.stringify(index), hashContent(index), syncedAt);
+    const putConfig = repository.database.prepare(`INSERT INTO question_bank_config(kind,payload,sha256,synced_at)
+      VALUES(?,?,?,?) ON CONFLICT(kind) DO UPDATE SET payload=excluded.payload,sha256=excluded.sha256,synced_at=excluded.synced_at`);
+    for (const [kind, value] of [['task_catalog', config], ['course_context', courseContext], ['source_manifest', sourceManifest]]) {
+      putConfig.run(kind, JSON.stringify(value), hashContent(value), syncedAt);
+    }
 
     repository.database.prepare('DELETE FROM question_bank_questions').run();
     const putQuestion = repository.database.prepare(`INSERT INTO question_bank_questions
@@ -692,7 +712,25 @@ export async function registerSqliteStorage(baseRoot, databasePath, { questionBa
   try {
     const migration = await importLegacyStorage(resolved, repository);
     migration.questionImports = await importLegacyQuestionImports(resolved, repository);
-    const questionBank = questionBankRoot ? await syncQuestionBank(questionBankRoot, repository) : null;
+    let questionBank = null;
+    if (questionBankRoot) {
+      const ledger = repository.getQuestionBankLedger();
+      if (!ledger) questionBank = await syncQuestionBank(questionBankRoot, repository);
+      else {
+        // Upgrade older SQLite snapshots once without replacing database-owned question content.
+        const configKinds = [['task_catalog', 'assembly/task-catalog.json'],
+          ['course_context', 'question-bank/course-context.json'], ['source_manifest', 'question-bank/sources.json']];
+        const missing = configKinds.filter(([kind]) => !repository.getQuestionBankConfig(kind));
+        const values = await Promise.all(missing.map(async ([kind, filename]) => [kind,
+          await readVersionedJson(path.join(questionBankRoot, 'data', filename))]));
+        if (values.length) repository.database.transaction(() => {
+          const insert = repository.database.prepare(`INSERT INTO question_bank_config(kind,payload,sha256,synced_at) VALUES(?,?,?,?)`);
+          for (const [kind, value] of values) insert.run(kind, JSON.stringify(value), hashContent(value), new Date().toISOString());
+        }).immediate();
+        if (!repository.getQuestionBankIndex()) throw storageError('integrity_error', 'SQLite 选题依据清单缺失。');
+        questionBank = repository.getQuestionBankSummary();
+      }
+    }
     registerStorage(resolved, repository);
     if (questionBankRoot) registerQuestionBank(questionBankRoot, repository);
     return { repository, migration, questionBank,

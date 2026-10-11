@@ -1,15 +1,28 @@
-import React, { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, LoaderCircle, Plus, Search, ShoppingBasket, Upload, X } from 'lucide-react';
 import { api, typeLabels } from './api.js';
 import { MathText } from './MathText.jsx';
+import { Select } from './Select.jsx';
+import { QuestionOptions } from './QuestionOptions.jsx';
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 12;
+const SESSION_KEY = 'tutor-question-bank:v1';
+const EMPTY_TEXTBOOKS = [];
+function readSession() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+    if (saved?.version !== 1 || !Array.isArray(saved.questions) || !Array.isArray(saved.origins)) return {};
+    if (typeof saved.query !== 'string' || typeof saved.title !== 'string') return {};
+    if (!saved.origins.every(entry => Array.isArray(entry) && entry.length === 2)) return {};
+    return saved;
+  } catch { return {}; }
+}
 
 function usableSourceRefs(question) {
   return (question.sourceRefs || []).filter(ref => !/^tutor-set(?:-|$)/i.test(ref.locator || ''));
 }
 
-function QuestionCard({ question, selected, onToggle }) {
+function QuestionCard({ question, selected, disabled, onToggle }) {
   const sourceRefs = usableSourceRefs(question);
   const evidenceId = useId();
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -31,13 +44,12 @@ function QuestionCard({ question, selected, onToggle }) {
   }
 
   return <article className={`bank-question ${selected ? 'is-selected' : ''}`}>
-    <button type="button" className="bank-question-add" aria-pressed={selected} aria-label={selected ? '从组卷篮移出此题' : '将此题加入组卷篮'} onClick={() => onToggle(question.questionId)}>
+    <button type="button" className="bank-question-add" disabled={disabled} aria-pressed={selected} aria-label={selected ? '从组卷篮移出此题' : '将此题加入组卷篮'} onClick={() => onToggle(question.questionId)}>
       {selected ? <><Check size={14}/>已加入</> : <><Plus size={14}/>加入组卷篮</>}
     </button>
     <div className="bank-question-body">
       <p className="bank-question-stem"><MathText text={question.student.stem}/></p>
-      {question.student.options.length ? <div className="bank-question-options">{question.student.options.map(option =>
-        <p key={option.label}><span>{option.label}.</span><MathText text={option.text}/></p>)}</div> : null}
+      {question.student.options.length ? <div className="bank-question-options"><QuestionOptions options={question.student.options}/></div> : null}
       {question.student.parts.length ? <div className="bank-question-parts">{question.student.parts.map((part, index) =>
         <p key={part.partId}><span>（{index + 1}）</span><MathText text={part.prompt}/></p>)}</div> : null}
       <div className="bank-question-information">
@@ -71,7 +83,7 @@ function firstSectionId(textbooks) {
 function initialCollapsedBranches(textbooks, selectedSectionId) {
   const collapsed = new Set();
   textbooks.forEach((textbook, textbookIndex) => {
-    if (textbookIndex > 0) collapsed.add(treeKey('textbook', textbook.id));
+    if (textbookIndex > 0 && !textbook.chapters.some(chapter => chapter.sections.some(section => section.id === selectedSectionId))) collapsed.add(treeKey('textbook', textbook.id));
     textbook.chapters.forEach(chapter => {
       if (!chapter.sections.some(section => section.id === selectedSectionId)) collapsed.add(treeKey('chapter', chapter.id));
     });
@@ -101,7 +113,7 @@ function sectionLocations(textbooks) {
   return locations;
 }
 
-function SelectionBasket({ questions, locations, selectedOrigins, title, creating, open, onTitleChange, onRemove, onClear, onClose, onSubmit }) {
+function SelectionBasket({ questions, locations, selectedOrigins, title, creating, error, open, onTitleChange, onRemove, onClear, onClose, onSubmit }) {
   const closeButtonRef = useRef(null);
   const basketRef = useRef(null);
 
@@ -140,7 +152,7 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
 
   return <>
     {open ? <button type="button" className="bank-basket-backdrop" aria-label="关闭组卷篮" onClick={onClose}/> : null}
-    <aside ref={basketRef} className={`bank-basket ${open ? 'is-open' : ''}`} aria-label="组卷篮">
+    <aside ref={basketRef} className={`bank-basket ${open ? 'is-open' : ''}`} role="dialog" aria-modal={open || undefined} aria-hidden={!open} aria-label="组卷篮">
       <div className="bank-basket-heading">
         <div><span className="bank-basket-icon"><ShoppingBasket size={18}/>{questions.length ? <b>{questions.length}</b> : null}</span><div><strong>组卷篮</strong><span aria-live="polite">已选 {questions.length} 道题</span></div></div>
         <button ref={closeButtonRef} type="button" className="bank-basket-close" aria-label="关闭组卷篮" onClick={onClose}><X size={18}/></button>
@@ -153,7 +165,7 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
             <div className="bank-basket-item-heading"><span>{index + 1}</span><strong>{typeLabels[question.questionType] ?? question.questionType}</strong><button type="button" aria-label={`移除第 ${index + 1} 题`} title="移出组卷篮" onClick={() => onRemove(question.questionId)}><X size={15}/></button></div>
             <div className="bank-basket-question">
               <p className="bank-basket-stem"><MathText text={question.student.stem}/></p>
-              {question.student.options.length ? <div className="bank-basket-options">{question.student.options.map(option => <p key={option.label}><span>{option.label}.</span><MathText text={option.text}/></p>)}</div> : null}
+              {question.student.options.length ? <div className="bank-basket-options"><QuestionOptions options={question.student.options}/></div> : null}
               {question.student.parts.length ? <div className="bank-basket-parts">{question.student.parts.map((part, partIndex) => <p key={part.partId}><span>（{partIndex + 1}）</span><MathText text={part.prompt}/></p>)}</div> : null}
             </div>
             <dl className="bank-basket-detail">
@@ -166,6 +178,7 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
         }) : <div className="bank-basket-empty"><ShoppingBasket size={22}/><strong>还没有选择题目</strong><span>从题目卡片加入组卷篮，题目会保留在这里。</span></div>}
       </div>
       <form className="bank-basket-actions" onSubmit={onSubmit}>
+        {error ? <p className="bank-create-error" role="alert">{error}</p> : null}
         <label><span>试卷标题</span><input value={title} onChange={event => onTitleChange(event.target.value)} maxLength={120} required placeholder="例如：集合单元练习"/></label>
         {questions.length ? <button type="button" className="bank-basket-clear" onClick={onClear}>清空组卷篮</button> : null}
         <button className="primary" type="submit" disabled={!questions.length || creating || !title.trim()}>{creating ? <><LoaderCircle className="spinning" size={16}/>正在创建…</> : `生成试卷草稿${questions.length ? `（${questions.length}）` : ''}`}</button>
@@ -176,6 +189,10 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
 
 function ChapterTree({ textbooks, activeId, collapsed, onToggleBranch, onSelect }) {
   const treeRef = useRef(null);
+  const treeId = useId();
+  const mobileToggleRef = useRef(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const activeLabel = findSection(textbooks, activeId)?.section.label || '选择教材小节';
   const defaultFocusKey = activeId ? treeKey('section', activeId) : treeKey('textbook', textbooks[0]?.id || '');
   const [focusKey, setFocusKey] = useState(defaultFocusKey);
   const stats = catalogueStats(textbooks);
@@ -212,8 +229,9 @@ function ChapterTree({ textbooks, activeId, collapsed, onToggleBranch, onSelect 
   }
 
   return <aside className="bank-tree-panel" aria-label="教材章节目录">
+    <button type="button" ref={mobileToggleRef} className="bank-tree-mobile-toggle" aria-expanded={mobileOpen} aria-controls={treeId} onClick={() => setMobileOpen(open => !open)}><BookOpen size={17}/><span>{activeLabel}</span><ChevronDown size={16}/></button>
     <div className="bank-tree-heading"><div><strong>教材目录</strong><span>{stats.textbooks} 册 · {stats.chapters} 章 · {stats.sections} 节</span></div></div>
-    <div className="bank-tree" role="tree" aria-label="教材章节树" ref={treeRef} onKeyDown={handleKeyDown}>
+    <div className="bank-tree" id={treeId} data-mobile-open={mobileOpen} role="tree" aria-label="教材章节树" ref={treeRef} onKeyDown={handleKeyDown}>
       {textbooks.map(textbook => {
         const textbookKey = treeKey('textbook', textbook.id);
         const textbookExpanded = !collapsed.has(textbookKey);
@@ -238,7 +256,7 @@ function ChapterTree({ textbooks, activeId, collapsed, onToggleBranch, onSelect 
                     const sectionKey = treeKey('section', section.id);
                     return <button type="button" key={section.id} role="treeitem" aria-level="3" aria-selected={section.id === activeId}
                       data-tree-key={sectionKey} data-parent-key={chapterKey} tabIndex={focusKey === sectionKey ? 0 : -1}
-                      className={section.id === activeId ? 'active' : ''} onFocus={() => setFocusKey(sectionKey)} onClick={() => onSelect(section.id)}>
+                      className={section.id === activeId ? 'active' : ''} onFocus={() => setFocusKey(sectionKey)} onClick={() => { onSelect(section.id); setMobileOpen(false); if (window.matchMedia('(max-width: 760px)').matches) requestAnimationFrame(() => mobileToggleRef.current?.focus({ preventScroll: true })); }}>
                       <span>{section.label}</span><b aria-label={`${section.questionCount} 道题`}>{section.questionCount}</b>
                     </button>
                   })}
@@ -253,147 +271,157 @@ function ChapterTree({ textbooks, activeId, collapsed, onToggleBranch, onSelect 
 }
 
 export function QuestionBank({ onCreated, onImport }) {
+  const [saved] = useState(readSession);
   const [catalog, setCatalog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [sectionId, setSectionId] = useState(null);
+  const [createError, setCreateError] = useState('');
+  const [sectionId, setSectionId] = useState(saved.sectionId || null);
   const [collapsedBranches, setCollapsedBranches] = useState(() => new Set());
-  const [query, setQuery] = useState('');
-  const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase('zh-CN'));
-  const [selected, setSelected] = useState(() => new Set());
-  const [selectedOrigins, setSelectedOrigins] = useState(() => new Map());
-  const [title, setTitle] = useState('题库手动组卷');
+  const [query, setQuery] = useState(saved.query || '');
+  const [debouncedQuery, setDebouncedQuery] = useState((saved.query || '').trim());
+  const [questionType, setQuestionType] = useState(saved.questionType || 'all');
+  const [selected, setSelected] = useState(() => new Map((saved.questions || []).filter(question => question?.questionId && question.student).map(question => [question.questionId, question])));
+  const [selectedOrigins, setSelectedOrigins] = useState(() => new Map(saved.origins || []));
+  const [title, setTitle] = useState(saved.title || '题库手动组卷');
   const [creating, setCreating] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Math.max(1, Number(saved.page) || 1));
+  const [retry, setRetry] = useState(0);
   const [basketOpen, setBasketOpen] = useState(false);
   const basketTriggerRef = useRef(null);
   const questionListRef = useRef(null);
+  const initialized = useRef(false);
+  const requestSequence = useRef(0);
+  const created = useRef(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = query.trim();
+      if (next !== debouncedQuery) { setPage(1); setDebouncedQuery(next); }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query, debouncedQuery]);
 
   useEffect(() => {
     const controller = new AbortController();
+    const sequence = ++requestSequence.current;
     setLoading(true); setError('');
-    api('/api/question-bank', undefined, controller.signal)
+    const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+    if (sectionId) params.set('sectionId', sectionId);
+    if (debouncedQuery) params.set('query', debouncedQuery);
+    if (questionType !== 'all') params.set('questionType', questionType);
+    api(`/api/question-bank?${params}`, undefined, controller.signal)
       .then(result => {
+        if (controller.signal.aborted || requestSequence.current !== sequence) return;
         const nextTextbooks = result.textbooks || [];
-        const initialSection = firstSectionId(nextTextbooks);
+        const nextSection = findSection(nextTextbooks, sectionId) ? sectionId : firstSectionId(nextTextbooks);
         setCatalog(result);
-        setSectionId(current => current || initialSection);
-        setCollapsedBranches(initialCollapsedBranches(nextTextbooks, initialSection));
+        if (!initialized.current) {
+          initialized.current = true;
+          setCollapsedBranches(initialCollapsedBranches(nextTextbooks, nextSection));
+        }
+        if (nextSection !== sectionId) { setLoading(true); setSectionId(nextSection); setPage(1); }
+        else if (result.pagination?.page && result.pagination.page !== page) setPage(result.pagination.page);
       })
-      .catch(failure => { if (failure.name !== 'AbortError') setError(failure.message); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+      .catch(failure => { if (!controller.signal.aborted && requestSequence.current === sequence) setError(failure.message); })
+      .finally(() => { if (!controller.signal.aborted && requestSequence.current === sequence) setLoading(false); });
     return () => controller.abort();
-  }, []);
+  }, [sectionId, debouncedQuery, questionType, page, retry]);
 
-  const textbooks = catalog?.textbooks || [];
+  useEffect(() => {
+    if (created.current) return;
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ version: 1, sectionId, query, questionType, page, title, questions: [...selected.values()], origins: [...selectedOrigins] })); } catch { /* Session storage may be unavailable or full; keep this session usable. */ }
+  }, [sectionId, query, questionType, page, title, selected, selectedOrigins]);
+
+  const textbooks = catalog?.textbooks || EMPTY_TEXTBOOKS;
   const locations = useMemo(() => sectionLocations(textbooks), [textbooks]);
   const active = useMemo(() => findSection(textbooks, sectionId), [textbooks, sectionId]);
-  const questions = useMemo(() => {
-    if (!catalog || !sectionId) return [];
-    return catalog.questions.filter(question => {
-      if (!(question.sectionIds ?? question.chapters).includes(sectionId)) return false;
-      if (!deferredQuery) return true;
-      return [question.taskSummary, question.student.stem, ...question.topics, ...question.requiredKnowledge]
-        .join(' ').toLocaleLowerCase('zh-CN').includes(deferredQuery);
-    });
-  }, [catalog, sectionId, deferredQuery]);
-  const pageCount = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
-  const visibleQuestions = questions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const selectedQuestions = useMemo(() => {
-    if (!catalog) return [];
-    const byId = new Map(catalog.questions.map(question => [question.questionId, question]));
-    return [...selected].map(questionId => byId.get(questionId)).filter(Boolean);
-  }, [catalog, selected]);
+  const visibleQuestions = catalog?.questions || [];
+  const pagination = catalog?.pagination || { page, total: visibleQuestions.length, totalPages: 1 };
+  const pageCount = Math.max(1, pagination.totalPages);
+  const selectedQuestions = useMemo(() => [...selected.values()], [selected]);
 
-  useEffect(() => { setPage(1); }, [sectionId, deferredQuery]);
-  useEffect(() => { if (page > pageCount) setPage(pageCount); }, [page, pageCount]);
   useEffect(() => {
-    const scrollFrame = requestAnimationFrame(() => {
-      if (questionListRef.current) questionListRef.current.scrollTop = 0;
-    });
-    return () => cancelAnimationFrame(scrollFrame);
-  }, [page, sectionId, deferredQuery]);
+    const frame = requestAnimationFrame(() => { if (questionListRef.current) questionListRef.current.scrollTop = 0; });
+    return () => cancelAnimationFrame(frame);
+  }, [page, sectionId, debouncedQuery, questionType]);
   useEffect(() => {
     if (!basketOpen) return undefined;
-    const closeOnEscape = event => { if (event.key === 'Escape') closeBasket(); };
+    const closeOnEscape = event => { if (event.key === 'Escape' && !document.querySelector('.tutor-select-popup')) closeBasket(); };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [basketOpen]);
 
   function toggle(questionId) {
+    if (creating) return;
     const removing = selected.has(questionId);
+    const question = visibleQuestions.find(item => item.questionId === questionId);
+    if (!removing && !question) return;
     setSelected(current => {
-      const next = new Set(current);
-      if (removing) next.delete(questionId); else next.add(questionId);
+      const next = new Map(current);
+      if (removing) next.delete(questionId); else next.set(questionId, question);
       return next;
     });
     setSelectedOrigins(origins => {
-      const nextOrigins = new Map(origins);
-      if (removing) nextOrigins.delete(questionId); else nextOrigins.set(questionId, sectionId);
-      return nextOrigins;
+      const next = new Map(origins);
+      if (removing) next.delete(questionId); else next.set(questionId, sectionId);
+      return next;
     });
+    setCreateError('');
   }
 
-  function closeBasket() {
-    setBasketOpen(false);
-    requestAnimationFrame(() => basketTriggerRef.current?.focus());
-  }
-
+  function closeBasket() { setBasketOpen(false); requestAnimationFrame(() => basketTriggerRef.current?.focus()); }
   function clearSelection() {
-    if (selected.size && !window.confirm(`确定清空组卷篮中的 ${selected.size} 道题吗？`)) return;
-    setSelected(new Set());
-    setSelectedOrigins(new Map());
+    if (creating || (selected.size && !window.confirm(`确定清空组卷篮中的 ${selected.size} 道题吗？`))) return;
+    setSelected(new Map()); setSelectedOrigins(new Map()); setCreateError('');
   }
+  function clearFilters() { setQuery(''); setDebouncedQuery(''); setQuestionType('all'); setPage(1); }
 
   async function createDraft(event) {
     event.preventDefault();
     if (!selected.size || creating) return;
-    setCreating(true); setError('');
+    setCreating(true); setCreateError('');
     try {
-      const byId = new Map(catalog.questions.map(question => [question.questionId, question]));
-      const selections = [...selected].map(questionId => {
-        const question = byId.get(questionId);
-        return { questionId, contentVersion: question.contentVersion, teacherVersion: question.teacherVersion };
-      });
+      const selections = [...selected.values()].map(question => ({ questionId: question.questionId, contentVersion: question.contentVersion, teacherVersion: question.teacherVersion }));
       const result = await api('/api/question-bank/manual-draft', { title: title.trim(), selections });
+      created.current = true;
+      try { sessionStorage.removeItem(SESSION_KEY); } catch { /* The saved draft is already in the database. */ }
       onCreated(result.draft);
-    } catch (failure) { setError(failure.message); }
+    } catch (failure) { setCreateError(failure.message); }
     finally { setCreating(false); }
   }
 
-  if (loading) return <section className="question-bank-page"><p className="bank-status" role="status"><LoaderCircle className="spinning" size={18}/>正在读取题库…</p></section>;
-  if (!catalog) return <section className="question-bank-page"><div className="notice error" role="alert">{error || '题库暂时无法读取。'}</div></section>;
+  if (!catalog && loading) return <section className="question-bank-page"><p className="bank-status" role="status"><LoaderCircle className="spinning" size={18}/>正在读取题库…</p></section>;
+  if (!catalog) return <section className="question-bank-page"><div className="notice error" role="alert"><p>{error || '题库暂时无法读取。'}</p><button onClick={() => setRetry(value => value + 1)}>重新加载题库</button></div></section>;
   const stats = catalogueStats(textbooks);
   return <section className="question-bank-page">
-    <div className="question-bank-heading"><div><h1>题库</h1><p>按教材章节浏览题目，加入组卷篮后生成试卷草稿。</p></div>
+    <div className="question-bank-heading"><div><h1>题库</h1><p>按教材章节浏览，选好题目后直接生成草稿。</p></div>
       <div className="bank-heading-actions">
-        <span className="bank-catalog-total">{stats.textbooks} 册教材 · {stats.chapters} 章 · {stats.sections} 节 · {catalog.totals.ready} 道可用题</span>
+        <span className="bank-catalog-total">{stats.textbooks} 册教材 · {catalog.totals.ready} 道可用题</span>
         <button ref={basketTriggerRef} type="button" className="bank-basket-trigger" aria-label={`打开组卷篮，已选 ${selected.size} 道题`} aria-expanded={basketOpen} onClick={() => setBasketOpen(true)}><ShoppingBasket size={17}/><span>组卷篮</span><b>{selected.size}</b></button>
         <button type="button" className="bank-import-link" onClick={onImport}><Upload size={16}/>上传试卷</button>
       </div>
     </div>
-    {error ? <div className="notice error" role="alert">{error}</div> : null}
+    {error ? <div className="notice error" role="alert">{error}<button onClick={() => setRetry(value => value + 1)}>重试</button></div> : null}
     <div className="bank-browser">
       <ChapterTree textbooks={textbooks} activeId={sectionId} collapsed={collapsedBranches}
-        onToggleBranch={branchId => setCollapsedBranches(current => {
-          const next = new Set(current);
-          if (next.has(branchId)) next.delete(branchId); else next.add(branchId);
-          return next;
-        })}
-        onSelect={nextSectionId => { setSectionId(nextSectionId); setQuery(''); }}/>
-      <main className="bank-results-panel">
+        onToggleBranch={branchId => setCollapsedBranches(current => { const next = new Set(current); if (next.has(branchId)) next.delete(branchId); else next.add(branchId); return next; })}
+        onSelect={nextSectionId => { setSectionId(nextSectionId); setPage(1); }}/>
+      <div className="bank-results-panel">
         {active ? <>
           <div className="bank-results-heading"><div><p>{active.textbook.title || active.textbook.label} / {active.chapter.label}</p><h2>{active.section.label}</h2></div><strong>{active.section.questionCount} 道题</strong></div>
           <div className="bank-results">
-            <label className="bank-search"><Search size={17}/><span>搜索本小节</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="题干或知识点"/></label>
-            <div className="bank-result-summary"><span>{deferredQuery ? `找到 ${questions.length} 道题` : `共 ${questions.length} 道题`}</span><span>{selected.size ? `组卷篮已有 ${selected.size} 道` : '悬浮题目即可加入组卷篮'}</span></div>
-            {visibleQuestions.length ? <div ref={questionListRef} className="bank-question-list" aria-label="题目列表">{visibleQuestions.map(question => <QuestionCard key={question.questionId} question={question} selected={selected.has(question.questionId)} onToggle={toggle}/>)}</div>
-              : <div className="bank-empty"><strong>{deferredQuery ? '没有找到匹配题目' : '本小节暂无题目'}</strong><span>{deferredQuery ? '可尝试更换关键词。' : '目录已收录，后续导入的题目会显示在这里。'}</span></div>}
-            {pageCount > 1 ? <nav className="bank-pagination" aria-label="题目分页"><button type="button" disabled={page === 1} onClick={() => setPage(value => value - 1)}><ChevronLeft size={16}/>上一页</button><span>第 {page} / {pageCount} 页</span><button type="button" disabled={page === pageCount} onClick={() => setPage(value => value + 1)}>下一页<ChevronRight size={16}/></button></nav> : null}
+            <div className="bank-filter-row"><label className="bank-search"><Search size={17}/><span className="sr-only">搜索本小节</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索本小节题干、知识点或题号"/></label>
+              <Select value={questionType} aria-label="筛选题型" onChange={event => { setQuestionType(event.target.value); setPage(1); }}><option value="all">全部题型</option>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
+            </div>
+            <div className="bank-result-summary"><span role="status" aria-live="polite">{loading ? '正在查询…' : `共 ${pagination.total} 道匹配题`}</span><span>已选 {selected.size} 道 · 切换章节保留</span></div>
+            {visibleQuestions.length ? <div ref={questionListRef} className="bank-question-list" aria-label="题目列表" aria-busy={loading}>{visibleQuestions.map(question => <QuestionCard key={question.questionId} question={question} selected={selected.has(question.questionId)} disabled={loading || creating} onToggle={toggle}/>)}</div>
+              : <div className="bank-empty"><strong>{loading ? '正在查询题目…' : debouncedQuery || questionType !== 'all' ? '没有找到匹配题目' : '本小节暂无题目'}</strong><span>{debouncedQuery || questionType !== 'all' ? '可清除筛选条件，或切换其他小节。' : '可切换其他小节，或上传试卷补充题目。'}</span>{debouncedQuery || questionType !== 'all' ? <button onClick={clearFilters}>清除筛选</button> : onImport ? <button onClick={onImport}>上传试卷</button> : null}</div>}
+            <nav className="bank-pagination" aria-label="题目分页"><button type="button" disabled={page === 1 || loading} onClick={() => setPage(value => value - 1)}><ChevronLeft size={16}/>上一页</button><span>第 {pagination.page || page} / {pageCount} 页</span><button type="button" disabled={page >= pageCount || loading} onClick={() => setPage(value => value + 1)}>下一页<ChevronRight size={16}/></button></nav>
           </div>
         </> : <div className="bank-results-empty"><BookOpen size={24}/><h2>选择一个小节</h2><p>题目将显示在这里。</p></div>}
-      </main>
-      <SelectionBasket questions={selectedQuestions} locations={locations} selectedOrigins={selectedOrigins} title={title} creating={creating} open={basketOpen}
+      </div>
+      <SelectionBasket questions={selectedQuestions} locations={locations} selectedOrigins={selectedOrigins} title={title} creating={creating} error={createError} open={basketOpen}
         onTitleChange={setTitle} onRemove={toggle} onClear={clearSelection} onClose={closeBasket} onSubmit={createDraft}/>
     </div>
   </section>;

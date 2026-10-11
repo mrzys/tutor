@@ -124,7 +124,8 @@ function verifyTeacher(record) {
 }
 
 async function verifySources(root, bankRoot, record) {
-  const manifest = await readJson(bankRoot, 'sources.json');
+  const repository = questionBankStorage(root);
+  const manifest = repository ? repository.getQuestionBankConfig('source_manifest') : await readJson(bankRoot, 'sources.json');
   if (!isObject(manifest) || manifest.schemaVersion !== 1) invalid('Unsupported source manifest schema.');
   requireArray(manifest.sources, 'sources');
   const sources = new Map();
@@ -156,13 +157,17 @@ async function verifySources(root, bankRoot, record) {
     }
     used.add(ref.sourceId);
   }
-  await Promise.all([...used].map(async sourceId => {
+  // Import verifies source bytes before publishing the SQLite snapshot. Runtime reads
+  // validate the saved references without repeatedly reading original paper PDFs.
+  if (!repository) await Promise.all([...used].map(async sourceId => {
     const source = sources.get(sourceId);
     const hash = createHash('sha256').update(await readSafe(root, source.path)).digest('hex');
     if (hash !== source.sha256) invalid(`Source hash mismatch: ${sourceId}.`);
   }));
   await Promise.all(record.student.assets.map(async asset => {
     requireSha(asset?.sha256, 'asset.sha256');
+    safePath(root, asset.path);
+    if (repository) return;
     const hash = createHash('sha256').update(await readSafe(root, asset.path)).digest('hex');
     if (hash !== asset.sha256) invalid(`Asset hash mismatch: ${asset.path}.`);
   }));

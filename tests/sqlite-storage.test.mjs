@@ -11,8 +11,8 @@ import { confirmPaper, getPaper, derivePaperDraft } from '../src/assembly/papers
 import { saveFeedback, readFeedback } from '../src/assembly/feedback.mjs';
 import { generateOutput, readOutputFile, getOutputStatus } from '../src/output/manager.mjs';
 import { hashContent } from '../src/question-bank/reader.mjs';
-import { listQuestions } from '../src/question-bank/reader.mjs';
-import { loadPool } from '../src/assembly/engine.mjs';
+import { getQuestion, listQuestions } from '../src/question-bank/reader.mjs';
+import { getAssemblyConfig, loadPool } from '../src/assembly/engine.mjs';
 import { listQuestionBankCatalog } from '../src/question-bank/catalog.mjs';
 import Database from 'better-sqlite3';
 
@@ -197,4 +197,38 @@ test('SQLite migrates the pre-BLOB question import table instead of treating CRE
   assert.equal(columns.has('source_sha256'), true);
   assert.ok(repository.database.prepare(`SELECT name FROM sqlite_master
     WHERE type='table' AND name='question_imports_without_source_v3'`).get());
+});
+
+test('SQLite bank survives restart without seed JSON or source PDFs and preserves database-owned content', async t => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'tutor-authoritative-bank-'));
+  const emptyProjectRoot = path.join(base, 'empty-project');
+  await mkdir(emptyProjectRoot);
+  let storage;
+  t.after(async () => { storage?.close(); await rm(base, { recursive: true, force: true }); });
+  storage = await registerSqliteStorage(base, 'bank.sqlite', { questionBankRoot: path.resolve('.') });
+  const original = await getAssemblyConfig();
+  assert.equal(original.ok, true);
+  const seededAt = storage.repository.database.prepare(`SELECT synced_at FROM question_bank_state WHERE kind='ledger'`).get().synced_at;
+  const updatedContext = { ...original.config.courseContext, contextId: 'database-owned-context' };
+  storage.repository.database.prepare(`UPDATE question_bank_config SET payload=?,sha256=? WHERE kind='course_context'`)
+    .run(JSON.stringify(updatedContext), hashContent(updatedContext));
+  storage.close(); storage = undefined;
+
+  // This deployment root contains neither data/ JSON nor any original source paper.
+  storage = await registerSqliteStorage(base, 'bank.sqlite', { questionBankRoot: emptyProjectRoot });
+  assert.deepEqual(await readdir(emptyProjectRoot), []);
+  assert.equal(storage.questionBank.readyQuestions, 45);
+  assert.equal(storage.repository.database.prepare(`SELECT synced_at FROM question_bank_state WHERE kind='ledger'`).get().synced_at, seededAt);
+  assert.equal((await listQuestions({ root: emptyProjectRoot })).totals.ready, 45);
+  const question = await getQuestion('tutor-set-001', { root: emptyProjectRoot });
+  assert.equal(question.ok, true, JSON.stringify(question));
+  const configured = await getAssemblyConfig({ root: emptyProjectRoot });
+  assert.equal(configured.ok, true, JSON.stringify(configured));
+  assert.equal(configured.config.courseContext.contextId, 'database-owned-context');
+  assert.deepEqual(configured.config.tasks, original.config.tasks);
+  assert.deepEqual(configured.config.sourceManifest, original.config.sourceManifest);
+  const pool = await loadPool(emptyProjectRoot);
+  assert.equal(pool.records.length, 45);
+  assert.equal(pool.failures.length, 0);
+  assert.equal((await listQuestionBankCatalog({ root: emptyProjectRoot })).questions.length, 45);
 });

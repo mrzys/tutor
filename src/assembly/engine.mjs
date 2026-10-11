@@ -24,8 +24,9 @@ async function readData(root, name) {
 }
 
 async function loadConfig(root) {
-  const fileConfig = await readData(root, 'task-catalog.json');
   const repository = questionBankStorage(root);
+  const fileConfig = repository ? repository.getQuestionBankConfig('task_catalog') : await readData(root, 'task-catalog.json');
+  if (!fileConfig) throw new AssemblyError('config_error', 'SQLite 组卷配置缺失。');
   const config = repository ? { ...fileConfig, chapters: repository.getQuestionBankChapters() } : fileConfig;
   if (config.schemaVersion !== 1 || !Array.isArray(config.chapters) || !Array.isArray(config.premises)
       || !Array.isArray(config.tasks) || !object(config.defaultTasks) || !object(config.defaultRequirements)) {
@@ -50,8 +51,12 @@ async function loadConfig(root) {
 export async function getAssemblyConfig({ root = defaultRoot } = {}) {
   try {
     const config = await loadConfig(root);
-    const [sourceManifest, courseContext] = await Promise.all(['sources.json', 'course-context.json'].map(async name =>
-      JSON.parse(await readFile(path.join(root, 'data', 'question-bank', name), 'utf8'))));
+    const repository = questionBankStorage(root);
+    const [sourceManifest, courseContext] = repository
+      ? [repository.getQuestionBankConfig('source_manifest'), repository.getQuestionBankConfig('course_context')]
+      : await Promise.all(['sources.json', 'course-context.json'].map(async name =>
+        JSON.parse(await readFile(path.join(root, 'data', 'question-bank', name), 'utf8'))));
+    if (!sourceManifest || !courseContext) throw new AssemblyError('config_error', 'SQLite 材料与课程上下文缺失。');
     if (sourceManifest.schemaVersion !== 1 || !Array.isArray(sourceManifest.sources)
         || sourceManifest.sources.some(source => !object(source) || typeof source.sourceId !== 'string' || !source.sourceId
           || typeof source.path !== 'string' || path.isAbsolute(source.path) || source.path.includes('\\')

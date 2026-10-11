@@ -73,13 +73,13 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
         }
       }
       if (url.pathname === '/api/config' && request.method === 'GET') {
-        const [config, bank, context, saved] = await Promise.all([
+        const [config, bank, saved] = await Promise.all([
           getAssemblyConfig({ root }), listQuestions({ root }),
-          readFile(path.join(root, 'data/question-bank/course-context.json'), 'utf8').then(JSON.parse),
           listDrafts(storeRoot),
         ]);
         if (!config.ok) return json(response, 500, config);
         if (!bank.ok) return json(response, 500, bank);
+        const context = config.config.courseContext;
         config.config.sources = config.config.sources.map(source => ({ ...source,
           label: source.sourceId === 'set-teacher' ? '集合汇编 · 解析版' : '集合汇编 · 原卷版（已分离答案）',
         }));
@@ -110,8 +110,10 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
         return json(response, result.ok ? 200 : result.error.code === 'not_found' ? 404 : 500, result);
       }
       if (url.pathname === '/api/question-bank' && request.method === 'GET') {
-        const result = await listQuestionBankCatalog({ root });
-        return json(response, result.ok ? 200 : 500, result);
+        const filters = Object.fromEntries(['sectionId', 'query', 'questionType', 'page', 'pageSize']
+          .filter(key => url.searchParams.has(key)).map(key => [key, url.searchParams.get(key)]));
+        const result = await listQuestionBankCatalog({ root, ...filters });
+        return json(response, result.ok ? 200 : result.error.code === 'invalid_request' ? 400 : 500, result);
       }
       if (url.pathname === '/api/question-bank/manual-draft' && request.method === 'POST') {
         const result = await createManualQuestionDraft(await body(request), { root });

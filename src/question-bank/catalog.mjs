@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, loadPool, normalizeRequirements } from '../assembly/engine.mjs';
 import { questionBankStorage } from '../storage/registry.mjs';
+import { getQuestion } from './reader.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const clone = value => structuredClone(value);
@@ -40,15 +41,87 @@ function publicQuestion(record, repository) {
   };
 }
 
-export async function listQuestionBankCatalog({ root = defaultRoot } = {}) {
+function queryOptions(input) {
+  const { sectionId = '', query = '', questionType = '', page, pageSize } = input;
+  if (typeof query !== 'string' || query.length > 256 || typeof sectionId !== 'string' || sectionId.length > 160
+      || !['', 'single_choice', 'fill_blank', 'free_response'].includes(questionType)) reject('invalid_request', '题库筛选条件无效。');
+  const paginated = page !== undefined || pageSize !== undefined || !!sectionId || !!query || !!questionType;
+  const currentPage = page === undefined ? 1 : Number(page);
+  const size = pageSize === undefined ? 12 : Number(pageSize);
+  if (!Number.isSafeInteger(currentPage) || currentPage < 1 || currentPage > 100000
+      || !Number.isSafeInteger(size) || size < 1 || size > 60) reject('invalid_request', '分页参数无效。');
+  return { sectionId, query: query.trim(), questionType, page: currentPage, pageSize: size, paginated };
+}
+
+async function databaseCatalog(repository, root, options) {
+  // SQL filters before materialising question bodies; placeholders keep teacher text literal.
+  const from = `FROM question_bank_questions q
+    JOIN json_each((SELECT payload FROM question_bank_state WHERE kind='question_index'), '$.entries') a
+      ON json_extract(a.value,'$.questionId')=q.question_id
+    JOIN json_each((SELECT payload FROM question_bank_state WHERE kind='ledger'), '$.entries') e
+      ON json_extract(e.value,'$.questionId')=q.question_id`;
+  const conditions = ["json_extract(e.value,'$.status')='ready'",
+    "json_extract(a.value,'$.contentVersion')=q.content_version", "json_extract(a.value,'$.teacherVersion')=q.teacher_version"];
+  const parameters = [];
+  if (options.sectionId) {
+    conditions.push('EXISTS (SELECT 1 FROM question_section_mappings m WHERE m.question_id=q.question_id AND m.section_id=?)');
+    parameters.push(options.sectionId);
+  }
+  if (options.questionType) { conditions.push("json_extract(q.payload,'$.questionType')=?"); parameters.push(options.questionType); }
+  if (options.query) {
+    conditions.push(`instr(lower(q.question_id || ' ' || coalesce(json_extract(q.payload,'$.student'),'') || ' ' ||
+      coalesce(json_extract(q.payload,'$.scopeEvidence'),'') || ' ' || coalesce(json_extract(e.value,'$.taskSummary'),'')), lower(?)) > 0`);
+    parameters.push(options.query);
+  }
+  const where = `WHERE ${conditions.join(' AND ')}`;
+  // Verify the shared snapshots before querying their JSON fields.
+  const ledger = repository.getQuestionBankLedger();
+  const index = repository.getQuestionBankIndex();
+  if (!ledger || !index) reject('integrity_error', 'SQLite 题库索引缺失。');
+  const total = repository.database.prepare(`SELECT count(*) AS count ${from} ${where}`).get(...parameters).count;
+  const pageSize = options.paginated ? options.pageSize : Math.max(1, total);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(options.page, totalPages);
+  const rows = repository.database.prepare(`SELECT q.question_id ${from} ${where} ORDER BY q.question_id LIMIT ? OFFSET ?`)
+    .all(...parameters, pageSize, (page - 1) * pageSize);
+  const entries = new Map(ledger.entries.map(entry => [entry.questionId, entry]));
+  const annotations = new Map(index.entries.map(entry => [entry.questionId, entry]));
+  const questions = await Promise.all(rows.map(async row => {
+    const result = await getQuestion(row.question_id, { root });
+    if (!result.ok) reject(result.error.code, result.error.message);
+    return publicQuestion({ result, entry: entries.get(row.question_id), annotation: annotations.get(row.question_id) }, repository);
+  }));
+  const chapters = repository.getQuestionBankChapters().map(chapter => ({ ...chapter,
+    questionCount: repository.database.prepare(`SELECT count(*) AS count ${from}
+      WHERE json_extract(e.value,'$.status')='ready' AND EXISTS (SELECT 1 FROM json_each(a.value,'$.primarySections') s WHERE s.value=?)`)
+      .get(chapter.id).count }));
+  const ready = ledger.entries.filter(entry => entry.status === 'ready').length;
+  return { ok: true, chapters, textbooks: repository.getQuestionBankTextbooks(), questions,
+    pagination: { page, pageSize, total, totalPages },
+    totals: { sourceUnits: ledger.entries.length, ready, pending: ledger.entries.length - ready },
+    storage: 'sqlite', limits: { teacherContentIncluded: false, difficultyAvailable: false } };
+}
+
+export async function listQuestionBankCatalog({ root = defaultRoot, ...input } = {}) {
   try {
+    const options = queryOptions(input);
+    const registered = questionBankStorage(root);
+    if (registered) return await databaseCatalog(registered, root, options);
     const { config, pool, ready, repository } = await loadCatalog(root);
-    const questions = ready.map(record => publicQuestion(record, repository))
+    const allQuestions = ready.map(record => publicQuestion(record, repository))
       .sort((a, b) => a.questionId.localeCompare(b.questionId));
+    const matching = allQuestions.filter(question => (!options.sectionId || question.chapters.includes(options.sectionId))
+      && (!options.questionType || question.questionType === options.questionType)
+      && (!options.query || JSON.stringify(question).toLowerCase().includes(options.query.toLowerCase())));
+    const pageSize = options.paginated ? options.pageSize : Math.max(1, matching.length);
+    const totalPages = Math.max(1, Math.ceil(matching.length / pageSize));
+    const page = Math.min(options.page, totalPages);
+    const questions = matching.slice((page - 1) * pageSize, page * pageSize);
     return { ok: true,
-      chapters: config.chapters.map(chapter => ({ ...clone(chapter), questionCount: questions.filter(item => item.chapters.includes(chapter.id)).length })),
+      chapters: config.chapters.map(chapter => ({ ...clone(chapter), questionCount: allQuestions.filter(item => item.chapters.includes(chapter.id)).length })),
       textbooks: repository?.getQuestionBankTextbooks() ?? [],
       questions,
+      pagination: { page, pageSize, total: matching.length, totalPages },
       totals: clone(pool.totals),
       limits: { teacherContentIncluded: false, difficultyAvailable: false },
     };
