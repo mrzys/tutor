@@ -124,8 +124,9 @@ test('real unscored student and teacher PDFs omit assigned scores and rubric req
     const result = await generatePaperOutput(paper, kind, { outputRoot }); assert.equal(result.ok, true, result.error?.message);
     const script = 'import sys,json;from pypdf import PdfReader;print(json.dumps("\\n".join(p.extract_text(extraction_mode="layout") for p in PdfReader(sys.argv[1]).pages)))';
     const text = JSON.parse((await promisify(execFile)(await findPdfPython(), ['-c', script, result.artifact.path], { encoding: 'utf8', windowsHide: true })).stdout);
-    assert.match(text, /实际可用：10 题/); assert.match(text, /第 10 题/);
+    assert.match(text, /共 10 题/); assert.match(text, /10\./);
     assert.doesNotMatch(text, /100 分|0 分|本卷赋分|评分建议|有效分值|赋分检查/);
-    if (kind === 'teacher') { assert.match(text, /参考答案/); assert.match(text, /参考解析/); }
+    if (kind === 'teacher') { assert.match(text, /参考答案/); assert.match(text, /解析/); }
+    else { assert.doesNotMatch(text, /参考答案|参考解析|答案速查/); }
   }
 });

@@ -1,0 +1,615 @@
+{
+  "schemaVersion": 1,
+  "checkedOn": "2026-10-10",
+  "method": "使用 pdftoppm 将存档教师版和学生版对应完整物理页渲染为1700px PNG并逐页视觉核对题干、选项、答案、解答和题目边界；数学解答另作独立检查。不是教师审定。",
+  "ready": [
+    {
+      "questionId": "tutor-set-004",
+      "questionType": "single_choice",
+      "contentVersion": "content-baa6798875ea5c4e",
+      "teacherVersion": "teacher-c30f74fdcc73c0b8",
+      "sourcePages": {
+        "set-teacher": [
+          3,
+          4
+        ],
+        "set-student": [
+          3
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_property_judgement",
+        "label": "辨析确定性、无序性和重复元素计数",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "A 所述五个常任理事国对象确定，能组成集合。B“年龄较小”没有明确标准，不能确定对象。C 两集合含相同的1、2、3，排列顺序不同不改变集合。D 去除重复列举后为 $\\{0,1,2,5\\}$，只有4个元素。故选 A。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合的确定性",
+          "集合的无序性",
+          "重复列举不重复计数"
+        ],
+        "bypass": "只核对 A 对象确定即可选出答案，不强制完整解释其余三项。"
+      }
+    },
+    {
+      "questionId": "tutor-set-005",
+      "questionType": "fill_blank",
+      "contentVersion": "content-7b09cc4498427541",
+      "teacherVersion": "teacher-5bf95c463647320e",
+      "sourcePages": {
+        "set-teacher": [
+          4
+        ],
+        "set-student": [
+          3
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_determinacy_fill",
+        "label": "辨析对象能否构成集合并填写序号",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "①学生范围确定；③由正整数乘7所得的数范围确定；④给定线段上的点范围确定，三者都能构成集合。②“非常接近”缺少明确距离标准，不能确定实数是否属于其中，所以不能构成集合。故填②。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合确定性",
+          "有限与无限对象的确定范围"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    },
+    {
+      "questionId": "tutor-set-006",
+      "questionType": "fill_blank",
+      "contentVersion": "content-c80a6142019d5d56",
+      "teacherVersion": "teacher-b201f9559c1301de",
+      "sourcePages": {
+        "set-teacher": [
+          4,
+          5
+        ],
+        "set-student": [
+          3,
+          4
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_determinacy_fill",
+        "label": "辨析对象能否构成集合并填写序号",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "①入学时间、地域和年级明确，对象确定。②定点及距离条件明确，对象确定；无需求点的坐标或写圆方程。③“影响力比较大”没有明确标准，对象不确定。④解一次不等式得 $x<10/3$，正整数解为 $\\{1,2,3\\}$，对象确定。因此能组成集合的是①②④。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合确定性",
+          "正整数",
+          "一次不等式",
+          "给定距离条件"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    },
+    {
+      "questionId": "tutor-set-011",
+      "questionType": "fill_blank",
+      "contentVersion": "content-7f0ba1a1fb52ac66",
+      "teacherVersion": "teacher-eff1ef0a29f365ab",
+      "sourcePages": {
+        "set-teacher": [
+          7
+        ],
+        "set-student": [
+          5
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "number_membership_fill",
+        "label": "判断常用数集的元素关系并填符号",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "自然数集 $\\mathbb N$ 为非负整数集。$\\sqrt5$ 不是整数，所以 $\\sqrt5\\notin\\mathbb N$；$\\sqrt{16}=4$ 是自然数，所以 $\\sqrt{16}\\in\\mathbb N$。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "自然数集",
+          "属于与不属于",
+          "平方根基本运算"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    },
+    {
+      "questionId": "tutor-set-012",
+      "questionType": "fill_blank",
+      "contentVersion": "content-aa04d1ba2c987203",
+      "teacherVersion": "teacher-b78c2aa6e349760c",
+      "sourcePages": {
+        "set-teacher": [
+          7
+        ],
+        "set-student": [
+          5
+        ]
+      },
+      "requiredSections": [
+        "1.1",
+        "1.2"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "membership_subset_judgement_fill",
+        "label": "辨析元素关系、真子集和常用数集",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1",
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "①0是自然数，错误。②空集是非空集合 $\\{0\\}$ 的真子集，正确。③ $\\pi$ 是无理数，不属于有理数集，错误。④ $\\{0,1\\}$ 的元素是数0和数1，不是集合 $\\{1\\}$，所以 $\\{1\\}\\notin\\{0,1\\}$，错误。故填②。",
+      "notes": [
+        "原真子集符号规范转写为 subsetneq，不改变包含关系含义。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "自然数集",
+          "有理数集",
+          "元素与集合关系",
+          "空集与真子集"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    },
+    {
+      "questionId": "tutor-set-014",
+      "questionType": "single_choice",
+      "contentVersion": "content-00a1d61e363ade3d",
+      "teacherVersion": "teacher-39eb2ae54734f51b",
+      "sourcePages": {
+        "set-teacher": [
+          8,
+          9
+        ],
+        "set-student": [
+          7
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [
+        "basic_geometry"
+      ],
+      "task": {
+        "id": "distinct_lengths_quadrilateral",
+        "label": "由四元长度集合判断可能的四边形",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "四种长度构成四元数集，表示4根火柴棒的长度两两不同。矩形有相等的对边，菱形四边相等，等腰梯形两腰相等，均不满足。普通梯形可以四边两两不同，例如顶点为 $(0,0),(5,0),(4,2),(0,2)$ 的梯形，四边长为 $5,\\sqrt5,4,2$，两两不同，故可能为梯形，选 A。",
+      "notes": [
+        "原题“四元数集”明确元素数为4，不依赖未明写互异条件。",
+        "补充梯形存在性例子，属于 source_adapted 教师解答；不在学生题面增加条件。",
+        "该题依赖初中三角形或四边形的边长性质；当前 course-context.foundation 未自动包含几何，必须在本次需求中显式允许 basic_geometry 后才能作为合格候选，不因题包ready自动注入。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合四个不同元素",
+          "四边形边长性质",
+          "初中平面几何"
+        ],
+        "bypass": "通过矩形、菱形及等腰梯形的相等边排除可作答，不强制写出具体梯形构造。"
+      }
+    },
+    {
+      "questionId": "tutor-set-016",
+      "questionType": "single_choice",
+      "contentVersion": "content-fa86e4635abe05ba",
+      "teacherVersion": "teacher-ba68251704236c10",
+      "sourcePages": {
+        "set-teacher": [
+          9,
+          10
+        ],
+        "set-student": [
+          7
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "parameter_linear_solution_set",
+        "label": "判断含参一次方程可能的解集",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "当 $a=1$ 时方程为 $0x=0$，解集为 $\\mathbb R$。当 $a=-1$ 时为 $0x=-2$，解集为空集。当 $a\\ne\\pm1$ 时，可除以 $(a-1)(a+1)$，解为 $x=1/(a+1)$，不为0，所以解集不可能为 $\\{0\\}$。$a=0$ 时解集为 $\\{1\\}$，故其余三选项都可能，选 C。",
+      "notes": [
+        "源教师解析 a=-1 分支首句误写 a-1=0，已按方程更正为 a²-1=0、a-1=-2。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合与方程解集",
+          "含参一次方程",
+          "初中整式因式分解",
+          "空集"
+        ],
+        "bypass": "只把 x=0 代入原方程得 a=1，此时所有实数均为解，即可排除单元素集{0}，不必完整分类三种参数情形。"
+      }
+    },
+    {
+      "questionId": "tutor-set-017",
+      "questionType": "single_choice",
+      "contentVersion": "content-a71403556b3ddf3c",
+      "teacherVersion": "teacher-9bb5212b4c91766c",
+      "sourcePages": {
+        "set-teacher": [
+          10
+        ],
+        "set-student": [
+          7
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [
+        "basic_geometry"
+      ],
+      "task": {
+        "id": "distinct_lengths_triangle",
+        "label": "由三个集合元素构成边长排除等腰三角形",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "题干说明 a、b、c 是集合中三个元素，因此三者两两不同。等腰三角形至少有两条边相等，与此矛盾，所以一定不是等腰三角形，选 D。边长两两不同的三角形可以是锐角、直角或钝角，因此不能排除前三种。",
+      "notes": [
+        "原解析用 a≠b≠c 的非严格连写，本次改为三者两两不同。",
+        "该题依赖初中三角形或四边形的边长性质；当前 course-context.foundation 未自动包含几何，必须在本次需求中显式允许 basic_geometry 后才能作为合格候选，不因题包ready自动注入。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合三个不同元素",
+          "等腰三角形定义"
+        ],
+        "bypass": "仅利用两两不同与等腰定义可选D，不要求构造其他三类三角形。"
+      }
+    },
+    {
+      "questionId": "tutor-set-023",
+      "questionType": "single_choice",
+      "contentVersion": "content-60c5cc87ad722b41",
+      "teacherVersion": "teacher-363a62a86edfcafa",
+      "sourcePages": {
+        "set-teacher": [
+          13
+        ],
+        "set-student": [
+          9
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "finite_progression_description",
+        "label": "将有限等差数集识别为描述法",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "自然数包含0。C 中 $n=0,1,2,3,4$，相应 $x=1,5,9,13,17$，恰好与 M 相同。A 中 n=1 时产生3而 M 无3；B 在 n=0 时产生−1；D 在 n=0 时产生−3，均不相等，故选 C。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合描述法与列举法",
+          "自然数含0",
+          "一次代数式代入"
+        ],
+        "bypass": "逐项枚举选项即可作答，不证明学生能自主发现数列通项或从零构建描述法。"
+      }
+    },
+    {
+      "questionId": "tutor-set-024",
+      "questionType": "fill_blank",
+      "contentVersion": "content-ce4cff172fe7e632",
+      "teacherVersion": "teacher-66410667d7c00c0e",
+      "sourcePages": {
+        "set-teacher": [
+          13
+        ],
+        "set-student": [
+          9
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "natural_integer_listing_fill",
+        "label": "将自然数描述集合化为列举法",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "自然数是非负整数。在−2至2（含端点）的范围内，自然数只有0、1、2，所以集合为 $\\{0,1,2\\}$。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "自然数集",
+          "描述法转列举法",
+          "不等式范围"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    },
+    {
+      "questionId": "tutor-set-026",
+      "questionType": "fill_blank",
+      "contentVersion": "content-4007e97ed8f07d85",
+      "teacherVersion": "teacher-31659e110fc68434",
+      "sourcePages": {
+        "set-teacher": [
+          14
+        ],
+        "set-student": [
+          10
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "factored_root_listing_fill",
+        "label": "将已因式分解方程根集化为列举法",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "三个因子的乘积为0，当且仅当至少一个因子为0。由 x=0、x−1=0 或 x+1=0 得 x=0、1 或−1，所以 $A=\\{-1,0,1\\}$。只需零乘积性质和一次方程。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合列举法",
+          "零乘积性质",
+          "初中一次方程"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    },
+    {
+      "questionId": "tutor-set-027",
+      "questionType": "fill_blank",
+      "contentVersion": "content-a4012c5adbcb09ea",
+      "teacherVersion": "teacher-c9fcd6e7e1a4e1a4",
+      "sourcePages": {
+        "set-teacher": [
+          14
+        ],
+        "set-student": [
+          10
+        ]
+      },
+      "requiredSections": [
+        "1.1"
+      ],
+      "primarySections": [
+        "1.1"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "system_pair_listing_fill",
+        "label": "求方程组解并用有序数对列举解集",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "由 $x^2-4=(x-2)(x+2)=0$ 得 x=−2 或 x=2。由 x+y=0 得 y=−x，分别得到 (x,y)=(−2,2) 或 (2,−2)。方程组的解是有序数对，故其解集为 $\\{(-2,2),(2,-2)\\}$，不能把所有坐标拆成无序数集。",
+      "notes": [
+        "原局部题号又为“跟踪训练1”，保留独立 auditId 027，不与022并为同题。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面和允许解法已核对；尚未创建与具体教学目标合同绑定的支持记录，不以题包ready替代目标支持。",
+        "observableActivities": [
+          "集合列举法",
+          "有序数对",
+          "初中方程组",
+          "平方差因式分解"
+        ],
+        "bypass": "填空仅交结果；不据教师解答宣称学生必须输出完整书面论证。"
+      }
+    }
+  ],
+  "pending": [
+    {
+      "questionId": "tutor-set-015",
+      "status": "pending",
+      "reason": "C选项把根集写成{1,1,2}，按通常集合语义重复列举仍表示{1,2}，与B可同时为真；若要求规范不重复的列举写法需要明确题干或改选项，当前单选不唯一。",
+      "sourcePages": {
+        "set-teacher": [
+          9
+        ],
+        "set-student": [
+          7
+        ]
+      }
+    },
+    {
+      "questionId": "tutor-set-019",
+      "status": "pending",
+      "reason": "原题仅说M={−1,3a−1}，未明写有两个不同元素。a=0时M={−1}仍为集合，原答案a≠0依赖缺失前提，不能静默补条件。",
+      "sourcePages": {
+        "set-teacher": [
+          10,
+          11
+        ],
+        "set-student": [
+          8
+        ]
+      }
+    },
+    {
+      "questionId": "tutor-set-021",
+      "status": "pending",
+      "reason": "双方PDF选项B、C、D均缺集合花括号，源选项C仅为0,−4/5而不是完整集合写法。原解析答案C可定位，但直接补齐选项会改变判定对象，待明确修订。",
+      "sourcePages": {
+        "set-teacher": [
+          12,
+          13
+        ],
+        "set-student": [
+          9
+        ]
+      }
+    },
+    {
+      "questionId": "tutor-set-025",
+      "status": "pending",
+      "reason": "题干“能被3整除余2”同时宣称整除与余2，存在矛盾；原解按“被3除余2”处理。保留原题等待明确笔误修订，不能直接发布矛盾题面。",
+      "sourcePages": {
+        "set-teacher": [
+          13,
+          14
+        ],
+        "set-student": [
+          9,
+          10
+        ]
+      }
+    }
+  ],
+  "structuralChecks": {
+    "studentTeacherSeparation": "pass",
+    "katex": "pass",
+    "notClaimed": "结构与渲染检查不等于教学目标支持已复核",
+    "method": "tmp/verify-expand-a.mjs 使用临时根目录和临时ledger调用正式reader；真实存档来源PDF复制并核验哈希；逐个KaTeX渲染所有数学片段",
+    "readerPackages": 12
+  }
+}

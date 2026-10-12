@@ -3,6 +3,7 @@ import { mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { hashContent } from '../question-bank/reader.mjs';
 import { sqliteStorage } from '../storage/sqlite.mjs';
+import { PDF_LAYOUT_VERSION } from './pdf.mjs';
 
 const kinds = ['student', 'teacher'];
 const queues = new Map();
@@ -60,7 +61,7 @@ export async function getOutputStatus(paper, kind, { outputRoot }) {
     }
   }
   const { filename, paperHash, schemaVersion, ...status } = manifest;
-  return { ...status, ...(['complete', 'incomplete'].includes(status.status)
+  return { ...status, layoutOutdated: ['complete', 'incomplete'].includes(status.status) && status.layoutVersion !== PDF_LAYOUT_VERSION, ...(['complete', 'incomplete'].includes(status.status)
     ? { downloadUrl: `/api/papers/${paper.paperId}/outputs/${kind}/file` } : {}) };
 }
 
@@ -75,7 +76,7 @@ export async function generateOutput(paper, kind, { outputRoot, root, generate }
   const previous = queues.get(key) ?? Promise.resolve();
   const transaction = previous.then(async () => {
     const cached = await getOutputStatus(paper, kind, { outputRoot });
-    if (['complete', 'incomplete'].includes(cached.status)) return { ok: true, output: cached };
+    if (['complete', 'incomplete'].includes(cached.status) && !cached.layoutOutdated) return { ok: true, output: cached };
     let output;
     try {
       const render = generate ?? (await import('./pdf.mjs')).generatePaperOutput;
@@ -88,8 +89,12 @@ export async function generateOutput(paper, kind, { outputRoot, root, generate }
       if (!bytes.subarray(0, 5).equals(Buffer.from('%PDF-')) || digest(bytes) !== artifact.sha256) throw new Error('输出文件校验失败。');
       if (!['complete', 'incomplete'].includes(artifact.status)) throw new Error('输出完成状态无效。');
       output = { schemaVersion: 1, paperHash: hashContent(paper), kind, status: artifact.status,
-        filename: relative, sha256: artifact.sha256, pages: artifact.pages, issues: artifact.issues ?? [], createdAt: new Date().toISOString() };
+        filename: relative, sha256: artifact.sha256, pages: artifact.pages, issues: artifact.issues ?? [], layoutVersion: artifact.layoutVersion ?? PDF_LAYOUT_VERSION, createdAt: new Date().toISOString() };
     } catch (error) {
+      // A failed layout upgrade must not make a previously verified PDF unavailable.
+      if (['complete', 'incomplete'].includes(cached.status)) {
+        return { ok: false, error: { code: error.code ?? 'output_error', message: error.message }, output: cached };
+      }
       output = { schemaVersion: 1, paperHash: hashContent(paper), kind, status: 'failed',
         message: error.message, errorCode: error.code ?? 'output_error', issues: [], createdAt: new Date().toISOString() };
     }

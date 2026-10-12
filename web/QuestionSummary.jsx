@@ -28,8 +28,8 @@ export function QuestionSummary({ slot, draft, supply, expanded = false }) {
   const solutionExample = path?.basis || question?.scopeEvidence?.allowedSolution;
   const body = <div className="question-summary-body">
       <dl className="question-profile">
-        <div><dt>考查内容</dt><dd>{topics}</dd></div>
-        <div><dt>题位任务</dt><dd>{slot.taskLabel}</dd></div>
+        <div><dt>考查内容</dt><dd><MathText text={topics}/></dd></div>
+        <div><dt>题位任务</dt><dd><MathText text={slot.taskLabel}/></dd></div>
         <div><dt>题目难度</dt><dd>未标定{Number.isFinite(slot.targetDifficulty ?? draft.baseline.requirements.targetDifficulty) ? ` · 目标 ${(slot.targetDifficulty ?? draft.baseline.requirements.targetDifficulty).toFixed(2)}` : ''}</dd></div>
         <div><dt>换题余量</dt><dd className={supply?.error ? 'warning-text' : undefined}>{availability.detail}{availability.exhausted ? <small>可查看差异建议，或调整本题要求后重新检索。</small> : null}</dd></div>
       </dl>
@@ -43,5 +43,5 @@ export function QuestionSummary({ slot, draft, supply, expanded = false }) {
       {slot.locked ? <p className="help">本题已锁定：批量自动换题跳过；仍可直接调整要求或手动换题。</p> : null}
     </div>;
   return expanded ? <section className="question-summary"><h3>题目摘要</h3>{body}</section>
-    : <details className="question-summary" open={open} onToggle={event => setOpen(event.currentTarget.open)}><summary><strong>题目摘要</strong><span>{topics}</span></summary>{body}</details>;
+    : <details className="question-summary" open={open} onToggle={event => setOpen(event.currentTarget.open)}><summary><strong>题目摘要</strong><span><MathText text={topics}/></span></summary>{body}</details>;
 }

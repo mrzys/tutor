@@ -1,0 +1,749 @@
+{
+  "schemaVersion": 1,
+  "checkedOn": "2026-10-10",
+  "method": "Poppler 渲染真实存档教师/学生对应物理页为1900px PNG，逐页视觉核对；数学解答另作独立检查。结构有效不是教师审定。",
+  "ready": [
+    {
+      "questionId": "tutor-set-028",
+      "questionType": "single_choice",
+      "contentVersion": "content-d9e0a3e4ef2dcd70",
+      "teacherVersion": "teacher-a4be4b663907b263",
+      "sourcePages": {
+        "set-teacher": [
+          15
+        ],
+        "set-student": [
+          10
+        ]
+      },
+      "requiredSections": [
+        "1.2"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_integer_combination_equality",
+        "label": "判断整数线性组合集合与偶数集相等",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "任取 $x\\in B$，则 $x=4m+6n=2(2m+3n)$ 为偶数，故 $B\\subseteq A$。任取 $x=2k\\in A$，取整数 $m=-k,n=k$，有 $4m+6n=2k=x$，故 $A\\subseteq B$，因此 $A=B$。两集合均含0，且均不含1，所以其余选项不成立。",
+      "notes": [
+        "B 项为真子集符号，规范为 subsetneq；原学生版混入答案和解答，已删除。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "集合相等",
+          "双向包含",
+          "整数与偶数",
+          "整式运算"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-029",
+      "questionType": "single_choice",
+      "contentVersion": "content-7f442bfb283451e5",
+      "teacherVersion": "teacher-bf8425ebadc7d9f6",
+      "sourcePages": {
+        "set-teacher": [
+          15
+        ],
+        "set-student": [
+          11
+        ]
+      },
+      "requiredSections": [
+        "1.1",
+        "1.2"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_object_equality",
+        "label": "辨析集合元素类型与集合相等",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1",
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "A、B 都是描述法表示的数集，仅有数2020这一个元素，故都等于 D 的 $\\{2020\\}$。C 按原题列举法的写法，其元素是方程 $x=2020$，不是数2020，因此与其余三个集合不同。不能把 C 擅自改写为带竖线的描述法。",
+      "notes": [
+        "保留原卷特殊的方程对象集合写法 {x=2020}；不改为 {x|x=2020}。原解析明确说明此意，题面与答案一致。",
+        "原学生版含答案解析，独立 student 已删除教师内容。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "集合表示法",
+          "集合元素的对象类型",
+          "集合相等"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-030",
+      "questionType": "single_choice",
+      "contentVersion": "content-08087971ea02fe08",
+      "teacherVersion": "teacher-7676a8ab07051672",
+      "sourcePages": {
+        "set-teacher": [
+          15,
+          16
+        ],
+        "set-student": [
+          11
+        ]
+      },
+      "requiredSections": [
+        "1.1",
+        "1.2"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_object_equality",
+        "label": "辨析集合元素类型与集合相等",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1",
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "A 的两个有序数对不同，所以对应单元素点集不同。B 的数集由同样的2、3组成，元素无序，故相等。C 的 M 是有序数对构成的点集，N 是满足条件的纵坐标构成的数集，元素类型不同，故不相等。D 的 M 是由2、3两个数构成的数集，N 是仅含有序数对 $(2,3)$ 的点集，不相等。故选 B。",
+      "notes": [
+        "原教师解析 D 错把 M={2,3} 说成点集；已在 source_adapted 解答更正为两个数的数集，保留原题和原答案 B。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "集合无序性",
+          "有序数对与数集",
+          "集合相等"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-031",
+      "questionType": "single_choice",
+      "contentVersion": "content-8383460904faf4c8",
+      "teacherVersion": "teacher-e178b11bd6fb1829",
+      "sourcePages": {
+        "set-teacher": [
+          16
+        ],
+        "set-student": [
+          11
+        ]
+      },
+      "requiredSections": [
+        "1.1",
+        "1.2"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_object_equality",
+        "label": "辨析集合元素类型与集合相等",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.1",
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "A 中 $|-\\sqrt3|=\\sqrt3$，两集合的元素完全相同，无序性使排列顺序无关，故相等。B 中 $\\pi\\ne3.14159$，故不同。C 的数集与点集元素类型不同，故不同。D 中 $P=\\{0,1\\}$（自然数含0），而 $Q=\\{-1,1\\}$，故不同。故选 A。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "集合相等",
+          "集合无序性",
+          "常用数集",
+          "绝对值基本运算",
+          "有序数对"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-033",
+      "questionType": "fill_blank",
+      "contentVersion": "content-8552445ac637e32c",
+      "teacherVersion": "teacher-623568a6a261b039",
+      "sourcePages": {
+        "set-teacher": [
+          17
+        ],
+        "set-student": [
+          11
+        ]
+      },
+      "requiredSections": [
+        "1.1",
+        "1.2"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "set_statement_equality",
+        "label": "辨析数集、点集、空集与描述法中的集合相等",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1",
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "① 有序数对 $(1,2)\\ne(2,1)$，故错误。② 只改变数集元素的排列顺序，不改变集合，故正确。③ 所有不含元素的集合都有完全相同的元素，均为空集，故空集唯一。④ 两集合都由“某个实数的平方加1”所得的数构成；将 M 中的自变量 x 改名为 t，元素变量 y 改名为 x，得到 N 的相同描述。因此 M=N，不必使用高中函数值域方法。故正确的序号为②③④。",
+      "notes": [
+        "原卷没有独立【答案】块；②③④ 位于教师第17页解答末尾，视觉核对后作为 source 结论保存。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "集合相等",
+          "有序数对",
+          "集合无序性",
+          "空集",
+          "描述法变量改名"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-036",
+      "questionType": "single_choice",
+      "contentVersion": "content-915a6bac920207f8",
+      "teacherVersion": "teacher-be08d64a2f09a75e",
+      "sourcePages": {
+        "set-teacher": [
+          20
+        ],
+        "set-student": [
+          14
+        ]
+      },
+      "requiredSections": [
+        "1.2"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "requiredPremises": [
+        "quadratic_basics"
+      ],
+      "task": {
+        "id": "empty_proper_root_parameter",
+        "label": "由空集为根集的真子集求参数",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "空集是 M 的真子集，等价于 $M\\ne\\varnothing$，即二次方程 $x^2-ax+1=0$ 有实数根。由根的判别式得 $\\Delta=a^2-4\\ge0$，所以 $a\\le-2$ 或 $a\\ge2$。当 $a=\\pm2$ 时，M 为单元素集，空集仍是真子集，故不能去掉端点。选 D。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "空集与真子集",
+          "二次方程判别式",
+          "平方与大小比较"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-037",
+      "questionType": "single_choice",
+      "contentVersion": "content-316bf8071a0c5f58",
+      "teacherVersion": "teacher-c55ed85254824298",
+      "sourcePages": {
+        "set-teacher": [
+          20
+        ],
+        "set-student": [
+          14
+        ]
+      },
+      "requiredSections": [
+        "1.2",
+        "1.3"
+      ],
+      "primarySections": [
+        "1.2",
+        "1.3"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "intersection_subset_count",
+        "label": "计算有限集与区间交集的子集数",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.2",
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "逐个检查 A 中元素是否满足 $-1<x<4$，得到 $A\\cap B=\\{0,2\\}$。其子集为 $\\varnothing,\\{0\\},\\{2\\},\\{0,2\\}$，共4个。等价地，由两个元素各有选或不选两种情况，得 $2^2=4$。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "交集",
+          "有限集合子集",
+          "枚举计数"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-038",
+      "questionType": "single_choice",
+      "contentVersion": "content-ade982aab6c8ee76",
+      "teacherVersion": "teacher-7a6f6682d2384ce2",
+      "sourcePages": {
+        "set-teacher": [
+          21
+        ],
+        "set-student": [
+          14
+        ]
+      },
+      "requiredSections": [
+        "1.2"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "sum_free_maximum",
+        "label": "确定满足两元素之和不在集内条件的最大基数",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "先证上界。若 B 为空集，则结论显然成立。若 B 非空，设其最大元素为 m，则 B 的所有元素都在 $\\{1,\\ldots,m\\}$ 中。若 $m=2k+1$，把 $1,\\ldots,m-1$ 分成 k 对 $(1,m-1),\\ldots,(k,k+1)$，每对至多一个元素属于 B，否则两元素之和 m 也在 B，与题意矛盾；加上 m，B 至多有 $k+1\\le1013$ 个元素。若 $m=2k$，因题设“任意 x,y”允许 x=y，数 k 不能在 B 中，否则 $k+k=m\\in B$。其余 $1,\\ldots,m-1$ 分成 k−1 对和为 m 的不同数，每对至多选一个，加上 m，至多有 $k\\le1012$ 个元素。因此 B 总不超过1013个元素。再取 $B=\\{1013,1014,\\ldots,2025\\}$，任意两元素（可相同）之和至少为2026，不在 B 中，且 B 有1013个元素，达到上界。故选 D。",
+      "notes": [
+        "原解析未经论证就假设最大元素为2025；替换为显式生成的完整补证，分别覆盖一般最大元素的奇偶两类。",
+        "题干任意 x,y 允许相等；偶数最大元素时中点不能选，已补足。",
+        "不以抽屉原理名称作为额外前提，使用集合分组后每组至多一个元素的直接计数。",
+        "选择题可通过检验1013元素构造并结合选项（无更大选项）作答，因此不能声称要求学生输出完整上界证明。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "有限集合与子集",
+          "集合元素个数",
+          "一般最大元素分类",
+          "整数分组与基本计数"
+        ],
+        "bypass": "构造1013元素且所有选项无更大值即可选D，选择题不强制输出完整上界证明。"
+      }
+    },
+    {
+      "questionId": "tutor-set-039",
+      "questionType": "fill_blank",
+      "contentVersion": "content-92bf7f422f360fb0",
+      "teacherVersion": "teacher-b462ad33f4a87e83",
+      "sourcePages": {
+        "set-teacher": [
+          21
+        ],
+        "set-student": [
+          14,
+          15
+        ]
+      },
+      "requiredSections": [
+        "1.2"
+      ],
+      "primarySections": [
+        "1.2"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "enumerated_event_subset",
+        "label": "从已枚举的二人组合中筛选满足条件的子集",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.2"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "题面已完整列出六种二人组合。AB 是两男，CD 是两女，排除这两个元素；AC、AD、BC、BD 都各含一男一女，保留。因此所求子集为 $\\{AC,AD,BC,BD\\}$。无需计算概率或另用排列组合公式。",
+      "notes": [
+        "保留原题样本空间、事件术语，但完整解法仅用已给六个元素筛选，不依赖概率知识。",
+        "教师版无独立答案块；结论在第21页解答末尾，已视觉核对。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "子集",
+          "给定有限集按条件筛选",
+          "二人组合记号"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-040",
+      "questionType": "fill_blank",
+      "contentVersion": "content-1c258f170048878c",
+      "teacherVersion": "teacher-3ef3d1a5ef22f652",
+      "sourcePages": {
+        "set-teacher": [
+          21,
+          22
+        ],
+        "set-student": [
+          15
+        ]
+      },
+      "requiredSections": [
+        "1.1",
+        "1.2",
+        "1.3"
+      ],
+      "primarySections": [
+        "1.1",
+        "1.2",
+        "1.3"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "defined_quotient_subset_count",
+        "label": "按商集新定义求并集并计算真子集数",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.1",
+          "1.2",
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "由 $k\\in\\{2,4\\}$，得 $B=\\{0,1\\}$。按题设新定义逐项计算，$0/2=0,0/4=0,1/2=1/2,1/4=1/4$，故 $B/A=\\{0,1/4,1/2\\}$。与 B 取并集得 $\\{0,1/4,1/2,1\\}$，共有4个不同元素。每个元素可以选或不选，子集共 $2^4=16$ 个，去掉集合本身后真子集有15个。A 中无0，所有商均有定义。",
+      "notes": [
+        "原PDF商集定义外层花括号缺失；仅补齐集合描述法的排版括号，不改变商式、m/n归属或约束。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "给定新定义",
+          "集合表示法",
+          "并集与互异性",
+          "真子集计数",
+          "分数运算"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-042",
+      "questionType": "single_choice",
+      "contentVersion": "content-fcb01a6e394cdeea",
+      "teacherVersion": "teacher-d102dd4538f9ef0a",
+      "sourcePages": {
+        "set-teacher": [
+          24
+        ],
+        "set-student": [
+          16
+        ]
+      },
+      "requiredSections": [
+        "1.3"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "interval_union",
+        "label": "计算平方约束区间与开区间的并集",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "由 $x^2\\le3$ 得 $-\\sqrt3\\le x\\le\\sqrt3$，故 $B=[-\\sqrt3,\\sqrt3]$。A 为 $(-3,1)$，与 B 有公共区间，并集左端到−3但不含−3，右端到 $\\sqrt3$ 且包含，所以 $A\\cup B=(-3,\\sqrt3]$。选 D。",
+      "notes": [
+        "原学生版含教师内容，独立 student 仅保留题干选项；本题不需要数轴图片，区间由完整文字条件给定。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "并集",
+          "区间端点",
+          "平方与平方根"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-043",
+      "questionType": "single_choice",
+      "contentVersion": "content-4a5f6aa883cdbbdc",
+      "teacherVersion": "teacher-afc7532e17485cb6",
+      "sourcePages": {
+        "set-teacher": [
+          24
+        ],
+        "set-student": [
+          16,
+          17
+        ]
+      },
+      "requiredSections": [
+        "1.3"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "requiredPremises": [
+        "quadratic_basics"
+      ],
+      "task": {
+        "id": "interval_intersection",
+        "label": "由因式符号求区间并取交集",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "因式分解 $x^2-x=x(x-1)$。当 $x<0$ 时两个因子都负，乘积正；当 $0<x<1$ 时两因子异号，乘积负；当 $x>1$ 时两因子都正，乘积正；x=0或1时乘积为0，不符合严格大于0。因此 $A=(-\\infty,0)\\cup(1,+\\infty)$，而 $B=(-1,+\\infty)$，取交集得 $(-1,0)\\cup(1,+\\infty)$。选 C。",
+      "notes": [
+        "使用因式分解后分区间讨论积的符号，不预设高中二次不等式通法；与已允许 quadratic_basics 绑定。",
+        "原学生版含教师内容，已删除。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "交集",
+          "因式分解",
+          "积的符号",
+          "一次不等式",
+          "区间端点"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-044",
+      "questionType": "single_choice",
+      "contentVersion": "content-b53be11931b178ac",
+      "teacherVersion": "teacher-9ff74d073891dd40",
+      "sourcePages": {
+        "set-teacher": [
+          24,
+          25
+        ],
+        "set-student": [
+          17
+        ]
+      },
+      "requiredSections": [
+        "1.3"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "requiredPremises": [
+        "absolute_root"
+      ],
+      "task": {
+        "id": "absolute_interval_complement",
+        "label": "由绝对值条件求实数区间补集",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "$|x-1|\\le1$ 等价于 $-1\\le x-1\\le1$，即 $0\\le x\\le2$，所以 $A=[0,2]$。在实数全集中去掉 A 的全部元素，得 $\\complement_U A=(-\\infty,0)\\cup(2,+\\infty)$。0和2属于 A，所以补集中不包含这两个端点。选 D。",
+      "notes": [
+        "原教师页24为题干及解答、25页续“故选D”；两页视觉核对；原学生版教师内容已删除。"
+      ],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "实数全集与补集",
+          "含变量绝对值不等式",
+          "区间端点"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-046",
+      "questionType": "single_choice",
+      "contentVersion": "content-85474d78715b5479",
+      "teacherVersion": "teacher-8fc28c536b60727d",
+      "sourcePages": {
+        "set-teacher": [
+          25
+        ],
+        "set-student": [
+          17
+        ]
+      },
+      "requiredSections": [
+        "1.3"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "integer_complement_union",
+        "label": "在整数全集中求补集再与有限集并集",
+        "questionType": "single_choice",
+        "sectionIds": [
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "全集限定为整数，$A=\\{-4,-3,-2,-1,0,1\\}$，所以 $\\complement_U A=\\{x\\mid x\\le-5\\text{ 或 }x\\ge2,\\ x\\in\\mathbb Z\\}$。再并入 B，把0、1补入，得到 $\\{x\\mid x\\le-5\\text{ 或 }x\\ge0,\\ x\\in\\mathbb Z\\}$，选 A。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "整数全集",
+          "补集",
+          "并集",
+          "有限集合列举"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    },
+    {
+      "questionId": "tutor-set-048",
+      "questionType": "fill_blank",
+      "contentVersion": "content-ded433f97fb886e2",
+      "teacherVersion": "teacher-26ac09fab929084f",
+      "sourcePages": {
+        "set-teacher": [
+          26
+        ],
+        "set-student": [
+          17
+        ]
+      },
+      "requiredSections": [
+        "1.3"
+      ],
+      "primarySections": [
+        "1.3"
+      ],
+      "requiredPremises": [],
+      "task": {
+        "id": "interval_intersection_fill",
+        "label": "计算已给区间的交集并判断端点",
+        "questionType": "fill_blank",
+        "sectionIds": [
+          "1.3"
+        ],
+        "partIds": [],
+        "partWeights": []
+      },
+      "allowedSolutionPath": "同时属于 A 和 B 的实数必须满足 $x<3$ 且 $0\\le x\\le4$，合并得 $0\\le x<3$。0同时在两集合中，3不在 A 中，所以 $A\\cap B=[0,3)$。",
+      "notes": [],
+      "goalSupport": {
+        "state": "not_imported",
+        "reason": "题面及完整允许解法已核对；尚未创建与具体目标合同绑定的支持记录，不以题包ready替代目标支持证据。",
+        "observableActivities": [
+          "交集",
+          "区间开闭端点"
+        ],
+        "bypass": "选择题可结合排除、代入或选项检验；填空只交结果不能证明完整书面论证能力。"
+      }
+    }
+  ],
+  "pending": [
+    {
+      "questionId": "tutor-set-032",
+      "status": "pending",
+      "sourcePages": {
+        "set-teacher": [
+          16,
+          17
+        ],
+        "set-student": [
+          11
+        ]
+      },
+      "reason": "原题 A={x=2,y=1} 以方程对象列举，而原解析改写成 {1,2}；对象语义冲突且原题括号排版不规范。不能据原答案3直接发布，需明确原作者意图或另建经批准改编题。"
+    }
+  ],
+  "validation": {
+    "isolatedReaderPackages": 15,
+    "studentTeacherSeparation": "pass",
+    "allStudentAndTeacherLatex": "KaTeX throwOnError pass",
+    "independentMathChecks": [
+      "038: exhaustive analogous universes n=1..16 match ceil(n/2); full general upper-bound proof recorded, not replaced by numeric test",
+      "040: exact fractions 0,1/4,1/2,1 produce 15 proper subsets"
+    ],
+    "limitations": [
+      "结构/哈希/公式检查不证明数学正确；实际源页视觉核对及解法检查独立执行。",
+      "没有导入目标支持状态，尚需根代理复核并注册ledger/index任务；未修改任何现有18题或原PDF。"
+    ]
+  }
+}

@@ -1,11 +1,12 @@
 import { allocateParts, typeLabels } from './api.js';
+import { groupSlotsByType, questionTypeOrder } from '../src/assembly/slot-order.mjs';
 
-const questionTypes = ['single_choice', 'fill_blank', 'free_response'];
+const questionTypes = questionTypeOrder;
 
 function withSlots(blueprint, slots) {
-  const ordered = questionTypes.flatMap(type => slots.filter(slot => slot.questionType === type));
+  const ordered = groupSlotsByType(slots);
   const counts = Object.fromEntries(questionTypes.map(type => [type, ordered.filter(slot => slot.questionType === type).length]));
-  return { ...blueprint, slots: ordered.map((slot, index) => ({ ...slot, number: index + 1 })),
+  return { ...blueprint, slots: ordered,
     requirements: { ...blueprint.requirements, counts },
     generation: { ...blueprint.generation, countPolicy: 'fixed' } };
 }

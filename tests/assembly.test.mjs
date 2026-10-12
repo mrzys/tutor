@@ -12,6 +12,19 @@ const readJson = async target => JSON.parse(await readFile(target, 'utf8'));
 const writeJson = (target, value) => writeFile(target, JSON.stringify(value, null, 2), 'utf8');
 const sum = values => values.reduce((a, b) => a + b, 0);
 
+test('cancelling draft assembly returns cancellation without an assembled draft', async () => {
+  const config = await getAssemblyConfig();
+  const preview = await previewBlueprint(config.config.defaultRequirements);
+  const controller = new AbortController();
+  controller.abort();
+  const result = await createDraft(preview.blueprint, {
+    signal: controller.signal,
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.error.code, 'cancelled');
+  assert.equal(result.draft, undefined);
+});
+
 async function fixture(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'tutor-assembly-test-'));
   t.after(async () => {

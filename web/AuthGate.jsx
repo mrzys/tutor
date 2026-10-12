@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Eye, EyeOff, LoaderCircle, RefreshCw } from 'lucide-react';
 import { api } from './api.js';
+import { Brand } from './Brand.jsx';
 
 function clearPrivateBrowserState() {
   try { localStorage.removeItem('tutor-intake-session'); } catch { /* Storage may be unavailable. */ }
@@ -52,8 +53,8 @@ function AuthForm({ hasUsers, onAuthenticated, notice }) {
 
   return <main className="auth-page">
     <section className="auth-card" aria-labelledby="auth-title">
-      <span className="brand auth-brand">Tutor</span>
-      <h1 id="auth-title">{registering ? '创建账户' : '登录 Tutor'}</h1>
+      <Brand className="auth-brand"/>
+      <h1 id="auth-title">{registering ? '创建账户' : '登录智教'}</h1>
       <p className="auth-intro">{registering ? '使用邮箱注册，开始备课与组卷。' : '继续你的教学与组卷工作。'}</p>
       {!hasUsers ? <p className="auth-first-account">首个注册账户将自动成为管理员。</p> : null}
       {notice ? <p className="auth-notice" role="status">{notice}</p> : null}
@@ -114,7 +115,7 @@ export function AuthGate({ children }) {
     finally { loggingOut.current = false; setLogoutPending(false); }
   }
 
-  if (!session) return <main className="auth-page"><section className="auth-card"><span className="brand auth-brand">Tutor</span>{error ? <><p className="auth-error" role="alert">{error}</p><button type="button" onClick={() => setAttempt(value => value + 1)}><RefreshCw size={16} aria-hidden="true"/>重新连接</button></> : <p className="auth-loading" role="status"><LoaderCircle className="spinning" size={18} aria-hidden="true"/>正在检查登录状态…</p>}</section></main>;
+  if (!session) return <main className="auth-page"><section className="auth-card"><Brand className="auth-brand"/>{error ? <><p className="auth-error" role="alert">{error}</p><button type="button" onClick={() => setAttempt(value => value + 1)}><RefreshCw size={16} aria-hidden="true"/>重新连接</button></> : <p className="auth-loading" role="status"><LoaderCircle className="spinning" size={18} aria-hidden="true"/>正在检查登录状态…</p>}</section></main>;
   if (!session.user) return <AuthForm hasUsers={session.hasUsers} notice={notice} onAuthenticated={user => { rememberUser(user); setSession({ user, hasUsers: true }); setNotice(''); }}/>;
   return children({ user: session.user, onLogout: logout, logoutPending, logoutError });
 }

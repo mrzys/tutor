@@ -13,12 +13,12 @@ function optionsFrom(children, inheritedDisabled = false) {
     if (child.type === Fragment || child.type === 'optgroup') return optionsFrom(child.props.children, inheritedDisabled || child.props.disabled);
     if (child.type !== 'option') return [];
     const label = plainText(child.props.children);
-    return [{ value: String(child.props.value ?? label), label, disabled: inheritedDisabled || Boolean(child.props.disabled) }];
+    return [{ value: String(child.props.value ?? label), label, description: child.props['data-description'], disabled: inheritedDisabled || Boolean(child.props.disabled) }];
   });
 }
 
 // A controlled, single-value select. onChange keeps the existing event.target.value contract.
-export function Select({ value, onChange, children, disabled = false, required = false, searchable, className = '', name, id,
+export function Select({ value, onChange, children, disabled = false, required = false, searchable, renderLabel, triggerLabel, className = '', name, id,
   onKeyDown, onClick, 'aria-label': ariaLabel, 'aria-labelledby': labelledBy, ...props }) {
   const generatedId = useId();
   const listId = `${generatedId}-options`;
@@ -37,6 +37,8 @@ export function Select({ value, onChange, children, disabled = false, required =
   const filtered = useMemo(() => options.filter(option => !query || option.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())), [options, query]);
   const selected = options.find(option => option.value === String(value ?? ''));
   const activeId = open && active >= 0 ? `${listId}-${active}` : undefined;
+  const activeDescription = filtered[active]?.description;
+  const hasDescriptions = options.some(option => option.description);
 
   function close(restoreFocus = true) {
     setOpen(false);
@@ -88,11 +90,12 @@ export function Select({ value, onChange, children, disabled = false, required =
       const rect = trigger.current?.getBoundingClientRect();
       if (!rect) return;
       const width = Math.min(Math.max(rect.width, 240), window.innerWidth - 24);
+      const descriptionWidth = hasDescriptions && window.innerWidth >= 680 ? 268 : 0;
       const below = window.innerHeight - rect.bottom - 12;
       const above = rect.top - 12;
       const upwards = below < 240 && above > below;
       const maxHeight = Math.max(100, Math.min(380, upwards ? above - 6 : below - 6));
-      setPosition({ left: Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)), width, maxHeight,
+      setPosition({ left: Math.max(12, Math.min(rect.left, window.innerWidth - width - descriptionWidth - 12)), width, maxHeight,
         ...(upwards ? { bottom: window.innerHeight - rect.top + 6 } : { top: rect.bottom + 6 }) });
     };
     update();
@@ -102,7 +105,7 @@ export function Select({ value, onChange, children, disabled = false, required =
     window.addEventListener('resize', update);
     window.addEventListener('scroll', update, true);
     return () => { document.removeEventListener('pointerdown', outside); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true); };
-  }, [open, canSearch]);
+  }, [open, canSearch, hasDescriptions]);
   useEffect(() => {
     if (!open) return;
     popup.current?.querySelector(`[data-option-index="${active}"]`)?.scrollIntoView({ block: 'nearest' });
@@ -113,20 +116,21 @@ export function Select({ value, onChange, children, disabled = false, required =
 
   return <span className="tutor-select">
     {name ? <input type="hidden" name={name} value={value ?? ''} disabled={disabled}/> : null}
-    <button {...props} ref={trigger} id={id} type="button" className={`tutor-select-trigger ${className}`} role="combobox"
+    <button title={selected?.description} {...props} ref={trigger} id={id} type="button" className={`tutor-select-trigger ${className}`} role="combobox"
       disabled={disabled} aria-label={ariaLabel} aria-labelledby={labelledBy} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? listId : undefined}
       aria-required={required || undefined} onClick={event => { onClick?.(event); if (!event.defaultPrevented) open ? close() : show(); }}
       onKeyDown={event => { onKeyDown?.(event); if (event.defaultPrevented) return; if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) { event.preventDefault(); open ? keys(event) : show(event.key === 'ArrowUp' ? -1 : 1); } }}>
-      <span>{selected?.label || '请选择'}</span><ChevronDown size={15} aria-hidden="true"/>
+      {triggerLabel ? <span className="tutor-select-prefix">{triggerLabel}</span> : null}<span>{selected ? (renderLabel ? renderLabel(selected.label) : selected.label) : '请选择'}</span><ChevronDown size={15} aria-hidden="true"/>
     </button>
-    {open ? createPortal(<div ref={popup} className="tutor-select-popup" style={{ ...position, visibility: position ? 'visible' : 'hidden' }} onKeyDown={keys}>
+    {open ? createPortal(<div ref={popup} className={`tutor-select-popup${hasDescriptions ? ' has-descriptions' : ''}`} style={{ ...position, visibility: position ? 'visible' : 'hidden' }} onKeyDown={keys}>
       {canSearch ? <div className="tutor-select-search"><Search size={15} aria-hidden="true"/><input ref={search} type="search" aria-label={`搜索${ariaLabel || '选项'}`} aria-controls={listId} aria-activedescendant={activeId} autoComplete="off" placeholder="搜索选项…" value={query} onChange={event => { setQuery(event.target.value); setActive(-1); }}/></div> : null}
       <div ref={list} id={listId} className="tutor-select-options" role="listbox" tabIndex={-1} aria-label={ariaLabel || '可选项'} aria-activedescendant={activeId}>
-        {filtered.map((option, index) => <div key={`${option.value}-${index}`} id={`${listId}-${index}`} role="option" aria-selected={option.value === String(value ?? '')} aria-disabled={option.disabled || undefined}
+        {filtered.map((option, index) => <div key={`${option.value}-${index}`} id={`${listId}-${index}`} role="option" aria-selected={option.value === String(value ?? '')} aria-disabled={option.disabled || undefined} aria-describedby={index === active && activeDescription ? `${listId}-description` : undefined}
           className={`tutor-select-option ${index === active ? 'is-active' : ''}`} data-option-index={index} onPointerMove={() => { if (!option.disabled) setActive(index); }}
-          onMouseDown={event => event.preventDefault()} onClick={() => choose(option)}><span>{option.label}</span>{option.value === String(value ?? '') ? <Check size={15} aria-hidden="true"/> : null}</div>)}
+          onMouseDown={event => event.preventDefault()} onClick={() => choose(option)}><span>{renderLabel ? renderLabel(option.label) : option.label}</span>{option.value === String(value ?? '') ? <Check size={15} aria-hidden="true"/> : null}</div>)}
         {!filtered.length ? <p className="tutor-select-empty">没有匹配的选项</p> : null}
       </div>
+      {hasDescriptions ? <div id={`${listId}-description`} className="tutor-select-description" role="status" aria-live="polite">{activeDescription || '移动到选项上，查看用途说明。'}</div> : null}
     </div>, portalRoot.current || document.body) : null}
   </span>;
 }

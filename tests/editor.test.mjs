@@ -206,7 +206,9 @@ test('new task slot uses real unoccupied supply and new IDs, unsupported slot re
   assert.equal(added.draft.stats.availablePoints, 108);
   assert.ok(added.draft.differences.some(item => item.code === 'slot_added'));
   const empty = await apply(original, 'add', { taskId: 'complement_quadratic_coefficients', points: 10, partPoints: [] });
-  assert.equal(empty.draft.slots.at(-1).question, null);
+  const addedEmpty = empty.draft.slots.find(slot => slot.slotId === empty.result.entries[0].slotId);
+  assert.equal(addedEmpty.question, null);
+  assert.equal(empty.draft.slots.filter(slot => slot.questionType === 'fill_blank').at(-1).slotId, addedEmpty.slotId);
   assert.equal(empty.draft.stats.plannedQuestions, 11);
   assert.equal(empty.draft.stats.selectedQuestions, 10);
   assert.equal(empty.draft.stats.plannedPoints, 110);
@@ -404,4 +406,37 @@ test('single-slot criteria validate inputs and task allocation before changing c
   const compatible = await apply(original, 'criteria', { ...fields, slotId: 'slot-9', taskId: 'root_set_subset_count' }, options);
   assert.deepEqual(compatible.draft.slots[8].partPoints, original.slots[8].partPoints);
   assert.deepEqual(compatible.draft.slots[8].question, original.slots[8].question);
+});
+
+
+test('same-knowledge replacement explicitly changes task while preserving slot identity and confirmed goal links', async () => {
+  const draft = await baseline(); const slot = draft.slots[4];
+  const preview = await previewDraftCandidates(draft, { slotId: slot.slotId, expectedRevision: 0 });
+  const candidate = preview.sameKnowledgeCandidates[0];
+  assert.ok(candidate, 'The fixture has an alternative task in section 1.3');
+  assert.equal(candidate.candidateScope, 'same_knowledge');
+  const old = structuredClone(slot); const requirements = structuredClone(draft.baseline.requirements);
+  const result = await apply(draft, 'replace', { slotIds: [slot.slotId], mode: 'direct', candidateId: candidate.questionId, taskId: candidate.replacementTaskId });
+  const updated = result.draft.slots.find(item => item.slotId === old.slotId);
+  assert.equal(updated.taskId, candidate.replacementTaskId);
+  assert.equal(updated.taskLabel, candidate.replacementTaskLabel);
+  assert.deepEqual(updated.goalIds, old.goalIds);
+  assert.deepEqual(result.draft.baseline.requirements, requirements);
+  assert.equal(result.result.entries[0].fromTaskId, old.taskId);
+  assert.equal(result.result.entries[0].toTaskId, candidate.replacementTaskId);
+  assert.equal(updated.selection.selectedReason.method, 'same_knowledge_replacement');
+  assert.equal((await applyDraftOperation(draft, operation(draft, 'replace', { slotIds: [slot.slotId], mode: 'automatic', taskId: candidate.replacementTaskId }))).ok, false);
+});
+
+test('same-knowledge replacement cannot expand chapter scope or bypass required-goal evidence', async () => {
+  const draft = await baseline(); const slot = draft.slots[4];
+  const before = structuredClone(draft);
+  const wrongSection = await apply(draft, 'replace', { slotIds: [slot.slotId], mode: 'direct', taskId: 'number_membership' });
+  assert.equal(wrongSection.result.entries[0].status, 'unchanged');
+  assert.deepEqual(wrongSection.draft.slots, draft.slots);
+  const goal = { ...slotGoal({ knowledgeScope: ['1.3'] }), id: 'required-goal', version: 1, source: { kind: 'teacher', text: '必须目标' } };
+  draft.baseline.requirements.teachingGoals = [goal]; slot.goalIds = [goal.id];
+  const blocked = await previewDraftCandidates(draft, { slotId: slot.slotId, expectedRevision: 0 });
+  assert.equal(blocked.sameKnowledgeCandidates.length, 0);
+  assert.deepEqual(wrongSection.draft.baseline, before.baseline);
 });

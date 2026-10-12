@@ -12,6 +12,46 @@ export async function api(url, body, signal) {
   return result;
 }
 
+// POST keeps authentication and cancellation on the same request as generation.
+export async function streamApi(url, body, signal, onProgress) {
+  const response = await fetch(url, { method: 'POST', signal,
+    headers: { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' }, body: JSON.stringify(body) });
+  const checked = (result, status = response.status) => {
+    if (!response.ok || !result?.ok) {
+      if (status === 401) window.dispatchEvent(new Event('tutor:unauthorized'));
+      const error = new Error(result?.error?.message || `请求失败（${status}）`);
+      error.status = status; error.code = result?.error?.code; throw error;
+    }
+    return result;
+  };
+  // Authentication failures and older servers still return ordinary JSON.
+  if (!response.headers.get('content-type')?.startsWith('application/x-ndjson')) return checked(await response.json());
+  if (!response.body) throw new Error('服务未返回生成进度，请重试。');
+  const reader = response.body.getReader(); const decoder = new TextDecoder();
+  let pending = ''; let result; let status;
+  const consume = line => {
+    if (!line.trim()) return;
+    const event = JSON.parse(line);
+    if (event.type === 'progress') onProgress?.(event.progress);
+    else if (event.type === 'result') { result = event.result; status = event.status; }
+  };
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      pending += done ? decoder.decode() : decoder.decode(value, { stream: true });
+      let end;
+      while ((end = pending.indexOf('\n')) >= 0) {
+        consume(pending.slice(0, end)); pending = pending.slice(end + 1);
+        if (result !== undefined) return checked(result, status);
+      }
+      if (done) break;
+    }
+    if (pending.trim()) consume(pending);
+    if (result === undefined) throw new Error('生成连接已中断，请先查看历史组卷确认是否已保存。');
+    return checked(result, status);
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+}
+
 export async function uploadApi(url, formData, signal) {
   const response = await fetch(url, { method: 'POST', body: formData, signal });
   let result;

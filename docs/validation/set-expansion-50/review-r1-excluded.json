@@ -1,0 +1,96 @@
+{
+  "reviewer": "Codex root",
+  "method": "重新渲染并实际查看6个来源页，独立检查反例及选项；019/046按项目不自动假定列举符号互异的口径处理。",
+  "items": [
+    {
+      "id": "SET-EXP50-010",
+      "decision": "remain_excluded",
+      "issueCode": "no_correct_option",
+      "rationale": "A=[-2,2]，B=(-∞,1)，交集[-2,1)不在四个选项中。",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2026\\2月\\广东\\广东省华附、省实、广雅、深中2026届高三四校联考1月期末\\数学试题.pdf",
+        "sha256": "95eec7ab6bf083eb98fb736d1b9bce609d2cbf713dce8bfcbd255bda7b39bce9",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "sourceVisualChecked": true,
+      "renderPath": ".tutor/review-set-expansion/excluded-010.png",
+      "renderSha256": "72b67489bde5b6604e95008e6c5677f20db484653258c1e4f56d978019db44d2"
+    },
+    {
+      "id": "SET-EXP50-019",
+      "decision": "remain_excluded",
+      "issueCode": "unstated_cardinality_assumption",
+      "rationale": "a=-2时并集为{-2,-1,1,4}，a=0时并集为{-2,-1,0,1}，均含4元素。四个给定选项中仅B满足，但源答案不是无额外前提下的完整参数解集。保持隔离，不自动添加A恰含三个不同元素。",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2026\\4月\\云南\\云南省玉溪市第一中学2025—2026学年下学期高三适应性测试（一）(全科）\\玉溪一中2025一2026学年下学期高三适应性测试（一）数学.pdf",
+        "sha256": "918e7235e5b9172d2a950c79db73e99a2754c6a78a8ff2fd9e6e140be5b151d6",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "sourceVisualChecked": true,
+      "renderPath": ".tutor/review-set-expansion/excluded-019.png",
+      "renderSha256": "aac92443a66794f0d7f8b4cb78ec3dd33b7e62b9a50f32a7905002b7a543eb8f"
+    },
+    {
+      "id": "SET-EXP50-028",
+      "decision": "remain_excluded",
+      "issueCode": "stem_relation_glyphs_corrupted",
+      "rationale": "实际渲染仍有乱码，不能从答案B反推关系符号。",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\四川\\树德中学\\树德中学2025-2026学年高三上学期10月月考+数学.pdf",
+        "sha256": "4081b1347f248d0e19e9a73e73ecba96e921c451c3082d9a4802651398beacad",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "sourceVisualChecked": true,
+      "renderPath": ".tutor/review-set-expansion/excluded-028.png",
+      "renderSha256": "1b4de3215777694066fc955be8f409afac9f92fd87376d42a9d7492903808bf2"
+    },
+    {
+      "id": "SET-EXP50-031",
+      "decision": "remain_excluded",
+      "issueCode": "option_relation_glyphs_missing",
+      "rationale": "C/D两个集合之间没有可辨认关系符号；A=B可证明，但不能确认其他选项真假。",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\宁夏\\宁夏石嘴山市第一中学2026届高三上学期10月月考\\宁夏石嘴山市第一中学2026届高三上学期10月月考+数学.pdf",
+        "sha256": "1ea3da384234ec70a150a65d7ff1ea23c31bf42877920b443f40a858a8c5734c",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "sourceVisualChecked": true,
+      "renderPath": ".tutor/review-set-expansion/excluded-031.png",
+      "renderSha256": "bcb47b8e4f815d8b8c4444bb9decb085b8e2d9b0ad55174e8efc65469c8d0052"
+    },
+    {
+      "id": "SET-EXP50-046",
+      "decision": "remain_excluded",
+      "issueCode": "unstated_distinct_elements_condition",
+      "rationale": "B⊆A等价于a+2∈{1,3,a²}；分别得a=-1、1、2。完整解集{-1,1,2}未列为一个选项。若要求A恰含3个不同元素才剩a=2。",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\浙江\\浙江省浙南名校联盟2026届高三上学期10月联考\\浙南名校联盟2026届高三上学期10月联考数学试题.pdf",
+        "sha256": "702872c7d023ba4dfac21aa59d83a32a9d8cfcab407ede4970ef6fbf47ec3d4a",
+        "pdfPage": 1,
+        "originalQuestionNumber": "3"
+      },
+      "sourceVisualChecked": true,
+      "renderPath": ".tutor/review-set-expansion/excluded-046.png",
+      "renderSha256": "1f5242d7f7ed9ef328be7bd4670ec400f7e5556c2a33a8d2b084e02a86e88631"
+    },
+    {
+      "id": "SET-EXP50-049",
+      "decision": "remain_excluded",
+      "issueCode": "option_operator_undefined",
+      "rationale": "B选项印为未定义的I。D本身与题干等价，但B语义不可判，不能保证选项完整有效。",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\10月\\湖北\\湖北省荆州中学2025-2026学年高三上学期10月月考\\2023级10月底月考数学试卷.pdf",
+        "sha256": "0e42ab5e9d84ed0a6197aa06d396796ec97346937c77bb3d4452fa639d660d7d",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "sourceVisualChecked": true,
+      "renderPath": ".tutor/review-set-expansion/excluded-049.png",
+      "renderSha256": "2014c62e8a5db4ee9a93e69c549f940cbf96313178db1686e80a386d72561580"
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "replacementCount": 6,
+  "items": [
+    {
+      "id": "SET-EXP50-051",
+      "replaces": "SET-EXP50-010",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\华大新高考联盟2026届高三9月教学质量测评\\华大新高考联盟2026届高三9月教学质量测评-试卷.pdf",
+        "sha256": "5af9ef57532223840b4b54b5cd64c36b1a6c934e7f17cba6ed02f8c119af9944",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "answerEvidence": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\华大新高考联盟2026届高三9月教学质量测评\\湖北省华大新高考联盟2026届高三上学期9月教学质量检测数学答案.pdf",
+        "sha256": "f62bc17bb51faca3cf082ce8875a1e8f98b01bfc7705ad0a11a1dcc2f80f1a43",
+        "pdfPages": [
+          1
+        ],
+        "sourceAnswer": "D",
+        "visuallyChecked": true
+      },
+      "independentCheck": {
+        "derivedAnswer": "D",
+        "uniqueCorrectOptionCount": 1,
+        "sourceAnswerMatches": true,
+        "derivation": "$A=\\{0,1,2,3\\}$，$U\\setminus A=\\{-2,-1,4\\}$。仅D与该集合相等。",
+        "method": "finite-set evaluation and manual algebra, independently of source answer"
+      },
+      "renderedEvidence": {
+        "question": ".tutor/set-replacements/candidate-05.png",
+        "answer": ".tutor/set-replacements/answer-05-0.png"
+      },
+      "duplicateCheck": {
+        "comparedWithOriginal50": true,
+        "comparedWithExisting45": true,
+        "sameMathematicalStatementFound": false
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-052",
+      "replaces": "SET-EXP50-028",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\浙江\\浙江名校协作体（G12）2025年9月2026届高三返校联考\\数学试卷-浙江省G12名校协作体2025学年第一学期9月高三年级暑假返校联考(9.1-9.2).pdf",
+        "sha256": "2709ae8ddda683dc62822d3b557717fccbae546adfdb2331ca17632fcccd6187",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "answerEvidence": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\浙江\\浙江名校协作体（G12）2025年9月2026届高三返校联考\\数学答案-浙江省G12名校协作体2025学年第一学期9月高三年级暑假返校联考(9.1-9.2).pdf",
+        "sha256": "a53c5322109cb75d68dba85a3280363a4932e6bcfa83a0e39b0cc606a0dae7c1",
+        "pdfPages": [
+          1
+        ],
+        "sourceAnswer": "D",
+        "visuallyChecked": true
+      },
+      "independentCheck": {
+        "derivedAnswer": "D",
+        "uniqueCorrectOptionCount": 1,
+        "sourceAnswerMatches": true,
+        "derivation": "$A=[-1,1]$；$x^2-4x-5=(x-5)(x+1)$，故$B=\\{-1,5\\}$，$A\\cap B=\\{-1\\}$。仅D正确。",
+        "method": "finite-set evaluation and manual algebra, independently of source answer"
+      },
+      "renderedEvidence": {
+        "question": ".tutor/set-replacements/candidate-08.png",
+        "answer": ".tutor/set-replacements/answer-08-0.png"
+      },
+      "duplicateCheck": {
+        "comparedWithOriginal50": true,
+        "comparedWithExisting45": true,
+        "sameMathematicalStatementFound": false
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-053",
+      "replaces": "SET-EXP50-031",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\河南\\河南师范大学附属中学2025-2026学年高三上学期9月开学考试\\高三9月数学试题.pdf",
+        "sha256": "9cccce91f597bb8ab7fd2fcbce1a31e7a61f85a930370047e2ae61e18f712189",
+        "pdfPage": 1,
+        "originalQuestionNumber": "2"
+      },
+      "answerEvidence": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\河南\\河南师范大学附属中学2025-2026学年高三上学期9月开学考试\\高三9月数学答案.pdf",
+        "sha256": "f492bee7bd91c09149b2df3391062fcdbdbd30cb5a951f3099dca74e63d2144b",
+        "pdfPages": [
+          1
+        ],
+        "sourceAnswer": "A",
+        "visuallyChecked": true
+      },
+      "independentCheck": {
+        "derivedAnswer": "A",
+        "uniqueCorrectOptionCount": 1,
+        "sourceAnswerMatches": true,
+        "derivation": "由$x+1\\in A$逐一减1，$B=\\{0,1,2,3,4,8\\}$；与A取交集得$\\{1,2,3,4\\}$。仅A正确。",
+        "method": "finite-set evaluation and manual algebra, independently of source answer"
+      },
+      "renderedEvidence": {
+        "question": ".tutor/set-replacements/candidate-09.png",
+        "answer": ".tutor/set-replacements/answer-09-0.png"
+      },
+      "duplicateCheck": {
+        "comparedWithOriginal50": true,
+        "comparedWithExisting45": true,
+        "sameMathematicalStatementFound": false
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-054",
+      "replaces": "SET-EXP50-046",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\江西\\江西省南昌市零模2026届高三上学期九月测试\\数学试卷-江西省南昌市2025年高三年级九月测试.pdf",
+        "sha256": "cb3f0a537f84092f3c73698b3af0c2e58e65a15fef08aef127ccf07c10bc54e1",
+        "pdfPage": 1,
+        "originalQuestionNumber": "4"
+      },
+      "answerEvidence": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\江西\\江西省南昌市零模2026届高三上学期九月测试\\数学答案-江西省南昌市2025年高三年级九月测试.pdf",
+        "sha256": "0e05dca702ddbe77586adef9a148e7ae129e785b2cb9bad30c274587b27b5cbf",
+        "pdfPages": [
+          1
+        ],
+        "sourceAnswer": "D",
+        "visuallyChecked": true
+      },
+      "independentCheck": {
+        "derivedAnswer": "D",
+        "uniqueCorrectOptionCount": 1,
+        "sourceAnswerMatches": true,
+        "derivation": "$U=\\{1,2,3,4,5,6,7,8,9\\}$；$U\\setminus A$由$B\\setminus A=\\{5,7,9\\}$及两集之外$\\{6,8\\}$组成，故$A=U\\setminus\\{5,6,7,8,9\\}=\\{1,2,3,4\\}$。仅D正确，并可重建$B=\\{2,5,7,9\\}$回代全部条件。",
+        "method": "finite-set evaluation and manual algebra, independently of source answer"
+      },
+      "renderedEvidence": {
+        "question": ".tutor/set-replacements/candidate-10.png",
+        "answer": ".tutor/set-replacements/answer-10-0.png"
+      },
+      "duplicateCheck": {
+        "comparedWithOriginal50": true,
+        "comparedWithExisting45": true,
+        "sameMathematicalStatementFound": false
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-055",
+      "replaces": "SET-EXP50-019",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\海南\\海南省文昌中学2025-2026学年高三上学期第一次月考\\海南省文昌中学2025-2026学年高三上学期第一次月考数学试题.pdf",
+        "sha256": "9d14205f7bcf7c10f25ba399482c4b04cdad0a4aa4d883e38b5901910a9770ea",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "answerEvidence": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\海南\\海南省文昌中学2025-2026学年高三上学期第一次月考\\高三数学第一次月考答案.pdf",
+        "sha256": "b0b18176aca22e15d9dc848af158cd4e6371b29b95b7d701fb6bfe413232078b",
+        "pdfPages": [
+          1
+        ],
+        "sourceAnswer": "D",
+        "visuallyChecked": true
+      },
+      "independentCheck": {
+        "derivedAnswer": "D",
+        "uniqueCorrectOptionCount": 1,
+        "sourceAnswerMatches": true,
+        "derivation": "$B=(-1,2)$，A中的-1与2均为开区间端点而不在B内，0和1在B内，故$A\\cap B=\\{0,1\\}$。仅D正确。",
+        "method": "finite-set evaluation and manual algebra, independently of source answer"
+      },
+      "renderedEvidence": {
+        "question": ".tutor/set-replacements/candidate-07.png",
+        "answer": ".tutor/set-replacements/answer-07-0.png"
+      },
+      "duplicateCheck": {
+        "comparedWithOriginal50": true,
+        "comparedWithExisting45": true,
+        "sameMathematicalStatementFound": false
+      },
+      "reviewStatus": "pending_review"
+    },
+    {
+      "id": "SET-EXP50-056",
+      "replaces": "SET-EXP50-049",
+      "source": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\广东\\广东省深圳市罗湖区2025-2026学年高三第一学期开学质量检测\\深圳市罗湖区2025-2026学年高三第一学期开学质量检测数学.pdf",
+        "sha256": "cbe51bee6b585043d7cda691028b86b90182ea0e6d8d13b38f3331b555aa5dd8",
+        "pdfPage": 1,
+        "originalQuestionNumber": "1"
+      },
+      "answerEvidence": {
+        "path": "C:\\baidunetdiskdownload\\高--模拟题\\数学\\2025\\9月\\广东\\广东省深圳市罗湖区2025-2026学年高三第一学期开学质量检测\\深圳市罗湖区2025-2026学年高三第一学期开学质量检测数学答案.pdf",
+        "sha256": "b013d18e8e4ec04414ffbe5f41cf82ae0f3df39c4a373d6b85511633d9f6b6b1",
+        "pdfPages": [
+          1
+        ],
+        "sourceAnswer": "C",
+        "visuallyChecked": true
+      },
+      "independentCheck": {
+        "derivedAnswer": "C",
+        "uniqueCorrectOptionCount": 1,
+        "sourceAnswerMatches": true,
+        "derivation": "二次式根为0、2，开口向上，$x(x-2)\\le0$等价于$0\\le x\\le2$，故$B=[0,2]$；$A\\cap B=\\{0,1,2\\}$。仅C正确。",
+        "method": "finite-set evaluation and manual algebra, independently of source answer"
+      },
+      "renderedEvidence": {
+        "question": ".tutor/set-replacements/candidate-12.png",
+        "answer": ".tutor/set-replacements/answer-12-0.png"
+      },
+      "duplicateCheck": {
+        "comparedWithOriginal50": true,
+        "comparedWithExisting45": true,
+        "sameMathematicalStatementFound": false
+      },
+      "reviewStatus": "pending_review"
+    }
+  ],
+  "limitations": [
+    "Source and independent calculation checks do not constitute an independent teacher pedagogical review.",
+    "Original defective source records are preserved separately by the main inventory; this file does not rewrite those sources."
+  ]
+}

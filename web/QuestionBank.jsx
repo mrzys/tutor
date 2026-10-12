@@ -4,6 +4,7 @@ import { api, typeLabels } from './api.js';
 import { MathText } from './MathText.jsx';
 import { Select } from './Select.jsx';
 import { QuestionOptions } from './QuestionOptions.jsx';
+import { availableTextbooks } from '../src/curriculum/availability.mjs';
 
 const PAGE_SIZE = 12;
 const SESSION_KEY = 'tutor-question-bank:v1';
@@ -55,13 +56,13 @@ function QuestionCard({ question, selected, disabled, onToggle }) {
       <div className="bank-question-information">
         <div className="bank-question-information-line">
           <span className="bank-question-type">{typeLabels[question.questionType] ?? question.questionType}</span>
-          <span>{question.topics.join('、') || question.taskSummary}</span>
+          <span><MathText text={question.topics.join('、') || question.taskSummary}/></span>
           <span>{sourceRefs[0]?.locator || '题库收录'}</span>
           <button ref={evidenceTriggerRef} type="button" className="bank-question-evidence-trigger" aria-expanded={evidenceOpen} aria-controls={evidenceId} onPointerDown={event => event.preventDefault()} onClick={toggleEvidence}>
             <ChevronRight size={13}/><span>知识与来源信息</span>
           </button>
         </div>
-        {evidenceOpen ? <dl id={evidenceId} className="bank-question-evidence-panel"><dt>考查摘要</dt><dd>{question.taskSummary}</dd><dt>相关知识</dt><dd>{question.requiredKnowledge.join('、') || '未单独标注'}</dd><dt>来源定位</dt><dd>{sourceRefs.length ? sourceRefs.map(ref => `${ref.locator}${ref.pages?.length ? `（${ref.pages.join('、')} 页）` : ''}`).join('；') : '题库收录'}</dd></dl> : null}
+        {evidenceOpen ? <dl id={evidenceId} className="bank-question-evidence-panel"><dt>考查摘要</dt><dd><MathText text={question.taskSummary}/></dd><dt>相关知识</dt><dd>{question.requiredKnowledge.join('、') || '未单独标注'}</dd><dt>来源定位</dt><dd>{sourceRefs.length ? sourceRefs.map(ref => `${ref.locator}${ref.pages?.length ? `（${ref.pages.join('、')} 页）` : ''}`).join('；') : '题库收录'}</dd></dl> : null}
       </div>
     </div>
   </article>;
@@ -77,7 +78,7 @@ function catalogueStats(textbooks) {
 
 function firstSectionId(textbooks) {
   const sections = textbooks.flatMap(textbook => textbook.chapters.flatMap(chapter => chapter.sections));
-  return (sections.find(section => section.questionCount > 0) || sections[0])?.id || null;
+  return sections[0]?.id || null;
 }
 
 function initialCollapsedBranches(textbooks, selectedSectionId) {
@@ -170,7 +171,7 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
             </div>
             <dl className="bank-basket-detail">
               <dt>章节</dt><dd>{location ? `${location.textbook} / ${location.chapter} / ${location.section}` : '题库题目'}</dd>
-              <dt>考查</dt><dd>{question.taskSummary}</dd>
+              <dt>考查</dt><dd><MathText text={question.taskSummary}/></dd>
               <dt>知识</dt><dd>{question.requiredKnowledge.join('、') || question.topics.join('、') || '未单独标注'}</dd>
               <dt>来源</dt><dd>{sourceRefs.length ? [...new Set(sourceRefs.map(ref => ref.locator))].join('；') : '题库收录'}</dd>
             </dl>
@@ -276,7 +277,8 @@ export function QuestionBank({ onCreated, onImport }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [createError, setCreateError] = useState('');
-  const [sectionId, setSectionId] = useState(saved.sectionId || null);
+  // Resolve saved navigation against the currently open curriculum before querying it.
+  const [sectionId, setSectionId] = useState(null);
   const [collapsedBranches, setCollapsedBranches] = useState(() => new Set());
   const [query, setQuery] = useState(saved.query || '');
   const [debouncedQuery, setDebouncedQuery] = useState((saved.query || '').trim());
@@ -308,6 +310,7 @@ export function QuestionBank({ onCreated, onImport }) {
   useEffect(() => {
     const controller = new AbortController();
     const sequence = ++requestSequence.current;
+    let needsSectionQuery = false;
     setLoading(true); setError('');
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
     for (const [key, value] of Object.entries({ difficulty, ability, literacy })) if (value) params.set(key, value);
@@ -317,9 +320,13 @@ export function QuestionBank({ onCreated, onImport }) {
     api(`/api/question-bank?${params}`, undefined, controller.signal)
       .then(result => {
         if (controller.signal.aborted || requestSequence.current !== sequence) return;
-        const nextTextbooks = result.textbooks || [];
-        const nextSection = findSection(nextTextbooks, sectionId) ? sectionId : firstSectionId(nextTextbooks);
-        setCatalog(result);
+        const nextTextbooks = availableTextbooks(result.textbooks || []);
+        const requestedSection = sectionId || (!initialized.current ? saved.sectionId : null);
+        const nextSection = findSection(nextTextbooks, requestedSection) ? requestedSection : firstSectionId(nextTextbooks);
+        needsSectionQuery = nextSection !== sectionId;
+        setCatalog({ ...result, textbooks: nextTextbooks,
+          // The initial catalogue response is unscoped; never display those results under a section heading.
+          ...(needsSectionQuery ? { questions: [], pagination: { page: 1, total: 0, totalPages: 1 } } : {}) });
         if (!initialized.current) {
           initialized.current = true;
           setCollapsedBranches(initialCollapsedBranches(nextTextbooks, nextSection));
@@ -328,7 +335,7 @@ export function QuestionBank({ onCreated, onImport }) {
         else if (result.pagination?.page && result.pagination.page !== page) setPage(result.pagination.page);
       })
       .catch(failure => { if (!controller.signal.aborted && requestSequence.current === sequence) setError(failure.message); })
-      .finally(() => { if (!controller.signal.aborted && requestSequence.current === sequence) setLoading(false); });
+      .finally(() => { if (!controller.signal.aborted && requestSequence.current === sequence && !needsSectionQuery) setLoading(false); });
     return () => controller.abort();
   }, [sectionId, debouncedQuery, questionType, difficulty, ability, literacy, page, retry]);
 
@@ -403,7 +410,7 @@ export function QuestionBank({ onCreated, onImport }) {
   return <section className="question-bank-page">
     <div className="question-bank-heading"><div><h1>题库</h1><p>按教材章节浏览，选好题目后直接生成草稿。</p></div>
       <div className="bank-heading-actions">
-        <span className="bank-catalog-total">{stats.textbooks} 册教材 · {catalog.totals.ready} 道可用题</span>
+        <span className="bank-catalog-total">已开放 {stats.chapters} 章 · {catalog.totals.ready} 道可用题</span>
         <button ref={basketTriggerRef} type="button" className="bank-basket-trigger" aria-label={`打开组卷篮，已选 ${selected.size} 道题`} aria-expanded={basketOpen} onClick={() => setBasketOpen(true)}><ShoppingBasket size={17}/><span>组卷篮</span><b>{selected.size}</b></button>
         <button type="button" className="bank-import-link" onClick={onImport}><Upload size={16}/>上传试卷</button>
       </div>

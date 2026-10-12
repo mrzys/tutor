@@ -4,9 +4,15 @@ import { api, typeLabels } from './api.js';
 import { ScopeTree } from './ScopeTree.jsx';
 import { Select } from './Select.jsx';
 import './Composer.css';
+import { availableScopeSelection } from '../src/curriculum/availability.mjs';
 
 const storageKey = 'tutor-intake-session';
-const purposeOptions = [{ id: 'consolidation', label: '课后巩固' }, { id: 'diagnostic', label: '学情诊断' }, { id: 'assessment', label: '单元测验' }, { id: 'mock_exam', label: '模拟考试' }];
+const purposeOptions = [
+  { id: 'consolidation', label: '课后巩固', description: '围绕所学内容练习，巩固概念和常规方法。' },
+  { id: 'diagnostic', label: '学情诊断', description: '了解学生的掌握情况，关注易错点和薄弱环节。' },
+  { id: 'assessment', label: '单元测验', description: '围绕单元内容，检查知识理解与综合运用。' },
+  { id: 'mock_exam', label: '模拟考试', description: '按考试要求安排练习，可补充题型、分值和时长。' }
+];
 const countFields = [['singleChoiceCount', '单选'], ['fillBlankCount', '填空'], ['freeResponseCount', '解答']];
 const cognitionLabels = { understand: '理解概念', apply: '常规运用', reason: '推理与论证' };
 function remember(id) { try { localStorage.setItem(storageKey, id); } catch { /* Server persistence remains available. */ } }
@@ -58,7 +64,11 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
   useEffect(() => { onBusyChange?.(Boolean(busy)); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
   function adopt(next, preserveLocal = false) {
     sessionRef.current = next; setSession(next); remember(next.sessionId);
-    if (!preserveLocal) { setAnswers(next.answers || {}); setLockedFields(next.lockedFields || []); setProposalEdits({}); }
+    if (!preserveLocal) {
+      const nextAnswers = next.answers || {};
+      setAnswers({ ...nextAnswers, mainScope: availableScopeSelection(config.chapters, nextAnswers.mainScope) });
+      setLockedFields(next.lockedFields || []); setProposalEdits({});
+    }
     callbacks.current.onSession?.(next);
     if (next.requirements) callbacks.current.onRequirements(next.requirements);
   }
@@ -184,6 +194,7 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
     } finally { inFlight.current = false; setBusy(''); }
   }
   const inWorkflow = started || workflowStage !== 'requirements';
+  const selectedPurpose = purposeOptions.find(item => item.id === answers.purpose) || purposeOptions[0];
   const scored = (proposed.scoringMode || answers.scoringMode || 'points') === 'points';
   const working = busy === 'prepare' || workflowStage === 'planning' || disabled;
   function focusComposer() { document.getElementById('quick-goal')?.focus({ preventScroll: true }); }
@@ -209,7 +220,7 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
     </div> : null}
     <div className={`chat-composer-dock ${inWorkflow ? 'is-docked' : ''}`}><div className="chat-composer-inner"><div className="chat-composer-card">
       {workflowStage === 'requirements' ? <div className="chat-context-controls"><ScopeTree chapters={config.chapters} selected={answers.mainScope} disabled={locked || workflowStage !== 'requirements'} onChange={value => change('mainScope', value)} open={scopeOpen} onToggle={setScopeOpen}/>
-        <label className="composer-purpose"><span className="sr-only">组卷用途</span><Select aria-label="组卷用途" value={answers.purpose || 'consolidation'} disabled={locked || workflowStage !== 'requirements'} onChange={event => change('purpose',event.target.value)}>{purposeOptions.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</Select></label>
+        <label className="composer-purpose"><span className="sr-only">组卷用途</span><Select aria-label="组卷用途" triggerLabel="组卷用途" value={answers.purpose || 'consolidation'} disabled={locked || workflowStage !== 'requirements'} onChange={event => change('purpose',event.target.value)}>{purposeOptions.map(item => <option key={item.id} value={item.id} data-description={item.description}>{item.label}</option>)}</Select></label>
         <button className="composer-scoring" type="button" disabled={locked || workflowStage !== 'requirements'} aria-pressed={answers.scoringMode === 'points'} onClick={() => change('scoringMode',answers.scoringMode === 'points' ? 'none' : 'points')}>{answers.scoringMode === 'points' ? '计分' : '不计分'}</button>
 
       </div> : <div className="composer-stage-context"><Sparkles size={14} aria-hidden="true"/><span>{workflowStage === 'blueprint' ? '选题蓝图' : workflowStage === 'draft' ? '试卷草稿' : workflowStage === 'paper' ? '已确认试卷' : '正在组卷'}</span><span className="composer-stage-hint">继续对话，随时调整</span></div>}
@@ -225,13 +236,16 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
           })}</div>
           <button type="button" className="composer-context-clear" aria-label="清除题目上下文" title="清除引用" disabled={locked} onClick={onClearSelectionContext}><X size={13} aria-hidden="true"/></button>
         </div> : null}
-        <label htmlFor="quick-goal" className="sr-only">组卷需求</label><textarea id="quick-goal" className="intake-request-text" rows="4" maxLength={2000} disabled={locked} value={message} onChange={event => setMessage(event.target.value)} onKeyDown={event => {
+        <div className="composer-writing-area">
+        {workflowStage === 'requirements' ? <p id="quick-purpose-description" className="composer-purpose-description" aria-live="polite"><span>{selectedPurpose.label}</span>{selectedPurpose.description}</p> : null}
+        <label htmlFor="quick-goal" className="sr-only">组卷需求</label><textarea id="quick-goal" className="intake-request-text" aria-describedby={workflowStage === 'requirements' ? 'quick-purpose-description' : undefined} rows="4" maxLength={2000} disabled={locked} value={message} onChange={event => setMessage(event.target.value)} onKeyDown={event => {
           if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
         }} placeholder={inWorkflow ? '继续调整，例如：第 2 题换一题；增加 2 道填空题…' : '例如：10 道集合基础题，检测概念和包含关系的掌握情况。也可以只选范围和用途，直接发送。'}/>
+        </div>
         <div className="intake-request-footer"><span className="composer-keyboard-hint">{working ? '正在处理…' : 'Enter 发送 · Shift+Enter 换行'}</span><div className="composer-send-tools"><span className="composer-ai-status"><Sparkles size={14} aria-hidden="true"/>AI 组卷</span><button className="primary intake-send" type="submit" disabled={locked || !configured || !answers.mainScope?.length} aria-label="发送组卷需求" title="发送组卷需求"><ArrowUp size={19}/><span className="sr-only">发送</span></button></div></div>
       </form>
       </div>
-      <p className="composer-footnote">{inWorkflow ? '随时补充要求，确认修改建议后更新蓝图或试卷。' : `当前可用 ${config.supply?.ready ?? '—'} 道集合题 · 计分可按需开启`}</p>
+      <p className="composer-footnote">{inWorkflow ? '随时补充要求，确认修改建议后更新蓝图或试卷。' : `题库当前可用 ${config.supply?.ready ?? '—'} 道题 · 计分可按需开启`}</p>
     </div></div>
     {workflowStage === 'requirements' && (!configured || error) ? <div className="quick-actions"><button type="button" className="link-button" disabled={locked || !answers.mainScope?.length} onClick={() => act('plain')}>{existingGoal ? '沿用已有目标预览' : '仅按点选条件继续'}</button></div> : null}
   </section>;

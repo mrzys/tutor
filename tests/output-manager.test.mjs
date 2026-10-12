@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
 import { generateOutput, getPaperOutputs, readOutputFile } from '../src/output/manager.mjs';
+import { hashContent } from '../src/question-bank/reader.mjs';
+import { PDF_LAYOUT_VERSION } from '../src/output/pdf.mjs';
 
 test('isolated renderer failure preserves the other output and retries the same immutable paper', async () => {
   const outputRoot = await mkdtemp(path.join(os.tmpdir(), 'tutor-s304-output-state-'));
@@ -55,4 +57,28 @@ test('corrupted PDF cannot be downloaded and its own output can be regenerated',
   await assert.rejects(readOutputFile(paper, 'student', options), { code: 'integrity_error' });
   assert.equal((await generateOutput(paper, 'student', options)).ok, true);
   assert.equal((await getPaperOutputs(paper, options)).teacher.status, 'not_generated');
+});
+
+test('explicit layout upgrade preserves legacy file bytes and the frozen paper; a failed upgrade keeps its download',async()=>{
+  const outputRoot=await mkdtemp(path.join(os.tmpdir(),'exam-layout-upgrade-'));
+  const paper={paperId:randomUUID(),title:'旧成卷',draft:{}};
+  const before=structuredClone(paper), folder=path.join(outputRoot,paper.paperId);
+  await mkdir(folder,{recursive:true});
+  const old=Buffer.from('%PDF-1.7\nOLD_LAYOUT');
+  await writeFile(path.join(folder,'legacy.pdf'),old);
+  await writeFile(path.join(folder,'student.json'),JSON.stringify({schemaVersion:1,paperHash:hashContent(paper),kind:'student',status:'complete',filename:'legacy.pdf',sha256:createHash('sha256').update(old).digest('hex'),pages:1,issues:[]}));
+  assert.equal((await getPaperOutputs(paper,{outputRoot})).student.layoutOutdated,true);
+  assert.deepEqual((await readOutputFile(paper,'student',{outputRoot})).bytes,old);
+  const failed=await generateOutput(paper,'student',{outputRoot,generate:async()=>({ok:false,error:{code:'render_failed',message:'Injected failure'}})});
+  assert.equal(failed.ok,false);
+  assert.deepEqual((await readOutputFile(paper,'student',{outputRoot})).bytes,old);
+  const newer=Buffer.from('%PDF-1.7\nNEW_FORMAL_LAYOUT');
+  const result=await generateOutput(paper,'student',{outputRoot,generate:async(_paper,kind,options)=>{
+    const file=path.join(options.outputRoot,'new-layout.pdf');await writeFile(file,newer);
+    return {ok:true,artifact:{path:file,kind,status:'complete',pages:1,layoutVersion:PDF_LAYOUT_VERSION,sha256:createHash('sha256').update(newer).digest('hex')}};
+  }});
+  assert.equal(result.ok,true);assert.equal(result.output.layoutOutdated,false);
+  assert.deepEqual(await readFile(path.join(folder,'legacy.pdf')),old);
+  assert.deepEqual((await readOutputFile(paper,'student',{outputRoot})).bytes,newer);
+  assert.deepEqual(paper,before);
 });

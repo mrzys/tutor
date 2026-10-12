@@ -7,6 +7,8 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createQuestionImportGateway } from '../llm/question-import-gateway.mjs';
 import { sqliteStorage } from '../storage/sqlite.mjs';
+import { questionBankStorage } from '../storage/registry.mjs';
+import { publishQuestionImport } from './publication.mjs';
 
 const exec = promisify(execFile);
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -110,6 +112,18 @@ async function findPython() {
   try { await access(bundled); return bundled; } catch { return process.platform === 'win32' ? 'python' : 'python3'; }
 }
 
+function retainSourceReferences(page) {
+  const { text } = page;
+  const visuals = [...(page.visuals ?? [])], tables = [...(page.tables ?? [])];
+  if (!visuals.length && /!\[[^\]]*\]\([^)]*\)|<img\b|<svg\b|\b(?:asset|oss|image):\/\/|SOURCE_VISUAL_UNRESOLVED|如图|下图|图中|图示|右图|左图|附图/i.test(text)) {
+    visuals.push({ id: `text-p${page.page}-visual-1`, kind: 'text_visual_reference', page: page.page, requiresReview: true, pixelsProvidedToModel: false });
+  }
+  if (!tables.length && /<table\b|\\begin\{(?:tabular|longtable)\}|^[^\r\n]*\|[^\r\n]*\r?\n[ \t]*\|?[ \t]*:?-{3,}:?[ \t]*(?:\|[ \t]*:?-{3,}:?[ \t]*)+\|?[ \t]*$|下表|上表(?!示|达|现|征|述)|表中|表格|如下表/m.test(text)) {
+    tables.push({ id: `text-p${page.page}-table-1`, page: page.page, requiresReview: true, reason: 'Table source-to-question alignment requires review' });
+  }
+  return { ...page, visuals, tables };
+}
+
 export async function extractQuestionDocument(filename, { root = defaultRoot } = {}) {
   const extension = path.extname(filename).toLowerCase();
   let pages;
@@ -136,7 +150,7 @@ export async function extractQuestionDocument(filename, { root = defaultRoot } =
   if (!Array.isArray(pages) || pages.some(item => !Number.isInteger(item?.page) || typeof item.text !== 'string')) {
     throw importError('extraction_failed', '文档提取结果缺少页码或文本。', 422);
   }
-  pages = pages.map(item => ({ ...item, text: item.text.replace(/\u0000/g, '') }));
+  pages = pages.map(item => retainSourceReferences({ ...item, text: item.text.replace(/\u0000/g, '') }));
   const totalCharacters = pages.reduce((sum, item) => sum + item.text.length, 0);
   if (!pages.some(item => item.text.trim())) throw importError('no_extractable_text', '文件没有可提取文本；扫描版 PDF 请先完成 OCR。', 422);
   if (totalCharacters > maxExtractedCharacters) throw importError('document_too_long', '提取文本超过 24 万字，请拆分试卷后上传。', 413);
@@ -160,8 +174,12 @@ async function loadKnowledgeCatalog(root) {
 
 async function loadAssemblyCatalog(root) {
   try {
-    const source = JSON.parse(await readFile(path.join(root, 'data', 'assembly', 'task-catalog.json'), 'utf8'));
+    const repository = questionBankStorage(root);
+    const source = repository?.getQuestionBankConfig('task_catalog') ?? JSON.parse(await readFile(path.join(root, 'data', 'assembly', 'task-catalog.json'), 'utf8'));
     const chapters = new Map((source.chapters ?? []).map(item => [item.id, item]));
+    if (repository) for (const section of repository.getQuestionBankTextbooks().flatMap(book => book.chapters.flatMap(chapter => chapter.sections))) {
+      chapters.set(section.id, { id: section.id, label: section.label });
+    }
     const tasks = new Map((source.tasks ?? []).map(item => [item.id, item]));
     return { catalogId: source.catalogId ?? null, chapters, tasks };
   } catch { return { catalogId: null, chapters: new Map(), tasks: new Map() }; }
@@ -178,10 +196,18 @@ function resolveStableIds(ids, entries, reviewIssues, type, questionType) {
   });
 }
 
-function enrichQuestion(question, index, catalog, assemblyCatalog) {
+function enrichQuestion(question, index, catalog, assemblyCatalog, extraction) {
   const reviewIssues = [{ code: 'ai_extraction_unverified', message: '题干、拆题边界、公式和维度均需对照原文件复核。' }];
   const knownParts = new Set(['main', ...question.student.parts.map(item => item.partId)]);
   if (!question.pages.length) reviewIssues.push({ code: 'source_page_missing', message: '缺少来源页码。' });
+  const sourcePages = (extraction?.pages ?? []).filter(page => question.pages.includes(page.page));
+  if (sourcePages.length !== question.pages.length) reviewIssues.push({ code: 'source_page_missing', message: '题目来源页码未对应提取结果，请核对原文件。' });
+  const visuals = sourcePages.flatMap(page => page.visuals ?? []);
+  const tables = sourcePages.flatMap(page => page.tables ?? []);
+  // Page-level attribution is intentionally conservative. DOCX page 1 is the whole logical
+  // document, and a text-only model cannot certify that an omitted picture belongs elsewhere.
+  if (visuals.length) reviewIssues.push({ code: 'source_visual_unresolved', message: `来源页含 ${visuals.length} 个图片、绘图或未解析对象，当前仅向模型提供文本与占位，尚未核验视觉内容，不能发布为完整题。` });
+  if (tables.length) reviewIssues.push({ code: 'source_table_unresolved', message: `来源页含 ${tables.length} 个表格或表格引用，需逐行逐格核对其在本题中的归属与完整性，尚不能直接发布。` });
   if (!question.teacher.answers.length) reviewIssues.push({ code: 'answer_missing', message: '原文件中未识别到答案。' });
   if (!question.teacher.solutions.length) reviewIssues.push({ code: 'solution_missing', message: '原文件中未识别到解析。' });
   if (question.questionType === 'single_choice' && question.student.options.length < 2) reviewIssues.push({ code: 'options_incomplete', message: '单选题选项不足。' });
@@ -223,7 +249,10 @@ async function atomicJson(filename, value) {
 function modelContext(upload, extraction, assemblyCatalog) {
   return {
     task: 'parse_question_paper_for_staging',
-    source: { filename: upload.filename, mimeType: upload.mimeType, pageCount: extraction.pageCount },
+    source: { filename: upload.filename, mimeType: upload.mimeType, pageCount: extraction.pageCount,
+      visuals: extraction.pages.flatMap(page => page.visuals ?? []),
+      tables: extraction.pages.flatMap(page => page.tables ?? []),
+      visualInput: 'text_and_placeholders_only; picture pixels are not provided' },
     trustedCatalog: {
       catalogId: assemblyCatalog.catalogId,
       chapters: [...assemblyCatalog.chapters.values()].map(({ id, label }) => ({ id, label })),
@@ -239,7 +268,8 @@ export function createQuestionImportService({ root = defaultRoot,
   const filesRoot = path.join(storeRoot, 'files');
   const repository = sqliteStorage(storeRoot, 'question-imports');
   return {
-    publicStatus() { return { ...gateway.publicStatus(), acceptedExtensions: [...allowed.keys()], maxUploadBytes, publication: 'staging_only' }; },
+    publicStatus() { return { ...gateway.publicStatus(), acceptedExtensions: [...allowed.keys()], maxUploadBytes, publication: 'explicit_admin_review' }; },
+    publish(importId, input) { return publishQuestionImport(repository, importId, input); },
     async create(request, { signal } = {}) {
       const upload = await parseQuestionImportUpload(request);
       const importId = randomUUID();
@@ -261,9 +291,11 @@ export function createQuestionImportService({ root = defaultRoot,
           source: { filename: upload.filename, mimeType: upload.mimeType, extension: upload.extension,
             bytes: upload.bytes.length, sha256: digest(upload.bytes), pageCount: extraction.pageCount,
             extractedCharacters: extraction.totalCharacters,
+            visuals: extraction.pages.flatMap(page => page.visuals ?? []),
+            tables: extraction.pages.flatMap(page => page.tables ?? []),
             pagination: upload.extension === '.pdf' ? 'physical_pages' : upload.extension === '.docx' ? 'logical_document' : 'text_document' },
           title: result.proposal.title,
-          questions: result.proposal.questions.map((item, index) => enrichQuestion(item, index, catalog, assemblyCatalog)),
+          questions: result.proposal.questions.map((item, index) => enrichQuestion(item, index, catalog, assemblyCatalog, extraction)),
           reviewSummary: { publicationBlocked: true, reason: 'AI 解析结果仅进入暂存区；逐题核对来源、内容、答案和维度后方可进入正式题库。',
             limitations: upload.extension === '.docx' ? ['DOCX 不保留物理分页，暂存页码 1 表示整个逻辑文档。', '复杂 Word 公式、图片与版式需对照原文件人工核查。']
               : upload.extension === '.pdf' ? ['扫描版 PDF 需先完成 OCR；公式、图片与阅读顺序需对照原文件人工核查。']
@@ -286,7 +318,7 @@ export function createQuestionImportService({ root = defaultRoot,
       if (repository) {
         try {
           const record = repository.getQuestionImport(importId);
-          return record ? { ok: true, import: record }
+          return record ? { ok: true, import: { ...record, publicationSummary: repository.getQuestionImportPublicationSummary(importId, record) } }
             : { ok: false, error: { code: 'not_found', message: '未找到该试卷导入记录。' } };
         } catch { return { ok: false, error: { code: 'read_error', message: '暂存记录无法读取。' } }; }
       }
@@ -302,6 +334,7 @@ export function createQuestionImportService({ root = defaultRoot,
           return { ok: true, imports: repository.listQuestionImports().map(item => ({
             importId: item.importId, status: item.status, title: item.title, createdAt: item.createdAt,
             source: item.source, questionCount: item.questions?.length ?? 0, publicationBlocked: true,
+            publicationSummary: repository.getQuestionImportPublicationSummary(item.importId, item),
           })) };
         } catch { return { ok: false, error: { code: 'read_error', message: '暂存记录无法读取。' } }; }
       }

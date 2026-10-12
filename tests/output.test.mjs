@@ -29,7 +29,7 @@ test('student projection excludes all teacher notes, traces, and unused assets',
   assert.match(JSON.stringify(projectPaper(paper,'teacher')),/TEACHER_SECRET_SENTINEL/);
 });
 
-test('real A4 PDFs retain order and points; student leaks no teacher content, teacher marks provenance and missing rubric',async()=>{
+test('real A4 PDFs retain order and points; student leaks no teacher content, teacher has formal answer hierarchy and no technical metadata',async()=>{
   const paper = await fixture();
   paper.draft.slots[0].question.teacher.answers[0].text += ' TEACHER_SECRET_SENTINEL';
   paper.summary = preparePaperConfirmation(paper.draft);
@@ -50,19 +50,21 @@ test('real A4 PDFs retain order and points; student leaks no teacher content, te
   const tt = t.pages.map(x=>x.text).join('\n');
   assert.doesNotMatch(st,/TEACHER_SECRET_SENTINEL|参考答案|参考解析|建议评分|原卷整理|source_adapted|版本：|原题全文/);
   assert.match(tt,/TEACHER_SECRET_SENTINEL/);
-  assert.match(tt,/原卷整理增补/);
-  assert.match(tt,/评分建议缺失/);
-  assert.match(tt,/本卷赋分/);
-  assert.match(tt,/未自动套用/);
+  assert.match(tt,/答案速查/);
+  assert.match(tt,/试题与解析/);
+  assert.match(tt,/参考答案/);
+  assert.equal((tt.match(/评分说明：/g) ?? []).length,1);
+  assert.doesNotMatch(tt,/仅引用本次标杆的建议赋分/);
+  assert.doesNotMatch(tt,/Tutor|test-frozen-paper|版本：|来源：|source_adapted|输出前确认记录/);
   assert.doesNotMatch(tt,/"slotId"|"rubric_missing"|"message"/);
-  assert.match(st,/10 题 \/ 100 分/);
+  assert.match(st,/共 10 题.*满分：100 分/);
   assert.match(st,/或/); // CJK inside a MathJax mtext must survive SVG/PDF conversion.
   for (const text of [st,tt]) {
     let last = -1;
-    for (let n=1;n<=10;n++) {const at=text.indexOf(`第 ${n} 题（`);assert.ok(at>last,`question ${n} out of order`);last=at;}
+    for (let n=1;n<=10;n++) {const at=text.indexOf(`${n}.`);assert.ok(at>last,`question ${n} out of order`);last=at;}
   }
   // No split choice question: all four options for question 4 remain on its page.
-  const q4 = s.pages.find(x=>x.text.includes('第 4 题'));
+  const q4 = s.pages.find(x=>x.text.includes('4.'));
   assert.match(q4.text,/A\./);assert.match(q4.text,/D\./);
 });
 
@@ -76,7 +78,7 @@ test('missing teacher data does not block student; incomplete student retains em
   assert.equal(student.ok,true,student.error?.message);
   assert.equal(student.artifact.status,'incomplete');
   const text = (await inspect(student.artifact.path)).pages.map(x=>x.text).join('\n');
-  assert.match(text,/9 题 \/ 90 分/);assert.match(text,/未完整卷/);assert.match(text,/第 8 题/);assert.match(text,/题面缺失/);assert.match(text,/第 9 题/);
+  assert.match(text,/共 9 题.*满分：90 分/);assert.match(text,/未完整卷/);assert.match(text,/8\./);assert.match(text,/题面缺失/);assert.match(text,/9\./);
   assert.doesNotMatch(text,/参考答案缺失/);
 });
 
@@ -108,13 +110,27 @@ test('incomplete choice options match confirmation and become an explicit 9-ques
   assert.equal(output.ok,true,output.error?.message);
   assert.equal(output.artifact.status,'incomplete');
   const text = (await inspect(output.artifact.path)).pages.map(x=>x.text).join('\n');
-  assert.match(text,/9 题 \/ 92 分/);
+  assert.match(text,/共 9 题.*满分：92 分/);
   assert.match(text,/未完整卷/);
-  assert.match(text,/第 1 题（8 分）/);
+  assert.match(text,/1\.\s*【题面缺失/);
   assert.match(text,/题面缺失/);
   assert.doesNotMatch(text,/南充校级期中/);
   // Frozen missing state is honored even if a caller restores question bytes in memory.
   const restored = await fixture();
   restored.summary = paper.summary;
   assert.equal(projectPaper(restored,'student').slots[0].missing,true);
+});
+
+test('option layout measures rendered formula width and tallest formula height for 4, 2 and 1 columns',async()=>{
+  const renderer=path.resolve('scripts/render-paper.py');
+  const script=`import importlib.util,json,sys
+s=importlib.util.spec_from_file_location('exam_renderer',sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+formulas={'fraction':'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="36"><path d="M0 18H20" stroke="black"/></svg>','wide':'<svg xmlns="http://www.w3.org/2000/svg" width="400" height="20"><path d="M0 10H260" stroke="black"/></svg>'}
+results=[]
+for text in ['短选项','这是长度适中的选项用于检验两列布局','这是很长的完整句子选项内容用于检验每个选项独占一行且文字自然换行不会覆盖邻近选项',' $fraction$',' $wide$']:
+ g=m.ChoiceGrid([{'label':x,'text':text} for x in 'ABCD'],formulas);g.wrap(491,700);results.append({'columns':g.columns,'height':g.height})
+print(json.dumps(results))`;
+  const values=JSON.parse((await exec(await findPdfPython(),['-c',script,renderer],{encoding:'utf8',windowsHide:true})).stdout);
+  assert.deepEqual(values.map(x=>x.columns),[4,2,1,4,1]);
+  assert.ok(values[3].height>values[0].height,'a tall fraction raises its option row height');
 });

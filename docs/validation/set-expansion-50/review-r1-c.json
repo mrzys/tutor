@@ -1,0 +1,247 @@
+{
+  "reviewer": "independent-r1-c",
+  "method": "Read only blind-c.json first and froze independent answers in .tutor/review-set-expansion/c/independent-answer-freeze.json before rendering or viewing source pages. Did not read staging teacher data, source solutions/answers, or existing review reports. Used Python fitz to render each specified 1-based PDF page and question crops; visually inspected every question and all A-D options with view_image. The teacher-source question crop for SET-EXP50-050 ends before its answer heading. Reviewed strict/non-strict endpoints, rational/logarithmic domains, N including zero, and the zero-vector counterexample for vector collinearity. Cross-chapter dependencies recorded without blocking.",
+  "items": [
+    {
+      "id": "SET-EXP50-039",
+      "derivedAnswer": "B",
+      "derivation": "A=(-2,4)，B中2、3满足-2<x<4；4为开端点不属于A，5不属于A。因此交集为{2,3}。",
+      "dependencies": [
+        "集合交集定义",
+        "实数严格不等式和开区间端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-039.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-040",
+      "derivedAnswer": "B",
+      "derivation": "原式要求x≠1。移项得(x+3)/(x-1)+1=2(x+1)/(x-1)≤0，临界点-1可取、1为分母零点不可取，解集A=[-1,1)。与{-2,-1,0,1}相交得{-1,0}。",
+      "dependencies": [
+        "集合交集定义",
+        "分式不等式符号分析",
+        "分母非零与闭开端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-040.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-041",
+      "derivedAnswer": "B",
+      "derivation": "|x-1|≤1等价于0≤x≤2；x∈Z，故A={0,1,2}。与{1,2,3,4}取并集得{0,1,2,3,4}。",
+      "dependencies": [
+        "绝对值不等式",
+        "整数集Z",
+        "集合并集与元素去重"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-041.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-042",
+      "derivedAnswer": "C",
+      "derivation": "B=[-1,3)，逐一筛选A中元素，-1、0、1、2属于B，3、4不属于B。交集为{-1,0,1,2}。",
+      "dependencies": [
+        "集合交集定义",
+        "左闭右开区间端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-042.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-043",
+      "derivedAnswer": [
+        "A",
+        "D"
+      ],
+      "derivation": "A：方程同解即解集相等，集合相等满足自反、对称、传递。B：取a=(1,0)、b=(0,0)、c=(0,1)，按零向量与任意向量共线的约定，a∼b且b∼c，但a与c不共线，故传递性失败。C：集合包含不对称，例如{1}⊆{1,2}而反向不成立；若将包含解释为真包含，则还不自反。D：命题互为充要条件即逻辑等价，满足自反、对称、传递。因此选AD。",
+      "dependencies": [
+        "等价关系三条定义",
+        "同解方程与解集相等",
+        "集合相等性质",
+        "向量共线定义",
+        "零向量与任意向量共线的高中约定",
+        "二维非共线向量存在",
+        "集合包含与真包含",
+        "命题逻辑等价和充要条件"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-043.png",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "向量集合未排除零向量，按高中零向量共线约定B不满足传递性；若另行限定非零向量集合则B将成为等价关系。当前题干未作该限定，AD唯一。跨章依赖命题逻辑和向量，不作为阻断。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-044",
+      "derivedAnswer": "A",
+      "derivation": "B=(0,3)，A中的0、3为开端点均不取，4超出范围，只有1、2同时属于A和B，故交集为{1,2}。",
+      "dependencies": [
+        "集合交集定义",
+        "实数严格不等式与端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-044.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-045",
+      "derivedAnswer": "D",
+      "derivation": "A=(-3,3)。按N={0,1,2,...}，y²<10且y∈N得B={0,1,2,3}。3不属于A，故A∩B={0,1,2}，选D。若N被定义为正整数则交集为{1,2}，题中没有匹配选项；该题依赖大陆高中自然数含0的约定。",
+      "dependencies": [
+        "绝对值不等式",
+        "自然数N含0约定",
+        "自然数平方筛选",
+        "集合交集与严格端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-045.png",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "依赖大陆高中通用约定N含0；若脱离该约定，自然数解释会改变结果并造成无匹配选项。建议知识依赖明确记录N含0。"
+        },
+        {
+          "severity": "info",
+          "description": "来源PDF的B定义在y与N之间显示空方框字形，依上下文可明确识别为成员关系；规范题干用y∈N恢复其数学含义。题干其他数据及全部选项已逐项视觉核对，无解答阻断。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-047",
+      "derivedAnswer": "A",
+      "derivation": "x²-3x-4=(x-4)(x+1)<0等价于-1<x<4。按N含0，B={0,1,2,3}，A={1,2}。满足A⊆C⊆B时，1、2必须取，0、3各自可取可不取，共2²=4个；分别为{1,2}、{0,1,2}、{1,2,3}、{0,1,2,3}，选A。若N不含0则只有2个，与选项不符。",
+      "dependencies": [
+        "二次不等式因式分解和符号",
+        "自然数N含0约定",
+        "包含关系允许等号",
+        "有限集合中间子集计数2^(|B\\A|)"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-047.png",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "依赖大陆高中通用约定N含0；若脱离该约定，自然数解释会改变结果并造成无匹配选项。建议知识依赖明确记录N含0。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-048",
+      "derivedAnswer": "D",
+      "derivation": "对数真数要求2x-1>0，即x>1/2；底数2>1，故log₂(2x-1)<2等价于2x-1<4，即x<5/2，所以A=(1/2,5/2)。N含0时B={0,1,2,3}，交集为{1,2}，选D；N不含0时交集也相同。",
+      "dependencies": [
+        "对数真数正的定义域",
+        "底数大于1时对数函数单调性",
+        "二次筛选与自然数",
+        "集合交集与开端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-048.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-050",
+      "derivedAnswer": "D",
+      "derivation": "A⊆B，故A∩B={1,2}。x²-2x-3=(x-3)(x+1)<0得C=(-1,3)，1、2均在C中，故结果为{1,2}。",
+      "dependencies": [
+        "集合交集结合与包含",
+        "二次不等式因式分解",
+        "严格区间端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-050.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-051",
+      "derivedAnswer": "D",
+      "derivation": "按N={0,1,2,...}，x-4<0得A={0,1,2,3}。从U={-2,-1,0,1,2,3,4}中去除A，得补集{-2,-1,4}，选D。若N为正整数，则补集为{-2,-1,0,4}，对应B；因此自然数含0约定是本题区分B与D的必要条件。",
+      "dependencies": [
+        "自然数N含0约定",
+        "一元一次严格不等式",
+        "相对于给定全集的补集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-051.png",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "N含0按大陆高中通用约定。若换用N为正整数的约定，答案会从D变为B；需记录自然数约定，当前考试语境并非缺条件阻断。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-052",
+      "derivedAnswer": "D",
+      "derivation": "A=[-1,1]。x²-4x-5=(x-5)(x+1)=0得B={-1,5}。-1是A闭端点，属于A；5不属于A，故交集为{-1}。",
+      "dependencies": [
+        "绝对值不等式与闭端点",
+        "一元二次方程因式分解",
+        "集合交集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-052.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-053",
+      "derivedAnswer": "A",
+      "derivation": "由x+1∈A可将A中每个元素减1，得B={0,1,2,3,4,8}。与A={1,2,3,4,5,9}相交，得{1,2,3,4}。",
+      "dependencies": [
+        "集合描述法与平移逆像",
+        "有限集逐元素计算",
+        "集合交集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-053.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-054",
+      "derivedAnswer": "D",
+      "derivation": "N*表示正整数，故U={1,2,3,4,5,6,7,8,9}。A的补集可分解为(补A∩B)∪(补A∩补B)={5,7,9}∪{6,8}={5,6,7,8,9}。所以A=U\\{5,6,7,8,9}={1,2,3,4}，与已知A∩B={2}一致，选D。",
+      "dependencies": [
+        "正整数集N*",
+        "全集及相对补集",
+        "B与补B划分全集",
+        "集合分配律或韦恩图四区域",
+        "有限集合差集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-054.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-055",
+      "derivedAnswer": "D",
+      "derivation": "B=(-1,2)，A中-1、2均为不取的开端点，0、1属于B，所以A∩B={0,1}。",
+      "dependencies": [
+        "集合交集定义",
+        "开区间两端点均排除"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-055.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-056",
+      "derivedAnswer": "C",
+      "derivation": "x(x-2)≤0的解集为B=[0,2]，两个根0、2均因等号可取。A中0、1、2在该区间内，故交集为{0,1,2}。",
+      "dependencies": [
+        "二次不等式符号",
+        "闭区间端点",
+        "集合交集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/c/SET-EXP50-056.png",
+      "issues": []
+    }
+  ]
+}

@@ -1,0 +1,1255 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "set-expansion-50-r1",
+  "reviewDate": "2026-10-11",
+  "reviewer": "Codex root plus three independent review agents",
+  "method": "三批先仅读无答案题面、冻结推导，再查看原PDF渲染核对题面与选项，最后由主审揭盲与收录答案比较。004教师版同页答案在冻结后曾被展示，明确披露，未改推导。此为独立AI内容复核，没有人工金标或学生作答验证。",
+  "sourceNormalizationReview": {
+    "id": "SET-EXP50-045",
+    "decision": "needs_source_confirmation",
+    "proposedText": "y∈N",
+    "sourceVisibleText": "y□N",
+    "rootVisualChecked": true,
+    "answerSourceVisualChecked": true,
+    "confirmationRequired": "清晰原题或教师确认修订题面；不能只按答案D反推缺字。"
+  },
+  "summary": {
+    "reviewed": 50,
+    "answerMatches": 50,
+    "contentReviewPassed": 49,
+    "needsSourceConfirmation": 1,
+    "needsContentReview": 0,
+    "previousExcludedStillExcluded": 6,
+    "exactDuplicatesFound": 0,
+    "nearPairsInspected": 16,
+    "publishedByThisReview": 0,
+    "teacherApprovedByThisReview": 0
+  },
+  "releaseBoundary": "全部仍为pending_review且不发布；content_review_passed仅表示本轮题面/数学解答检查无阻断，不表示教师批准、实测难度、四维目标支持证据、课程依赖映射或正式题库契约完成。020原答案未找到，独立解答D与原generated提议相符，仍保持generated。",
+  "inputs": [
+    {
+      "path": "data/question-bank/staging/set-expansion-50.json",
+      "sha256": "2f8e7d6255b6199d33833ac4cd429273c26ab2fafa7d3358f5f269c352c17238"
+    },
+    {
+      "path": "data/question-bank/staging/set-expansion-50-001-025.json",
+      "sha256": "e00dd98f1c40f3798a9517d566ce356d06c1489b529cf0d64f7c11d392f48448"
+    },
+    {
+      "path": "data/question-bank/staging/set-expansion-50-026-050.json",
+      "sha256": "45f386e3dc1a7b94663163b9a5f209ecf26e70a7bddbdb961ac738c8ee2535fd"
+    },
+    {
+      "path": "data/question-bank/staging/set-expansion-50-replacements.json",
+      "sha256": "a973fedb64ff41cc8f7a0a045547ad4862d3e644bd76c65815cecc63120a91c3"
+    },
+    {
+      "path": "docs/validation/set-expansion-50/review-r1-a.json",
+      "sha256": "8baccabb858f03a530919591bbb6221a876246a6a32fff4a3ee300743729f963"
+    },
+    {
+      "path": "docs/validation/set-expansion-50/review-r1-b.json",
+      "sha256": "357dd387d95f5ee61be786b66d8e80abb4ed2bb91ddc1a6cfd232b70657a45e6"
+    },
+    {
+      "path": "docs/validation/set-expansion-50/review-r1-c.json",
+      "sha256": "ea18d394793992b5cee4c9e9f67659b334db0624ad054823dd85b4eb9302d5c3"
+    },
+    {
+      "path": "docs/validation/set-expansion-50/review-r1-excluded.json",
+      "sha256": "78aca29d64c94294956851593539aff9a50105b361c883b8973c50961782f21d"
+    },
+    {
+      "path": "docs/validation/set-expansion-50/review-r1-dedup.json",
+      "sha256": "cbb44cc7c8c0f9ef8da06ca6c4b58ef8d57e156fd742d55d39da0d3022970dee"
+    },
+    {
+      "path": "data/question-bank/ledger.json",
+      "sha256": "109818762522bb7087d0a7854def2e0734eda3835d9cba754858f9d2fc56b46c"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-001.json",
+      "sha256": "8a19820fce6bd4316d02003771bf385f93a5429219622c9056e3e83cbbc58291"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-002.json",
+      "sha256": "b1f87d27e39dc6e8af9a8e2e1759f55fa7794f1d008baaa4dfd4c136ea9b5695"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-003.json",
+      "sha256": "884119a77dfba9205671b7b704e4849944e74b8f07db7ad090f72bfd2558994c"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-004.json",
+      "sha256": "1c7e76d3b9f35977b6c14398cc0f8b2a924182c3677bf06c9ad1094832bdd5e8"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-005.json",
+      "sha256": "93d970384faaf0d3cce3cfe169e157cf0f7df5a7c64c5c42b6646399f88e174d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-006.json",
+      "sha256": "b168d6cc10d6b0dd8acd4a2c14af2b5b572be4410a8a3c1702c989b61cec5c5d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-007.json",
+      "sha256": "09e73b6f95a430ac0b600726db1a9e32fe05786d703f4f384ce5789f1f747c25"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-008.json",
+      "sha256": "8ef11a059421ed823b3d6f45e568c78d2acb8694839ea86c8719a1fb5732fb83"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-009.json",
+      "sha256": "1dd2f6498090b0ae94c0d1c35475f4625220220256867f5b09751275ec31a230"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-010.json",
+      "sha256": "a6356843161e51af8f105d495f7aba4e41a2f26aefccb33c39a4089cbbb825ca"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-011.json",
+      "sha256": "5055cca0dde6a2f79a174493464499aafda5b093d1dbf649ad5ad550ca58d3a8"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-012.json",
+      "sha256": "c1c484342b4a21ccbc608b7ebedccea535954c3e8145408dc474f6dee919b33d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-013.json",
+      "sha256": "1d41609cd6f89432c430196c97bc2a4e0f938df6f434029e5a06cbbcd115cd54"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-014.json",
+      "sha256": "fb03f8133b1bf16e7977c2e2209b598976b882dc3ac429fef04590648ac3822c"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-016.json",
+      "sha256": "05af968e3434389ef5aca9155120a016810d921095dd2a7c56e8c70ddabf16de"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-017.json",
+      "sha256": "8bc01998b3f4b51aec69fe48fc208bf813caeecaa07c739d5ff38181164835ed"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-018.json",
+      "sha256": "918ee95847e214dbd4b6a4d859c2990cbea2e9a85d8c24f923b5c85bfe6e2da1"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-020.json",
+      "sha256": "5b62f5935fe52c2c6d7e994ce8f7383e84affef9be4454b371fa094b11c081e9"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-022.json",
+      "sha256": "9877b5d32c1906134263745788d2bfdacae8819117ffc4e632cf2e9e837067c0"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-023.json",
+      "sha256": "1551bd4b9345ec8d56d534b0a7e8d4afbc414585f73cfca04d5487ed1f1e7d71"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-024.json",
+      "sha256": "f5757fa6a9ab1a3a36ef6eae202d91a27d7f6c4e994ccd84af0b1c828d09b066"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-026.json",
+      "sha256": "ecf764e34fc7fd1cb58b14871569f442f5e1034ab54b0d9cf9355f3055f02812"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-027.json",
+      "sha256": "66ca7aeae92c7735b82733892114347fd528e4851db91c93d92de1e77415734d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-028.json",
+      "sha256": "c8464b0f9e5ddcf85637f7bff4c76258c556ad5dbc40cb3592079897fac0fec4"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-029.json",
+      "sha256": "1a348c0ce159ef6eb8dd0b9c9d85c177dc04b5867d9f152da3ca8c8f21511dcc"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-030.json",
+      "sha256": "351df813bd1992b7d154ab6b951095e7b2e4194726fe590fc53f2854df826d3d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-031.json",
+      "sha256": "9b7238182917b987102efb37c6d25dd3d43470d1e6951b3b7ff99ae6c7a79b76"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-033.json",
+      "sha256": "c7ae9442dec6e78f3edbf91f024a923345d916f73129158eaa8a2c30b7fbb6d3"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-034.json",
+      "sha256": "83a5e8ee8dcfdf86697dd9577869ecf36a6e0f5fe0aea4fdc038d86ed062fac9"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-035.json",
+      "sha256": "872380a841de7fcc74278b9202aa537521b0f79e3f00e56eff74151015147f01"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-036.json",
+      "sha256": "cecc9c6546a4d74feb30538bfa5bbeec6d549133645207c5dca4b7a5f3fc5983"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-037.json",
+      "sha256": "1c7839273ea3969f4904166b2e6b794d7c65a3886c470c0d7daa668656718569"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-038.json",
+      "sha256": "770249c14635fc35ba87980e3692cd0fdaf657555d790e87c2f765dfb285a53e"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-039.json",
+      "sha256": "e2e517eac1544499b064c5db31d1380306658b5be7929ccdcd6caa61b0efcba0"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-040.json",
+      "sha256": "ab79d64511dd4cf4275211d750ead22d7b7723d1d7a98666d650ba98cb886026"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-041.json",
+      "sha256": "92ddd16488cdc20d870bb416a3e72d78e88c61b272be646cfa1e28351111167f"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-042.json",
+      "sha256": "22fd736b1869c30b8c6a113b2375c65c465099caacfcd27adad831e0ab0ade37"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-043.json",
+      "sha256": "86dbd2d6fe0e16e3ad2118cbcef9f198b52b71c997c6ef52c77af62cb799568b"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-044.json",
+      "sha256": "31475ebbcde16a4fc72f304ff137e6c6d097841ca089419ca0901d23a077a943"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-045.json",
+      "sha256": "9f3f89cf216c3917d21d9533dd9e458823d978b944ae68edd20ba8d0b7caa097"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-046.json",
+      "sha256": "d2b9540b9012ab63dfe63811f49640ea23199b0b2cd2437ea7ff9bfb21a20ca8"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-047.json",
+      "sha256": "c07a55b7513b636e34039d484c09c72c9a1c59a737e8b374cbbd54b155bef628"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-048.json",
+      "sha256": "6b51d569b4fabc9ac1c01550a05222fc57b53b51ca8fa08fea4e382c05f779ae"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-049.json",
+      "sha256": "e256d829df12c79867fdd59629ef6e7fe12e4688a943217d08424c3f44d1b877"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-050.json",
+      "sha256": "d513b8fd863668bb01eda870e1fc3784f975e5d7c5793ce5bfaceb42ff619651"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/天津/天津市南开中学/南开中学（高三上学期）第二次月考（数学）2025-2026学年试卷.pdf",
+      "sha256": "eb8a6a3b632da583dc7f0f856d46651bededf91531340f47bae69f400c4dc633"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/天津/天津市南开中学/南开中学（高三上学期）第二次月考（数学）2025-2026学年试卷解析.pdf",
+      "sha256": "c3ce526c526639d41c37cf9034445de37c10a66f6d1b8790d31eeadb3d2b0178"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/安徽/合肥市第一中学/安徽省合肥一中2025-2026学年高三上学期1月考试 数学.pdf",
+      "sha256": "b4ac33ffc7530865beaa3cdf5627ed16094a4009fb813fc1625d6b043fb8d103"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/安徽/合肥市第一中学/安徽省合肥一中2025-2026学年高三上学期1月考试 数学答案.pdf",
+      "sha256": "248ed7506df3be717a0602018adffe910ca78944b457500bd7d8158f873f09a9"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/江苏/江苏省扬州市2026届高三上学期期末考试(扬州一模)/数学试卷-2026届高三扬州一模.pdf",
+      "sha256": "1d6fe22152fc43e3bf315279aca3c4ab5869406bd274ad394743de2aeef8fefd"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/江苏/江苏省扬州市2026届高三上学期期末考试(扬州一模)/数学答案-2026届高三扬州一模.pdf",
+      "sha256": "4bc25dd7e21f59d43fa82876eb27dc159e373f294fa51feec732e42fa96634c1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/海南/海南中学/2026届高三第3次月考（教师版）.pdf",
+      "sha256": "6d0e61645f575e387dd5e268d6e5776d9c6562f837c47f0bd28bdc6a1f18e92b"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/湖南/湖南省2026年邵阳市高三第一次联考试题卷/数学(1).pdf",
+      "sha256": "4639f60247d641927696cdc3c21df1ed640342700905f2849b9d63ee96c5cf08"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/湖南/湖南省2026年邵阳市高三第一次联考试题卷/数学答案(1).pdf",
+      "sha256": "fb1759f6252d7fe68ecb5f39e6f95c88690f6151377d48057074d68a3fd3c029"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/辽宁/辽宁省沈阳市2026届高中三年级高三教学质量监测（一）（沈阳一模）/数学试卷-2026年沈阳市高中三年级教学质量监测(一).pdf",
+      "sha256": "378726b40bb22e6327274773c78ba6693237a23d9058eb6234b63e99f260103d"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/辽宁/辽宁省沈阳市2026届高中三年级高三教学质量监测（一）（沈阳一模）/数学解析-2026年沈阳市高中三年级教学质量监测(一).pdf",
+      "sha256": "aa457fe939a2d39af8b3baa8c66a1d6bc423b853e49de40d47b1b03d9c00f6bf"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/雅礼中学/雅礼中学2026届高三月考试卷（五）数学.pdf",
+      "sha256": "9bb8bb90df02a24277943972447e47ac847ffb829462f8ab73e972655dfa18e1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/1月/雅礼中学/雅礼中学2026届高三月考试卷（五）数学答案.pdf",
+      "sha256": "29327cb1c0c9c2a40683cb7782949757cb07df68925ba941cb7fe34118e7370d"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/四川/成都市第七中学/成都市第七中学2025—2026学年度上期高2026届期末考试数学.pdf",
+      "sha256": "c6029e7b08b69b86c9277abff3507d104f2789222b75564b2a2fdcc01306eb76"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/四川/成都市第七中学/成都市第七中学2025—2026学年度上期高2026届期末考试数学答案.pdf",
+      "sha256": "1430d9c24283f64d872cbf2f264b476aae71caa749798879990f8782bd91ecd8"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/山西/山西省运城市2025-2026学年高三上学期期末调研/数学试题 运城市2025—2026学年第一学期期末调研测试 高三数学.pdf",
+      "sha256": "f575fd0bdf87e6a463d35f4c3b54948357717e01d06e21f7b1462f55a09c35e4"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/山西/山西省运城市2025-2026学年高三上学期期末调研/数学详解 运城市2025—2026学年第一学期期末调研测试(2).pdf",
+      "sha256": "518c8f60cde4002179873a9c7ed7d72f0ae4c90618181bf916ff66c52685ec53"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/湖北/2026年湖北省高三2月检测试卷/数学试卷.pdf",
+      "sha256": "88949adc2ae9260498293eebd758a95e451b18c3b1aa5b1a1b7dde53dffd7eb9"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/湖北/2026年湖北省高三2月检测试卷/2025-2026学年下学期湖北省孝感市楚天协作体高三2月联考数学答案.pdf",
+      "sha256": "8fd0334750921b20bb26bcb3114432d596f360e40593ee8108f3c5689c314845"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/湖南/长郡中学/长郡中学2026届高三月考试卷（六）数学.pdf",
+      "sha256": "c782a7d23daf851518a7d64271350f2884756d1ea09aa657f4dd615f912694ff"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/湖南/长郡中学/长郡中学2026届高三月考试卷（六）数学答案.pdf",
+      "sha256": "cf778eb99ff60b2d520f32a91efb15c98fe23b6f50e08bdf969bde586dfff5c7"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/四川省宜宾市普通高中2023级第二次诊断性测试/宜宾市普通高中2023级第二次诊断性测试 数学.pdf",
+      "sha256": "558b4462f72afc451261da310b26f8c9aa56647a1dc62bffe733ced62bcf64ee"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/四川省宜宾市普通高中2023级第二次诊断性测试/宜宾市普通高中2023级第二次诊断性测试 数学答案.pdf",
+      "sha256": "f4e1b9be91cd163f4a3774ab1ffbff4a6cafd4350545dfecc3cbf3d59cf8b539"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/成都市第七中学/成都市第七中学2025~2026学年度下期高2026届二诊模拟考试 数学.pdf",
+      "sha256": "937646f735d9cfa76a022014eeb1d374db9e5ff6f25d26827bc7d48870b9f0f8"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/成都市第七中学/成都市第七中学2025~2026学年度下期高2026届二诊模拟考试 数学答案.pdf",
+      "sha256": "03c34e6c2ae6ef14779b81d29f517b8c11975d4eed2c4f6be009dec7a3c1aea5"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/成都市第七中学/成都市第七中学2025—2026学年度下期高2026届开学考试 数学.pdf",
+      "sha256": "275dba3432b879e3b4da9ac7bc007c894ae30a1c0f4df3fb23660255cffcd2d2"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/成都市第七中学/成都市第七中学2025—2026学年度下期高2026届开学考试 数学答案.pdf",
+      "sha256": "e4135a3c4b4fb8ff0333523d4109fa4f6151c95bd78fdb538ca9924df9a78eb0"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/石室中学/成都石室中学2025-2026学年度下学期高2026届二诊模拟考试 数学.pdf",
+      "sha256": "db65d662c80409cb09ed2a6295973dbc72893560f1199bb33b22ef1c124730fc"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/四川/石室中学/成都石室中学2025-2026学年度下学期高2026届二诊模拟考试 数学答案.pdf",
+      "sha256": "f9c2a4a45882093ebe3f0ded6f0cc09f0c70c4a5543d28998c324a8157125465"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/山东/山东省东营市2026届高三年级第一次诊断性测试（东营一模）/山东省东营市2026届高三年级第一次诊断性测试 数学.pdf",
+      "sha256": "4cdf3c119e24064f0555474914ecbbb55db86b78c5f99950dea5ee4ebee5f8d6"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/山东/山东省东营市2026届高三年级第一次诊断性测试（东营一模）/山东省东营市2026届高三年级第一次诊断性测试 数学答案.pdf",
+      "sha256": "e40a3f4c0751f05fdf32017f873e920d81dc81a6250495aacf2192fd9aca4706"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/海南/海南省文昌中学2025一2026学年度第二学期高三第一次月考试题/文昌中学2025一2026学年度第二学期高三第一次月考试题 数学.pdf",
+      "sha256": "730be716ac1e7aaceffc4fe2ab9e261952cfc450c9509b804416ddb7d607fd57"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/3月/海南/海南省文昌中学2025一2026学年度第二学期高三第一次月考试题/文昌中学2025一2026学年度第二学期高三第一次月考试题 数学答案.pdf",
+      "sha256": "8c7417ebffea7fe4a0f98d1dc7c4eb683eba31395abaa7b23b823de115e3a94e"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/四川/四川省凉山州2026届高中毕业班第二次诊断性考试/凉山州2026届高中毕业班第二次诊断性考试 数学.pdf",
+      "sha256": "cf639d4635fee626fcc685132828d82bab56d978c761a07a5ba4d9d7adb861e0"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/山西/山西省卓越联盟2025～2026学年高三4月质量检测卷/山西省卓越联盟2025～2026学年高三4月质量检测卷 数学.pdf",
+      "sha256": "1e1da741d7c5e3433a6cd719bf0b211587560f769b30799fbc6d74762f369674"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/山西/山西省卓越联盟2025～2026学年高三4月质量检测卷/山西省卓越联盟2025～2026学年高三4月质量检测卷 数学答案.pdf",
+      "sha256": "a0c9e0c3966ab6996c53f9ba6d6d23fbfaadb9b2a47bc82b414b950e7c93cbcb"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/江苏/江苏南京第六十六中学2026届高三四月第一次检测（二模）/数学试题.pdf",
+      "sha256": "0b465b13409b4fc7ad1951c64d289db91241817c9c219b05c3b42378698c4bc4"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/江苏/江苏南京第六十六中学2026届高三四月第一次检测（二模）/数学答案.pdf",
+      "sha256": "bf887f8d928a5a7112920de39c7a8e788705041e3b36ad64f59a5d31916608b1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/福州市2026届高中毕业班4月适应性练习/福州市2026届高中毕业班4月适应性练习 数学.pdf",
+      "sha256": "e31e8ea334c22b738bf580e13804451e83c5c07afa47259f0cef76c97bd04106"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/★2026年4月/【260409】福建省2026届高中毕业班适应性练习（省质检）/福建省2026届高中毕业班适应性练习（福州、漳州、南平、泉州）数学/福州市2026届高中毕业班4月适应性练习 数学答案.pdf",
+      "sha256": "d88c1712ba9cf5f98c40149e8b2fe2cc5617becef729a6e63cba8b9c8644de04"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/吉林/吉林省长春市第二实验中学2026届高三上学期10月月考/吉林省长春市第二实验中学2026届高三上学期10月月考+数学.pdf",
+      "sha256": "a29b297c4164a32d057a870c6f4511707a5941726b9152fa4dbaf7d7c2be8a30"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/吉林/吉林省长春市第二实验中学2026届高三上学期10月月考/吉林省长春市第二实验中学2026届高三上学期10月月考+数学答案.pdf",
+      "sha256": "1d59a6f9695f9b9dbdeccb376c646e57f8cfb77048cc6c4d88800927b5e87e86"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/四川/四川省广安中学2025-2026学年高三上学期10月月考/数学.pdf",
+      "sha256": "e2f8810b6e0c946f860a3cbd444cca9ef15564346543f259017ba1408fe7ff47"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/四川/四川省广安市前锋区高2026届第一次全真模拟考试/前锋区高2026届第一次全真模拟考试+数学.pdf",
+      "sha256": "992ecf32c31663dc1bd5f705de8e55bc8b8f1549d7d15af320a68eaeadacce25"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/四川/四川省广安市前锋区高2026届第一次全真模拟考试/前锋区高2026届第一次全真模拟考试+数学答案.pdf",
+      "sha256": "a8a72ba59e629773939bf537e430a8fe8d53e56bd8e1ee638ac8178c01c3319a"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/四川/成都市第七中学/四川省成都市第七中学2025-2026学年高三上学期10月月考数学.pdf",
+      "sha256": "40b28d80adb860310d2fc9f4897e4c55ffd177194dc3af7c3ab61a153b05cbac"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/四川/成都市第七中学/四川省成都市第七中学2025-2026学年高三上学期10月月考数学答案.pdf",
+      "sha256": "48d0b61494dc3c0f6a73be3fb53c592ee631cf95f6930c47fdc5b1a61aa5c60e"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/天津/天津市南开大学附中2025年高三上学期第一次阶段检测/天津市南开大学附中2025年高三上学期第一次阶段检测+数学.pdf",
+      "sha256": "de62cbfb24996831046438a205368b22ccea8552fd854b7bffb58afaadf938e6"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/天津/天津市南开大学附中2025年高三上学期第一次阶段检测/天津市南开大学附中2025年高三上学期第一次阶段检测+数学答案.pdf",
+      "sha256": "81a173073d6955f49e4865d2f75333ab21cef30e20028e23a407469f958f2d2e"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/天津/天津市第三中学2026届高三上学期10月月考/天津市第三中学2026届高三上学期10月月考+数学.pdf",
+      "sha256": "c88bc64bcf1f33488ec879fddbc62db9780611775963886cf61db3f725c39e75"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/天津/天津市第三中学2026届高三上学期10月月考/天津市第三中学2026届高三上学期10月月考+数学答案.pdf",
+      "sha256": "c8208286ab6f2394c0c2835b7212fb8b02f63fa2e42a51cb7871b502b55d91a5"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/安徽/合肥市第一中学/高三10月份教学质量测评数学卷.pdf",
+      "sha256": "fb8010db958b86202ae9222a03afb4d304dfa2af202a92a226ec23bcaf456594"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/安徽/合肥市第一中学/高三10月份教学质量测评数学参考答案.pdf",
+      "sha256": "06b97f12d48ca0b483af0b7e01d0d52dde99dad5e72734e04db2554f550a0bf4"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/安徽/安徽省六安第一中学2025-2026学年高三上学期10月月考/安徽省六安第一中学2025-2026学年高三上学期10月月考数学试题.pdf",
+      "sha256": "53bce3c755688c05f90e2deb3b7fa5d0e56202f694547ffb637cfc428dbc60ec"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/山西/山西大学附属中学/山西大学附中10月月考数学试题.pdf",
+      "sha256": "0bd61148b8e434d9a74dc164e22795e69536e05dd2c4e3189c995b72cc0fc6c5"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/山西/山西大学附属中学/山西大学附中10月月考数学试题解析.pdf",
+      "sha256": "9513d4284560a0e08c495e3f261dd25862b781f90e701a1578a3c9961f9dd9cc"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/山西/山西大学附属中学/山西省山西大学附属中学校2025-2026学年高三上学期10月模块诊断（总第四次）数学试题（原卷版）.pdf",
+      "sha256": "08467ed771f14063b801a4a93a87d5e353eab7b2b0d2235d1f8ef6432baad6bc"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/山西/山西大学附属中学/山西省山西大学附属中学校2025-2026学年高三上学期10月模块诊断（总第四次）数学试题（解析版）.pdf",
+      "sha256": "5d4528c006a0f11ec93139965dd8193b81787c5305097293fdd6f9b81a9e9901"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东上进联考2025-2026学年领航高中联盟2026届高三10月一轮复习阶段检测/广东高三10月上进联考数学试卷.pdf",
+      "sha256": "74edd0479868d5f933770abc42a0b91f0f299266abffc9bf60d9cbec118a0261"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东上进联考2025-2026学年领航高中联盟2026届高三10月一轮复习阶段检测/广东高三10月上进联考数学答案（官方答案）.pdf",
+      "sha256": "647926abcd8f8489c0ef07ec42aa06a9655ca7c931d8eeee30cf5f7e04022cc4"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东省六校联盟2025-2026学年高三上学期第二次联考/广东省六校联考2026届高三上学期第二次联考数学试卷.pdf",
+      "sha256": "68c4b3e163697c9ccbabbcc848ceaaf0ee875f56f5e63c40105855719b040b38"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东省六校联盟2025-2026学年高三上学期第二次联考/广东省六校联考2026届高三上学期第二次联考数学答案（图片版）.pdf",
+      "sha256": "32c65dfe21bba611750cb92e364d6215d74670863fae0c03cbdcb82962f5a601"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东省深圳市宝安区2025-2026学年高三上学期10月教学质量检测/宝一模数学.pdf",
+      "sha256": "cddd8b5a5fd63fa8f98304803d34dba9521d36fd269c537182c872447433434b"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东省深圳市宝安区2025-2026学年高三上学期10月教学质量检测/宝一模数学答案及评分细则.pdf",
+      "sha256": "52740e767d15677514c5f8031a8eba9a504600537ed4a02a2a2689088ca12312"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东省清远市第一中学2025-2026学年高三上学期10月期中/清远一中2025-2026学年度高三10月期中考试数学试卷.pdf",
+      "sha256": "2b8758d642c5f9eaee97b11f0861df6a1f46412a82d384a77c302a48779c3935"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/广东省清远市第一中学2025-2026学年高三上学期10月期中/清远一中2025-2026学年度高三10月期中考试数学试卷 解析.pdf",
+      "sha256": "acfe2dd765ddb466a48c439ad0d625626ada0acb3369543342d44ce131eb75cf"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/汕头市金山中学/2023级高三第一学期阶段考试数学试卷.pdf",
+      "sha256": "70f64a80a1f7a19d668d8ba010e863198a6468eff7ac4ad425933141ac2907f7"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/广东/汕头市金山中学/2023级高三第一学期阶段考试数学答案.pdf",
+      "sha256": "e2b14d2c52ed2af370f84c27e24ab9e429e70da8e4cc30f6eecc4dc56e2d6e75"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/江苏/江苏省无锡市三校联考2025-2026学年高三上学期10月月考/无锡市三校联考2025-2026学年高三上学期10月月考数学.pdf",
+      "sha256": "1b9cabd43a449b3e0b379e93a33a5e53602ef915840907feda272d0dba43acb1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/江苏/江苏省无锡市三校联考2025-2026学年高三上学期10月月考/2025年秋学期10月质量调研 高三数学答案.pdf",
+      "sha256": "f8cd2a6e496069e955d8f503b7975034170446ff53fa29ab79ee906886beaaa8"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/江苏/江苏省盐城市五校联考2026届高三上学期10月月考/江苏省盐城市五校联考2026届高三上学期10月月考+数学.pdf",
+      "sha256": "8cfb1a390ad4db40c938cb2b5585b4fde6a86cbc90dd5cc741d8ea0f1f026b00"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/江苏/江苏省盐城市五校联考2026届高三上学期10月月考/江苏省盐城市五校联考2026届高三上学期10月月考+数学答案.pdf",
+      "sha256": "5414f8657463d62b4a93cd842ab2d3f0fde30eae2563033928fe1e7a349d3432"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/河北/河北省沧州市普通高中2026届高三复习质量检测/河北省沧州市普通高中2026届高三复习质量检测+数学.pdf",
+      "sha256": "dad8c194d1bb86b8b91d054277689d257daa8f86572fb943e717039689932127"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/河北/河北省沧州市普通高中2026届高三复习质量检测/河北省沧州市普通高中2026届高三复习质量检测+数学答案.pdf",
+      "sha256": "c0a334226f5f520ce008e167494c28d6f03566ce743abd43ef398b6c6dd14d88"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/河北/河北省衡水市2025-2026学年高三上学期第三次调研考试（26008C）/河北省衡水市衡水二中等学校2026届高三三调考试（三模）数学试题.pdf",
+      "sha256": "401b0144953aecb40884e0c5f000f6c7bc697fea031bbabcc0ddb36d6511f28d"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/河北/河北省衡水市2025-2026学年高三上学期第三次调研考试（26008C）/河北省衡水市2025-2026学年高三上学期第三次调研考试（26008C）数学答案.pdf",
+      "sha256": "4785c1bf98533ba0685791791b371f9c530f6f9c9177c86c6bc0cc1716630edd"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/浙江/2026届浙江新阵地教育联盟高三上学期第一次模拟/浙江新阵地教育联盟2026届高三上学期第一次联考数学试卷.pdf",
+      "sha256": "1b1dca3247041dac7b85b9dbdc7eb24c063fa0024a81c65fb96e421c4adf48a5"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/浙江/2026届浙江新阵地教育联盟高三上学期第一次模拟/浙江新阵地教育联盟2026届高三上学期第一次联考数学答案.pdf",
+      "sha256": "ea2c73dba8f1055dee110edcc097473398c626c71b78367abb4dec1029b99757"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/湖北/华中师范大学第一附属中学/湖北省武汉市华中师范大学第一附属中学2025-2026学年高三上学期10月考试数学试题（原卷版）.pdf",
+      "sha256": "b067552227fef6ada6d4faa90c1b7961f6d9921199757171fe015510359101d7"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/湖北/华中师范大学第一附属中学/湖北省武汉市华中师范大学第一附属中学2025-2026学年高三上学期10月考试数学试题（解析版）.pdf",
+      "sha256": "ae6b0261af485b81a782b3cb3c06f4671b6f518ef45fbd8a80a37742421854de"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/湖北/湖北省新八校协作体2025-2026学年上学期高三10月联考/湖北新八校2025-2026学年高三10月联考数学试卷.pdf",
+      "sha256": "1854c5cb590ee6201bedadb2ea69fe83305ae5ed1bcd419975b96a1539693376"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/湖北/湖北省新八校协作体2025-2026学年上学期高三10月联考/湖北省新八校协作体2025-2026学年高三上学期10月月考数学试题 答案.pdf",
+      "sha256": "4e0d26ecab587cdb43b5b8a8a282cd299d3345d155bf5ee2b9971808cc3d2d20"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/湖南/湖南省长沙大学附属中学2025-2026学年高三上学期10月月考/长沙大学附属中学高三10月月考数学试题卷（教师用卷）.pdf",
+      "sha256": "f5e6db14364ace9045ac4a410a793652ee757b5b3f5a202d8b2890aa6f92d4ad"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/华大新高考联盟2026届高三9月教学质量测评/华大新高考联盟2026届高三9月教学质量测评-试卷.pdf",
+      "sha256": "5af9ef57532223840b4b54b5cd64c36b1a6c934e7f17cba6ed02f8c119af9944"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/华大新高考联盟2026届高三9月教学质量测评/湖北省华大新高考联盟2026届高三上学期9月教学质量检测数学答案.pdf",
+      "sha256": "f62bc17bb51faca3cf082ce8875a1e8f98b01bfc7705ad0a11a1dcc2f80f1a43"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/浙江/浙江名校协作体（G12）2025年9月2026届高三返校联考/数学试卷-浙江省G12名校协作体2025学年第一学期9月高三年级暑假返校联考(9.1-9.2).pdf",
+      "sha256": "2709ae8ddda683dc62822d3b557717fccbae546adfdb2331ca17632fcccd6187"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/浙江/浙江名校协作体（G12）2025年9月2026届高三返校联考/数学答案-浙江省G12名校协作体2025学年第一学期9月高三年级暑假返校联考(9.1-9.2).pdf",
+      "sha256": "a53c5322109cb75d68dba85a3280363a4932e6bcfa83a0e39b0cc606a0dae7c1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/河南/河南师范大学附属中学2025-2026学年高三上学期9月开学考试/高三9月数学试题.pdf",
+      "sha256": "9cccce91f597bb8ab7fd2fcbce1a31e7a61f85a930370047e2ae61e18f712189"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/河南/河南师范大学附属中学2025-2026学年高三上学期9月开学考试/高三9月数学答案.pdf",
+      "sha256": "f492bee7bd91c09149b2df3391062fcdbdbd30cb5a951f3099dca74e63d2144b"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/江西/江西省南昌市零模2026届高三上学期九月测试/数学试卷-江西省南昌市2025年高三年级九月测试.pdf",
+      "sha256": "cb3f0a537f84092f3c73698b3af0c2e58e65a15fef08aef127ccf07c10bc54e1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/江西/江西省南昌市零模2026届高三上学期九月测试/数学答案-江西省南昌市2025年高三年级九月测试.pdf",
+      "sha256": "0e05dca702ddbe77586adef9a148e7ae129e785b2cb9bad30c274587b27b5cbf"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/海南/海南省文昌中学2025-2026学年高三上学期第一次月考/海南省文昌中学2025-2026学年高三上学期第一次月考数学试题.pdf",
+      "sha256": "9d14205f7bcf7c10f25ba399482c4b04cdad0a4aa4d883e38b5901910a9770ea"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/海南/海南省文昌中学2025-2026学年高三上学期第一次月考/高三数学第一次月考答案.pdf",
+      "sha256": "b0b18176aca22e15d9dc848af158cd4e6371b29b95b7d701fb6bfe413232078b"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/广东/广东省深圳市罗湖区2025-2026学年高三第一学期开学质量检测/深圳市罗湖区2025-2026学年高三第一学期开学质量检测数学.pdf",
+      "sha256": "cbe51bee6b585043d7cda691028b86b90182ea0e6d8d13b38f3331b555aa5dd8"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/9月/广东/广东省深圳市罗湖区2025-2026学年高三第一学期开学质量检测/深圳市罗湖区2025-2026学年高三第一学期开学质量检测数学答案.pdf",
+      "sha256": "b013d18e8e4ec04414ffbe5f41cf82ae0f3df39c4a373d6b85511633d9f6b6b1"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/2月/广东/广东省华附、省实、广雅、深中2026届高三四校联考1月期末/数学试题.pdf",
+      "sha256": "95eec7ab6bf083eb98fb736d1b9bce609d2cbf713dce8bfcbd255bda7b39bce9"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2026/4月/云南/云南省玉溪市第一中学2025—2026学年下学期高三适应性测试（一）(全科）/玉溪一中2025一2026学年下学期高三适应性测试（一）数学.pdf",
+      "sha256": "918e7235e5b9172d2a950c79db73e99a2754c6a78a8ff2fd9e6e140be5b151d6"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/四川/树德中学/树德中学2025-2026学年高三上学期10月月考+数学.pdf",
+      "sha256": "4081b1347f248d0e19e9a73e73ecba96e921c451c3082d9a4802651398beacad"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/宁夏/宁夏石嘴山市第一中学2026届高三上学期10月月考/宁夏石嘴山市第一中学2026届高三上学期10月月考+数学.pdf",
+      "sha256": "1ea3da384234ec70a150a65d7ff1ea23c31bf42877920b443f40a858a8c5734c"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/浙江/浙江省浙南名校联盟2026届高三上学期10月联考/浙南名校联盟2026届高三上学期10月联考数学试题.pdf",
+      "sha256": "702872c7d023ba4dfac21aa59d83a32a9d8cfcab407ede4970ef6fbf47ec3d4a"
+    },
+    {
+      "path": "C:/baidunetdiskdownload/高--模拟题/数学/2025/10月/湖北/湖北省荆州中学2025-2026学年高三上学期10月月考/2023级10月底月考数学试卷.pdf",
+      "sha256": "0e42ab5e9d84ed0a6197aa06d396796ec97346937c77bb3d4452fa639d660d7d"
+    }
+  ],
+  "items": [
+    {
+      "id": "SET-EXP50-001",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-002",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-003",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-004",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-005",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "N 是否包含 0 会改变选项：按中国中学标准约定答案 D；若采用 N={1,2,…} 则为 C。题目面向中国高中可成立，跨约定使用时需显式说明 N 包含 0。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-006",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-007",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-008",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-009",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-011",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-012",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-013",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-014",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-015",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-016",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-017",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-018",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-a.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-020",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "generated",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-021",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-022",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-023",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-024",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "low",
+          "description": "来源PDF的公式图片本身较模糊，已额外渲染放大并实际查看；主要条件及四个选项可核对，与blind题一致，不影响独立答案。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-025",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-026",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-027",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-029",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "low",
+          "description": "来源PDF的公式图片本身较模糊，已额外渲染放大并实际查看；主要条件及四个选项可核对，与blind题一致，不影响独立答案。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-030",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "low",
+          "description": "来源PDF的公式图片本身较模糊，已额外渲染放大并实际查看；主要条件及四个选项可核对，与blind题一致，不影响独立答案。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-032",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-033",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-034",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-035",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-036",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-037",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-038",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-b.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-039",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-040",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-041",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "B",
+      "storedAnswer": "B",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-042",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-043",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "AD",
+      "storedAnswer": "AD",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "向量集合未排除零向量，按高中零向量共线约定B不满足传递性；若另行限定非零向量集合则B将成为等价关系。当前题干未作该限定，AD唯一。跨章依赖命题逻辑和向量，不作为阻断。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-044",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-045",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "needs_source_confirmation",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "依赖大陆高中通用约定N含0；若脱离该约定，自然数解释会改变结果并造成无匹配选项。建议知识依赖明确记录N含0。"
+        },
+        {
+          "severity": "info",
+          "description": "来源PDF的B定义在y与N之间显示空方框字形，依上下文可明确识别为成员关系；规范题干用y∈N恢复其数学含义。题干其他数据及全部选项已逐项视觉核对，无解答阻断。"
+        },
+        {
+          "severity": "warning",
+          "description": "主审复看原题及答案页：原题y与N之间是缺损方框，∈来自上下文恢复；答案页只有D无解答，保留为转写提议，需清晰来源或教师确认。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-047",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "依赖大陆高中通用约定N含0；若脱离该约定，自然数解释会改变结果并造成无匹配选项。建议知识依赖明确记录N含0。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-048",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-050",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-051",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": [
+        {
+          "severity": "info",
+          "description": "N含0按大陆高中通用约定。若换用N为正整数的约定，答案会从D变为B；需记录自然数约定，当前考试语境并非缺条件阻断。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-052",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-053",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "A",
+      "storedAnswer": "A",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-054",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-055",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "D",
+      "storedAnswer": "D",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-056",
+      "reviewFile": "docs/validation/set-expansion-50/review-r1-c.json",
+      "derivedAnswer": "C",
+      "storedAnswer": "C",
+      "answerProvenance": "source",
+      "answerMatches": true,
+      "sourceVisualChecked": true,
+      "decision": "content_review_passed",
+      "issues": []
+    }
+  ]
+}

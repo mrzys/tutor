@@ -19,6 +19,9 @@ const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 const math = mathjax.document('', { InputJax: new TeX({ packages: AllPackages.filter(x => !['require','autoload','html','noerrors','noundefined'].includes(x)), formatError: (_jax,error) => { throw error; } }), OutputJax: new SVG({ fontCache: 'none' }) });
 
+// Layout revisions do not alter the frozen paper; explicit regeneration writes a new file.
+export const PDF_LAYOUT_VERSION = 'formal-exam-v2';
+
 export async function findPdfPython() {
   if (process.env.TUTOR_PYTHON) return process.env.TUTOR_PYTHON;
   const bundled = path.join(homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/python', process.platform === 'win32' ? 'python.exe' : 'bin/python');
@@ -103,7 +106,7 @@ export async function generatePaperOutput(paper, kind, {outputRoot = path.join(r
     temp = await mkdtemp(path.join(tmpdir(),'tutor-pdf-'));
     await writeFile(path.join(temp,'input.json'),JSON.stringify({...model,formulas:Object.fromEntries(formulas)}),'utf8');
     await mkdir(outputRoot,{recursive:true});
-    const target = path.resolve(outputRoot,`${paper.paperId}-${kind}.pdf`);
+    const target = path.resolve(outputRoot,`${paper.paperId}-${kind}-${PDF_LAYOUT_VERSION}-${randomUUID()}.pdf`);
     targetTemp = `${target}.${randomUUID()}.tmp`;
     const python = await findPdfPython();
     const result = await exec(python,[path.join(repoRoot,'scripts','render-paper.py'),path.join(temp,'input.json'),targetTemp],{windowsHide:true,maxBuffer:1024*1024,timeout:120000,encoding:'utf8',env:{...process.env,PYTHONUTF8:'1',PYTHONIOENCODING:'utf-8'}});
@@ -112,7 +115,7 @@ export async function generatePaperOutput(paper, kind, {outputRoot = path.join(r
     if (!bytes.subarray(0,5).equals(Buffer.from('%PDF-'))) throw new Error('输出不是有效 PDF');
     await rename(targetTemp,target);
     targetTemp = undefined;
-    return {ok:true,artifact:{path:target,sha256:createHash('sha256').update(bytes).digest('hex'),pages:metadata.pages,status:model.status,issues:model.issues,kind,bytes:bytes.length}};
+    return {ok:true,artifact:{path:target,sha256:createHash('sha256').update(bytes).digest('hex'),pages:metadata.pages,status:model.status,issues:model.issues,kind,bytes:bytes.length,layoutVersion:PDF_LAYOUT_VERSION}};
   } catch (error) {
     return {ok:false,error:{code:'output_failed',message:`${kind === 'teacher'?'教师':'学生'}版输出失败：${error.message}`}};
   } finally {

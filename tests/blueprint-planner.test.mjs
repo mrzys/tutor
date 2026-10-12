@@ -34,8 +34,12 @@ test('LLM planning uses real supply identities, preserves demands, and rechecks 
   assert.ok(task.eligibleCandidates.length > 0);
   assert.ok(task.eligibleCandidates.every(candidate => candidate.questionId && candidate.contentVersion && candidate.duplicateGroup));
   assert.equal(task.eligibleCount, task.eligibleCandidates.length);
+  assert.equal(Object.values(task.difficultyDistribution).reduce((sum, count) => sum + count, 0), task.eligibleCount);
+  assert.ok(task.eligibleCandidates.every(candidate => ['easy', 'medium', 'hard', 'unknown'].includes(candidate.difficulty.level)));
   assert.equal(blueprint.supply.distinctCandidateCapacity, 2);
   assert.ok(context.tasks.some(task => task.unknownCount > 0));
+  assert.ok(context.tasks.every(task => task.eligibleCount > 0 || task.foundationEligibleCount > 0
+    || task.compatibleGoalIds.some(id => context.requirements.teachingGoals.some(goal => goal.id === id && goal.priority === 'required'))));
   assert.equal(context.requirements.premises.length, 0);
   assert.ok(!JSON.stringify(context).includes(env.LLM_API_KEY));
   const checked = await recheckBlueprint(blueprint);
@@ -69,6 +73,20 @@ test('strict output rejects unknown fields, invented tasks, and scope changes', 
   assert.equal(result.error.code, 'invalid_model_output');
 });
 
+test('teacher-facing blueprint summary derives type counts and scale from verified slots instead of model narration', async () => {
+  const output = clone(proposal);
+  output.summary = '本次九道解答题，共999分；原两道单选改为三道填空。';
+  output.slots.forEach(slot => { slot.points = 0; });
+  output.slots[1].taskId = 'element_parameter_distinct';
+  const result = await planBlueprint({ ...requirements, scoringMode: 'none', targetScore: 0, durationMinutes: 20 },
+    { gateway: gateway(output), countPolicy: 'suggested' });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.match(result.blueprint.generation.summary, /2 题：单选 1 题、填空 1 题；不计分，20 分钟/);
+  assert.doesNotMatch(result.blueprint.generation.summary, /九道|999|三道/);
+  assert.equal(result.blueprint.generation.modelSummary, output.summary, 'raw narration retained for audit only');
+  assert.match(result.blueprint.generation.summary, /配比已按当前蓝图调整/);
+});
+
 test('fixed counts reject redistribution while suggested only changes counts and keeps total/points', async () => {
   const output = clone(proposal);
   output.slots[1].taskId = 'element_parameter_distinct';
@@ -84,6 +102,18 @@ test('fixed counts reject redistribution while suggested only changes counts and
   }
 });
 
+test('interleaved model output is grouped with reasons attached to stable slot identities', async () => {
+  const output = clone(proposal);
+  output.slots[0].taskId = 'element_parameter_distinct';
+  const result = await planBlueprint(requirements, { gateway: gateway(output), countPolicy: 'suggested' });
+  assert.equal(result.ok, true, JSON.stringify(result.error));
+  assert.deepEqual(result.blueprint.slots.map(slot => [slot.slotId, slot.number, slot.questionType]), [
+    ['slot-2', 1, 'single_choice'], ['slot-1', 2, 'fill_blank'],
+  ]);
+  assert.equal(result.blueprint.slots[0].planningReason, output.slots[1].rationale);
+  assert.equal(result.blueprint.slots[1].planningReason, output.slots[0].rationale);
+});
+
 test('bounded correction repairs business/schema errors and records all real attempts', async () => {
   let calls = 0; let feedback;
   const mocked = createBlueprintGateway({ env, generate: async options => {
@@ -97,6 +127,8 @@ test('bounded correction repairs business/schema errors and records all real att
   assert.equal(result.blueprint.generation.llmRun.attempts.length, 2);
   assert.equal(result.blueprint.generation.llmRun.usage.totalTokens, 14);
   assert.ok(feedback.issues[0].message.includes('未知任务'));
+  assert.match(feedback.issues[0].message, /第 1 题.*bad/);
+  assert.match(feedback.issues[0].message, /context\.tasks/);
   let schemaCalls = 0;
   const repaired = await planBlueprint(requirements, { gateway: createBlueprintGateway({ env, generate: async () => ({ output: ++schemaCalls === 1 ? { html: 'wrong' } : proposal }) }) });
   assert.equal(repaired.ok, true);

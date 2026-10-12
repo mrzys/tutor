@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createIntakeService, verifiedProgression } from '../src/intake/service.mjs';
+import { createIntakeService, verifiedProgression, scopeTitle } from '../src/intake/service.mjs';
 import { createLlmGateway } from '../src/llm/gateway.mjs';
 
 let counter = 0;
@@ -17,6 +17,44 @@ const fixture = proposal => ({ configured: true, async propose(context, { valida
   const parsed = validate(proposal);
   return { ok: true, proposal: parsed, run: { status: 'succeeded', provider: 'fixture', model: 'fixture-only' } };
 } });
+
+test('scope-derived default titles distinguish chapter one and two while teacher titles remain intact', async () => {
+  const config = { defaultRequirements: { title: '高一数学 · 集合专项' }, chapters: [] };
+  assert.equal(scopeTitle(['1.1', '1.2', '1.3'], config), config.defaultRequirements.title);
+  assert.match(scopeTitle(['1.1', 'rja-compulsory-1:1.4', 'rja-compulsory-1:1.5'], config), /第一章集合与常用逻辑用语/);
+  assert.match(scopeTitle(['rja-compulsory-1:2.1', 'rja-compulsory-1:2.3'], config), /第二章一元二次函数、方程和不等式/);
+  const session = await begin(createIntakeService(), { title: '张老师的诊断练习', mainScope: ['1.1'] });
+  assert.equal(session.answers.title, '张老师的诊断练习');
+});
+
+test('quick correction identifies forbidden locked fields and accepts only a corrected goal proposal', async () => {
+  let attempts = 0;
+  const gateway = createLlmGateway({ env: { LLM_BASE_URL: 'https://fixture.invalid/v1', LLM_API_KEY: 'fixture-key', LLM_MODEL: 'fixture' },
+    generate: async input => {
+      const context = JSON.parse(input.prompt);
+      attempts++;
+      if (attempts === 1) return { output: { summary: '六题含参练习，不计分。', changes: {
+        questionCount: 6, scoringMode: 'none', cognition: 'reason', observable: '讨论含参集合的空集与非空分支。',
+      }, blocks: [] } };
+      const issue = context.schemaCorrection.issues[0].message;
+      assert.match(issue, /禁止输出的字段：questionCount、scoringMode/);
+      assert.match(issue, /即使值与当前相同也不能输出/);
+      assert.match(input.system, /changes 必须是 supportedFields 的子集/);
+      return { output: { summary: '六题含参练习，不计分。', changes: {
+        cognition: 'reason', observable: '讨论含参集合的空集与非空分支。',
+      }, blocks: [] } };
+    } });
+  const service = createIntakeService({ gateway });
+  const session = await begin(service, { questionCount: 6 });
+  const result = await request(service, session, 'prepare', { message: '6题集合提高，不计分。', lockedFields: ['questionCount', 'scoringMode'] });
+  assert.equal(attempts, 2);
+  assert.equal(result.session.llmRun.status, 'succeeded');
+  assert.equal(result.session.llmRun.attempts[0].status, 'invalid_model_output');
+  assert.deepEqual(Object.keys(result.session.proposal.changes).sort(), ['cognition', 'observable']);
+  assert.equal(result.session.answers.questionCount, 6);
+  assert.equal(result.session.requirements.scoringMode, 'none');
+  assert.equal(result.session.requirements.teachingGoals.length, 0, 'proposal still needs explicit adoption');
+});
 
 test('quick intake uses verified textbook progression and does not assume special methods or response conditions', async () => {
   const service = createIntakeService({ gateway: createLlmGateway({ env: {} }) });
@@ -228,6 +266,24 @@ test('quick natural-language scale suggestions remain pending and preserve sugge
   assert.equal(Object.values(session.requirements.counts).reduce((sum, count) => sum + count, 0), 8);
   session = (await request(service, session, 'confirm')).session;
   assert.equal(session.summary.questionCount, 8);
+});
+
+test('a total-only teacher request cannot acquire a model-invented fixed type ratio', async () => {
+  let context;
+  const service = createIntakeService({ gateway: { async propose(input, { validate }) {
+    context = input;
+    return { ok: true, proposal: validate({ summary: '集合含参提高练习。', changes: {
+      singleChoiceCount: 4, fillBlankCount: 1, freeResponseCount: 1,
+      observable: '对含参集合关系进行推理。', cognition: 'reason',
+    }, blocks: [] }), run: { status: 'succeeded' } };
+  } } });
+  let session = await begin(service, { questionCount: 6 });
+  session = (await request(service, session, 'prepare', { message: '6道集合提高题，要求推理说明，不计分。', lockedFields: ['questionCount'] })).session;
+  assert.equal(context.typeCountsEditable, false);
+  assert.ok(['singleChoiceCount', 'fillBlankCount', 'freeResponseCount'].every(field => !context.supportedFields.includes(field)));
+  assert.equal(session.proposal, null);
+  assert.equal(session.planning.countPolicy, 'suggested');
+  assert.equal(session.answers.questionCount, 6);
 });
 
 test('manually locked quick scale values cannot be overwritten by model suggestions and survive revise', async () => {

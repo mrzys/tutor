@@ -6,6 +6,7 @@ import { listQuestions, getQuestion } from '../question-bank/reader.mjs';
 import { normalizeTeachingGoals, compatibleGoal, suggestedGoalIds, goalReview, goalDifferences, unknownGoalSupport } from './teaching-goals.mjs';
 import { selectWithLlm, combineRankings } from './selector.mjs';
 import { questionBankStorage } from '../storage/registry.mjs';
+import { groupSlotsByType } from './slot-order.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const types = ['single_choice', 'fill_blank', 'free_response'];
@@ -16,7 +17,7 @@ class AssemblyError extends Error {
 }
 const reject = message => { throw new AssemblyError('invalid_plan', message); };
 const failure = error => ({ ok: false, error: {
-  code: error instanceof AssemblyError || error.code === 'invalid_plan' ? error.code : 'read_error', message: error.message,
+  code: error instanceof AssemblyError || ['invalid_plan', 'cancelled'].includes(error.code) ? error.code : 'read_error', message: error.message,
 } });
 
 async function readData(root, name) {
@@ -291,7 +292,7 @@ function validateBlueprint(blueprint, config) {
       reject('AI 蓝图的必须教学目标需保留关联题位，不能通过编辑静默省略。');
     }
   }
-  return { requirements, slots };
+  return { requirements, slots: groupSlotsByType(slots) };
 }
 
 export async function recheckBlueprint(blueprint, { root = defaultRoot } = {}) {
@@ -310,20 +311,22 @@ export async function recheckBlueprint(blueprint, { root = defaultRoot } = {}) {
   } catch (error) { return failure(error); }
 }
 
-export async function createDraft(blueprint, { root = defaultRoot, selectionMode = 'rule', gateway, signal } = {}) {
+export async function createDraft(blueprint, { root = defaultRoot, selectionMode = 'rule', gateway, signal, onProgress } = {}) {
   try {
     const loaded = await getAssemblyConfig({ root });
     if (!loaded.ok) return loaded;
     const { requirements, slots } = validateBlueprint(blueprint, loaded.config);
+    onProgress?.({ stage: 'retrieving', totalQuestions: slots.length });
     const pool = await loadPool(root);
     if (!['rule', 'llm'].includes(selectionMode)) reject('选题方式无效。');
     let rankedSelection = null;
     const initialCandidates = new Map(slots.map(slot => [slot.slotId, slotCandidates(pool, slot, requirements)]));
     let ruleCombination = null;
     if (selectionMode === 'llm') {
-      rankedSelection = await selectWithLlm({ slots, requirements, pool, candidatesBySlot: initialCandidates, gateway, signal });
+      rankedSelection = await selectWithLlm({ slots, requirements, pool, candidatesBySlot: initialCandidates, gateway, signal, onProgress });
       if (!rankedSelection.ok) return rankedSelection;
     } else {
+      onProgress?.({ stage: 'combining', totalQuestions: slots.length });
       const eligible = new Map([...initialCandidates.values()].flat().filter(candidate => candidate.status === 'eligible').map(candidate => [candidate.questionId, candidate]));
       ruleCombination = combineRankings(slots, slots.map(slot => ({ slotId: slot.slotId,
         candidates: initialCandidates.get(slot.slotId).filter(candidate => candidate.status === 'eligible') })), eligible);
@@ -358,9 +361,9 @@ export async function createDraft(blueprint, { root = defaultRoot, selectionMode
     differences.push(...goalDifferences(requirements, selectedSlots, loaded.config.tasks));
     if (plannedPoints !== requirements.targetScore) differences.push({ code: 'planned_score_differs', message: `题位合计 ${plannedPoints} 分，与需求 ${requirements.targetScore} 分不同。`, expected: requirements.targetScore, actual: plannedPoints });
     for (const slot of selectedSlots.filter(item => item.status !== 'selected')) differences.push({ code: slot.status === 'search_failed' ? 'retrieval_failed' : 'missing_question', slotId: slot.slotId, message: `第 ${slot.number} 题未选入题目，保留题位。` });
-    differences.push({ code: 'difficulty_unknown', message: '本次实际题目缺少独立难度估计，整卷难度保持未知；目标难度仅作已确认偏好。' });
+    differences.push({ code: 'difficulty_unknown', message: '题目分档可参考 LLM 内容估计；未经学生作答标定，整卷精确难度系数保持未知。' });
     const now = new Date().toISOString();
-    return { ok: true, draft: { schemaVersion: 1, draftId: randomUUID(), createdAt: now, title: requirements.title,
+    const draft = { schemaVersion: 1, draftId: randomUUID(), createdAt: now, title: requirements.title,
       baseline: { requirements: clone(requirements), slots: clone(slots), confirmedAt: now, version: 1,
         ...(blueprint.generation ? { generation: clone(blueprint.generation) } : {}),
         courseContext: clone(loaded.config.courseContext), sourceManifest: clone(loaded.config.sourceManifest),
@@ -372,6 +375,9 @@ export async function createDraft(blueprint, { root = defaultRoot, selectionMode
       ...(rankedSelection ? { selectionGeneration: clone(rankedSelection.selectionGeneration) } : {}),
       retrieval: { ...pool.totals, pendingCount: pool.pending.length, pending: clone(pool.pending), failures: clone(pool.failures), mode: 'real_local_bank',
         conditions: clone(requirements), candidateOrder: selectionMode === 'llm' ? 'AI rank; maximum-cardinality global duplicate-group assignment' : 'questionId ascending; maximum-cardinality global duplicate-group assignment',
-        ...(ruleCombination ? { combination: clone(ruleCombination.summary) } : {}), noAutomaticRelaxation: true } } };
+        ...(ruleCombination ? { combination: clone(ruleCombination.summary) } : {}), noAutomaticRelaxation: true } };
+    // Goal coverage is an explicit teacher action, separate from assembling a draft.
+    if (signal?.aborted) return { ok: false, error: { code: 'cancelled', message: '已取消组卷，未保存草稿。' } };
+    return { ok: true, draft };
   } catch (error) { return failure(error); }
 }

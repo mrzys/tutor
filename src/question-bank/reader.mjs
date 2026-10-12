@@ -8,7 +8,7 @@ import { questionBankStorage } from '../storage/registry.mjs';
 export { canonicalJson, hashContent } from './integrity.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
-const idPattern = /^tutor-set-\d{3}$/;
+const idPattern = /^(?:tutor-set-\d{3}|tutor-import-[a-f0-9]{24})$/;
 const shaPattern = /^[a-f0-9]{64}$/;
 
 class BankError extends Error {
@@ -63,7 +63,7 @@ async function readLedger(root) {
   for (const entry of ledger.entries) {
     if (!isObject(entry) || !idPattern.test(entry.questionId)) invalid('Invalid ledger question identity.');
     if (ids.has(entry.questionId) || audits.has(entry.auditId)) invalid('Duplicate ledger identity.');
-    if (!/^SET-SRC-\d{3}$/.test(entry.auditId)) invalid('Invalid ledger audit identity.');
+    if (!/^(?:SET-SRC-\d{3}|IMPORT-SRC-[a-f0-9]{24})$/.test(entry.auditId)) invalid('Invalid ledger audit identity.');
     ids.add(entry.questionId); audits.add(entry.auditId);
     if (!['ready', 'pending'].includes(entry.status)) invalid('Unknown ledger status.');
     if (entry.status === 'ready') safePath(bankRoot, entry.contentPath);

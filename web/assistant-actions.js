@@ -59,11 +59,14 @@ export function draftOperationsFor(actions, draft, tasks) {
   let baselineRequirements = structuredClone(draft.baseline.requirements);
   const slotId = number => { const slot = draft.slots.find(item => item.number === number); if (!slot) throw new Error(`没有第 ${number} 题。`); return slot.slotId; };
   return actions.flatMap(action => {
-    if (action.type === 'replace') return [{ type: 'replace', slotIds: action.numbers.map(slotId), mode: 'direct' }];
+    if (action.type === 'replace') return [{ type: 'replace', slotIds: action.numbers.map(slotId), mode: 'direct', ...(action.taskId ? { taskId: action.taskId } : {}) }];
     if (action.type === 'delete') return action.numbers.map(number => ({ type: 'delete', slotId: slotId(number) }));
     if (action.type === 'difficulty') return [{ type: 'difficulty', slotIds: action.numbers.map(slotId), targetDifficulty: action.targetDifficulty, mode: 'direct' }];
     if (action.type === 'add') {
       const task = tasks.find(item => item.id === action.taskId); if (!task) throw new Error('考查任务已变化。');
+      const anchor = action.afterNumber == null ? null : draft.slots.find(item => item.number === action.afterNumber);
+      if (action.afterNumber != null && !anchor) throw new Error(`没有第 ${action.afterNumber} 题。`);
+      if (anchor && anchor.questionType !== task.questionType) throw new Error('草稿按题型分组，只能指定同题型题目之后的位置；新增其他题型请使用默认位置。');
       const sample = draft.slots.find(item => item.questionType === task.questionType);
       const points = draft.baseline.requirements.scoringMode === 'none' ? 0 : sample?.points ?? ({ single_choice: 8, fill_blank: 10, free_response: 16 })[task.questionType];
       return Array.from({ length: action.count }, () => ({ type: 'add', taskId: task.id, points, ...(action.afterNumber ? { afterSlotId: slotId(action.afterNumber) } : {}) }));

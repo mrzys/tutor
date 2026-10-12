@@ -82,7 +82,7 @@ export function preparePaperConfirmation(draft) {
   return { schemaVersion: 1, revision: revisionOf(draft), title: draft.title, stats, scoringMode: scored ? 'points' : 'none',
     student: { complete: !missing.length, questionCount: available.length, points: stats.availablePoints, missing },
     teacher: { complete: !teacherIssues.length, issues: teacherIssues }, unknown, scoringIssues, differences,
-    difficulty: { target: draft.baseline.requirements.targetDifficulty, estimate: null, message: '目标难度仅是偏好，现有材料缺少独立难度估计。' },
+    difficulty: { target: draft.baseline.requirements.targetDifficulty, estimate: null, message: '目标难度仅是偏好，题目分档可参考 LLM 内容估计；整卷精确系数未经学生作答标定。' },
     requiresAcknowledgement: Boolean(missing.length || teacherIssues.length || unknown.length || scoringIssues.length || differences.length) };
 }
 

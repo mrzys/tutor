@@ -1,0 +1,215 @@
+{
+  "sourceUnits": 50,
+  "ready": 45,
+  "pending": 5,
+  "taskCount": 34,
+  "counts": {
+    "single_choice": 20,
+    "fill_blank": 12,
+    "free_response": 2
+  },
+  "allTasks": {
+    "premises": [
+      "vieta",
+      "quadratic_basics",
+      "absolute_root",
+      "basic_geometry"
+    ],
+    "selected": 34,
+    "uniqueParents": 34,
+    "slotSupply": [
+      {
+        "taskId": "set_determinacy",
+        "eligible": 4,
+        "selectedId": "tutor-set-001"
+      },
+      {
+        "taskId": "number_membership",
+        "eligible": 4,
+        "selectedId": "tutor-set-007"
+      },
+      {
+        "taskId": "positive_integer_listing",
+        "eligible": 2,
+        "selectedId": "tutor-set-020"
+      },
+      {
+        "taskId": "proper_subset",
+        "eligible": 2,
+        "selectedId": "tutor-set-034"
+      },
+      {
+        "taskId": "finite_absolute_intersection",
+        "eligible": 1,
+        "selectedId": "tutor-set-045"
+      },
+      {
+        "taskId": "union_complement_parameter",
+        "eligible": 1,
+        "selectedId": "tutor-set-047"
+      },
+      {
+        "taskId": "set_integer_combination_equality",
+        "eligible": 1,
+        "selectedId": "tutor-set-028"
+      },
+      {
+        "taskId": "set_object_equality",
+        "eligible": 3,
+        "selectedId": "tutor-set-029"
+      },
+      {
+        "taskId": "empty_proper_root_parameter",
+        "eligible": 1,
+        "selectedId": "tutor-set-036"
+      },
+      {
+        "taskId": "intersection_subset_count",
+        "eligible": 1,
+        "selectedId": "tutor-set-037"
+      },
+      {
+        "taskId": "sum_free_maximum",
+        "eligible": 1,
+        "selectedId": "tutor-set-038"
+      },
+      {
+        "taskId": "interval_union",
+        "eligible": 1,
+        "selectedId": "tutor-set-042"
+      },
+      {
+        "taskId": "interval_intersection",
+        "eligible": 1,
+        "selectedId": "tutor-set-043"
+      },
+      {
+        "taskId": "absolute_interval_complement",
+        "eligible": 1,
+        "selectedId": "tutor-set-044"
+      },
+      {
+        "taskId": "integer_complement_union",
+        "eligible": 1,
+        "selectedId": "tutor-set-046"
+      },
+      {
+        "taskId": "set_property_judgement",
+        "eligible": 1,
+        "selectedId": "tutor-set-004"
+      },
+      {
+        "taskId": "distinct_lengths_quadrilateral",
+        "eligible": 1,
+        "selectedId": "tutor-set-014"
+      },
+      {
+        "taskId": "parameter_linear_solution_set",
+        "eligible": 1,
+        "selectedId": "tutor-set-016"
+      },
+      {
+        "taskId": "distinct_lengths_triangle",
+        "eligible": 1,
+        "selectedId": "tutor-set-017"
+      },
+      {
+        "taskId": "finite_progression_description",
+        "eligible": 1,
+        "selectedId": "tutor-set-023"
+      },
+      {
+        "taskId": "element_parameter_distinct",
+        "eligible": 1,
+        "selectedId": "tutor-set-018"
+      },
+      {
+        "taskId": "complement_quadratic_coefficients",
+        "eligible": 1,
+        "selectedId": "tutor-set-049"
+      },
+      {
+        "taskId": "set_statement_equality",
+        "eligible": 1,
+        "selectedId": "tutor-set-033"
+      },
+      {
+        "taskId": "enumerated_event_subset",
+        "eligible": 1,
+        "selectedId": "tutor-set-039"
+      },
+      {
+        "taskId": "defined_quotient_subset_count",
+        "eligible": 1,
+        "selectedId": "tutor-set-040"
+      },
+      {
+        "taskId": "interval_intersection_fill",
+        "eligible": 1,
+        "selectedId": "tutor-set-048"
+      },
+      {
+        "taskId": "set_determinacy_fill",
+        "eligible": 2,
+        "selectedId": "tutor-set-005"
+      },
+      {
+        "taskId": "number_membership_fill",
+        "eligible": 1,
+        "selectedId": "tutor-set-011"
+      },
+      {
+        "taskId": "membership_subset_judgement_fill",
+        "eligible": 1,
+        "selectedId": "tutor-set-012"
+      },
+      {
+        "taskId": "natural_integer_listing_fill",
+        "eligible": 1,
+        "selectedId": "tutor-set-024"
+      },
+      {
+        "taskId": "factored_root_listing_fill",
+        "eligible": 1,
+        "selectedId": "tutor-set-026"
+      },
+      {
+        "taskId": "system_pair_listing_fill",
+        "eligible": 1,
+        "selectedId": "tutor-set-027"
+      },
+      {
+        "taskId": "interval_complement_parameter",
+        "eligible": 1,
+        "selectedId": "tutor-set-050"
+      },
+      {
+        "taskId": "root_set_subset_count",
+        "eligible": 1,
+        "selectedId": "tutor-set-041"
+      }
+    ]
+  },
+  "repeatedEquality": {
+    "requested": 4,
+    "selected": 3,
+    "missing": 1
+  },
+  "narrowedBoundary": {
+    "plannedQuestions": 34,
+    "selectedQuestions": 12,
+    "plannedPoints": 340,
+    "availablePoints": 117,
+    "missingQuestions": 22,
+    "difficultyEstimate": null
+  },
+  "defaultPaper": {
+    "plannedQuestions": 10,
+    "selectedQuestions": 10,
+    "plannedPoints": 100,
+    "availablePoints": 100,
+    "missingQuestions": 0,
+    "difficultyEstimate": null
+  },
+  "limitation": "具体任务供给核验，不等于四维教学目标支持复核、难度标定或教师采用。"
+}

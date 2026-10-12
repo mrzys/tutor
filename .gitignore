@@ -5,3 +5,25 @@ dist/
 .tutor/
 .env
 .env.local
+
+# Generated verification artifacts and local agent state
+output/
+.workbuddy/
+__pycache__/
+*.py[cod]
+*.log
+
+# Runtime databases and private environment overrides
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3
+.env.*
+!.env.example
+
+# Downloaded source documents stay local; keep provenance README files.
+/materials/**/*.pdf
+/materials/**/*.png
+/docs/validation/raw/*.pdf
+/docs/validation/raw/*.docx
+/docs/validation/raw/*_parsed.txt

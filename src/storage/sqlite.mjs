@@ -181,6 +181,20 @@ export class SqliteRepository {
         `);
       }).immediate();
     }
+    this.database.exec(`
+      CREATE TABLE IF NOT EXISTS question_import_publications(
+        publication_id TEXT PRIMARY KEY, import_id TEXT NOT NULL REFERENCES question_imports(import_id),
+        request_sha256 TEXT NOT NULL, reviewer_id TEXT NOT NULL, payload TEXT NOT NULL,
+        sha256 TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(import_id,request_sha256)
+      );
+      CREATE TABLE IF NOT EXISTS question_import_published_items(
+        import_id TEXT NOT NULL REFERENCES question_imports(import_id), staging_question_id TEXT NOT NULL,
+        question_id TEXT NOT NULL REFERENCES question_bank_questions(question_id),
+        publication_id TEXT NOT NULL REFERENCES question_import_publications(publication_id),
+        PRIMARY KEY(import_id,staging_question_id)
+      );
+      INSERT OR IGNORE INTO schema_migrations VALUES(8, strftime('%Y-%m-%dT%H:%M:%fZ','now'));
+    `);
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(3, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(4, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
     this.database.prepare(`INSERT OR IGNORE INTO schema_migrations VALUES(5, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`).run();
@@ -291,7 +305,9 @@ export class SqliteRepository {
   getQuestionBankPedagogy() { return this.#readHashed('question_bank_pedagogy', 'kind', 'analysis'); }
   getQuestionBankSummary() {
     const count = table => this.database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count;
-    return { readyQuestions: count('question_bank_questions'),
+    const readyIds = new Set((this.getQuestionBankLedger()?.entries ?? []).filter(entry => entry.status === 'ready').map(entry => entry.questionId));
+    const readyQuestions = this.database.prepare('SELECT question_id FROM question_bank_questions').all().filter(row => readyIds.has(row.question_id)).length;
+    return { readyQuestions,
       annotations: this.getQuestionBankIndex()?.entries.length ?? 0, chapters: count('question_bank_chapters'),
       textbooks: count('curriculum_textbooks'), curriculumChapters: count('curriculum_chapters'),
       curriculumSections: count('curriculum_sections'), questionSectionMappings: count('question_section_mappings') };
@@ -311,8 +327,12 @@ export class SqliteRepository {
     const books = bookRows.map(row => ({ row, payload: this.#readHashed('curriculum_textbooks', 'textbook_id', row.textbook_id) }));
     const chapters = chapterRows.map(row => ({ row, payload: this.#readHashed('curriculum_chapters', 'chapter_id', row.chapter_id) }));
     const sections = sectionRows.map(row => ({ row, payload: this.#readHashed('curriculum_sections', 'section_id', row.section_id) }));
-    const counts = new Map(this.database.prepare(`SELECT section_id,COUNT(DISTINCT question_id) AS question_count
-      FROM question_section_mappings GROUP BY section_id`).all().map(row => [row.section_id, Number(row.question_count)]));
+    const ledger = this.getQuestionBankLedger();
+    const counts = new Map(this.database.prepare(`SELECT m.section_id,COUNT(DISTINCT m.question_id) AS question_count
+      FROM question_section_mappings m JOIN question_bank_questions q ON q.question_id=m.question_id
+      JOIN json_each(?, '$.entries') entry ON json_extract(entry.value,'$.questionId')=m.question_id
+      WHERE json_extract(entry.value,'$.status')='ready' GROUP BY m.section_id`)
+      .all(JSON.stringify(ledger ?? { entries: [] })).map(row => [row.section_id, Number(row.question_count)]));
     const sectionsByChapter = new Map();
     const chaptersByBook = new Map();
     for (const section of sections) sectionsByChapter.set(section.row.chapter_id,
@@ -411,6 +431,35 @@ export class SqliteRepository {
   listQuestionImports() {
     return this.database.prepare('SELECT import_id FROM question_imports ORDER BY created_at DESC, import_id DESC').all()
       .map(row => this.getQuestionImport(row.import_id));
+  }
+
+  getQuestionImportPublicationSummary(importId, record = this.getQuestionImport(importId)) {
+    if (!record) return null;
+    const states = new Map((record.questions ?? []).map(question => [question.stagingQuestionId, { status: 'held' }]));
+    let lastPublishedAt = null;
+    for (const row of this.database.prepare('SELECT payload,sha256,created_at FROM question_import_publications WHERE import_id=? ORDER BY created_at,publication_id').all(importId)) {
+      let audit;
+      try { audit = JSON.parse(row.payload); } catch { throw storageError('integrity_error', '发布审核记录无法解析。'); }
+      if (hashContent(audit) !== row.sha256) throw storageError('integrity_error', '发布审核记录校验失败。');
+      lastPublishedAt = row.created_at;
+      for (const status of ['rejected', 'duplicates', 'accepted']) for (const item of audit[status] ?? []) {
+        if (!states.has(item.stagingQuestionId)) throw storageError('integrity_error', '发布记录引用未知暂存题。');
+        const previous = states.get(item.stagingQuestionId);
+        // A later rejection or duplicate retry cannot undo an earlier accepted publication.
+        if (previous.status === 'accepted' || previous.status === 'duplicates' && status === 'rejected') continue;
+        states.set(item.stagingQuestionId, { status, questionId: item.questionId });
+      }
+    }
+    const ledger = new Map((this.getQuestionBankLedger()?.entries ?? []).map(entry => [entry.questionId, entry]));
+    const summary = { total: states.size, accepted: 0, duplicates: 0, rejected: 0, held: 0, currentReady: 0, currentPending: 0, lastPublishedAt };
+    for (const state of states.values()) {
+      summary[state.status]++;
+      if (state.status === 'accepted') {
+        if (ledger.get(state.questionId)?.status === 'ready' && this.database.prepare('SELECT 1 FROM question_bank_questions WHERE question_id=?').get(state.questionId)) summary.currentReady++;
+        else summary.currentPending++;
+      }
+    }
+    return summary;
   }
 
   close() { this.database.close(); }

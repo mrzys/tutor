@@ -1,0 +1,257 @@
+{
+  "reviewer": "independent-r1-b",
+  "method": "先只读取blind-b.json逐题独立解题并冻结于.tutor/review-set-expansion/b/independent-answer-freeze.json（SHA256 444d02579d25989a94b9a796fc36bc02852e0a438294144ebbc3535f713aa4fb）；冻结后使用Python fitz将source.path指定pdfPage（1-based）渲染为PNG，通过view_image实际查看全部17道题的来源题干及A-D全部选项，必要时额外放大核对；未读取任何teacher、原解析答案或其他复核报告。视觉核对未导致独立答案改变。依高中数学默认实数函数及中国自然数约定推导，N是否含0对本批025/030最终答案无影响。跨章依赖完整列出且不视为阻断。",
+  "items": [
+    {
+      "id": "SET-EXP50-020",
+      "derivedAnswer": "D",
+      "derivation": "A中log_2 x有定义须x>0；底数2>1，log_2 x<1等价于x<2，故A=(0,2)。1≤2^x≤4等价于0≤x≤2，故B=[0,2]，并集为[0,2]。",
+      "dependencies": [
+        "集合并集",
+        "对数函数定义域x>0",
+        "底数大于1的对数与指数函数单调递增",
+        "区间端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-020.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-021",
+      "derivedAnswer": "B",
+      "derivation": "M∩N={2,3}，包含2个元素。",
+      "dependencies": [
+        "集合交集",
+        "有限集合元素计数"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-021.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-022",
+      "derivedAnswer": "B",
+      "derivation": "A∪B={1,2,4}，在U={1,2,3,4}中删去该并集，余{3}。",
+      "dependencies": [
+        "集合并集",
+        "相对于指定全集的补集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-022.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-023",
+      "derivedAnswer": "A",
+      "derivation": "0<x<6且x∈Z给出U={1,2,3,4,5}；U中删去A={1,2,3}，余{4,5}。6不在U；选项D是实数区间而非仅整数4和5。",
+      "dependencies": [
+        "整数集Z",
+        "严格不等式端点",
+        "相对于指定全集的补集",
+        "有限集与连续实数区间区分"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-023.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-024",
+      "derivedAnswer": "A",
+      "derivation": "A=[2,+∞)，所以C_R A=(-∞,2)。B=[1,4]与该补集交得[1,2)，端点1保留，2排除。",
+      "dependencies": [
+        "实数全集补集",
+        "集合交集",
+        "区间端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-024.png",
+      "issues": [
+        {
+          "severity": "low",
+          "description": "来源PDF的公式图片本身较模糊，已额外渲染放大并实际查看；主要条件及四个选项可核对，与blind题一致，不影响独立答案。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-025",
+      "derivedAnswer": "C",
+      "derivation": "中国高中通常N={0,1,2,…}，故B={0,1,2}；A∪B={-2,0,1,2,4}。即使采用不含0的自然数约定，0已属于A，并集答案仍相同；3因x<3而不属于B。",
+      "dependencies": [
+        "自然数集N约定",
+        "严格上界",
+        "有限集合并集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-025.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-026",
+      "derivedAnswer": "A",
+      "derivation": "逐项代入B中元素，(-3)^3=-27不满足，(-1)^3=-1满足，0^3=0满足，2^3=8与3^3=27均不满足；所以A∩B={-1,0}。亦可由立方函数单调性得A=(-∛5,∛5)。",
+      "dependencies": [
+        "集合交集",
+        "数值立方与不等式",
+        "立方函数单调性（可选替代方法）"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-026.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-027",
+      "derivedAnswer": "B",
+      "derivation": "M={-1,0,1,2,3}。根式√(x-2)为实数要求x-2≥0，所以N=[2,+∞)。交集是{2,3}；选项A还含非整数，不能选。 题中{x|y=√(x-2)}按高中函数定义域的通行记法理解，即存在实数y。",
+      "dependencies": [
+        "整数集Z",
+        "严格区间界",
+        "实数平方根定义域",
+        "集合交集",
+        "有限集与实数区间区分",
+        "含y的集合描述按实函数定义域的通行记法解释"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-027.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-029",
+      "derivedAnswer": "A",
+      "derivation": "B=(-∞,-1)∪(2,+∞)，故其R中补集为[-1,2]；与A={1,2,3,4,5}交得{1,2}，2因B上界为严格大于而保留。",
+      "dependencies": [
+        "实数全集补集",
+        "或与区间并集",
+        "集合交集",
+        "严格不等式端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-029.png",
+      "issues": [
+        {
+          "severity": "low",
+          "description": "来源PDF的公式图片本身较模糊，已额外渲染放大并实际查看；主要条件及四个选项可核对，与blind题一致，不影响独立答案。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-030",
+      "derivedAnswer": "D",
+      "derivation": "通常N包含0，A={0,1,2}；log_2 x<3必须同时满足x>0和x<8，所以B=(0,8)，交集为{1,2}。若N不包含0，A={1,2}，交集仍相同。3因A的x<3被排除，0因对数定义域被排除。",
+      "dependencies": [
+        "自然数集N约定",
+        "对数定义域x>0",
+        "底数大于1的对数单调递增",
+        "严格不等式端点",
+        "集合交集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-030.png",
+      "issues": [
+        {
+          "severity": "low",
+          "description": "来源PDF的公式图片本身较模糊，已额外渲染放大并实际查看；主要条件及四个选项可核对，与blind题一致，不影响独立答案。"
+        }
+      ]
+    },
+    {
+      "id": "SET-EXP50-032",
+      "derivedAnswer": "C",
+      "derivation": "A=(-∞,-1)∪(0,+∞)缺少整个闭区间[-1,0]。A∪B=R当且仅当[-1,0]⊆(m-1,m+2)，需m-1<-1且m+2>0，即m<0且m>-2。故m∈(-2,0)。m=-2时0缺失，m=0时-1缺失，端点均不取。",
+      "dependencies": [
+        "集合并集覆盖实数全集",
+        "补集与子集条件",
+        "开区间包含闭区间的端点条件",
+        "一次不等式组"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-032.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-033",
+      "derivedAnswer": "C",
+      "derivation": "对数定义域要求3-x>0，得A=(-∞,3)。x²-3x-4=(x-4)(x+1)≤0得-1≤x≤4，又x∈Z，故B={-1,0,1,2,3,4}。与x<3交得{-1,0,1,2}，-1保留，3排除。 题中{x|y=log_2(3-x)}按高中函数定义域的通行记法理解，即存在实数y。",
+      "dependencies": [
+        "对数函数定义域真数>0",
+        "一元二次不等式与因式分解",
+        "整数集Z",
+        "集合交集",
+        "区间端点",
+        "含y的集合描述按实函数定义域的通行记法解释"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-033.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-034",
+      "derivedAnswer": "C",
+      "derivation": "等边三角形的三边相等，因而至少两边相等，必为等腰三角形，所以C⊆B。等边三角形不是直角三角形，故C⊆A不成立；取三边3,4,5的直角三角形，它不是等腰三角形，说明D⊆A与D⊆B均不成立。",
+      "dependencies": [
+        "子集定义",
+        "等腰三角形包含等边三角形的标准定义",
+        "等边三角形角均60度",
+        "不等腰直角三角形反例"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-034.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-035",
+      "derivedAnswer": "C",
+      "derivation": "(x-1)/2∈Z等价于存在k∈Z使x=2k+1，即x为奇整数。在1,2,3,4,5中满足的是1,3,5（对应k=0,1,2），故交集{1,3,5}。",
+      "dependencies": [
+        "整数集含0",
+        "奇整数表示x=2k+1",
+        "集合交集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-035.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-036",
+      "derivedAnswer": "C",
+      "derivation": "|x-2|≤5等价于-5≤x-2≤5，即-3≤x≤7。与A={4,7,10}交得{4,7}，7为闭端点须保留。该二元素集合有2²=4个子集，排除自身得3个真子集，分别∅、{4}、{7}。",
+      "dependencies": [
+        "绝对值不等式",
+        "集合交集",
+        "闭端点",
+        "n元素集合子集数2^n",
+        "真子集定义与空集"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-036.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-037",
+      "derivedAnswer": "D",
+      "derivation": "2^x≥8=2³，因底数2>1，得x≥3。与2≤x<4取交集得[3,4)，3包含而4不包含。",
+      "dependencies": [
+        "指数函数单调递增",
+        "集合交集",
+        "区间端点"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-037.png",
+      "issues": []
+    },
+    {
+      "id": "SET-EXP50-038",
+      "derivedAnswer": "B",
+      "derivation": "x²=2x等价于x(x-2)=0，故A={0,2}。B中x∈Z且0<x<3，故B={1,2}。两者并集为{0,1,2}；选项C、D包含非整数，均不等于该有限集合。",
+      "dependencies": [
+        "一元二次方程因式分解与零乘积",
+        "整数集Z",
+        "严格不等式端点",
+        "集合并集",
+        "有限集与实数区间区分"
+      ],
+      "sourceVisualChecked": true,
+      "sourceImage": "C:/Users/mrzys/Codebase/tutor-v1/.tutor/review-set-expansion/b/SET-EXP50-038.png",
+      "issues": []
+    }
+  ]
+}

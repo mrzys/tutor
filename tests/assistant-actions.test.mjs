@@ -103,6 +103,9 @@ test('cross-type or removed insertion anchors are rejected explicitly without ch
     { type: 'delete', numbers: [1] }, { type: 'difficulty', numbers: [1], targetDifficulty: .5 },
   ], tasks), /题位已删除/);
   assert.deepEqual(original, snapshot);
+  const draft = { slots: original.slots, baseline: { requirements: original.requirements } };
+  assert.throws(() => draftOperationsFor([{ type: 'add', taskId: 'blank', count: 1, afterNumber: 1 }], draft, tasks), /按题型分组.*同题型/);
+  assert.throws(() => draftOperationsFor([{ type: 'add', taskId: 'concept', count: 1, afterNumber: 99 }], draft, tasks), /没有第 99 题/);
 });
 
 test('default insertion appends inside its type group and draft operations resolve original IDs upfront', () => {
@@ -117,4 +120,11 @@ test('default insertion appends inside its type group and draft operations resol
     { type: 'replace', slotIds: ['original-two'], mode: 'direct' },
     { type: 'difficulty', slotIds: ['original-three'], targetDifficulty: .4, mode: 'direct' },
   ]);
+});
+
+
+test('same-knowledge assistant replacement preserves explicit alternative task identity', () => {
+  const draft = { slots: [{ number: 1, slotId: 'stable-id' }], baseline: { requirements: {} } };
+  assert.deepEqual(draftOperationsFor([{ type: 'replace', numbers: [1], taskId: 'alternative-task' }], draft, []),
+    [{ type: 'replace', slotIds: ['stable-id'], mode: 'direct', taskId: 'alternative-task' }]);
 });

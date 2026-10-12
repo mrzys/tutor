@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 const requests = new AsyncLocalStorage();
+export const currentUser = () => requests.getStore() ?? null;
 const denied = () => Object.assign(new Error('没有找到该记录。'), { status: 404, code: 'not_found' });
 
 /** Request-local ownership: shared bank, private teaching work, no administrator bypass. */

@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, mkdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createAppServer } from '../src/server.mjs';
 import { readDraft, listDrafts, saveDraft } from '../src/assembly/store.mjs';
 
-async function app(t, blockedStore = false) {
+async function app(t, blockedStore = false, options = {}) {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'tutor-s302-http-'));
   const storeRoot = path.join(temp, 'drafts');
   if (blockedStore) await writeFile(storeRoot, 'This is a file, not a writable draft directory.');
-  const server = createAppServer({ storeRoot });
+  const server = createAppServer({ storeRoot, ...options });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const url = `http://127.0.0.1:${server.address().port}`;
@@ -22,6 +22,123 @@ async function app(t, blockedStore = false) {
   };
   return { request, url, storeRoot };
 }
+
+test('PDF preview worker and decoder static assets use browser-compatible MIME types', async t => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'tutor-pdf-assets-'));
+  await mkdir(path.join(root, 'dist', 'assets'), { recursive: true });
+  await writeFile(path.join(root, 'dist', 'assets', 'worker.mjs'), 'export const ready = true;');
+  await writeFile(path.join(root, 'dist', 'assets', 'decoder.wasm'), Buffer.from([0, 97, 115, 109]));
+  const { url } = await app(t, false, { root });
+  assert.match((await fetch(`${url}/assets/worker.mjs`)).headers.get('content-type'), /^text\/javascript/);
+  assert.equal((await fetch(`${url}/assets/decoder.wasm`)).headers.get('content-type'), 'application/wasm');
+});
+
+test('business POST accepts HTTPS origin through the configured loopback proxy', async t => {
+  const previous = process.env.TUTOR_TRUST_PROXY;
+  process.env.TUTOR_TRUST_PROXY = 'loopback';
+  t.after(() => { if (previous === undefined) delete process.env.TUTOR_TRUST_PROXY; else process.env.TUTOR_TRUST_PROXY = previous; });
+  const { request, url } = await app(t);
+  const config = await request('/api/config');
+  const response = await fetch(`${url}/api/blueprint`, { method: 'POST', headers: {
+    'Content-Type': 'application/json', Origin: url.replace('http:', 'https:'), 'X-Forwarded-Proto': 'https',
+  }, body: JSON.stringify({ requirements: config.config.defaultRequirements }) });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).ok, true);
+});
+
+test('coverage HTTP preserves questions, persists a version-bound review and rejects stale revision', async t => {
+  let reviewCalls = 0;
+  const { request } = await app(t, false, { coverageGateway: { async propose(context) {
+    reviewCalls++;
+    return { ok: true, proposal: { summary: '按教师目标复核。', checks: [{ requirement: context.confirmedTargets[0],
+      status: 'unknown', rationale: '本测试不判断数学语义。', evidence: [], suggestion: '教师核对。' }] } };
+  } } });
+  const value = await initialDraft(request);
+  assert.equal(reviewCalls, 0);
+  assert.equal(Object.hasOwn(value, 'coverageReview'), false);
+  const base = `/api/drafts/${value.draftId}`;
+  const result = await request(`${base}/coverage`, { expectedRevision: 0 });
+  assert.equal(result.status, 200); assert.equal(result.draft.revision, 1);
+  assert.equal(reviewCalls, 1);
+  assert.deepEqual(result.draft.slots, value.slots);
+  assert.equal((await request(base)).draft.coverageReview.status, 'complete');
+  assert.equal((await request(`${base}/coverage`, { expectedRevision: 0 })).status, 409);
+  assert.equal(reviewCalls, 1);
+});
+
+test('streamed assembly reports live model progress before completion and only returns success after persistence', async t => {
+  let release; let enter;
+  const entered = new Promise(resolve => { enter = resolve; });
+  const { request, url, storeRoot } = await app(t, false, { selectionGateway: { async propose(context) {
+    enter(); await new Promise(resolve => { release = resolve; });
+    return { ok: true, proposal: { summary: '测试比较', rankings: context.slots.map(slot => ({ slotId: slot.slotId,
+      candidates: slot.candidates.map(id => { const q = context.candidates.find(q => q.questionId === id);
+        return { questionId: id, contentVersion: q.contentVersion, teacherVersion: q.teacherVersion,
+          rationale: '测试题面依据', evidenceRefs: ['student.stem'] }; }) })) } };
+  } } });
+  const { blueprint } = await request('/api/blueprint', { requirements: { counts: { single_choice: 1, fill_blank: 0, free_response: 0 } } });
+  const response = await fetch(`${url}/api/drafts`, { method: 'POST', headers: {
+    'Content-Type': 'application/json', Accept: 'application/x-ndjson' }, body: JSON.stringify({ blueprint, selectionMode: 'llm' }) });
+  assert.match(response.headers.get('content-type'), /^application\/x-ndjson/);
+  assert.equal(response.headers.get('x-accel-buffering'), 'no');
+  const reader = response.body.getReader();
+  const first = await reader.read();
+  const firstText = new TextDecoder().decode(first.value);
+  assert.ok(firstText.includes('"stage":"retrieving"'));
+  await entered;
+  assert.equal((await listDrafts(storeRoot)).drafts.length, 0, 'Progress must arrive while the model is still waiting');
+  release();
+  let tail = '';
+  while (true) { const { done, value } = await reader.read(); if (done) break; tail += new TextDecoder().decode(value); }
+  const events = (firstText + tail).trim().split('\n').map(line => JSON.parse(line));
+  const progress = events.filter(event => event.type === 'progress').map(event => event.progress);
+  assert.deepEqual([...new Set(progress.map(event => event.stage))], ['retrieving', 'comparing', 'combining', 'saving']);
+  assert.ok(progress.some(event => event.batches?.[0]?.status === 'running'));
+  assert.ok(progress.some(event => event.completedBatches === 1));
+  assert.equal(events.filter(event => event.type === 'result').length, 1);
+  const final = events.at(-1);
+  assert.equal(final.result.ok, true); assert.equal(final.status, 201);
+  assert.equal(final.result.draft, undefined, 'Large snapshots must use the compressed JSON route, not the progress stream');
+  const stored = await readDraft(storeRoot, final.result.draftId);
+  assert.equal(stored.stats.selectedQuestions, 1);
+  assert.equal(Object.hasOwn(stored, 'coverageReview'), false);
+  assert.deepEqual((await request(`/api/drafts/${final.result.draftId}`)).draft, stored);
+});
+
+test('streamed model or save failure returns a terminal error, never a successful draft', async t => {
+  for (const blocked of [false, true]) {
+    const { request, url } = await app(t, blocked, { selectionGateway: { async propose() {
+      return { ok: false, error: { code: 'model_error', message: '模型暂不可用' } };
+    } } });
+    const { blueprint } = await request('/api/blueprint', { requirements: {} });
+    const response = await fetch(`${url}/api/drafts`, { method: 'POST', headers: {
+      'Content-Type': 'application/json', Accept: 'application/x-ndjson' },
+      body: JSON.stringify({ blueprint, selectionMode: blocked ? 'rule' : 'llm' }) });
+    const events = (await response.text()).trim().split('\n').map(line => JSON.parse(line));
+    const final = events.at(-1);
+    assert.equal(final.type, 'result'); assert.equal(final.result.ok, false);
+    assert.equal(final.result.draft, undefined);
+    assert.equal(final.status, blocked ? 500 : 503);
+    if (!blocked) assert.ok(!events.some(event => event.progress?.stage === 'saving'));
+  }
+});
+
+test('disconnecting a progress stream cancels the model without persisting a partial draft', async t => {
+  let enter; let cancelled;
+  const entered = new Promise(resolve => { enter = resolve; });
+  const aborted = new Promise(resolve => { cancelled = resolve; });
+  const { request, url, storeRoot } = await app(t, false, { selectionGateway: { propose(context, { signal }) {
+    signal.addEventListener('abort', cancelled, { once: true }); enter(); return new Promise(() => {});
+  } } });
+  const { blueprint } = await request('/api/blueprint', { requirements: {} });
+  const controller = new AbortController();
+  const response = await fetch(`${url}/api/drafts`, { method: 'POST', signal: controller.signal, headers: {
+    'Content-Type': 'application/json', Accept: 'application/x-ndjson' }, body: JSON.stringify({ blueprint, selectionMode: 'llm' }) });
+  await entered; controller.abort();
+  await aborted;
+  await response.body.cancel().catch(() => {});
+  assert.equal((await listDrafts(storeRoot)).drafts.length, 0);
+});
 
 test('HTTP confirmation saves real selected contents and reopening preserves exact draft', async t => {
   const { request, storeRoot } = await app(t);

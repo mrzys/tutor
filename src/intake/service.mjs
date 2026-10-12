@@ -24,6 +24,10 @@ const quickTypeFields = ['singleChoiceCount', 'fillBlankCount', 'freeResponseCou
 // Fixed planning is distinct from a teacher's manual lock: extracted counts can
 // be replaced by a later teacher message, but only through another proposal.
 const editableQuickTypes = session => session.answers.size === 'recommend' || session.quickTypeCountSource === 'model';
+// A total alone must not become an accidental fixed ratio through an LLM guess.
+// This only gates whether extraction may be proposed; it does not parse counts.
+const canExtractQuickTypes = (session, message) => editableQuickTypes(session)
+  && (session.quickTypeCountSource === 'model' || /单选|多选|选择题|填空|解答|主观题|客观题/i.test(message ?? ''));
 const effectiveQuickLocks = session => [...new Set([...(session.lockedFields ?? []),
   ...(!editableQuickTypes(session) ? ['questionCount'] : [])])];
 function rememberManualTypeCounts(session, patch = {}) {
@@ -96,6 +100,10 @@ function checkAnswers(input, config) {
 
 function applyAnswers(existing, patch, config) {
   let next = { ...existing, ...checkAnswers(patch, config) };
+  if (patch.mainScope && patch.title === undefined
+      && [config.defaultRequirements.title, scopeTitle(existing.mainScope, config)].includes(existing.title)) {
+    next.title = scopeTitle(next.mainScope, config);
+  }
   // New quick sessions carry a mode; legacy guided sessions keep point semantics.
   if (existing.scoringMode !== undefined && patch.scoringMode === undefined && patch.purpose !== undefined && patch.purpose !== existing.purpose) {
     next.scoringMode = ['assessment', 'mock_exam'].includes(patch.purpose) ? 'points' : 'none';
@@ -140,6 +148,16 @@ function applyAnswers(existing, patch, config) {
   const count = next.singleChoiceCount + next.fillBlankCount + next.freeResponseCount;
   if (count < 1 || count > 60) fail('invalid_intake', '总题量需为 1～60 题。');
   return next;
+}
+
+export function scopeTitle(scope = [], config) {
+  if (!scope.length) return config.defaultRequirements.title;
+  const sections = scope.map(id => id.replace(/^rja-compulsory-1:/, ''));
+  if (sections.every(id => ['1.1', '1.2', '1.3'].includes(id))) return config.defaultRequirements.title;
+  if (sections.every(id => /^1\.[1-5]$/.test(id))) return '高一数学 · 第一章集合与常用逻辑用语';
+  if (sections.every(id => /^2\.[1-3]$/.test(id))) return '高一数学 · 第二章一元二次函数、方程和不等式';
+  const labels = scope.map(id => config.chapters.find(chapter => chapter.id === id)?.label).filter(Boolean);
+  return `高中数学 · ${labels.length === 1 ? labels[0] : '跨章节练习'}`;
 }
 
 function validateStep(stage, answers) {
@@ -231,8 +249,9 @@ function safeQuickProposal(input, config, answers, lockedFields = [], typesEdita
   const proposal = safeProposal(candidate, config, answers);
   const allowedFields = [...quickGoalFields, ...(!lockedFields.includes('scoringMode') ? ['scoringMode'] : []), ...quickNumericFields.filter(field => !lockedFields.includes(field)),
     ...(typesEditable ? quickTypeFields : [])];
-  if (Object.keys(proposal.changes).some(field => !allowedFields.includes(field))) {
-    fail('invalid_model_output', '快速整理只能完善目标及未手动指定的规模；明确题型只能在尚未指定配比时提取，不能覆盖已选条件或锁定数值。');
+  const forbiddenFields = Object.keys(proposal.changes).filter(field => !allowedFields.includes(field));
+  if (forbiddenFields.length) {
+    fail('invalid_model_output', `changes 包含本次禁止输出的字段：${forbiddenFields.join('、')}。请删除这些键，即使值与当前相同也不能输出。当前可建议字段仅有：${allowedFields.join('、')}；其他已选条件和锁定数值必须保留。`);
   }
   if (typesEditable && answers.size !== 'recommend' && proposal.changes.questionCount !== undefined
       && proposal.changes.questionCount !== answers.questionCount && !quickTypeFields.some(field => proposal.changes[field] !== undefined)) {
@@ -426,8 +445,9 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
               if (!quick && !methodsOnly && !input.message) fail('invalid_intake', '请填写希望助手补充的需求。');
               const dependencies = methodsOnly ? await methodDependencies(root, session.answers, config) : null;
               if (signal?.aborted) fail('cancelled', '已取消本次操作。');
+              const typeExtractionAllowed = canExtractQuickTypes(session, input.message ?? session.assistantMessage);
               const validate = candidate => methodsOnly ? safeMethodsProposal(candidate, config, session.answers, dependencies)
-                : quick ? safeQuickProposal(candidate, config, session.answers, effectiveQuickLocks(session), editableQuickTypes(session)) : safeProposal(candidate, config, session.answers);
+                : quick ? safeQuickProposal(candidate, config, session.answers, effectiveQuickLocks(session), typeExtractionAllowed) : safeProposal(candidate, config, session.answers);
               if (!methodsOnly) {
                 session.assistantMessage = input.message ?? (quick ? session.assistantMessage ?? '' : '');
                 if (input.message !== undefined) session.teacherRequest = input.message;
@@ -440,8 +460,8 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
                 confirmedStages: session.confirmedStages, chapters: config.chapters, premises: config.premises,
                 availableCounts: config.availableCounts, supportedFields: methodsOnly ? ['premises'] : quick
                   ? [...quickGoalFields, ...(!effectiveQuickLocks(session).includes('scoringMode') ? ['scoringMode'] : []), ...quickNumericFields.filter(field => !effectiveQuickLocks(session).includes(field)),
-                    ...(editableQuickTypes(session) ? quickTypeFields : [])] : Object.keys(answerSchema.shape),
-                ...(quick ? { lockedFields: effectiveQuickLocks(session), typeCountsEditable: editableQuickTypes(session),
+                    ...(typeExtractionAllowed ? quickTypeFields : [])] : Object.keys(answerSchema.shape),
+                ...(quick ? { lockedFields: effectiveQuickLocks(session), typeCountsEditable: typeExtractionAllowed,
                   typeCountSource: session.quickTypeCountSource ?? (session.answers.size === 'recommend' ? 'suggested' : 'manual_or_legacy') } : {}),
                 ...(methodsOnly ? { premises: dependencies.methods.map(({ id, label, description }) => ({ id, label, description })),
                   methodDependencies: dependencies, foundation: config.courseContext.foundation } : {}),

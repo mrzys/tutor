@@ -185,3 +185,33 @@ test('HTTP assistant route exposes model status and returns read-only proposals 
   assert.equal((await post({ ...f.input('换第1题'), expectedRevision: 99 })).status, 409);
   assert.equal((await post({ ...f.input('换第1题'), arbitraryCode: 'not allowed' })).status, 400);
 });
+
+
+test('assistant prechecks exact draft availability and converts empty replacement promises into actionable alternatives', async () => {
+  const f = await draftFixture(); let seen;
+  const result = await proposeAssemblyAdjustment(f.input('第5题换一道题'), { storeRoot: f.storeRoot, gateway: fixtureGateway(context => {
+    seen = context.slots.find(slot => slot.number === 5).replacementSupply;
+    return ready([{ type: 'replace', numbers: [5] }]);
+  }) });
+  assert.equal(seen.sameTaskCount, 0);
+  assert.ok(seen.sameKnowledgeTasks.length > 0);
+  assert.equal(result.ok, true);
+  assert.equal(result.proposal.status, 'clarify');
+  assert.deepEqual(result.proposal.actions, []);
+  assert.match(result.proposal.clarification, /同任务备选/);
+  assert.equal((await readDraft(f.storeRoot, f.draft.draftId)).revision, f.draft.revision);
+  const crossTask = seen.sameKnowledgeTasks[0].taskId;
+  const proposed = await proposeAssemblyAdjustment(f.input('第5题换一道同知识点的题'), { storeRoot: f.storeRoot, gateway: fixtureGateway(ready([{ type: 'replace', numbers: [5], taskId: crossTask }])) });
+  assert.equal(proposed.ok, true);
+  assert.equal(proposed.proposal.status, 'ready');
+  assert.equal(proposed.proposal.actions[0].taskId, crossTask);
+});
+
+test('assistant does not offer more new questions than the unoccupied task supply', async () => {
+  const f = await draftFixture();
+  const result = await proposeAssemblyAdjustment(f.input('新增10道判断集合的单选题'), { storeRoot: f.storeRoot, gateway: fixtureGateway(ready([{ type: 'add', taskId: 'set_determinacy', count: 10, afterNumber: null }])) });
+  assert.equal(result.ok, true);
+  assert.equal(result.proposal.status, 'clarify');
+  assert.deepEqual(result.proposal.actions, []);
+  assert.match(result.proposal.clarification, /无法新增/);
+});

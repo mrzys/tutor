@@ -64,6 +64,17 @@ function queryOptions(input) {
 const difficultyLevels = [['easy', '基础'], ['medium', '中等'], ['hard', '较难'], ['unknown', '未评估']];
 const difficultySql = `CASE WHEN json_extract(a.value,'$.difficultyLevel') IN ('easy','medium','hard')
   THEN json_extract(a.value,'$.difficultyLevel') ELSE 'unknown' END`;
+// Materialize each JSON snapshot once. Joining json_each virtual tables directly
+// repeatedly scans and reparses all three arrays for every question and facet.
+const snapshotCtes = `WITH
+  annotation_rows AS MATERIALIZED (SELECT value, CAST(json_extract(value,'$.questionId') AS TEXT) AS question_id,
+    CAST(json_extract(value,'$.contentVersion') AS TEXT) AS content_version, CAST(json_extract(value,'$.teacherVersion') AS TEXT) AS teacher_version
+    FROM json_each((SELECT payload FROM question_bank_state WHERE kind='question_index'), '$.entries')),
+  ledger_rows AS MATERIALIZED (SELECT value, CAST(json_extract(value,'$.questionId') AS TEXT) AS question_id
+    FROM json_each((SELECT payload FROM question_bank_state WHERE kind='ledger'), '$.entries')),
+  pedagogy_rows AS MATERIALIZED (SELECT value, CAST(json_extract(value,'$.questionId') AS TEXT) AS question_id,
+    CAST(json_extract(value,'$.contentVersion') AS TEXT) AS content_version, CAST(json_extract(value,'$.teacherVersion') AS TEXT) AS teacher_version
+    FROM json_each((SELECT payload FROM question_bank_pedagogy WHERE kind='analysis'), '$.entries'))`;
 
 function publicFilterOptions(questions) {
   const tags = key => {
@@ -77,11 +88,11 @@ function publicFilterOptions(questions) {
 
 function databaseFilterOptions(repository, from, baseConditions) {
   const where = `WHERE ${baseConditions.join(' AND ')}`;
-  const rows = repository.database.prepare(`SELECT ${difficultySql} AS level, count(*) AS count ${from} ${where} GROUP BY level`).all();
+  const rows = repository.database.prepare(`${snapshotCtes} SELECT ${difficultySql} AS level, count(*) AS count ${from} ${where} GROUP BY level`).all();
   const tags = key => {
-    const tagged = repository.database.prepare(`SELECT tag.value AS value, COUNT(DISTINCT q.question_id) AS count
+    const tagged = repository.database.prepare(`${snapshotCtes} SELECT tag.value AS value, COUNT(DISTINCT q.question_id) AS count
       ${from} JOIN json_each(p.value,'$.${key}') tag ${where} GROUP BY tag.value ORDER BY tag.value`).all();
-    const unknown = repository.database.prepare(`SELECT count(*) AS count ${from} ${where}
+    const unknown = repository.database.prepare(`${snapshotCtes} SELECT count(*) AS count ${from} ${where}
       AND coalesce(json_array_length(p.value,'$.${key}'),0)=0`).get().count;
     return [...tagged.map(item => ({ ...item, label: item.value })), { value: 'unknown', label: '未标注', count: unknown }];
   };
@@ -92,13 +103,10 @@ function databaseFilterOptions(repository, from, baseConditions) {
 async function databaseCatalog(repository, root, options) {
   // SQL filters before materialising question bodies; placeholders keep teacher text literal.
   const from = `FROM question_bank_questions q
-    JOIN json_each((SELECT payload FROM question_bank_state WHERE kind='question_index'), '$.entries') a
-      ON json_extract(a.value,'$.questionId')=q.question_id
-    JOIN json_each((SELECT payload FROM question_bank_state WHERE kind='ledger'), '$.entries') e
-      ON json_extract(e.value,'$.questionId')=q.question_id
-    LEFT JOIN json_each((SELECT payload FROM question_bank_pedagogy WHERE kind='analysis'), '$.entries') p
-      ON json_extract(p.value,'$.questionId')=q.question_id
-      AND json_extract(p.value,'$.contentVersion')=q.content_version AND json_extract(p.value,'$.teacherVersion')=q.teacher_version`;
+    JOIN annotation_rows a ON a.question_id=q.question_id
+    JOIN ledger_rows e ON e.question_id=q.question_id
+    LEFT JOIN pedagogy_rows p ON p.question_id=q.question_id
+      AND p.content_version=q.content_version AND p.teacher_version=q.teacher_version`;
   const baseConditions = ["json_extract(e.value,'$.status')='ready'",
     "json_extract(a.value,'$.contentVersion')=q.content_version", "json_extract(a.value,'$.teacherVersion')=q.teacher_version"];
   const conditions = [...baseConditions];
@@ -126,11 +134,11 @@ async function databaseCatalog(repository, root, options) {
   const pedagogy = repository.getQuestionBankPedagogy();
   if (!ledger || !index) reject('integrity_error', 'SQLite 题库索引缺失。');
   if (!pedagogy || !Array.isArray(pedagogy.entries)) reject('integrity_error', 'SQLite 教研标注快照缺失。');
-  const total = repository.database.prepare(`SELECT count(*) AS count ${from} ${where}`).get(...parameters).count;
+  const total = repository.database.prepare(`${snapshotCtes} SELECT count(*) AS count ${from} ${where}`).get(...parameters).count;
   const pageSize = options.paginated ? options.pageSize : Math.max(1, total);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const page = Math.min(options.page, totalPages);
-  const rows = repository.database.prepare(`SELECT q.question_id ${from} ${where} ORDER BY q.question_id LIMIT ? OFFSET ?`)
+  const rows = repository.database.prepare(`${snapshotCtes} SELECT q.question_id ${from} ${where} ORDER BY q.question_id LIMIT ? OFFSET ?`)
     .all(...parameters, pageSize, (page - 1) * pageSize);
   const entries = new Map(ledger.entries.map(entry => [entry.questionId, entry]));
   const annotations = new Map(index.entries.map(entry => [entry.questionId, entry]));
@@ -140,10 +148,12 @@ async function databaseCatalog(repository, root, options) {
     return publicQuestion({ result, entry: entries.get(row.question_id), annotation: annotations.get(row.question_id),
       pedagogy: pedagogyForQuestion(pedagogy, result.question) }, repository);
   }));
+  const chapterCounts = new Map(repository.database.prepare(`${snapshotCtes}
+    SELECT s.value AS section_id,COUNT(DISTINCT q.question_id) AS count ${from}
+    JOIN json_each(a.value,'$.primarySections') s WHERE ${baseConditions.join(' AND ')} GROUP BY s.value`)
+    .all().map(row => [row.section_id, row.count]));
   const chapters = repository.getQuestionBankChapters().map(chapter => ({ ...chapter,
-    questionCount: repository.database.prepare(`SELECT count(*) AS count ${from}
-      WHERE json_extract(e.value,'$.status')='ready' AND EXISTS (SELECT 1 FROM json_each(a.value,'$.primarySections') s WHERE s.value=?)`)
-      .get(chapter.id).count }));
+    questionCount: chapterCounts.get(chapter.id) ?? 0 }));
   const ready = ledger.entries.filter(entry => entry.status === 'ready').length;
   return { ok: true, chapters, textbooks: repository.getQuestionBankTextbooks(), questions,
     filterOptions: databaseFilterOptions(repository, from, baseConditions),

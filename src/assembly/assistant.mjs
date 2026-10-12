@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, recheckBlueprint, loadPool, slotCandidates } from './engine.mjs';
+import { assessDraftReplacementCandidates } from './editor.mjs';
+import { suggestedGoalIds } from './teaching-goals.mjs';
 import { readDraft } from './store.mjs';
 import { hashContent } from '../question-bank/reader.mjs';
 import { createAssistantGateway, assistantProposalSchema } from '../llm/assistant-gateway.mjs';
@@ -40,8 +42,9 @@ function validateProposal(output, context) {
   if (!proposal.actions.length || proposal.clarification !== null) invalid('待确认提案须有动作，不能混入未解决澄清。');
   const byNumber = new Map(context.slots.map(slot => [slot.number, slot]));
   const byTask = new Map(context.tasks.map(task => [task.taskId, task]));
+  const additionsByTask = new Map();
   const touched = []; const deleted = new Set(); const unique = new Set(); const numberedActions = new Set();
-  let count = context.slots.length;
+  let count = context.slots.length; let supplyClarification = null;
   for (const action of proposal.actions) {
     if (unique.has(JSON.stringify(action))) invalid('动作不能重复。'); unique.add(JSON.stringify(action));
     if (context.stage === 'draft' && ['set_task', 'set_counts'].includes(action.type)) invalid('草稿不能用蓝图重规划动作覆盖当前题目。');
@@ -58,10 +61,26 @@ function validateProposal(output, context) {
     }
     if (action.taskId && !byTask.has(action.taskId)) invalid('任务身份未知或不在当前主考范围内。');
     if (action.type === 'set_task' && action.numbers.some(number => byNumber.get(number).questionType !== byTask.get(action.taskId).questionType)) invalid('更改任务需保持当前题型；改题型请明确题量规划。');
+    if (action.type === 'replace' && context.stage === 'draft') {
+      if (action.taskId && action.numbers.length !== 1) invalid('更换考查任务需逐题确认。');
+      const blocked = action.numbers.filter(number => {
+        const slot = byNumber.get(number); const supply = slot.replacementSupply;
+        return action.taskId && action.taskId !== slot.taskId
+          ? !supply?.sameKnowledgeTasks?.some(task => task.taskId === action.taskId && task.eligibleCount > 0)
+          : !(supply?.sameTaskCount > 0);
+      });
+      if (blocked.length) {
+        const alternatives = blocked.flatMap(number => (byNumber.get(number).replacementSupply?.sameKnowledgeTasks ?? []).map(task => `第 ${number} 题：${task.label}（${task.eligibleCount} 道）`));
+        supplyClarification = { status: 'clarify', summary: '已预检当前试卷备选，现题保留。', actions: [],
+          clarification: alternatives.length ? `当前要求下第 ${blocked.join('、')} 题没有同任务备选。可在相同知识范围内改为：${alternatives.join('；')}。是否调整考查任务？` : `当前要求下第 ${blocked.join('、')} 题暂无未重复的合格备选。请保留现题，或明确调整本题要求。` };
+      }
+    }
     if (action.type === 'delete') { action.numbers.forEach(number => deleted.add(number)); count -= action.numbers.length; }
     if (action.type === 'add') {
       if (action.afterNumber !== null && !explicitNumbers.has(action.afterNumber)) invalid('新增位置未明确，默认末尾或先澄清。');
       if (action.afterNumber !== null && !byNumber.has(action.afterNumber)) invalid('新增位置题号不存在。');
+      const requested = (additionsByTask.get(action.taskId) ?? 0) + action.count; additionsByTask.set(action.taskId, requested);
+      if (!(byTask.get(action.taskId).eligibleCount >= requested)) supplyClarification = { status: 'clarify', summary: '已预检新增题的真实供给，当前试卷未改变。', actions: [], clarification: `该任务目前只有 ${byTask.get(action.taskId).eligibleCount} 道合格未重复候选，无法新增 ${requested} 道。请减少数量或选择当前范围内其他任务。` };
       count += action.count;
     }
     if (action.type === 'set_counts') {
@@ -78,11 +97,14 @@ function validateProposal(output, context) {
     }
     // The existing replacement API cannot honor new semantic dimensions. Do not
     // permit an injected/misbehaving model to silently discard a clear request.
-    if (action.type === 'replace' && /能力|素养|认知|知识点|考查任务|考察任务|更难|简单|容易|降低难度|提高难度|难一点|难些|数学抽象|逻辑推理|数据分析|建模|分类讨论|证明|新解法|换个解法/.test(context.message)) invalid('新考查维度或未标定难度不能用同任务换题表达；请澄清考查要求。');
+    if (action.type === 'replace' && (/能力|素养|认知|更难|简单|容易|降低难度|提高难度|难一点|难些|数学抽象|逻辑推理|数据分析|建模|分类讨论|证明|新解法|换个解法/.test(context.message) || (!action.taskId && /知识点|考查任务|考察任务/.test(context.message)))) invalid('新考查维度或未标定难度不能用同任务换题表达；请澄清考查要求。');
   }
   if (count < 1 || count > 60) invalid('调整后总题量需为1到60。');
   if (touched.some(item => deleted.has(item.number) && item.type !== 'delete')) invalid('删除题位不能同时执行其他修改。');
   if (proposal.actions.some(action => action.type === 'add' && deleted.has(action.afterNumber))) invalid('新增位置不能指向同时删除的题位。');
+  if (supplyClarification) return supplyClarification;
+  const taskChanges = proposal.actions.filter(action => action.type === 'replace' && action.taskId && action.taskId !== byNumber.get(action.numbers[0]).taskId);
+  if (taskChanges.length && !proposal.summary.includes('考查任务将调整为：')) proposal.summary = `${proposal.summary.slice(0, 180)} 考查任务将调整为：${taskChanges.map(action => `第 ${action.numbers[0]} 题「${byTask.get(action.taskId).label.slice(0, 30)}」`).join('；')}。知识范围及原教学目标保留，待确认后应用。`;
   return proposal;
 }
 
@@ -93,7 +115,7 @@ export async function proposeAssemblyAdjustment(raw, { root = defaultRoot, store
     const input = requestSchema.parse(raw); abort(signal);
     const loaded = await getAssemblyConfig({ root }); if (!loaded.ok) return loaded;
     const config = loaded.config;
-    let slots; let requirements; let base;
+    let slots; let requirements; let base; let currentDraft;
     if (input.stage === 'blueprint') {
       const checked = await recheckBlueprint(input.blueprint, { root }); if (!checked.ok) return checked;
       slots = checked.blueprint.slots; requirements = checked.blueprint.requirements;
@@ -102,19 +124,26 @@ export async function proposeAssemblyAdjustment(raw, { root = defaultRoot, store
       const draft = await readDraft(storeRoot, input.draftId);
       if (draft.confirmedPaperId) return { ok: false, error: { code: 'finalized_draft', message: '请先从成卷派生新草稿，再调整题目。' } };
       if ((draft.revision ?? 0) !== input.expectedRevision) return { ok: false, error: { code: 'revision_conflict', message: '草稿已更新，请读取最新版本后重新提出调整。' } };
-      slots = draft.slots; requirements = draft.baseline.requirements;
+      currentDraft = draft; slots = draft.slots; requirements = draft.baseline.requirements;
       base = { stage: 'draft', draftId: draft.draftId, revision: draft.revision ?? 0 };
     }
     const pool = await loadPool(root); abort(signal);
+    const occupiedIds = new Set(slots.flatMap(slot => slot.question ? [slot.question.questionId] : []));
+    const occupiedGroups = new Set(pool.records.filter(item => occupiedIds.has(item.entry.questionId)).map(item => item.annotation?.duplicateGroup).filter(Boolean));
     const tasks = config.tasks.filter(task => task.sectionIds.length && task.sectionIds.every(id => requirements.mainScope.includes(id))).map(task => ({
       taskId: task.id, label: task.label, questionType: task.questionType,
-      eligibleCount: slotCandidates(pool, { questionType: task.questionType, taskId: task.id, goalIds: [] }, requirements).filter(item => item.status === 'eligible').length,
+      eligibleCount: slotCandidates(pool, { questionType: task.questionType, taskId: task.id, goalIds: suggestedGoalIds(requirements.teachingGoals ?? [], task) }, requirements, occupiedIds, occupiedGroups).filter(item => item.status === 'eligible').length,
     }));
     const context = { stage: input.stage, message: input.message, requirements,
       slots: slots.map(slot => ({ number: slot.number, slotId: slot.slotId, taskId: slot.taskId, taskLabel: slot.taskLabel, questionType: slot.questionType, points: slot.points, targetDifficulty: slot.targetDifficulty ?? requirements.targetDifficulty,
+        ...(currentDraft ? { replacementSupply: (() => {
+          const { sameTask, sameKnowledge } = assessDraftReplacementCandidates(currentDraft, slot, pool, config);
+          return { sameTaskCount: sameTask.filter(item => item.canSelect && item.status === 'eligible').length,
+            sameKnowledgeTasks: [...new Set(sameKnowledge.map(item => item.replacementTaskId))].map(taskId => ({ taskId, label: config.tasks.find(task => task.id === taskId).label, eligibleCount: sameKnowledge.filter(item => item.replacementTaskId === taskId).length })) };
+        })() } : {}),
         ...(slot.question ? { questionId: slot.question.questionId, stem: slot.question.student.stem.slice(0, 1500) } : {}) })), tasks,
       specialPremises: config.premises.filter(item => !(requirements.foundationPremises ?? []).includes(item.id) && !requirements.premises.includes(item.id)).map(item => ({ premiseId: item.id, label: item.label, description: item.description })),
-      constraints: { proposalOnly: true, actualDifficulty: 'unknown', replacementRetainsTaskAndGoals: true, maxQuestions: 60 } };
+      constraints: { proposalOnly: true, actualDifficulty: 'unknown', replacementRetainsConfirmedScopeAndGoals: true, differentSolutionMethodsAllowed: true, maxQuestions: 60 } };
     const validate = output => validateProposal(output, context);
     const result = await gateway.propose(context, { signal, validate }); llmRun = result.run;
     if (!result.ok) return { ok: false, error: result.error, ...(llmRun ? { llmRun } : {}) };

@@ -1,0 +1,344 @@
+{
+  "reviewer": "Codex root",
+  "newCount": 50,
+  "existingReadyCount": 45,
+  "method": "比较完整题干及全部选项，移除来源前缀、空白和少量LaTeX等价书写；文本相似度>0.78用于召回，主审再比较数学条件。非全库数学等价证明，也不把相似度用作自动删除依据。",
+  "exactDuplicates": [],
+  "nearPairs": [
+    {
+      "ids": [
+        "SET-EXP50-042",
+        "SET-EXP50-055"
+      ],
+      "textSimilarity": 0.905,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-042",
+        "SET-EXP50-056"
+      ],
+      "textSimilarity": 0.85,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-030",
+        "SET-EXP50-044"
+      ],
+      "textSimilarity": 0.848,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-018",
+        "SET-EXP50-055"
+      ],
+      "textSimilarity": 0.847,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-001",
+        "SET-EXP50-029"
+      ],
+      "textSimilarity": 0.839,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-055",
+        "tutor-set-045"
+      ],
+      "textSimilarity": 0.831,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-030",
+        "SET-EXP50-041"
+      ],
+      "textSimilarity": 0.821,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-001",
+        "SET-EXP50-044"
+      ],
+      "textSimilarity": 0.814,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-042",
+        "SET-EXP50-044"
+      ],
+      "textSimilarity": 0.812,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-044",
+        "SET-EXP50-056"
+      ],
+      "textSimilarity": 0.808,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-025",
+        "SET-EXP50-055"
+      ],
+      "textSimilarity": 0.804,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-009",
+        "SET-EXP50-024"
+      ],
+      "textSimilarity": 0.794,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-052",
+        "tutor-set-045"
+      ],
+      "textSimilarity": 0.788,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-042",
+        "SET-EXP50-053"
+      ],
+      "textSimilarity": 0.787,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-055",
+        "SET-EXP50-056"
+      ],
+      "textSimilarity": 0.786,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    },
+    {
+      "ids": [
+        "SET-EXP50-026",
+        "SET-EXP50-055"
+      ],
+      "textSimilarity": 0.784,
+      "rootDecision": "distinct_conditions_or_operations",
+      "note": "主审对照完整题面：集合、端点、运算或选项不同，保留独立题目；同类练习需组卷时控制集中出现。"
+    }
+  ],
+  "coverageObservation": "大量有限集合与区间求交的同类练习，题量增加不等于教学目标/能力/素养和题型覆盖同比增加。",
+  "inputs": [
+    {
+      "path": "data/question-bank/staging/set-expansion-50.json",
+      "sha256": "2f8e7d6255b6199d33833ac4cd429273c26ab2fafa7d3358f5f269c352c17238"
+    },
+    {
+      "path": "data/question-bank/ledger.json",
+      "sha256": "109818762522bb7087d0a7854def2e0734eda3835d9cba754858f9d2fc56b46c"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-001.json",
+      "sha256": "8a19820fce6bd4316d02003771bf385f93a5429219622c9056e3e83cbbc58291"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-002.json",
+      "sha256": "b1f87d27e39dc6e8af9a8e2e1759f55fa7794f1d008baaa4dfd4c136ea9b5695"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-003.json",
+      "sha256": "884119a77dfba9205671b7b704e4849944e74b8f07db7ad090f72bfd2558994c"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-004.json",
+      "sha256": "1c7e76d3b9f35977b6c14398cc0f8b2a924182c3677bf06c9ad1094832bdd5e8"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-005.json",
+      "sha256": "93d970384faaf0d3cce3cfe169e157cf0f7df5a7c64c5c42b6646399f88e174d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-006.json",
+      "sha256": "b168d6cc10d6b0dd8acd4a2c14af2b5b572be4410a8a3c1702c989b61cec5c5d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-007.json",
+      "sha256": "09e73b6f95a430ac0b600726db1a9e32fe05786d703f4f384ce5789f1f747c25"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-008.json",
+      "sha256": "8ef11a059421ed823b3d6f45e568c78d2acb8694839ea86c8719a1fb5732fb83"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-009.json",
+      "sha256": "1dd2f6498090b0ae94c0d1c35475f4625220220256867f5b09751275ec31a230"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-010.json",
+      "sha256": "a6356843161e51af8f105d495f7aba4e41a2f26aefccb33c39a4089cbbb825ca"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-011.json",
+      "sha256": "5055cca0dde6a2f79a174493464499aafda5b093d1dbf649ad5ad550ca58d3a8"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-012.json",
+      "sha256": "c1c484342b4a21ccbc608b7ebedccea535954c3e8145408dc474f6dee919b33d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-013.json",
+      "sha256": "1d41609cd6f89432c430196c97bc2a4e0f938df6f434029e5a06cbbcd115cd54"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-014.json",
+      "sha256": "fb03f8133b1bf16e7977c2e2209b598976b882dc3ac429fef04590648ac3822c"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-016.json",
+      "sha256": "05af968e3434389ef5aca9155120a016810d921095dd2a7c56e8c70ddabf16de"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-017.json",
+      "sha256": "8bc01998b3f4b51aec69fe48fc208bf813caeecaa07c739d5ff38181164835ed"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-018.json",
+      "sha256": "918ee95847e214dbd4b6a4d859c2990cbea2e9a85d8c24f923b5c85bfe6e2da1"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-020.json",
+      "sha256": "5b62f5935fe52c2c6d7e994ce8f7383e84affef9be4454b371fa094b11c081e9"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-022.json",
+      "sha256": "9877b5d32c1906134263745788d2bfdacae8819117ffc4e632cf2e9e837067c0"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-023.json",
+      "sha256": "1551bd4b9345ec8d56d534b0a7e8d4afbc414585f73cfca04d5487ed1f1e7d71"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-024.json",
+      "sha256": "f5757fa6a9ab1a3a36ef6eae202d91a27d7f6c4e994ccd84af0b1c828d09b066"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-026.json",
+      "sha256": "ecf764e34fc7fd1cb58b14871569f442f5e1034ab54b0d9cf9355f3055f02812"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-027.json",
+      "sha256": "66ca7aeae92c7735b82733892114347fd528e4851db91c93d92de1e77415734d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-028.json",
+      "sha256": "c8464b0f9e5ddcf85637f7bff4c76258c556ad5dbc40cb3592079897fac0fec4"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-029.json",
+      "sha256": "1a348c0ce159ef6eb8dd0b9c9d85c177dc04b5867d9f152da3ca8c8f21511dcc"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-030.json",
+      "sha256": "351df813bd1992b7d154ab6b951095e7b2e4194726fe590fc53f2854df826d3d"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-031.json",
+      "sha256": "9b7238182917b987102efb37c6d25dd3d43470d1e6951b3b7ff99ae6c7a79b76"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-033.json",
+      "sha256": "c7ae9442dec6e78f3edbf91f024a923345d916f73129158eaa8a2c30b7fbb6d3"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-034.json",
+      "sha256": "83a5e8ee8dcfdf86697dd9577869ecf36a6e0f5fe0aea4fdc038d86ed062fac9"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-035.json",
+      "sha256": "872380a841de7fcc74278b9202aa537521b0f79e3f00e56eff74151015147f01"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-036.json",
+      "sha256": "cecc9c6546a4d74feb30538bfa5bbeec6d549133645207c5dca4b7a5f3fc5983"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-037.json",
+      "sha256": "1c7839273ea3969f4904166b2e6b794d7c65a3886c470c0d7daa668656718569"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-038.json",
+      "sha256": "770249c14635fc35ba87980e3692cd0fdaf657555d790e87c2f765dfb285a53e"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-039.json",
+      "sha256": "e2e517eac1544499b064c5db31d1380306658b5be7929ccdcd6caa61b0efcba0"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-040.json",
+      "sha256": "ab79d64511dd4cf4275211d750ead22d7b7723d1d7a98666d650ba98cb886026"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-041.json",
+      "sha256": "92ddd16488cdc20d870bb416a3e72d78e88c61b272be646cfa1e28351111167f"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-042.json",
+      "sha256": "22fd736b1869c30b8c6a113b2375c65c465099caacfcd27adad831e0ab0ade37"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-043.json",
+      "sha256": "86dbd2d6fe0e16e3ad2118cbcef9f198b52b71c997c6ef52c77af62cb799568b"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-044.json",
+      "sha256": "31475ebbcde16a4fc72f304ff137e6c6d097841ca089419ca0901d23a077a943"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-045.json",
+      "sha256": "9f3f89cf216c3917d21d9533dd9e458823d978b944ae68edd20ba8d0b7caa097"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-046.json",
+      "sha256": "d2b9540b9012ab63dfe63811f49640ea23199b0b2cd2437ea7ff9bfb21a20ca8"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-047.json",
+      "sha256": "c07a55b7513b636e34039d484c09c72c9a1c59a737e8b374cbbd54b155bef628"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-048.json",
+      "sha256": "6b51d569b4fabc9ac1c01550a05222fc57b53b51ca8fa08fea4e382c05f779ae"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-049.json",
+      "sha256": "e256d829df12c79867fdd59629ef6e7fe12e4688a943217d08424c3f44d1b877"
+    },
+    {
+      "path": "data/question-bank/questions/tutor-set-050.json",
+      "sha256": "d513b8fd863668bb01eda870e1fc3784f975e5d7c5793ce5bfaceb42ff619651"
+    }
+  ]
+}

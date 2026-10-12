@@ -3,6 +3,7 @@ import { ChevronDown, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { allocateParts, blueprintError, typeLabels, typeTitles } from './api.js';
 import { addBlueprintSlot, canRemoveGoalLink, changeBlueprintTask, goalAssignmentSummary, goalTaskCompatible, removeBlueprintSlot } from './blueprint-review.js';
 import { Select } from './Select.jsx';
+import { MathText } from './MathText.jsx';
 import './Blueprint.css';
 
 const cognitionLabels = { unspecified: '暂不指定', understand: '理解与解释', apply: '应用与操作', reason: '推理与论证' };
@@ -11,6 +12,7 @@ const promptLabels = { provided: '允许提供提示', independent: '独立完�
 const responseLabels = { answer: '给出答案即可', written_reasoning: '写出完整推理过程' };
 const issueText = issue => typeof issue === 'string' ? issue : issue.message || issue.reason || '需要核查';
 const questionTypes = ['single_choice', 'fill_blank', 'free_response'];
+const renderTaskLabel = label => <MathText text={label}/>;
 
 function TeachingGoalReview({ config, blueprint, checking, busy, onEdit, onShowSlots }) {
   const goals = blueprint.requirements.teachingGoals || [];
@@ -32,7 +34,7 @@ function TeachingGoalReview({ config, blueprint, checking, busy, onEdit, onShowS
       const slotNumbers = blueprint.slots.filter(slot => (slot.goalIds || []).includes(goal.id)).map(slot => slot.number);
       return <li key={goal.id}>
         <div className="goal-review-title"><strong>目标 {index + 1}{goal.priority === 'required' ? ' · 必须考查' : ''}</strong><span className={review?.status === 'planned' ? 'muted' : 'warning-text'}>{checking ? '正在核查…' : goalStatusLabels[review?.status] || '待核查'}</span></div>
-        <p>{goal.observable || '尚未描述学生要做到什么'}</p>
+        <p><MathText text={goal.observable || '尚未描述学生要做到什么'}/></p>
         <p className="help">{cognitionLabels[goal.cognition] || '认知要求待明确'}</p>
         <div className="goal-slot-summary"><span>{slotNumbers.length ? `关联题位：${slotNumbers.join('、')}` : '暂未关联题位'}</span>{blueprint.slots.some(slot => (slot.goalIds || []).includes(goal.id) || goalTaskCompatible(goal, config.tasks.find(task => task.id === slot.taskId))) ? <button type="button" className="link-button" disabled={busy} onClick={() => onShowSlots(goal)}>调整关联题位</button> : <span className="warning-text">暂无兼容题位</span>}</div>
       </li>;
@@ -168,7 +170,7 @@ export function Blueprint({ config, value, onChange, onConfirm, onBack, onAiAdju
       return <React.Fragment key={slot.slotId}>
         <tr id={`blueprint-slot-${slot.slotId}`} className={expanded ? 'slot-expanded' : ''}>
           <td>{slot.number}</td>
-          <td><Select aria-label={`第 ${slot.number} 题考查任务`} value={slot.taskId} disabled={busy} onChange={event => changeTask(slot, event.target.value)}>{config.tasks.filter(task => task.questionType === slot.questionType).map(task => <option key={task.id} value={task.id}>{task.label}</option>)}</Select></td>
+          <td><Select renderLabel={renderTaskLabel} aria-label={`第 ${slot.number} 题考查任务`} value={slot.taskId} disabled={busy} onChange={event => changeTask(slot, event.target.value)}>{config.tasks.filter(task => task.questionType === slot.questionType).map(task => <option key={task.id} value={task.id}>{task.label}</option>)}</Select></td>
           {scored ? <td><input aria-label={`第 ${slot.number} 题分值`} className="point-input" type="number" min="0" max="1000" value={slot.points} disabled={busy} onChange={event => changePoints(slot, Number(event.target.value))}/></td> : null}
           <td><span className={checking || checkError || invalid ? 'muted' : !item?.eligibleCount ? 'warning-text' : ''}>{checking || checkError || invalid ? '待核查' : `${item?.eligibleCount ?? 0} 题`}</span>{!checking && item?.readFailures?.length ? <small className="error-text">{item.readFailures.length} 题读取失败</small> : null}</td>
           <td><div className="blueprint-slot-actions"><button type="button" className="blueprint-slot-ai" aria-label={`AI 调整第 ${slot.number} 题位`} title="AI 调整本题位" disabled={busy} onClick={() => onAiAdjust?.(slot)}><Sparkles size={14} aria-hidden="true"/><span>AI 调整</span></button><button type="button" className="slot-details-toggle" aria-label={`第 ${slot.number} 题详情`} aria-expanded={expanded} aria-controls={`slot-detail-${slot.slotId}`} onClick={() => toggleSlot(slot.slotId)}>详情<ChevronDown size={14}/></button><button type="button" className="icon-button blueprint-slot-remove" aria-label={`删除第 ${slot.number} 题位`} title="删除题位" disabled={busy} onClick={() => removeSlot(slot)}><Trash2 size={15} aria-hidden="true"/></button></div></td>

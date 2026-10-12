@@ -27,7 +27,8 @@ function ParsedQuestion({ question, index }) {
   </article>;
 }
 
-function ReviewSummary({ value }) {
+function ReviewSummary({ value, publication }) {
+  if (publication?.lastPublishedAt) return <p>已审核入库 {publication.accepted} 道，当前可用 {publication.currentReady} 道{publication.currentPending ? `，入库后待复核 ${publication.currentPending} 道` : ''}；重复 {publication.duplicates} 道，未通过 {publication.rejected} 道，未处理 {publication.held} 道。原始解析记录保留，便于对照复核。</p>;
   if (!value) return null;
   if (typeof value === 'string') return <p>{value}</p>;
   if (Array.isArray(value)) return <ul>{value.map((item, index) => <li key={index}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>)}</ul>;
@@ -88,7 +89,7 @@ export function QuestionImport() {
 
   return <section className="question-import-page">
     <div className="question-bank-heading"><div><span className="bank-eyebrow"><FileUp size={16}/>试卷导入</span><h1>上传并解析试卷</h1><p>LLM 会拆分题目并建议题型、章节和知识点；结果只进入待审核区。</p></div></div>
-    <div className="import-safety-note"><AlertTriangle size={18}/><div><strong>不会自动进入正式题库</strong><p>解析结果可能有误，必须逐题人工核对题面、答案和维度信息后再决定是否入库。</p></div></div>
+    <div className="import-safety-note"><AlertTriangle size={18}/><div><strong>审核通过后才能进入正式题库</strong><p>请对照原文件核对题面、答案、解析和公式；含图片、表格的题目还需核对内容及对应关系，未核验完整时保留在待审核区。AI 解析与难度估计仅作参考。</p></div></div>
     <form className="import-upload-card" onSubmit={upload}>
       <label className="import-file-drop"><FileUp size={27}/><span><strong>{file ? file.name : '选择一份试卷文件'}</strong><small>{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '支持 TXT、MD、PDF、DOCX，最大 15MB'}</small></span><input ref={inputRef} type="file" accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => chooseFile(event.target.files?.[0])} disabled={busy}/></label>
       <button className="primary" type="submit" disabled={!file || busy}>{busy ? <><LoaderCircle className="spinning" size={17}/>正在上传并解析…</> : '开始解析'}</button>
@@ -96,13 +97,13 @@ export function QuestionImport() {
     {busy ? <div className="import-progress" role="status"><LoaderCircle className="spinning" size={19}/><div><strong>正在处理试卷</strong><p>文件已提交，正在提取文本、拆分题目并生成维度建议，请稍候。</p></div></div> : null}
     {error ? <div className="notice error" role="alert">{error}</div> : null}
     {result ? <section className="import-result" aria-label="解析结果">
-      <div className="import-result-heading"><div><CheckCircle2 size={21}/><div><h2>{result.title || '试卷解析结果'}</h2><p>{result.source?.filename ?? result.source?.name ?? (typeof result.source === 'string' ? result.source : '上传文件')} · {result.questions?.length ?? 0} 道题</p></div></div><span>待人工审核</span></div>
-      <div className="import-review-summary"><h3>审核概览</h3><ReviewSummary value={result.reviewSummary}/></div>
+      <div className="import-result-heading"><div><CheckCircle2 size={21}/><div><h2>{result.title || '试卷解析结果'}</h2><p>{result.source?.filename ?? result.source?.name ?? (typeof result.source === 'string' ? result.source : '上传文件')} · {result.questions?.length ?? 0} 道题</p></div></div><span>{result.publicationSummary?.lastPublishedAt ? `已入库 ${result.publicationSummary.accepted} 道` : '待人工审核'}</span></div>
+      <div className="import-review-summary"><h3>审核概览</h3><ReviewSummary value={result.reviewSummary} publication={result.publicationSummary}/></div>
       <div className="import-question-list">{(result.questions ?? []).map((question, index) => <ParsedQuestion key={question.questionId ?? question.id ?? index} question={question} index={index}/>)}</div>
       {!result.questions?.length ? <p className="bank-empty">没有拆分出可展示的题目，请检查审核概览或重新上传更清晰的文件。</p> : null}
     </section> : null}
     <section className="import-history"><div className="section-heading"><h2>最近上传</h2><button className="link-button" onClick={() => loadImports()} disabled={historyLoading}><RefreshCw size={14}/>刷新</button></div>
-      {historyLoading ? <p className="history-loading" role="status">正在读取上传记录…</p> : imports.length ? <ul>{imports.map(item => <li key={item.importId}><button onClick={() => openImport(item.importId)} disabled={busy}><span><strong>{item.title || item.source?.filename || '未命名试卷'}</strong><small>{item.questions?.length ?? item.questionCount ?? '—'} 道题 · 待人工审核</small></span><span>查看结果</span></button></li>)}</ul> : <p className="bank-empty">还没有上传记录。</p>}
+      {historyLoading ? <p className="history-loading" role="status">正在读取上传记录…</p> : imports.length ? <ul>{imports.map(item => <li key={item.importId}><button onClick={() => openImport(item.importId)} disabled={busy}><span><strong>{item.title || item.source?.filename || '未命名试卷'}</strong><small>{item.questions?.length ?? item.questionCount ?? '—'} 道题 · {item.publicationSummary?.lastPublishedAt ? `已入库 ${item.publicationSummary.accepted} 道 · 可用 ${item.publicationSummary.currentReady} 道` : '待人工审核'}</small></span><span>查看结果</span></button></li>)}</ul> : <p className="bank-empty">还没有上传记录。</p>}
     </section>
   </section>;
 }

@@ -1,7 +1,9 @@
 import { selectionProposalSchema, createSelectionGateway } from '../llm/selection-gateway.mjs';
+import { difficultyView } from './difficulty.mjs';
 
 const MAX_CANDIDATES = 8;
 const MAX_BATCH_SLOTS = 8;
+const MAX_CONCURRENT_BATCHES = 2;
 const MAX_CONTEXT_CHARS = 100000;
 const MAX_TEXT_CHARS = 6000;
 const invalid = message => { throw Object.assign(new Error(message), { code: 'invalid_model_output' }); };
@@ -37,12 +39,16 @@ function candidateView(record, candidate) {
   question.student.options.forEach((option, index) => add(`student.options[${index}].text`, `${option.label}. ${option.text}`));
   question.student.parts.forEach((part, index) => add(`student.parts[${index}].prompt`, `${part.partId}: ${part.prompt}`));
   add('allowedSolutionPath.basis', candidate.allowedSolutionPath.basis);
+  add('allowedSolutionPath.requiredSections', JSON.stringify(candidate.allowedSolutionPath.requiredSections));
+  add('allowedSolutionPath.requiredPremises', JSON.stringify(candidate.allowedSolutionPath.requiredPremises));
   question.teacher.solutions.forEach((solution, index) => add(`teacher.solutions[${index}].text`, `${solution.partId}: ${solution.text}`));
+  const difficulty = difficultyView(record.annotation);
+  if (difficulty.rationale) add('difficulty.rationale', difficulty.rationale);
   return {
     candidateKey: question.questionId, questionId: question.questionId,
     contentVersion: question.contentVersion, teacherVersion: question.teacherVersion,
     duplicateGroup: candidate.duplicateGroup,
-    questionType: question.questionType, evidence,
+    questionType: question.questionType, evidence, availableEvidenceRefs: Object.keys(evidence), difficulty,
     allowedSolutionPath: { id: candidate.allowedSolutionPath.id,
       requiredSections: candidate.allowedSolutionPath.requiredSections,
       requiredPremises: candidate.allowedSolutionPath.requiredPremises },
@@ -69,9 +75,10 @@ export function validateSelectionProposal(proposal, context) {
       if (!view || !slot.candidates.includes(candidate.questionId) || seenCandidates.has(candidate.questionId)) invalid('排名包含不合格、未知或重复候选。');
       seenCandidates.add(candidate.questionId);
       if (candidate.contentVersion !== view.contentVersion || candidate.teacherVersion !== view.teacherVersion) invalid('候选版本与本次读取的题面/解析不一致。');
-      if (new Set(candidate.evidenceRefs).size !== candidate.evidenceRefs.length
-          || candidate.evidenceRefs.some(ref => !Object.hasOwn(view.evidence, ref))
-          || !candidate.evidenceRefs.some(ref => ref.startsWith('student.'))) invalid('必须引用该候选已提供的精确证据键，并包含题面证据。');
+      const unknownRefs = candidate.evidenceRefs.filter(ref => !Object.hasOwn(view.evidence, ref));
+      const repeatedRefs = new Set(candidate.evidenceRefs).size !== candidate.evidenceRefs.length;
+      const missingStudentRef = !candidate.evidenceRefs.some(ref => ref.startsWith('student.') && Object.hasOwn(view.evidence, ref));
+      if (unknownRefs.length || repeatedRefs || missingStudentRef) invalid(`题位 ${ranking.slotId} 的候选 ${candidate.questionId} 证据引用无效：${unknownRefs.length ? `不存在的键 ${unknownRefs.join('、')}；` : ''}${repeatedRefs ? '引用重复；' : ''}${missingStudentRef ? '缺少该题有效 student 题面引用；' : ''}仅可从该题 evidence 精确键中选择：${Object.keys(view.evidence).join('、')}。至少包含一条 student 题面键，不要改写为 question.student.stem 等不存在的路径。`);
     }
   }
   return parsed;
@@ -161,7 +168,18 @@ function coverageBackbone(slots, eligibleBySlot) {
   return assignment;
 }
 
-export async function selectWithLlm({ slots, requirements, pool, candidatesBySlot, gateway = createSelectionGateway(), signal }) {
+function selectionSummary(slots, assignments, views, requirements) {
+  const selected = slots.filter(slot => assignments.has(slot.slotId));
+  const types = [['single_choice', '单选'], ['fill_blank', '填空'], ['free_response', '解答']];
+  const distribution = types.map(([type, label]) => [label, selected.filter(slot => views.get(assignments.get(slot.slotId).questionId)?.questionType === type).length])
+    .filter(([, count]) => count).map(([label, count]) => `${label} ${count} 题`).join('、');
+  const points = selected.reduce((sum, slot) => sum + slot.points, 0);
+  return `已选 ${selected.length}/${slots.length} 题${distribution ? `：${distribution}` : ''}；${requirements.scoringMode === 'none' ? '不计分' : `已选题位共 ${points} 分`}。`
+    + (selected.length < slots.length ? `还有 ${slots.length - selected.length} 个题位空缺。` : '')
+    + '教学目标支持仍按题目证据核对，选入不代表目标已达成。';
+}
+
+export async function selectWithLlm({ slots, requirements, pool, candidatesBySlot, gateway = createSelectionGateway(), signal, onProgress }) {
   const eligibleBySlot = new Map(slots.map(slot => [slot.slotId, candidatesBySlot.get(slot.slotId).filter(candidate => candidate.status === 'eligible')]));
   const backbone = coverageBackbone(slots, eligibleBySlot);
   const shortlists = slots.map(slot => {
@@ -180,59 +198,107 @@ export async function selectWithLlm({ slots, requirements, pool, candidatesBySlo
     view.goalSupport = [...new Map(supports.map(goal => [`${goal.goalId}:${goal.goalVersion}`, goal])).values()];
     view.goalSupportScope = 'union_of_linked_shortlisted_slots; exact_associations_in_slots.candidateGoalSupport';
   }
-  const metadata = { mode: 'llm', summary: '', run: null, runs: [],
+  const metadata = { mode: 'llm', summary: '', modelSummary: '', run: null, runs: [],
     candidateEvidenceSnapshot: [...views.values()], rankings: [],
     shortlists: shortlists.map(({ candidates: ignored, ...list }) => list),
     limits: { maxCandidatesPerSlot: MAX_CANDIDATES, maxSlotsPerBatch: MAX_BATCH_SLOTS, maxContextChars: MAX_CONTEXT_CHARS, maxCandidateTextChars: MAX_TEXT_CHARS },
     shortlistStrategy: 'stable_identity_order_with_full_eligible_maximum_matching_backbone',
     fullEligibleMaximumFill: backbone.size,
-    supportStatus: 'AI 匹配建议；不替代已复核教学目标证据，难度仍未知。' };
+    supportStatus: 'AI 匹配建议；不替代已复核教学目标证据。难度分档是模型估计，未做学生作答实测校准。' };
   const fail = result => ({ ...result, selectionGeneration: metadata });
   if (signal?.aborted) return fail(cancelled());
   const contextFor = batch => {
     const ids = [...new Set(batch.flatMap(slot => shortlists.find(list => list.slotId === slot.slotId).candidates.map(item => item.questionId)))];
     return { task: 'candidate_selection', requirements,
-      slots: batch.map(({ slotId, taskLabel, goalIds, points, planningReason }) => ({ slotId, taskLabel, goalIds, points, planningReason,
+      slots: batch.map(({ slotId, questionType, taskLabel, goalIds, points, planningReason }) => ({ slotId, questionType, taskLabel, goalIds, points, planningReason,
         candidates: shortlists.find(list => list.slotId === slotId).candidates.map(item => item.questionId),
         candidateGoalSupport: shortlists.find(list => list.slotId === slotId).candidates.map(item => ({ questionId: item.questionId, goalSupport: item.goalSupport })) })),
       candidates: ids.map(id => views.get(id)), limits: metadata.limits,
       shortlists: metadata.shortlists.filter(list => batch.some(slot => slot.slotId === list.slotId)) };
   };
-  const batches = []; let current = [];
+  const batches = []; const batchesByType = [];
+  const types = new Map();
   for (const slot of slots) {
-    const proposed = [...current, slot];
-    if (current.length && (proposed.length > MAX_BATCH_SLOTS || JSON.stringify(contextFor(proposed)).length > MAX_CONTEXT_CHARS)) {
-      batches.push(current); current = [];
-    }
-    current.push(slot);
-    if (JSON.stringify(contextFor(current)).length > MAX_CONTEXT_CHARS) return fail({ ok: false, error: { code: 'selection_resource_limit', message: '单题位候选上下文超出上限，请减少条件文本后重试。未保存草稿。' } });
+    if (!types.has(slot.questionType)) types.set(slot.questionType, []);
+    types.get(slot.questionType).push(slot);
   }
-  if (current.length) batches.push(current);
-  const rankings = []; const summaries = [];
-  for (const batch of batches) {
-    if (signal?.aborted) return fail(cancelled());
-    const context = contextFor(batch);
-    // Empty supply never needs a fabricated model ranking or API call.
-    if (!context.candidates.length) {
-      rankings.push(...batch.map(slot => ({ slotId: slot.slotId, candidates: [] })));
-      continue;
+  for (const typeSlots of types.values()) {
+    const typeBatches = [];
+    let current = [];
+    for (const slot of typeSlots) {
+      const proposed = [...current, slot];
+      if (current.length && (proposed.length > MAX_BATCH_SLOTS || JSON.stringify(contextFor(proposed)).length > MAX_CONTEXT_CHARS)) {
+        typeBatches.push(current); current = [];
+      }
+      current.push(slot);
+      if (JSON.stringify(contextFor(current)).length > MAX_CONTEXT_CHARS) return fail({ ok: false, error: { code: 'selection_resource_limit', message: '单题位候选上下文超出上限，请减少条件文本后重试。未保存草稿。' } });
     }
-    let result;
-    try { result = await proposeWithCancellation(gateway, context, signal); }
-    catch { return fail({ ok: false, error: { code: signal?.aborted ? 'cancelled' : 'model_error', message: 'AI 候选比较调用失败或已取消，未保存草稿。' } }); }
-    if (!result || typeof result.ok !== 'boolean') return fail({ ok: false, error: { code: 'invalid_model_output', message: 'AI 候选比较返回无效结果，未保存草稿。' } });
-    if (result.run) { metadata.runs.push(result.run); metadata.run = result.run; }
-    if (signal?.aborted) return fail(cancelled());
-    if (!result.ok) return fail(result);
-    try {
-      const proposal = validateSelectionProposal(result.proposal, context);
-      rankings.push(...proposal.rankings); summaries.push(proposal.summary);
-      metadata.rankings = structuredClone(rankings);
-    } catch { return fail({ ok: false, error: { code: 'invalid_model_output', message: 'AI 候选排名未通过身份、版本及证据校验，未保存草稿。' } }); }
+    if (current.length) typeBatches.push(current);
+    batchesByType.push(typeBatches);
   }
+  // Give each question type a turn before scheduling another large batch of the same type.
+  for (let index = 0; batchesByType.some(group => index < group.length); index++) {
+    for (const group of batchesByType) if (group[index]) batches.push(group[index]);
+  }
+
+  const progress = batches.map((batch, batchId) => ({ batchId, questionType: batch[0].questionType,
+    slotCount: batch.length, status: 'queued' }));
+  const report = () => onProgress?.({ stage: 'comparing', totalQuestions: slots.length,
+    batches: progress.map(batch => ({ ...batch })), totalBatches: progress.length,
+    completedBatches: progress.filter(batch => batch.status === 'complete').length });
+  report();
+
+  const started = performance.now();
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) controller.abort();
+  const outcomes = new Array(batches.length);
+  let next = 0; let failure;
+  const stop = result => { failure ??= result; controller.abort(); };
+  async function worker() {
+    while (!failure && !controller.signal.aborted && next < batches.length) {
+      const index = next++;
+      const batch = batches[index];
+      const context = contextFor(batch);
+      progress[index].status = 'running'; report();
+      // Batch results are independent. Global duplicate matching runs only after all validate.
+      if (!context.candidates.length) {
+        outcomes[index] = { proposal: { rankings: batch.map(slot => ({ slotId: slot.slotId, candidates: [] })), summary: '' } };
+        progress[index].status = 'complete'; report();
+        continue;
+      }
+      let result;
+      try { result = await proposeWithCancellation(gateway, context, controller.signal); }
+      catch { stop({ ok: false, error: { code: signal?.aborted ? 'cancelled' : 'model_error', message: 'AI 候选比较调用失败或已取消，未保存草稿。' } }); break; }
+      if (failure) break;
+      outcomes[index] = { run: result?.run };
+      if (signal?.aborted) { stop(cancelled()); break; }
+      if (!result || typeof result.ok !== 'boolean') { stop({ ok: false, error: { code: 'invalid_model_output', message: 'AI 候选比较返回无效结果，未保存草稿。' } }); break; }
+      if (!result.ok) { stop(result); break; }
+      try { outcomes[index].proposal = validateSelectionProposal(result.proposal, context); }
+      catch { stop({ ok: false, error: { code: 'invalid_model_output', message: 'AI 候选排名未通过身份、版本及证据校验，未保存草稿。' } }); break; }
+      progress[index].status = 'complete'; report();
+    }
+  }
+  try {
+    await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_BATCHES, batches.length) }, () => worker()));
+  } finally { signal?.removeEventListener('abort', abort); controller.abort(); }
+  // Keep audit order stable even when later batches finish first.
+  metadata.runs = outcomes.flatMap(outcome => outcome?.run ? [outcome.run] : []);
+  metadata.run = metadata.runs.at(-1) ?? null;
+  const ranked = new Map(outcomes.flatMap(outcome => outcome?.proposal?.rankings ?? []).map(item => [item.slotId, item]));
+  const rankings = slots.flatMap(slot => ranked.has(slot.slotId) ? [ranked.get(slot.slotId)] : []);
+  metadata.rankings = structuredClone(rankings);
+  metadata.execution = { strategy: 'question_type_batches', batchCount: batches.length,
+    maxConcurrentBatches: MAX_CONCURRENT_BATCHES, durationMs: Math.round(performance.now() - started) };
+  if (signal?.aborted) return fail(cancelled());
+  if (failure) return fail(failure);
+  onProgress?.({ stage: 'combining', totalQuestions: slots.length });
   const combined = combineRankings(slots, rankings, candidates);
   metadata.rankings = structuredClone(rankings);
-  metadata.summary = summaries.join('\n') || '本次题位没有已证实合格候选，保留空位。';
+  metadata.modelSummary = outcomes.map(outcome => outcome.proposal.summary).filter(Boolean).join('\n');
+  metadata.summary = selectionSummary(slots, combined.assignments, views, requirements);
   metadata.combination = { ...combined.summary, fullEligibleMaximumFill: backbone.size, shortlistPreservesMaximumFill: combined.summary.selectedQuestions === backbone.size };
   return { ok: true, assignments: combined.assignments, selectionGeneration: metadata };
 }

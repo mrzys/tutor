@@ -1,5 +1,6 @@
 import { createHash, randomBytes, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { requestClientAddress, requestOrigin, secureRequest } from './request-origin.mjs';
 
 const scrypt = promisify(scryptCallback);
 const COOKIE_NAME = 'tutor_session';
@@ -37,35 +38,38 @@ async function readBody(request) {
 
 function credentials(body) {
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-  const password = body.password;
   if (email.length > 254 || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(email)) {
     throw authError(400, 'invalid_email', '请输入有效的邮箱地址。');
   }
+  return { email, password: validPassword(body.password) };
+}
+
+function validPassword(password) {
   if (typeof password !== 'string' || password.length < 8 || password.length > 128 || Buffer.byteLength(password) > 512) {
     throw authError(400, 'invalid_password', '密码需为 8–128 个字符。');
   }
-  return { email, password };
+  return password;
 }
 
 /** SQLite is authoritative for users and opaque sessions. No password or token is returned in JSON.
  * @param {any} repository
- * @param {{clock?:()=>number,sessionTtlMs?:number,onFirstUser?:(user:any)=>void}} options
+ * @param {{clock?:()=>number,sessionTtlMs?:number,onFirstUser?:(user:any)=>void,trustProxy?:boolean}} options
  */
-export function createAuthService(repository, { clock = Date.now, sessionTtlMs = 7 * DAY, onFirstUser } = {}) {
+export function createAuthService(repository, { clock = Date.now, sessionTtlMs = 7 * DAY, onFirstUser, trustProxy = process.env.TUTOR_TRUST_PROXY === 'loopback' } = {}) {
   const db = repository.database;
   const attempts = new Map();
   let activeHashes = 0;
 
   const getBootstrapState = () => ({ hasUsers: db.prepare('SELECT 1 FROM users LIMIT 1').get() !== undefined });
   function assertSameOrigin(request) {
-    const expected = `${request.socket.encrypted ? 'https' : 'http'}://${request.headers.host}`;
+    const expected = requestOrigin(request, trustProxy);
     if (request.headers.origin !== expected || ['cross-site', 'same-site'].includes(request.headers['sec-fetch-site'])) {
       throw authError(403, 'invalid_origin', '请求来源不受信任，请刷新页面后重试。');
     }
   }
   function limit(request, kind) {
     const now = clock();
-    const key = `${kind}:${request.socket.remoteAddress ?? 'unknown'}`;
+    const key = `${kind}:${requestClientAddress(request, trustProxy)}`;
     const max = kind === 'login' ? 20 : 10;
     const previous = attempts.get(key);
     if (!previous || previous.until <= now) {
@@ -88,8 +92,14 @@ export function createAuthService(repository, { clock = Date.now, sessionTtlMs =
     return publicUser(db.prepare(`SELECT u.* FROM auth_sessions s JOIN users u ON u.user_id=s.user_id
       WHERE s.token_hash=? AND s.expires_at>?`).get(tokenHash(token), clock()));
   }
+  function requireAdmin(request) {
+    const user = authenticate(request);
+    if (!user) throw authError(401, 'authentication_required', '请先登录后继续。');
+    if (user.role !== 'admin') throw authError(403, 'admin_required', '仅管理员可以管理用户。');
+    return user;
+  }
   function cookie(response, request, token, maxAge) {
-    response.setHeader('Set-Cookie', `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${request.socket.encrypted ? '; Secure' : ''}`);
+    response.setHeader('Set-Cookie', `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secureRequest(request, trustProxy) ? '; Secure' : ''}`);
   }
   function createSession(response, request, user) {
     const token = randomBytes(32).toString('base64url');
@@ -112,6 +122,52 @@ export function createAuthService(repository, { clock = Date.now, sessionTtlMs =
     try {
       if (url.pathname === '/api/auth/me' && request.method === 'GET') {
         send(response, 200, { ok: true, user: authenticate(request), ...getBootstrapState() });
+        return true;
+      }
+      const passwordRoute = /^\/api\/auth\/users\/([^/]+)\/password$/.exec(url.pathname);
+      if ((url.pathname === '/api/auth/users' && ['GET', 'POST'].includes(request.method))
+        || (passwordRoute && request.method === 'POST')) {
+        const administrator = requireAdmin(request);
+        if (request.method === 'GET') {
+          const users = db.prepare('SELECT user_id,email,role,created_at FROM users ORDER BY created_at,user_id').all().map(publicUser);
+          send(response, 200, { ok: true, users });
+          return true;
+        }
+        assertSameOrigin(request);
+        limit(request, passwordRoute ? 'admin_password' : 'admin_create');
+        const body = await readBody(request);
+        if (passwordRoute) {
+          const targetId = passwordRoute[1];
+          const target = publicUser(db.prepare('SELECT user_id,email,role,created_at FROM users WHERE user_id=?').get(targetId));
+          if (!target) throw authError(404, 'user_not_found', '没有找到该用户。');
+          const password = validPassword(body.password);
+          const salt = randomBytes(16).toString('hex');
+          const hash = (await passwordHash(password, salt)).toString('hex');
+          // Password derivation yields: recheck privileges before committing any account change.
+          requireAdmin(request);
+          db.transaction(() => {
+            const changed = db.prepare('UPDATE users SET password_hash=?,password_salt=? WHERE user_id=?').run(hash, salt, targetId);
+            if (!changed.changes) throw authError(404, 'user_not_found', '没有找到该用户。');
+            db.prepare('DELETE FROM auth_sessions WHERE user_id=?').run(targetId);
+            // Rotate the current administrator session while signing out all other sessions.
+            if (targetId === administrator.userId) createSession(response, request, administrator);
+          })();
+          send(response, 200, { ok: true, user: target });
+          return true;
+        }
+        const { email, password } = credentials(body);
+        const salt = randomBytes(16).toString('hex');
+        const hash = (await passwordHash(password, salt)).toString('hex');
+        requireAdmin(request);
+        const user = { userId: randomUUID(), email, role: 'teacher', createdAt: new Date(clock()).toISOString() };
+        try {
+          db.prepare('INSERT INTO users(user_id,email,password_hash,password_salt,role,created_at) VALUES(?,?,?,?,?,?)')
+            .run(user.userId, email, hash, salt, user.role, user.createdAt);
+        } catch (cause) {
+          if (cause.code === 'SQLITE_CONSTRAINT_UNIQUE') throw authError(409, 'email_exists', '该邮箱已注册，请使用其他邮箱。');
+          throw cause;
+        }
+        send(response, 201, { ok: true, user });
         return true;
       }
       if (request.method !== 'POST' || !['/api/auth/register', '/api/auth/login', '/api/auth/logout'].includes(url.pathname)) {
@@ -152,7 +208,9 @@ export function createAuthService(repository, { clock = Date.now, sessionTtlMs =
         const row = db.prepare('SELECT * FROM users WHERE email=? COLLATE NOCASE').get(email);
         // Unknown accounts still execute the same expensive derivation.
         const hash = await passwordHash(password, row?.password_salt ?? '0'.repeat(32));
-        if (!row || !timingSafeEqual(hash, Buffer.from(row.password_hash, 'hex'))) {
+        const current = row && db.prepare('SELECT password_hash,password_salt FROM users WHERE user_id=?').get(row.user_id);
+        if (!row || !current || current.password_hash !== row.password_hash || current.password_salt !== row.password_salt
+          || !timingSafeEqual(hash, Buffer.from(row.password_hash, 'hex'))) {
           throw authError(401, 'invalid_credentials', '邮箱或密码不正确。');
         }
         user = publicUser(row);

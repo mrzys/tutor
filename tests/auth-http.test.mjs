@@ -103,3 +103,36 @@ test('Nest auth protects business APIs and isolates drafts, papers, PDF files an
   assert.equal((await request('/api/auth/logout', { cookie: teacher.cookie, method: 'POST' })).status, 200);
   assert.equal((await request('/api/config', { cookie: teacher.cookie })).status, 401);
 });
+
+test('Nest routes administrator user management and nested password reset through authentication', async t => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'tutor-admin-http-'));
+  const application = await createNestApp({ storeRoot: path.join(base, 'drafts'), logger: false });
+  t.after(async () => { await application.close(); await rm(base, { recursive: true, force: true }); });
+  await application.app.listen(0, '127.0.0.1');
+  const baseUrl = await application.app.getUrl();
+  const request = async (route, { cookie, body, origin = baseUrl } = {}) => {
+    const response = await fetch(`${baseUrl}${route}`, { method: body ? 'POST' : 'GET', headers: {
+      ...(cookie ? { Cookie: cookie } : {}), ...(body ? { Origin: origin, 'Content-Type': 'application/json' } : {}),
+    }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    return { status: response.status, value: await response.json(), cookie: response.headers.get('set-cookie')?.split(';')[0] };
+  };
+  const admin = await request('/api/auth/register', { body: { email: 'admin@example.com', password: 'admin-password-2026' } });
+  assert.equal((await request('/api/auth/users')).status, 401);
+  const created = await request('/api/auth/users', { cookie: admin.cookie, body: { email: 'teacher@example.com', password: 'teacher-password-2026', role: 'admin' } });
+  assert.equal(created.status, 201, JSON.stringify(created.value));
+  assert.equal(created.cookie, undefined);
+  assert.equal(created.value.user.role, 'teacher');
+  assert.equal((await request('/api/auth/me', { cookie: admin.cookie })).value.user.role, 'admin');
+  const teacher = await request('/api/auth/login', { body: { email: 'teacher@example.com', password: 'teacher-password-2026' } });
+  assert.equal((await request('/api/auth/users', { cookie: teacher.cookie })).status, 403);
+  const route = `/api/auth/users/${created.value.user.userId}/password`;
+  const body = { password: 'changed-password-2026' };
+  assert.equal((await request(route, { body })).status, 401);
+  assert.equal((await request(route, { cookie: teacher.cookie, body })).status, 403);
+  assert.equal((await request(route, { cookie: admin.cookie, body, origin: 'https://attacker.invalid' })).status, 403);
+  assert.equal((await request(route, { cookie: admin.cookie, body })).status, 200);
+  assert.equal((await request('/api/question-bank', { cookie: teacher.cookie })).status, 401);
+  assert.equal((await request('/api/auth/login', { body: { email: 'teacher@example.com', password: 'teacher-password-2026' } })).status, 401);
+  assert.equal((await request('/api/auth/login', { body: { email: 'teacher@example.com', ...body } })).status, 200);
+  assert.equal((await request('/api/auth/users', { cookie: admin.cookie })).value.users.length, 2);
+});

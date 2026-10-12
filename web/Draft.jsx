@@ -7,6 +7,8 @@ import { LockKeyhole, ListChecks, Sparkles } from 'lucide-react';
 import { api, sourceLabel, statusLabels, typeLabels, typeTitles } from './api.js';
 import { draftSupplyKey, slotSupply, validateCandidateSupply } from './question-supply.js';
 import { AddEditor, BaselineEditor, Candidates, CriteriaEditor, DifficultyEditor, DraftOperationContext, Modal, OperationResult, PointsEditor, useDraftOperations } from './DraftEditor.jsx';
+import { slotsAreGroupedByType } from '../src/assembly/slot-order.mjs';
+import { CoverageReview } from './CoverageReview.jsx';
 
 function Evidence({ slot, config, expanded = false }) {
   const reason = slot.selection?.selectedReason;
@@ -14,20 +16,20 @@ function Evidence({ slot, config, expanded = false }) {
   const path = applicability ? applicability.allowedSolutionPath : reason?.allowedSolutionPath;
   const status = applicability?.status || (slot.status === 'selected' ? 'eligible' : slot.status === 'search_failed' ? 'read_failed' : 'empty');
   const Container = expanded ? 'section' : 'details';
-  return <Container className="evidence">{expanded ? <h3>选题依据</h3> : <summary><strong>选题依据</strong><span>{slot.taskLabel} · {statusLabels[status] || '题位留空'}</span></summary>}<div className="evidence-body">
+  return <Container className="evidence">{expanded ? <h3>选题依据</h3> : <summary><strong>选题依据</strong><span><MathText text={slot.taskLabel}/> · {statusLabels[status] || '题位留空'}</span></summary>}<div className="evidence-body">
     {reason ? <><p>原选入记录：{reason.text}</p>{path ? <p>学生可用解法示例所需知识：章节 {path.requiredSections?.join('、') || '无新增章节'}；显式前提 {path.requiredPremises?.map(id => config.premises.find(item => item.id === id)?.label || id).join('、') || '无额外允许项'}。至少一条完整允许解法即可，教师解析可保留其他路线。</p> : null}{reason.notes?.map((text, index) => <p key={index}><MathText text={text}/></p>)}</> : (slot.selection?.reasons || []).map(text => <p key={text}>{text}</p>)}
     {reason?.method === 'llm_candidate_ranking_global_assignment' ? <><p className="help">AI 对候选的教学匹配建议，经程序整卷组合；目标支持与实际难度仍按证据核查。</p>{reason.evidence?.length ? <details><summary>查看 AI 比较时引用的内容</summary>{reason.evidence.map(item => <p key={item.ref}><MathText text={item.text}/></p>)}</details> : null}</> : null}
     {applicability?.reasons?.map((text, index) => <p className={status === 'eligible' ? '' : 'warning-text'} key={index}>{text}</p>)}
     {slot.question ? <><p>题目身份：<code>{slot.question.questionId}</code><br/>题面版本：<code>{slot.question.contentVersion}</code><br/>教师资料版本：<code>{slot.question.teacherVersion}</code></p><ul>{slot.question.sourceRefs.map((ref, index) => <li key={index}>{sourceLabel(ref.sourceId, config)} · 物理页 {ref.pages.join('、')} · {ref.locator}</li>)}</ul></> : null}
     {slot.scoringStatus ? <p className="warning-text">{slot.scoringStatus.message}</p> : null}
-    <p>题位目标难度：{Number.isFinite(slot.targetDifficulty) ? slot.targetDifficulty.toFixed(2) : '沿用基线目标'}；实际题目难度未知。</p>
+    <p>题位目标难度：{Number.isFinite(slot.targetDifficulty) ? slot.targetDifficulty.toFixed(2) : '沿用基线目标'}；题目分档可参考 LLM 内容估计，精确系数未经实测标定。</p>
     <details className="candidate-details"><summary>此前检索候选（{slot.selection?.candidates?.length || 0} 题）</summary><ul>{(slot.selection?.candidates || []).map(candidate => <li key={candidate.questionId}><code>{candidate.questionId}</code> · {statusLabels[candidate.status] || candidate.status}{candidate.reasons?.length ? `：${candidate.reasons.join('；')}` : ''}{candidate.notes?.map((note, index) => <small key={index}><MathText text={note}/></small>)}</li>)}</ul><p className="help">最新候选请使用本题的「换题」。</p></details>
   </div></Container>;
 }
 
 export function DraftRail({ draft }) {
   const scored = draft.baseline.requirements.scoringMode !== 'none';
-  return <><h2>本次草稿</h2><div className="stats-pair"><div><span>实际可用</span><strong>{draft.stats.selectedQuestions} <small>题</small></strong></div>{scored ? <div><span>有效分值</span><strong>{draft.stats.availablePoints} <small>分</small></strong></div> : null}</div><div className="rail-status"><span>{draft.stats.missingQuestions ? `缺 ${draft.stats.missingQuestions} 题` : '题面完整'}</span><span>难度估计未知</span></div><p className="help revision-note">已保存 · 修订 {draft.revision ?? 0} · {draft.slots.filter(slot => slot.locked).length} 题锁定</p><div className="rail-separator"/><h2>题目目录</h2><nav className="question-directory" aria-label="题目目录">{draft.slots.map(slot => <a key={slot.slotId} href={`#question-${slot.number}`}><span>{slot.number}</span><span>{typeLabels[slot.questionType]}{slot.status !== 'selected' ? ' · 缺题' : slot.locked ? ' · 锁定' : ''}</span>{scored ? <span>{slot.points} 分</span> : null}</a>)}</nav></>;
+  return <><h2>本次草稿</h2><div className="stats-pair"><div><span>实际可用</span><strong>{draft.stats.selectedQuestions} <small>题</small></strong></div>{scored ? <div><span>有效分值</span><strong>{draft.stats.availablePoints} <small>分</small></strong></div> : null}</div><div className="rail-status"><span>{draft.stats.missingQuestions ? `缺 ${draft.stats.missingQuestions} 题` : '题面完整'}</span><span>难度系数未标定</span></div><p className="help revision-note">已保存 · 修订 {draft.revision ?? 0} · {draft.slots.filter(slot => slot.locked).length} 题锁定</p><div className="rail-separator"/><h2>题目目录</h2><nav className="question-directory" aria-label="题目目录">{draft.slots.map(slot => <a key={slot.slotId} href={`#question-${slot.number}`}><span>{slot.number}</span><span>{typeLabels[slot.questionType]}{slot.status !== 'selected' ? ' · 缺题' : slot.locked ? ' · 锁定' : ''}</span>{scored ? <span>{slot.points} 分</span> : null}</a>)}</nav></>;
 }
 
 function Question({ slot, scored, supply, checked, onSelect, onDetails, onCandidates, onCriteria, onDifficulty, onPoints, onDelete, onLock, onAiAdjust, busy }) {
@@ -83,6 +85,7 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
   const latestDraft = useRef(draft);
   latestDraft.current = draft;
   const operations = useDraftOperations(draft, onChange);
+  const needsTypeGrouping = !draft.confirmedPaperId && !slotsAreGroupedByType(draft.slots);
   useEffect(() => {
     const controller = new AbortController();
     const key = draftSupplyKey(draft);
@@ -133,19 +136,26 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
     } catch (error) { if (candidateRequest.current === token) setCandidateState({ loading: false, data: null, error: `${error.message}${error.status === 409 ? ' 请关闭候选并重新读取草稿。' : ''}` }); }
   }
   const currentSlot = editor?.slot ? draft.slots.find(slot => slot.slotId === editor.slot.slotId) : null;
-  return <DraftOperationContext.Provider value={operations}><div className="paper">
-    <div className="draft-toolbar"><div className="toolbar-intro"><h2>调整当前草稿</h2><span>每次操作保存；锁定题跳过自动换题。</span></div><div className="toolbar-actions"><button className="assembly-details-trigger" disabled={operations.busy} onClick={() => setEditor({ type: 'assembly-details' })}><ListChecks size={15} aria-hidden="true"/>组卷详情</button><button disabled={operations.busy} onClick={() => setEditor({ type: 'add' })}>添加题位</button><button className="primary" disabled={operations.busy} onClick={onConfirm}>确认成卷与输出</button></div><div className="batch-toolbar">{scored && draft.stats.availablePoints !== draft.baseline.requirements.targetScore ? <button className="score-difference" disabled={operations.busy} onClick={() => setEditor({ type: 'assembly-details' })}>有效 {draft.stats.availablePoints} / 计划 {draft.baseline.requirements.targetScore} 分 · 查看差异</button> : null}<label className="check-item"><input type="checkbox" checked={draft.slots.length > 0 && selectedIds.length === draft.slots.length} onChange={event => setSelected(event.target.checked ? draft.slots.map(slot => slot.slotId) : [])}/><span>全选</span></label><span className="help">已选 {selectedIds.length} 题</span>{onAiAdjust && selectedIds.length > 1 ? <button className="question-ai-adjust" disabled={operations.busy} onClick={() => onAiAdjust(draft.slots.filter(slot => selectedIds.includes(slot.slotId)))}><Sparkles size={13} aria-hidden="true"/>AI 调整所选题目</button> : null}<button disabled={operations.busy || !selectedIds.length} onClick={() => apply({ type: 'replace', slotIds: selectedIds, mode: 'automatic' })}>批量自动换题</button><button disabled={operations.busy || !selectedIds.length} onClick={() => setEditor({ type: 'difficulty' })}>修改所选难度目标</button><button className="link-button" disabled={operations.busy} onClick={operations.reload}>重新读取草稿</button></div></div>
+  return <DraftOperationContext.Provider value={operations}><div className="paper draft-editor"><div className="draft-content">
+    <div className="draft-toolbar"><div className="toolbar-intro"><h2>调整当前草稿</h2><span>每次操作保存；锁定题跳过自动换题。</span></div><div className="toolbar-actions"><button className="assembly-details-trigger" disabled={operations.busy} onClick={() => setEditor({ type: 'assembly-details' })}><ListChecks size={15} aria-hidden="true"/>组卷详情</button><button disabled={operations.busy} onClick={() => setEditor({ type: 'add' })}>添加题位</button></div><div className="batch-toolbar">{scored && draft.stats.availablePoints !== draft.baseline.requirements.targetScore ? <button className="score-difference" disabled={operations.busy} onClick={() => setEditor({ type: 'assembly-details' })}>有效 {draft.stats.availablePoints} / 计划 {draft.baseline.requirements.targetScore} 分 · 查看差异</button> : null}<label className="check-item"><input type="checkbox" checked={draft.slots.length > 0 && selectedIds.length === draft.slots.length} onChange={event => setSelected(event.target.checked ? draft.slots.map(slot => slot.slotId) : [])}/><span>全选</span></label><span className="help">已选 {selectedIds.length} 题</span>{onAiAdjust && selectedIds.length > 1 ? <button className="question-ai-adjust" disabled={operations.busy} onClick={() => onAiAdjust(draft.slots.filter(slot => selectedIds.includes(slot.slotId)))}><Sparkles size={13} aria-hidden="true"/>AI 调整所选题目</button> : null}<button disabled={operations.busy || !selectedIds.length} onClick={() => apply({ type: 'replace', slotIds: selectedIds, mode: 'automatic' })}>批量自动换题</button><button disabled={operations.busy || !selectedIds.length} onClick={() => setEditor({ type: 'difficulty' })}>修改所选难度目标</button><button className="link-button" disabled={operations.busy} onClick={operations.reload}>重新读取草稿</button></div></div>
     {operations.failure ? <div className="notice error" role="alert"><span>{operations.failure.message}{operations.failure.code === 'finalized_draft' ? ' 请读取成卷，再派生新草稿进行调整。' : operations.failure.status === 409 ? ' 草稿已变化，请读取最新草稿后重新操作。' : ''}</span>{operations.failure.retry ? <button disabled={operations.busy} onClick={operations.retry}>重试同一操作</button> : null}<button disabled={operations.busy} onClick={operations.reload}>{operations.failure.code === 'finalized_draft' ? '读取已确认成卷' : '读取最新草稿'}</button></div> : null}
+    {needsTypeGrouping ? <div className="notice" role="status"><span>同一题型的题目尚未排在一起。</span><button disabled={operations.busy} onClick={() => apply({ type: 'group_by_type' })}>按题型整理</button></div> : null}
     <OperationResult result={operations.result}/>
+    <CoverageReview draft={draft} onChange={onChange} disabled={operations.busy}/>
     {operations.busy ? <p className="help" role="status">正在处理并保存草稿…</p> : null}
     {draft.stats.missingQuestions ? <div className="notice warning" role="status">未完整卷：实际可用 {draft.stats.selectedQuestions} 题{scored ? `，有效分值 ${draft.stats.availablePoints} 分` : ''}。缺题保留原题号及明确占位。</div> : null}
     {groups.map((group, index) => <section className="paper-section" key={`${group.type}-${index}`}><h2>{index + 1}、{group.title}</h2><p className="group-subtitle">当前 {group.slots.length} 题{scored ? ` / ${group.slots.reduce((sum, slot) => sum + slot.points, 0)} 分` : ''}；实际可用 {group.slots.filter(slot => slot.status === 'selected').length} 题{scored ? ` / ${group.slots.filter(slot => slot.status === 'selected').reduce((sum, slot) => sum + slot.points, 0)} 分` : ''}</p>{group.slots.map(slot => <Question key={slot.slotId} slot={slot} scored={scored} supply={slotSupply(supplyState, draft, slot.slotId)} busy={operations.busy} checked={selectedIds.includes(slot.slotId)} onSelect={checked => setSelected(ids => checked ? [...new Set([...ids, slot.slotId])] : ids.filter(id => id !== slot.slotId))} onDetails={() => setEditor({ type: 'details', slot })} onCandidates={() => candidates(slot)} onCriteria={() => setEditor({ type: 'criteria', slot })} onDifficulty={() => setEditor({ type: 'difficulty', slotIds: [slot.slotId] })} onPoints={scored ? () => setEditor({ type: 'points', slot }) : undefined} onDelete={() => setEditor({ type: 'delete', slot })} onLock={() => apply({ type: 'lock', slotId: slot.slotId, locked: !slot.locked })} onAiAdjust={onAiAdjust ? () => { setSelected([slot.slotId]); onAiAdjust(slot); } : undefined}/>)}</section>)}
     {!draft.slots.length ? <p className="empty-message">当前草稿没有题位，可添加题位继续组卷。</p> : null}
+    </div>
+    <footer className="draft-confirm-footer" aria-label="成卷操作">
+      <p><strong>已选 {draft.stats.selectedQuestions} 题</strong>{scored ? ` · ${draft.stats.availablePoints} 分` : ''}<span>{draft.stats.missingQuestions ? `还缺 ${draft.stats.missingQuestions} 题，可返回题位调整` : '草稿已自动保存'}</span></p>
+      <button className="primary" disabled={operations.busy} onClick={onConfirm}>确认成卷与输出</button>
+    </footer>
     {editor?.type === 'assembly-details' ? <Modal title="组卷详情" className="question-detail-drawer assembly-detail-drawer" onClose={close} busy={operations.busy}>
       <AssemblyDetails draft={draft} config={config}/>
     </Modal> : null}
     {editor?.type === 'details' && currentSlot ? <Modal title={`第 ${currentSlot.number} 题详情`} className="question-detail-drawer" onClose={close} busy={operations.busy}>
-      <p className="detail-task">{currentSlot.taskLabel}</p>
+      <p className="detail-task"><MathText text={currentSlot.taskLabel}/></p>
       <QuestionSummary key={currentSlot.slotId} slot={currentSlot} draft={draft} supply={slotSupply(supplyState, draft, currentSlot.slotId)} expanded/>
       <Evidence slot={currentSlot} config={config} expanded/>
     </Modal> : null}

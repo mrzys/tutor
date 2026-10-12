@@ -5,6 +5,7 @@
 .assembly-workbench-product .draft-toolbar { margin-top: 0; }
 .assembly-workbench-product .toolbar-intro { display: none; }
 .assembly-workbench-product .toolbar-actions { justify-content: flex-end; }
+.assembly-workbench-product .draft-toolbar .toolbar-actions { justify-content: flex-start; }
 .assembly-workbench-product .batch-toolbar { flex-wrap: wrap; }
 .assembly-workbench-product .blueprint-origin { margin-bottom: 18px; }
 .assembly-workbench-product .blueprint-advice-summary { font-size: 13px; line-height: 1.8; }
@@ -52,6 +53,23 @@
 .assembly-workbench[data-stage="blueprint"] .assembly-workbench-body { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1120px); justify-content: center; }
 .assembly-workbench[data-stage="blueprint"] .assembly-workbench-product { display: flex; flex-direction: column; min-height: 0; height: 100%; padding-bottom: 0; }
 .assembly-workbench[data-stage="blueprint"] .assembly-workbench-product > :not(.blueprint-editor) { flex-shrink: 0; max-height: 24dvh; overflow-y: auto; }
+/* The paper scrolls independently; the final action stays beside its summary. */
+.app-main:has(.assembly-workbench[data-stage="draft"]) { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+.app-main:has(.assembly-workbench[data-stage="draft"]) > .app-header { flex-shrink: 0; }
+.app-main .workspace.product-workspace:has(.assembly-workbench[data-stage="draft"]) { display: flex; flex-direction: column; flex: 1; min-height: 0; width: 100%; padding-bottom: 0; }
+.app-main .workspace.product-workspace:has(.assembly-workbench[data-stage="draft"]) > .notice { flex-shrink: 0; max-height: 20dvh; overflow-y: auto; }
+.assembly-workbench[data-stage="draft"] { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.assembly-workbench[data-stage="draft"] .assembly-workbench-heading { flex-shrink: 0; }
+.assembly-workbench[data-stage="draft"] .assembly-workbench-body { display: flex; flex: 1; min-height: 0; align-items: stretch; }
+.assembly-workbench[data-stage="draft"] .assembly-workbench-product { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; padding-bottom: 0; }
+.assembly-workbench[data-stage="draft"] .assembly-workbench-product > div { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.draft-editor { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.draft-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 2px 4px 24px 2px; }
+.draft-confirm-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-shrink: 0; padding: 16px 0 max(16px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #fff; }
+.draft-confirm-footer p { margin: 0; font-size: 13px; }
+.draft-confirm-footer strong { color: #171717; font-weight: 500; }
+.draft-confirm-footer p > span { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.draft-confirm-footer .primary { min-height: 44px; padding: 10px 20px; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
 @media (max-width: 760px) {
   .app-main .workspace.product-workspace { padding: 20px 16px 32px; }
   .assembly-workbench-heading { align-items: start; gap: 12px; margin-bottom: 20px; }
@@ -66,4 +84,7 @@
   .app-main:has(.assembly-workbench[data-stage="blueprint"]) .steps { gap: 10px; }
   .app-main:has(.assembly-workbench[data-stage="blueprint"]) .steps > span { font-size: 11px; gap: 4px; }
   .app-main:has(.assembly-workbench[data-stage="blueprint"]) .steps b { width: 24px; min-width: 24px; height: 24px; font-size: 11px; }
+  .assembly-workbench[data-stage="draft"] .assembly-workbench-heading p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .draft-confirm-footer { gap: 10px; padding-top: 12px; }
+  .draft-confirm-footer .primary { padding-inline: 14px; font-size: 13px; }
 }
