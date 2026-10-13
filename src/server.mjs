@@ -36,7 +36,7 @@ function json(response, status, body) {
 function editorStatus(result) {
   if (result.ok) return 200;
   if (['revision_conflict', 'operation_conflict', 'finalized_draft'].includes(result.error.code)) return 409;
-  if (['invalid_operation', 'invalid_plan', 'invalid_request', 'confirmation_required'].includes(result.error.code)) return 400;
+  if (['invalid_operation', 'insufficient_supply', 'invalid_plan', 'invalid_request', 'confirmation_required'].includes(result.error.code)) return 400;
   if (result.error.code === 'not_found') return 404;
   return 500;
 }
@@ -76,9 +76,10 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
         }
       }
       if (url.pathname === '/api/config' && request.method === 'GET') {
-        const [config, bank, saved] = await Promise.all([
+        // History has its own endpoint; do not read and verify every saved paper
+        // before the new-paper composer can open.
+        const [config, bank] = await Promise.all([
           getAssemblyConfig({ root }), listQuestions({ root }),
-          listDrafts(storeRoot),
         ]);
         if (!config.ok) return json(response, 500, config);
         if (!bank.ok) return json(response, 500, bank);
@@ -87,7 +88,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
           label: source.label ?? (source.sourceId === 'set-teacher' ? '集合汇编 · 解析版' : '集合汇编 · 原卷版（已分离答案）'),
         }));
         return json(response, 200, { ok: true, config: { ...config.config, foundation: context.foundation,
-          context, supply: bank.totals, drafts: saved.drafts, draftWarnings: saved.warnings,
+          context, supply: bank.totals,
           intake: intake.publicStatus(), blueprintPlanner: blueprintGateway.publicStatus(),
           candidateSelector: selectionGateway.publicStatus(), assemblyAssistant: assistantGateway.publicStatus?.() ?? { configured: false },
           questionImport: questionImports.publicStatus() } });
@@ -162,7 +163,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
           if (response.destroyed) return;
           const status = result.ok ? 200 : ['revision_conflict', 'finalized_draft'].includes(result.error.code) ? 409
             : result.error.code === 'not_found' ? 404 : result.error.code === 'cancelled' ? 499
-            : ['invalid_request', 'invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400 : 503;
+            : ['invalid_request', 'insufficient_supply', 'invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400 : 503;
           return json(response, status, result);
         } finally { response.off('close', cancel); }
       }
@@ -183,7 +184,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
           const result = await planBlueprint(input.requirements, { root, gateway: blueprintGateway,
             signal: controller.signal, countPolicy: input.countPolicy ?? 'fixed' });
           if (response.destroyed) return;
-          return json(response, result.ok ? 200 : ['invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400
+          return json(response, result.ok ? 200 : ['insufficient_supply', 'invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400
             : result.error.code === 'cancelled' ? 499 : 503, result);
         } finally { response.off('close', cancel); }
       }
@@ -224,7 +225,7 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
             const result = await createDraft(input?.blueprint, { root, selectionMode, gateway: selectionGateway, signal: controller.signal,
               ...(streaming ? { onProgress: progress => send({ type: 'progress', progress }) } : {}) });
             if (controller.signal.aborted || response.destroyed) return;
-            if (!result.ok) return finish(['invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400
+            if (!result.ok) return finish(['insufficient_supply', 'invalid_plan', 'invalid_model_output'].includes(result.error.code) ? 400
               : result.error.code === 'cancelled' ? 499
               : ['not_configured', 'model_error', 'timeout', 'selection_resource_limit'].includes(result.error.code) ? 503 : 500, result);
             if (streaming) send({ type: 'progress', progress: { stage: 'saving', totalQuestions: result.draft.slots.length } });

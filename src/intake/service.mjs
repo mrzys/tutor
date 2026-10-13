@@ -1,3 +1,4 @@
+import { normalizeTypeConstraints, suggestedTypeCounts, typeCountsAllowed } from '../assembly/type-constraints.mjs';
 import { randomUUID, createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
@@ -7,13 +8,15 @@ import { listQuestions } from '../question-bank/reader.mjs';
 import { createLlmGateway } from '../llm/gateway.mjs';
 import { createMemoryIntakeStorage } from './storage.mjs';
 import { requestSchema, answerSchema, proposalSchema, stages } from './schema.mjs';
+import { assemblyPurposes, purposeFor, purposeStrategy } from '../assembly/purposes.mjs';
+import { canonicalSectionId, includesSection } from '../curriculum/section-identity.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const copy = value => structuredClone(value);
 const fail = (code, message) => { throw Object.assign(new Error(message), { code }); };
 const fieldsByStage = {
   purpose: ['purpose', 'title'], scope: ['mainScope'], boundary: ['learnedScope', 'learnedScopeMode', 'premises'],
-  size: ['size', 'questionCount', 'singleChoiceCount', 'fillBlankCount', 'freeResponseCount', 'targetScore', 'scoringMode', 'durationMinutes'],
+  size: ['typeConstraints', 'size', 'questionCount', 'singleChoiceCount', 'fillBlankCount', 'freeResponseCount', 'targetScore', 'scoringMode', 'durationMinutes'],
   goal: ['cognition', 'priority', 'observable', 'response', 'prompt', 'abilities', 'literacies'], review: [],
 };
 const dependentStages = { purpose: ['purpose', 'goal'], scope: ['scope', 'boundary', 'goal'],
@@ -27,19 +30,16 @@ const editableQuickTypes = session => session.answers.size === 'recommend' || se
 // A total alone must not become an accidental fixed ratio through an LLM guess.
 // This only gates whether extraction may be proposed; it does not parse counts.
 const canExtractQuickTypes = (session, message) => editableQuickTypes(session)
-  && (session.quickTypeCountSource === 'model' || /单选|多选|选择题|填空|解答|主观题|客观题/i.test(message ?? ''));
+  && (session.quickTypeCountSource === 'model' || /(?:[0-9一二三四五六七八九十]+\s*(?:道|题|个)?\s*(?:单选|选择题|填空|解答))|(?:(?:全部|全是|只出|只要|都出)\s*(?:单选|选择题|填空|解答))/i.test(message ?? ''));
+const canExtractTypeConstraints = (session, message) => editableQuickTypes(session)
+  && (session.answers.typeConstraints !== undefined || /单选|多选|选择题|填空|解答|主观题|客观题/i.test(message ?? ''));
 const effectiveQuickLocks = session => [...new Set([...(session.lockedFields ?? []),
   ...(!editableQuickTypes(session) ? ['questionCount'] : [])])];
 function rememberManualTypeCounts(session, patch = {}) {
   if (patch.size === 'recommend') session.quickTypeCountSource = 'suggested';
   else if (['custom', 'preset'].includes(patch.size) || quickTypeFields.some(field => patch[field] !== undefined)) session.quickTypeCountSource = 'manual';
 }
-const purposes = [
-  { id: 'consolidation', label: '课后巩固', description: '巩固概念和常规运用，发现薄弱点。' },
-  { id: 'diagnostic', label: '学情诊断', description: '关注学生目前会什么、卡在哪里。' },
-  { id: 'assessment', label: '阶段检测', description: '围绕已学范围检查综合表现。' },
-  { id: 'mock_exam', label: '模拟考试', description: '按考试结构安排题型、分值与时间。' },
-];
+const purposes = assemblyPurposes.map(({ id, label, description }) => ({ id, label, description }));
 const cognitions = [
   { id: 'unspecified', label: '先按范围组卷', description: '暂不设置教学目标约束。' },
   { id: 'understand', label: '理解概念', description: '解释含义、判断正反例。' },
@@ -56,7 +56,7 @@ const notice = (id, title, description) => ({ kind: 'notice', id, title, descrip
 function defaultAnswers(config) {
   return { title: config.defaultRequirements.title, purpose: 'consolidation',
     mainScope: [...config.defaultRequirements.mainScope], learnedScope: [...config.defaultRequirements.learnedScope], premises: [],
-    size: 'recommend', singleChoiceCount: 6, fillBlankCount: 2, freeResponseCount: 2, targetScore: 100, durationMinutes: 45,
+    size: 'recommend', singleChoiceCount: 6, fillBlankCount: 2, freeResponseCount: 2, scoringMode: 'none', targetScore: 0, durationMinutes: 45,
     cognition: 'unspecified', priority: 'preferred', observable: '', response: 'answer', prompt: 'independent', abilities: [], literacies: [] };
 }
 
@@ -77,22 +77,31 @@ export function verifiedProgression(config, textbooks) {
   if (mappings.some(item => !item)) return { status: 'unavailable', orderedIds: [],
     basis: 'data/curriculum/textbooks.json', reason: '部分章节尚未对应唯一且已核实的教材目录，请自定义已学范围。' };
   mappings.sort((a, b) => a.bookIndex - b.bookIndex || a.sectionIndex - b.sectionIndex);
-  return { status: 'verified', orderedIds: mappings.map(item => item.id),
-    basis: 'data/curriculum/textbooks.json', entries: mappings };
+  // A short alias and its UID are the same verified textbook section, not two
+  // successive learning steps. Keep the first catalog identity for new inference;
+  // existing confirmed/custom arrays are never rewritten.
+  const seenSections = new Set();
+  const progression = mappings.filter(item => {
+    const identity = canonicalSectionId(item.id);
+    if (seenSections.has(identity)) return false;
+    seenSections.add(identity); return true;
+  });
+  return { status: 'verified', orderedIds: progression.map(item => item.id),
+    basis: 'data/curriculum/textbooks.json', entries: progression };
 }
 
 function progressionAnswers(answers, config) {
   if (answers.learnedScopeMode !== 'progress') return answers;
   const order = config.progression.orderedIds;
   if (config.progression.status !== 'verified') return { ...answers, learnedScope: [] };
-  const latest = Math.max(-1, ...answers.mainScope.map(id => order.indexOf(id)));
+  const latest = Math.max(-1, ...answers.mainScope.map(id => order.findIndex(item => canonicalSectionId(item) === canonicalSectionId(id))));
   return { ...answers, learnedScope: order.slice(0, latest + 1) };
 }
 
 function checkAnswers(input, config) {
   const answers = answerSchema.parse(input);
   for (const [field, ids] of [['mainScope', config.chapters.map(item => item.id)], ['learnedScope', config.chapters.map(item => item.id)], ['premises', config.premises.map(item => item.id)]]) {
-    if (answers[field] && (new Set(answers[field]).size !== answers[field].length || answers[field].some(id => !ids.includes(id)))) fail('invalid_intake', `${field} 包含未知或重复项目。`);
+    if (answers[field] && (new Set(answers[field]).size !== answers[field].length || answers[field].some(id => !(field === 'premises' ? ids.includes(id) : includesSection(ids, id))))) fail('invalid_intake', `${field} 包含未知或重复项目。`);
   }
   for (const field of ['abilities', 'literacies']) if (answers[field] && new Set(answers[field]).size !== answers[field].length) fail('invalid_intake', '能力或素养项目重复。');
   return answers;
@@ -104,10 +113,8 @@ function applyAnswers(existing, patch, config) {
       && [config.defaultRequirements.title, scopeTitle(existing.mainScope, config)].includes(existing.title)) {
     next.title = scopeTitle(next.mainScope, config);
   }
-  // New quick sessions carry a mode; legacy guided sessions keep point semantics.
-  if (existing.scoringMode !== undefined && patch.scoringMode === undefined && patch.purpose !== undefined && patch.purpose !== existing.purpose) {
-    next.scoringMode = ['assessment', 'mock_exam'].includes(patch.purpose) ? 'points' : 'none';
-  }
+  // A purpose change is pedagogical, not a scoring instruction. Preserve the
+  // teacher's current mode (including an explicit no-score selection).
   if (patch.targetScore > 0 && patch.scoringMode === undefined && existing.scoringMode === 'none') next.scoringMode = 'points';
   if (next.scoringMode === 'points' && !(next.targetScore > 0)) next.targetScore = 100;
   // Direct editing of the boundary is an explicit override of progression defaults.
@@ -141,6 +148,18 @@ function applyAnswers(existing, patch, config) {
     }
     [next.singleChoiceCount, next.fillBlankCount, next.freeResponseCount] = counts;
   }
+  if (quickTypeFields.some(field => patch[field] !== undefined) && patch.typeConstraints === undefined) delete next.typeConstraints;
+  if (patch.typeConstraints !== undefined) {
+    next.typeConstraints = normalizeTypeConstraints(patch.typeConstraints, next.questionCount);
+    if (quickCount) {
+      next.size = 'recommend';
+      const counts = suggestedTypeCounts(next.questionCount, { single_choice: next.singleChoiceCount, fill_blank: next.fillBlankCount, free_response: next.freeResponseCount }, next.typeConstraints);
+      [next.singleChoiceCount, next.fillBlankCount, next.freeResponseCount] = [counts.single_choice, counts.fill_blank, counts.free_response];
+    }
+  } else if (quickCount && next.size === 'recommend' && next.typeConstraints) {
+    const counts = suggestedTypeCounts(next.questionCount, { single_choice: next.singleChoiceCount, fill_blank: next.fillBlankCount, free_response: next.freeResponseCount }, next.typeConstraints);
+    [next.singleChoiceCount, next.fillBlankCount, next.freeResponseCount] = [counts.single_choice, counts.fill_blank, counts.free_response];
+  }
   if (quickCount) next.questionCount = next.singleChoiceCount + next.fillBlankCount + next.freeResponseCount;
   if (next.scoringMode === 'none') next.targetScore = 0;
   if (next.scoringMode !== 'none' && next.targetScore < 1) fail('invalid_intake', '计分时总分需为正整数。');
@@ -156,7 +175,7 @@ export function scopeTitle(scope = [], config) {
   if (sections.every(id => ['1.1', '1.2', '1.3'].includes(id))) return config.defaultRequirements.title;
   if (sections.every(id => /^1\.[1-5]$/.test(id))) return '高一数学 · 第一章集合与常用逻辑用语';
   if (sections.every(id => /^2\.[1-3]$/.test(id))) return '高一数学 · 第二章一元二次函数、方程和不等式';
-  const labels = scope.map(id => config.chapters.find(chapter => chapter.id === id)?.label).filter(Boolean);
+  const labels = scopeChapters(scope, config).map(chapter => chapter.label);
   return `高中数学 · ${labels.length === 1 ? labels[0] : '跨章节练习'}`;
 }
 
@@ -164,25 +183,39 @@ function validateStep(stage, answers) {
   if ((stage === 'scope' || stage === 'review') && !answers.mainScope.length) fail('invalid_intake', '至少选择一个主考章节。');
   if (stage === 'boundary' || stage === 'review') {
     if (!answers.learnedScope.length) fail('invalid_intake', '请确认已学范围。');
-    if (answers.mainScope.some(id => !answers.learnedScope.includes(id))) fail('invalid_intake', '主考章节超出了已学边界，请先调整范围。');
+    if (answers.mainScope.some(id => !includesSection(answers.learnedScope, id))) fail('invalid_intake', '主考章节超出了已学边界，请先调整范围。');
   }
 }
 
+function scopeChapters(scope, config) {
+  const seen = new Set();
+  return scope.flatMap(id => {
+    const canonical = canonicalSectionId(id);
+    if (seen.has(canonical)) return [];
+    seen.add(canonical);
+    const chapter = config.chapters.find(item => item.id === id)
+      ?? config.chapters.find(item => canonicalSectionId(item.id) === canonical);
+    return chapter ? [chapter] : [];
+  });
+}
+
 function requirementsFor(answers, config, teacherRequest, quick = false) {
-  const scopeLabels = config.chapters.filter(chapter => answers.mainScope.includes(chapter.id)).map(item => item.label).join('、');
+  const scopeLabels = scopeChapters(answers.mainScope, config).map(item => item.label).join('、');
   const statements = { understand: `解释${scopeLabels}的基本概念，判断符合与不符合定义的例子。`, apply: `在常规问题中运用${scopeLabels}，完成相应判断与运算。`, reason: `针对${scopeLabels}的问题选择方法，写出推导并说明关键理由。` };
   const observable = answers.observable || statements[answers.cognition] || '';
   const teachingGoals = answers.cognition === 'unspecified' && !observable ? [] : [{
     id: 'teacher-goal-1', version: 1, knowledgeScope: answers.mainScope, cognition: answers.cognition,
     observable, conditions: { prompt: answers.prompt, response: answers.response },
     priority: answers.priority, abilities: answers.abilities, literacies: answers.literacies,
-    source: { kind: 'teacher', text: `${purposes.find(item => item.id === answers.purpose).label}；${observable}` },
+    source: { kind: 'teacher', text: `${purposeFor(answers.purpose).label}；${observable}` },
   }];
   return normalizeRequirements({ ...config.defaultRequirements,
     ...(teacherRequest !== undefined ? { teacherRequest } : {}),
     ...(quick ? { automaticFoundation: true } : {}),
-    ...(answers.scoringMode !== undefined ? { scoringMode: answers.scoringMode, purpose: answers.purpose } : {}),
-    title: answers.title, goal: `${purposes.find(item => item.id === answers.purpose).label}。${observable || '按已确认的章节与解题边界组卷。'}`,
+    ...(answers.typeConstraints !== undefined ? { typeConstraints: answers.typeConstraints } : {}),
+    purpose: answers.purpose,
+    ...(answers.scoringMode !== undefined ? { scoringMode: answers.scoringMode } : {}),
+    title: answers.title, goal: `${purposeFor(answers.purpose).label}。${observable || '按已确认的章节与解题边界组卷。'}`,
     mainScope: answers.mainScope, learnedScope: answers.learnedScope, premises: answers.premises,
     durationMinutes: answers.durationMinutes, targetScore: answers.targetScore, targetDifficulty: null,
     counts: { single_choice: answers.singleChoiceCount, fill_blank: answers.fillBlankCount, free_response: answers.freeResponseCount }, teachingGoals,
@@ -195,7 +228,7 @@ function stageBlocks(stage, answers, config) {
   if (stage === 'boundary') return [block('multi_choice', 'learnedScope', '学生已经学到哪里？', answers.learnedScope, config.chapters),
     ...(answers.premises.length ? [block('multi_choice', 'premises', '额外允许使用的知识与方法', answers.premises,
       config.premises.filter(item => answers.premises.includes(item.id)), '这些是你已允许的方法，可以取消；新增建议须由你确认。')] : [])];
-  if (stage === 'size') return [block('single_choice', 'scoringMode', '本次是否计分？', answers.scoringMode ?? 'points', [{ id: 'none', label: '不计分' }, { id: 'points', label: '计分' }]), block('single_choice', 'size', '选择试卷规模', answers.size, [{ id: 'recommend', label: '10 题 · AI 建议题型配比', description: '保持总题量、总分与时长，由 AI 结合教学目标和真实候选安排题型；蓝图中再确认。' }, { id: 'preset', label: '10 题 · 100 分 · 45 分钟', description: '固定 6 道单选、2 道填空、2 道解答；AI 在此结构内规划考查任务。' }, { id: 'custom', label: '自定义题量与分值' }]),
+  if (stage === 'size') return [block('single_choice', 'scoringMode', '本次是否计分？', answers.scoringMode ?? 'points', [{ id: 'none', label: '不计分' }, { id: 'points', label: '计分' }]), block('single_choice', 'size', '选择试卷规模', answers.size, [{ id: 'recommend', label: '10 题 · AI 建议题型配比', description: '保持总题量、总分与时长，由 AI 结合教学目标和真实候选安排题型；蓝图中再确认。' }, { id: 'preset', label: answers.scoringMode === 'none' ? '10 题 · 45 分钟 · 固定题型配比' : '10 题 · 100 分 · 45 分钟', description: '固定 6 道单选、2 道填空、2 道解答；AI 在此结构内规划考查任务。' }, { id: 'custom', label: '自定义题量与分值' }]),
     ...(answers.size === 'custom' ? [['singleChoiceCount', '单选题数量'], ['fillBlankCount', '填空题数量'], ['freeResponseCount', '解答题数量'], ...(answers.scoringMode === 'none' ? [] : [['targetScore', '总分']]), ['durationMinutes', '时间（分钟）']].map(([field, title]) => block('number', field, title, answers[field])) : []),
     notice('size-note', '实际供给会在蓝图中核查', `当前有 ${config.availableCounts.freeResponse} 道就绪解答题。AI 建议配比只调整题型安排，不增加允许工具或放宽目标；不能满足的位置仍会留空。`)];
   if (stage === 'goal') return [block('single_choice', 'cognition', '希望学生做到什么程度？', answers.cognition, cognitions),
@@ -241,19 +274,20 @@ function safeProposal(input, config, answers) {
   return proposal;
 }
 
-function safeQuickProposal(input, config, answers, lockedFields = [], typesEditable = answers.size === 'recommend') {
+function safeQuickProposal(input, config, answers, lockedFields = [], typesEditable = answers.size === 'recommend', partialTypesEditable = typesEditable) {
   // A total explicitly extracted from the teacher's words is still a visible, pending points suggestion.
   const candidate = copy(input);
   if (candidate?.changes?.targetScore > 0 && candidate.changes.scoringMode === undefined && answers.scoringMode === 'none' && !lockedFields.includes('scoringMode')) candidate.changes.scoringMode = 'points';
   if (candidate?.changes?.targetScore > 0 && answers.scoringMode === 'none' && lockedFields.includes('scoringMode')) fail('invalid_model_output', '教师已选择不计分，模型不能写入总分。');
   const proposal = safeProposal(candidate, config, answers);
   const allowedFields = [...quickGoalFields, ...(!lockedFields.includes('scoringMode') ? ['scoringMode'] : []), ...quickNumericFields.filter(field => !lockedFields.includes(field)),
-    ...(typesEditable ? quickTypeFields : [])];
+    ...(typesEditable ? quickTypeFields : []), ...(partialTypesEditable ? ['typeConstraints'] : [])];
   const forbiddenFields = Object.keys(proposal.changes).filter(field => !allowedFields.includes(field));
   if (forbiddenFields.length) {
     fail('invalid_model_output', `changes 包含本次禁止输出的字段：${forbiddenFields.join('、')}。请删除这些键，即使值与当前相同也不能输出。当前可建议字段仅有：${allowedFields.join('、')}；其他已选条件和锁定数值必须保留。`);
   }
-  if (typesEditable && answers.size !== 'recommend' && proposal.changes.questionCount !== undefined
+  if (proposal.changes.typeConstraints !== undefined && quickTypeFields.some(field => proposal.changes[field] !== undefined)) fail('invalid_model_output', '部分题型条件不能同时补出全部题型数量；请只保留typeConstraints。');
+  if (typesEditable && answers.size !== 'recommend' && !answers.typeConstraints && proposal.changes.typeConstraints === undefined && proposal.changes.questionCount !== undefined
       && proposal.changes.questionCount !== answers.questionCount && !quickTypeFields.some(field => proposal.changes[field] !== undefined)) {
     fail('invalid_model_output', '修改此前从原话采纳的总题量时，请同时给出单选、填空、解答三项新数量，避免旧固定配比吞掉新题量。');
   }
@@ -285,13 +319,13 @@ async function methodDependencies(root, answers, config) {
     if (!result.ok || !annotation || annotation.contentVersion !== result.question.contentVersion
         || annotation.teacherVersion !== result.question.teacherVersion
         || !Array.isArray(annotation.primarySections) || !annotation.primarySections.length
-        || !annotation.primarySections.every(id => answers.mainScope.includes(id))
+        || !annotation.primarySections.every(id => includesSection(answers.mainScope, id))
         || !Array.isArray(annotation.solutionPaths)
         || !result.question.sourceRefs.some(ref => config.defaultRequirements.sourceIds.includes(ref.sourceId))) continue;
     for (const solution of annotation.solutionPaths) {
       if (!solution || typeof solution.id !== 'string' || !solution.id
           || !Array.isArray(solution.requiredSections) || !Array.isArray(solution.requiredPremises)
-          || !solution.requiredSections.every(id => answers.learnedScope.includes(id))
+          || !solution.requiredSections.every(id => includesSection(answers.learnedScope, id))
           || !solution.requiredPremises.every(id => methods.has(id))
           || typeof solution.basis !== 'string' || !solution.basis.trim()) continue;
       if (solution.requiredPremises.every(id => answers.premises.includes(id))) alreadyAllowedQuestions.add(entry.questionId);
@@ -341,9 +375,9 @@ function present(session, config) {
   }
   const requirements = output.requirements;
   output.planning = { countPolicy: output.answers.size === 'recommend' ? 'suggested' : 'fixed' };
-  output.summary = output.status === 'confirmed' && output.summary ? output.summary : { title: requirements.title, purpose: purposes.find(item => item.id === output.answers.purpose).label,
-    mainScope: config.chapters.filter(item => requirements.mainScope.includes(item.id)).map(item => item.label),
-    learnedScope: config.chapters.filter(item => requirements.learnedScope.includes(item.id)).map(item => item.label),
+  output.summary = output.status === 'confirmed' && output.summary ? output.summary : { title: requirements.title, purpose: purposeFor(output.answers.purpose).label,
+    mainScope: scopeChapters(requirements.mainScope, config).map(item => item.label),
+    learnedScope: scopeChapters(requirements.learnedScope, config).map(item => item.label),
     premises: config.premises.filter(item => requirements.premises.includes(item.id)).map(item => item.label),
     scoringMode: requirements.scoringMode ?? 'points',
     questionCount: Object.values(requirements.counts).reduce((sum, count) => sum + count, 0), points: requirements.targetScore,
@@ -446,8 +480,9 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
               const dependencies = methodsOnly ? await methodDependencies(root, session.answers, config) : null;
               if (signal?.aborted) fail('cancelled', '已取消本次操作。');
               const typeExtractionAllowed = canExtractQuickTypes(session, input.message ?? session.assistantMessage);
+              const partialTypeExtractionAllowed = canExtractTypeConstraints(session, input.message ?? session.assistantMessage);
               const validate = candidate => methodsOnly ? safeMethodsProposal(candidate, config, session.answers, dependencies)
-                : quick ? safeQuickProposal(candidate, config, session.answers, effectiveQuickLocks(session), typeExtractionAllowed) : safeProposal(candidate, config, session.answers);
+                : quick ? safeQuickProposal(candidate, config, session.answers, effectiveQuickLocks(session), typeExtractionAllowed, partialTypeExtractionAllowed) : safeProposal(candidate, config, session.answers);
               if (!methodsOnly) {
                 session.assistantMessage = input.message ?? (quick ? session.assistantMessage ?? '' : '');
                 if (input.message !== undefined) session.teacherRequest = input.message;
@@ -457,11 +492,12 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
               session.proposalKind = methodsOnly ? 'methods' : quick ? 'quick_intake' : 'intake';
               let result;
               try { result = await gateway.propose({ task: methodsOnly ? 'suggest_methods' : quick ? 'quick_intake' : 'intake', message: modelMessage, stage: session.stage, answers: session.answers,
+                purposeStrategy: purposeStrategy(session.answers.purpose),
                 confirmedStages: session.confirmedStages, chapters: config.chapters, premises: config.premises,
                 availableCounts: config.availableCounts, supportedFields: methodsOnly ? ['premises'] : quick
                   ? [...quickGoalFields, ...(!effectiveQuickLocks(session).includes('scoringMode') ? ['scoringMode'] : []), ...quickNumericFields.filter(field => !effectiveQuickLocks(session).includes(field)),
-                    ...(typeExtractionAllowed ? quickTypeFields : [])] : Object.keys(answerSchema.shape),
-                ...(quick ? { lockedFields: effectiveQuickLocks(session), typeCountsEditable: typeExtractionAllowed,
+                    ...(typeExtractionAllowed ? quickTypeFields : []), ...(partialTypeExtractionAllowed ? ['typeConstraints'] : [])] : Object.keys(answerSchema.shape),
+                ...(quick ? { lockedFields: effectiveQuickLocks(session), typeCountsEditable: typeExtractionAllowed, partialTypeConstraintsEditable: partialTypeExtractionAllowed,
                   typeCountSource: session.quickTypeCountSource ?? (session.answers.size === 'recommend' ? 'suggested' : 'manual_or_legacy') } : {}),
                 ...(methodsOnly ? { premises: dependencies.methods.map(({ id, label, description }) => ({ id, label, description })),
                   methodDependencies: dependencies, foundation: config.courseContext.foundation } : {}),
@@ -503,6 +539,7 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
               const previousAnswers = session.answers;
               session.answers = applyAnswers(session.answers, patch, config);
               if (session.mode === 'quick') {
+                if (input.acceptProposal && session.proposal.changes.typeConstraints !== undefined) session.quickTypeCountSource = 'partial';
                 if (input.acceptProposal && quickTypeFields.some(field => session.proposal.changes[field] !== undefined)) session.quickTypeCountSource = 'model';
                 rememberManualTypeCounts(session, input.answers);
               }

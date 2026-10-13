@@ -1,0 +1,151 @@
+.paper-workspace {
+  max-width: 1080px;
+  margin-inline: auto;
+}
+
+.paper-workspace .paper-saved-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-bottom: 24px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.paper-document-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.paper-version-tabs, .paper-document-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paper-workspace .paper-version-tabs button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.paper-workspace .paper-version-tabs button[aria-selected="true"] {
+  color: var(--ink, #202020);
+  box-shadow: inset 0 -2px currentColor;
+  font-weight: 600;
+}
+
+.paper-workspace .paper-document-actions button,
+.paper-workspace .paper-document-actions a,
+.paper-workspace .paper-output-tools button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.paper-workspace .paper-document-actions a.primary {
+  background: var(--ink, #202020);
+  color: #fff;
+}
+
+.paper-document-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px 0 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.paper-workspace .paper-document-panel {
+  min-width: 0;
+}
+
+.paper-workspace .frozen-student {
+  margin: 0;
+  padding: 36px clamp(16px, 5vw, 64px);
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.paper-workspace .frozen-student > h2 {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 21px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.paper-workspace .frozen-student h3 {
+  margin: 24px 0;
+  font-size: 16px;
+}
+
+.paper-workspace .frozen-student .question {
+  border: 0;
+  padding: 0 0 24px;
+  margin: 0 0 16px;
+  font-size: 15px;
+}
+
+.paper-preview-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.paper-workspace .pdf-canvas-preview { margin-top: 0; }
+.paper-workspace .pdf-kind-switch,
+.paper-workspace .pdf-preview-actions { display: none; }
+.paper-workspace .pdf-canvas-toolbar { justify-content: center; }
+.paper-workspace .pdf-canvas-stage { border-radius: 0; }
+
+.paper-workspace .paper-output-tools,
+.paper-workspace .paper-secondary-content > details {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.paper-workspace details > summary { width: fit-content; cursor: pointer; }
+.paper-workspace details[open] > summary { margin-bottom: 16px; color: var(--ink, #202020); }
+.paper-workspace .paper-output-tools button { margin: 0 12px 8px 0; }
+.paper-workspace .paper-output-tools code { display: block; overflow-wrap: anywhere; margin-top: 6px; }
+.paper-workspace .paper-secondary-content { margin-top: 16px; }
+.paper-workspace .user-feedback { border: 0; margin: 0; padding: 0 0 12px; color: var(--ink, #202020); }
+.paper-workspace .user-feedback h2 { font-size: 16px; }
+.paper-workspace .user-feedback .action-row { justify-content: flex-end; }
+
+@media (max-width: 640px) {
+  .paper-document-toolbar { align-items: stretch; flex-direction: column; gap: 0; }
+  .paper-version-tabs { order: 1; }
+  .paper-document-actions { justify-content: flex-end; flex-wrap: wrap; padding-bottom: 8px; }
+  .paper-workspace .paper-document-actions button,
+  .paper-workspace .paper-document-actions a,
+  .paper-workspace .paper-output-tools button { min-height: 44px; }
+  .paper-workspace .paper-saved-line { margin-bottom: 16px; }
+  .paper-workspace .frozen-student { padding: 24px 16px; }
+  .paper-workspace .frozen-student > h2 { font-size: 19px; }
+}
+
+.paper-workspace .paper-sheet-meta { margin: 0 0 32px; text-align: center; color: var(--muted); font-size: 12px; }
+.paper-workspace .paper-teacher-material { margin-top: 20px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.paper-workspace .paper-teacher-material h4 { margin: 12px 0 8px; font-size: 13px; font-weight: 600; }
+.paper-workspace .paper-teacher-material p { margin: 6px 0; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.paper-workspace .paper-question-image { display: block; max-width: 100%; height: auto; margin: 16px 0; }

@@ -4,7 +4,9 @@ import { api, typeLabels } from './api.js';
 import { MathText } from './MathText.jsx';
 import { Select } from './Select.jsx';
 import { QuestionOptions } from './QuestionOptions.jsx';
+import { questionSource, sourceCaption } from '../src/question-bank/source-label.mjs';
 import { availableTextbooks } from '../src/curriculum/availability.mjs';
+import './QuestionBank.css';
 
 const PAGE_SIZE = 12;
 const SESSION_KEY = 'tutor-question-bank:v1';
@@ -45,21 +47,21 @@ function QuestionCard({ question, selected, disabled, onToggle }) {
   }
 
   return <article className={`bank-question ${selected ? 'is-selected' : ''}`}>
-    <button type="button" className="bank-question-add" disabled={disabled} aria-pressed={selected} aria-label={selected ? '从组卷篮移出此题' : '将此题加入组卷篮'} onClick={() => onToggle(question.questionId)}>
-      {selected ? <><Check size={14}/>已加入</> : <><Plus size={14}/>加入组卷篮</>}
-    </button>
     <div className="bank-question-body">
       <p className="bank-question-stem"><MathText text={question.student.stem}/></p>
       {question.student.options.length ? <div className="bank-question-options"><QuestionOptions options={question.student.options}/></div> : null}
       {question.student.parts.length ? <div className="bank-question-parts">{question.student.parts.map((part, index) =>
-        <p key={part.partId}><span>（{index + 1}）</span><MathText text={part.prompt}/></p>)}</div> : null}
+        <p key={part.partId}><span>（{index + 1}）</span><span className="bank-part-prompt"><MathText text={part.prompt}/></span></p>)}</div> : null}
       <div className="bank-question-information">
         <div className="bank-question-information-line">
           <span className="bank-question-type">{typeLabels[question.questionType] ?? question.questionType}</span>
           <span><MathText text={question.topics.join('、') || question.taskSummary}/></span>
-          <span>{sourceRefs[0]?.locator || '题库收录'}</span>
+          <span>{sourceCaption(questionSource(question))}</span>
           <button ref={evidenceTriggerRef} type="button" className="bank-question-evidence-trigger" aria-expanded={evidenceOpen} aria-controls={evidenceId} onPointerDown={event => event.preventDefault()} onClick={toggleEvidence}>
             <ChevronRight size={13}/><span>知识与来源信息</span>
+          </button>
+          <button type="button" className="bank-question-add" disabled={disabled} aria-pressed={selected} aria-label={selected ? '从组卷篮移出此题' : '将此题加入组卷篮'} onClick={() => onToggle(question.questionId)}>
+            {selected ? <><Check size={14}/>已加入 · 移出</> : <><Plus size={14}/>加入组卷篮</>}
           </button>
         </div>
         {evidenceOpen ? <dl id={evidenceId} className="bank-question-evidence-panel"><dt>考查摘要</dt><dd><MathText text={question.taskSummary}/></dd><dt>相关知识</dt><dd>{question.requiredKnowledge.join('、') || '未单独标注'}</dd><dt>来源定位</dt><dd>{sourceRefs.length ? sourceRefs.map(ref => `${ref.locator}${ref.pages?.length ? `（${ref.pages.join('、')} 页）` : ''}`).join('；') : '题库收录'}</dd></dl> : null}
@@ -173,7 +175,7 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
               <dt>章节</dt><dd>{location ? `${location.textbook} / ${location.chapter} / ${location.section}` : '题库题目'}</dd>
               <dt>考查</dt><dd><MathText text={question.taskSummary}/></dd>
               <dt>知识</dt><dd>{question.requiredKnowledge.join('、') || question.topics.join('、') || '未单独标注'}</dd>
-              <dt>来源</dt><dd>{sourceRefs.length ? [...new Set(sourceRefs.map(ref => ref.locator))].join('；') : '题库收录'}</dd>
+              <dt>来源</dt><dd>{sourceCaption(questionSource(question))}</dd>
             </dl>
           </article>;
         }) : <div className="bank-basket-empty"><ShoppingBasket size={22}/><strong>还没有选择题目</strong><span>从题目卡片加入组卷篮，题目会保留在这里。</span></div>}
@@ -353,6 +355,11 @@ export function QuestionBank({ onCreated, onImport }) {
   const hasFilters = !!(debouncedQuery || questionType !== 'all' || difficulty || ability || literacy);
   const filterOptions = catalog?.filterOptions || { difficulty: [], abilities: [], literacies: [] };
   const selectedQuestions = useMemo(() => [...selected.values()], [selected]);
+  const selectedDimensions = [
+    { key: 'difficulty', value: difficulty, label: '难度', options: filterOptions.difficulty, clear: () => setDifficulty('') },
+    { key: 'ability', value: ability, label: '能力', options: filterOptions.abilities, clear: () => setAbility('') },
+    { key: 'literacy', value: literacy, label: '素养', options: filterOptions.literacies, clear: () => setLiteracy('') },
+  ].filter(dimension => dimension.value);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => { if (questionListRef.current) questionListRef.current.scrollTop = 0; });
@@ -426,13 +433,21 @@ export function QuestionBank({ onCreated, onImport }) {
           <div className="bank-results">
             <div className="bank-filter-row"><label className="bank-search"><Search size={17}/><span className="sr-only">搜索本小节</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索本小节题干、知识点或题号"/></label>
               <Select value={questionType} aria-label="筛选题型" onChange={event => { setQuestionType(event.target.value); setPage(1); }}><option value="all">全部题型</option>{Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
-            </div>
-            <div className="bank-dimension-filters" aria-label="教学维度筛选">
               <Select value={difficulty} aria-label="筛选难度" onChange={event => { setDifficulty(event.target.value); setPage(1); }}><option value="">全部难度</option>{filterOptions.difficulty.map(item => <option key={item.value} value={item.value}>{item.label} · {item.count}</option>)}</Select>
+            </div>
+            <details className="bank-more-filters">
+              <summary>更多筛选{ability || literacy ? <span>已选 {[ability, literacy].filter(Boolean).length} 项</span> : null}<ChevronDown size={14}/></summary>
+              <div className="bank-dimension-filters" aria-label="教学维度筛选">
               <Select value={ability} aria-label="筛选能力" onChange={event => { setAbility(event.target.value); setPage(1); }}><option value="">全部能力</option>{filterOptions.abilities.map(item => <option key={item.value} value={item.value}>{item.label} · {item.count}</option>)}</Select>
               <Select value={literacy} aria-label="筛选核心素养" onChange={event => { setLiteracy(event.target.value); setPage(1); }}><option value="">全部核心素养</option>{filterOptions.literacies.map(item => <option key={item.value} value={item.value}>{item.label} · {item.count}</option>)}</Select>
-              {hasFilters ? <button type="button" className="bank-reset-filters" onClick={clearFilters}>清除筛选</button> : null}
-            </div>
+              </div>
+            </details>
+            {hasFilters ? <div className="bank-active-filters" aria-label="已选筛选条件">
+              {selectedDimensions.map(dimension => <button key={dimension.key} type="button" className="bank-active-filter" onClick={() => { dimension.clear(); setPage(1); }} aria-label={`清除${dimension.label}筛选：${dimension.options.find(option => option.value === dimension.value)?.label || dimension.value}`}>
+                <span>{dimension.label}：{dimension.options.find(option => option.value === dimension.value)?.label || dimension.value}</span><X size={13}/>
+              </button>)}
+              <button type="button" className="bank-reset-filters" onClick={clearFilters}>清除全部筛选</button>
+            </div> : null}
             {(ability || literacy) ? <p className="bank-annotation-note">能力与素养按已有教研标注筛选，待复核标注仅供检索参考。</p> : difficulty === 'unknown' ? <p className="bank-annotation-note">这些题目尚无独立难度评估。</p> : null}
             <div className="bank-result-summary"><span role="status" aria-live="polite">{loading ? '正在查询…' : `共 ${pagination.total} 道匹配题`}</span><span>已选 {selected.size} 道 · 切换章节保留</span></div>
             {visibleQuestions.length ? <div ref={questionListRef} className="bank-question-list" aria-label="题目列表" aria-busy={loading}>{visibleQuestions.map(question => <QuestionCard key={question.questionId} question={question} selected={selected.has(question.questionId)} disabled={loading || creating} onToggle={toggle}/>)}</div>

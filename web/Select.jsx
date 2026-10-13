@@ -38,6 +38,7 @@ export function Select({ value, onChange, children, disabled = false, required =
   const selected = options.find(option => option.value === String(value ?? ''));
   const activeId = open && active >= 0 ? `${listId}-${active}` : undefined;
   const activeDescription = filtered[active]?.description;
+  const activeLabel = filtered[active]?.label;
   const hasDescriptions = options.some(option => option.description);
 
   function close(restoreFocus = true) {
@@ -89,13 +90,12 @@ export function Select({ value, onChange, children, disabled = false, required =
     const update = () => {
       const rect = trigger.current?.getBoundingClientRect();
       if (!rect) return;
-      const width = Math.min(Math.max(rect.width, 240), window.innerWidth - 24);
-      const descriptionWidth = hasDescriptions && window.innerWidth >= 680 ? 268 : 0;
+      const width = Math.min(hasDescriptions && window.innerWidth >= 680 ? 480 : Math.max(rect.width, 240), window.innerWidth - 24);
       const below = window.innerHeight - rect.bottom - 12;
       const above = rect.top - 12;
       const upwards = below < 240 && above > below;
       const maxHeight = Math.max(100, Math.min(380, upwards ? above - 6 : below - 6));
-      setPosition({ left: Math.max(12, Math.min(rect.left, window.innerWidth - width - descriptionWidth - 12)), width, maxHeight,
+      setPosition({ left: Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)), width, maxHeight,
         ...(upwards ? { bottom: window.innerHeight - rect.top + 6 } : { top: rect.bottom + 6 }) });
     };
     update();
@@ -116,10 +116,10 @@ export function Select({ value, onChange, children, disabled = false, required =
 
   return <span className="tutor-select">
     {name ? <input type="hidden" name={name} value={value ?? ''} disabled={disabled}/> : null}
-    <button title={selected?.description} {...props} ref={trigger} id={id} type="button" className={`tutor-select-trigger ${className}`} role="combobox"
+    <button {...props} ref={trigger} id={id} type="button" className={`tutor-select-trigger ${className}`} role="combobox"
       disabled={disabled} aria-label={ariaLabel} aria-labelledby={labelledBy} aria-haspopup="listbox" aria-expanded={open} aria-controls={open ? listId : undefined}
-      aria-required={required || undefined} onClick={event => { onClick?.(event); if (!event.defaultPrevented) open ? close() : show(); }}
-      onKeyDown={event => { onKeyDown?.(event); if (event.defaultPrevented) return; if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) { event.preventDefault(); open ? keys(event) : show(event.key === 'ArrowUp' ? -1 : 1); } }}>
+      aria-activedescendant={activeId} aria-required={required || undefined} onClick={event => { onClick?.(event); if (!event.defaultPrevented) open ? close() : show(); }}
+      onKeyDown={event => { onKeyDown?.(event); if (event.defaultPrevented) return; if (open) keys(event); else if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) { event.preventDefault(); show(event.key === 'ArrowUp' ? -1 : 1); } }}>
       {triggerLabel ? <span className="tutor-select-prefix">{triggerLabel}</span> : null}<span>{selected ? (renderLabel ? renderLabel(selected.label) : selected.label) : '请选择'}</span><ChevronDown size={15} aria-hidden="true"/>
     </button>
     {open ? createPortal(<div ref={popup} className={`tutor-select-popup${hasDescriptions ? ' has-descriptions' : ''}`} style={{ ...position, visibility: position ? 'visible' : 'hidden' }} onKeyDown={keys}>
@@ -130,7 +130,7 @@ export function Select({ value, onChange, children, disabled = false, required =
           onMouseDown={event => event.preventDefault()} onClick={() => choose(option)}><span>{renderLabel ? renderLabel(option.label) : option.label}</span>{option.value === String(value ?? '') ? <Check size={15} aria-hidden="true"/> : null}</div>)}
         {!filtered.length ? <p className="tutor-select-empty">没有匹配的选项</p> : null}
       </div>
-      {hasDescriptions ? <div id={`${listId}-description`} className="tutor-select-description" role="status" aria-live="polite">{activeDescription || '移动到选项上，查看用途说明。'}</div> : null}
+      {hasDescriptions ? <div id={`${listId}-description`} className="tutor-select-description" role="status" aria-live="polite"><strong>{activeLabel || '用途说明'}</strong><p>{activeDescription || '选择左侧用途，查看适用场景。'}</p></div> : null}
     </div>, portalRoot.current || document.body) : null}
   </span>;
 }

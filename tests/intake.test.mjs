@@ -49,7 +49,8 @@ test('click-only intake confirms a normalized assembly contract and can be resto
   const blueprint = await previewBlueprint(session.requirements);
   assert.equal(blueprint.ok, true);
   assert.equal(blueprint.blueprint.plannedStats.questionCount, 10);
-  assert.equal(blueprint.blueprint.plannedStats.points, 100);
+  assert.equal(blueprint.blueprint.plannedStats.points, 0);
+  assert.equal(session.requirements.scoringMode, 'none');
   assert.equal((await answer(service, session, { answers: { targetScore: 90 } })).error.code, 'already_confirmed');
 });
 

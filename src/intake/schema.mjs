@@ -1,13 +1,19 @@
 import { z } from 'zod';
 
+export const typeConstraintsSchema = z.strictObject({
+  excludedTypes: z.array(z.enum(['single_choice', 'fill_blank', 'free_response'])).max(3).refine(values => new Set(values).size === values.length).default([]),
+  exactCounts: z.strictObject({ single_choice: z.number().int().min(0).max(30).optional(), fill_blank: z.number().int().min(0).max(30).optional(), free_response: z.number().int().min(0).max(30).optional() }).default({}),
+});
+
 export const stages = ['purpose', 'scope', 'boundary', 'size', 'goal', 'review'];
 export const answerSchema = z.object({
   title: z.string().trim().min(1).max(120).optional(),
-  purpose: z.enum(['consolidation', 'diagnostic', 'assessment', 'mock_exam']).optional(),
+  purpose: z.enum(['consolidation', 'targeted_practice', 'diagnostic', 'assessment', 'mock_exam']).optional(),
   mainScope: z.array(z.string().min(1).max(60)).max(30).optional(),
   learnedScope: z.array(z.string().min(1).max(60)).max(30).optional(),
   learnedScopeMode: z.enum(['progress', 'custom']).optional(),
   premises: z.array(z.string().min(1).max(60)).max(30).optional(),
+  typeConstraints: typeConstraintsSchema.optional(),
   size: z.enum(['recommend', 'preset', 'custom']).optional(),
   questionCount: z.number().int().min(1).max(60).optional(),
   singleChoiceCount: z.number().int().min(0).max(30).optional(),

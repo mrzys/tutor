@@ -13,6 +13,9 @@ import { getAssemblyConfig, loadPool, slotCandidates, normalizeRequirements } fr
 import { createManualQuestionDraft, listQuestionBankCatalog } from '../src/question-bank/catalog.mjs';
 import { createNestApp } from '../src/api/app.ts';
 import { hashContent } from '../src/question-bank/integrity.mjs';
+import { canonicalSectionId, includesSection } from '../src/curriculum/section-identity.mjs';
+import { planBlueprint } from '../src/assembly/planner.mjs';
+import { createIntakeService } from '../src/intake/service.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const checks = { sourceMatched: true, answerChecked: true, solutionChecked: true, formulaChecked: true };
@@ -25,7 +28,7 @@ const question = {
     knowledgePoints: [], allowedSolution: '将 x²−4 分解为 (x−2)(x+2)，两因式同号得到 x<−2 或 x>2。', cognition: 'apply', abilities: ['因式符号判断'], literacies: ['数学运算'], difficultySuggestion: { level: 'standard', rationale: '需要因式分解并作符号判断，属于常规两步运用。' } },
 };
 
-async function setup(t) {
+async function setup(t, importedQuestion = question) {
   const base = await mkdtemp(path.join(os.tmpdir(), 'tutor-publication-'));
   const storage = await registerSqliteStorage(base, undefined, { questionBankRoot: root });
   t.after(async () => { storage.close(); await rm(base, { recursive: true, force: true }); });
@@ -34,7 +37,7 @@ async function setup(t) {
   const admin = { userId: 'publication-admin', role: 'admin' }, teacher = { userId: 'publication-teacher', role: 'teacher' };
   for (const user of [admin, teacher]) repository.database.prepare('INSERT INTO users VALUES(?,?,?,?,?,?)').run(user.userId, `${user.userId}@example.test`, 'test', 'test', user.role, new Date().toISOString());
   const service = createQuestionImportService({ root, storeRoot: path.join(base, 'question-imports'), gateway: {
-    publicStatus: () => ({ configured: true }), propose: async () => ({ ok: true, proposal: { title: '第二章试卷', questions: [structuredClone(question), { ...structuredClone(question), sourceLabel: '练习2', student: { ...question.student, stem: '另题不完整解析' }, teacher: { answers: question.teacher.answers, solutions: [] } }] }, run: { model: 'fixture-deepseek', status: 'succeeded' } }),
+    publicStatus: () => ({ configured: true }), propose: async () => ({ ok: true, proposal: { title: '第二章试卷', questions: [structuredClone(importedQuestion), { ...structuredClone(question), sourceLabel: '练习2', student: { ...question.student, stem: '另题不完整解析' }, teacher: { answers: question.teacher.answers, solutions: [] } }] }, run: { model: 'fixture-deepseek', status: 'succeeded' } }),
   } });
   const request = Readable.from([Buffer.from(JSON.stringify({ filename: 'paper.txt', mimeType: 'text/plain', text: '不等式 x²>4，答案B，解析为因式分解。' }))]);
   request.headers = { 'content-type': 'application/json' };
@@ -129,8 +132,13 @@ test('catalog materializes index snapshots for indexed joins and counts all chap
   t.after(() => { db.prepare = prepare; });
   const result = await listQuestionBankCatalog({ root, page: 1, difficulty: 'unknown' });
   assert.equal(result.ok, true, JSON.stringify(result));
-  const chapterQueries = statements.filter(sql => sql.includes('GROUP BY s.value'));
-  assert.equal(chapterQueries.length, 1);
+  // Verify one aggregate per catalog view, independent of aliases or the CASE
+  // expression used to canonicalize legacy IDs. This guards against one query
+  // per chapter while allowing the SQL's selected/grouped field names to evolve.
+  const chapterQueries = statements.filter(sql => sql.includes('question_section_mappings') && /\bGROUP\s+BY\b/i.test(sql));
+  assert.equal(chapterQueries.length, 1, 'Textbook section counts must use one grouped mapping query');
+  const annotationQueries = statements.filter(sql => sql.includes('$.primarySections') && /\bGROUP\s+BY\b/i.test(sql));
+  assert.equal(annotationQueries.length, 1, 'Assembly chapter counts must use one grouped annotation query');
   const countSql = statements.find(sql => sql.includes('SELECT count(*) AS count FROM question_bank_questions'));
   // Bind the difficulty filter used above. The plan must index materialized identity
   // columns rather than rescan unindexed JSON virtual tables for every question.
@@ -229,4 +237,71 @@ test('publication HTTP endpoint requires authenticated administrator, CSRF origi
   assert.equal((await request(route, input, admin.cookie)).body.replayed, true);
   const foreignUpload = await request('/api/question-imports', { filename: 'teacher.txt', text: '题干答案解析' }, teacher.cookie);
   assert.equal((await request(`/api/question-imports/${foreignUpload.body.import.importId}/publish`, { ...input, sourceSha256: foreignUpload.body.import.source.sha256 }, admin.cookie)).status, 404);
+});
+
+
+test('canonical published questions and legacy curated questions share only the verified chapter identities', async t => {
+  const imported = structuredClone(question);
+  imported.student = { stem: '身份回归：集合 A={1,2}，B={2,3}，求 A∪B。', options: [{ label: 'A', text: '{1,2,3}' }, { label: 'B', text: '{2}' }], parts: [] };
+  imported.teacher = { answers: [{ partId: 'main', text: 'A', sourceBasis: 'explicit' }],
+    solutions: [{ partId: 'main', text: '把两个集合的所有元素合在一起，重复元素只保留一次，得到{1,2,3}。', sourceBasis: 'explicit' }] };
+  imported.dimensions.chapterCandidates = ['rja-compulsory-1:1.3'];
+  imported.dimensions.primaryTopics = ['集合并集'];
+  imported.dimensions.requiredKnowledge = ['并集定义'];
+  imported.dimensions.allowedSolution = '按并集定义合并集合A与B的元素。';
+  const { service, record, input, access, admin, repository } = await setup(t, imported);
+  // A canonical-only catalog reproduces a current import, while seed questions
+  // still retain their old short IDs. The live SQLite store is isolated to tmp.
+  const chapters = repository.getQuestionBankChapters();
+  t.mock.method(repository, 'getQuestionBankChapters', () => chapters.map(chapter => ({ ...chapter, id: canonicalSectionId(chapter.id) })));
+  input.questions = [{ ...input.questions[0], sectionIds: ['rja-compulsory-1:1.3'], taskLabel: '身份回归：求有限集合并集' }];
+  const published = access.run(admin, () => service.publish(record.importId, input));
+  assert.equal(published.ok, true, JSON.stringify(published));
+  assert.equal(published.publication.accepted.length, 1, JSON.stringify(published));
+  const questionId = published.publication.accepted[0].questionId;
+  const annotation = repository.getQuestionBankIndex().entries.find(item => item.questionId === questionId);
+  assert.deepEqual(annotation.primarySections, ['rja-compulsory-1:1.3']);
+  const legacyCatalog = await listQuestionBankCatalog({ root, sectionId: '1.3', query: questionId });
+  const canonicalCatalog = await listQuestionBankCatalog({ root, sectionId: 'rja-compulsory-1:1.3', query: questionId });
+  assert.deepEqual(legacyCatalog.questions.map(item => item.questionId), [questionId]);
+  assert.deepEqual(canonicalCatalog.questions.map(item => item.questionId), [questionId]);
+  const { config } = await getAssemblyConfig({ root });
+  const pool = await loadPool(root);
+  const taskId = annotation.tasks[0];
+  const normalize = scopes => normalizeRequirements({ ...config.defaultRequirements, ...scopes,
+    counts: { single_choice: 1, fill_blank: 0, free_response: 0 }, scoringMode: 'none', targetScore: 0,
+    sourceIds: config.sources.map(item => item.sourceId), teachingGoals: [] }, config, config.sources.map(item => item.sourceId));
+  const legacy = normalize({ mainScope: ['1.3'], learnedScope: ['1.1', '1.2', '1.3'] });
+  assert.equal(slotCandidates(pool, { taskId, questionType: 'single_choice', goalIds: [] }, legacy).find(item => item.questionId === questionId).status, 'eligible');
+  assert.deepEqual(legacy.mainScope, ['1.3']);
+  assert.deepEqual(legacy.learnedScope, ['1.1', '1.2', '1.3']);
+  const canonical = normalize({ mainScope: ['rja-compulsory-1:1.1'], learnedScope: ['rja-compulsory-1:1.1'] });
+  const old = pool.records.find(item => item.annotation?.primarySections.length === 1 && item.annotation.primarySections[0] === '1.1'
+    && item.annotation.solutionPaths.some(solution => solution.requiredSections.every(section => includesSection(canonical.learnedScope, section)) && !solution.requiredPremises.length));
+  assert.ok(old, 'A genuinely curated legacy question is present');
+  assert.equal(slotCandidates(pool, { taskId: old.annotation.tasks[0], questionType: old.entry.questionType, goalIds: [] }, canonical)
+    .find(item => item.questionId === old.entry.questionId).status, 'eligible');
+  let context;
+  const planned = await planBlueprint(legacy, { root, gateway: { async propose(value) {
+    context = value; return { ok: true, proposal: { summary: '实际入库题身份回归。', slots: [{ taskId, points: 0, goalIds: [], rationale: '同一小节的新入库题可见。' }] } };
+  } } });
+  assert.equal(planned.ok, true, JSON.stringify(planned));
+  assert.ok(context.tasks.some(task => task.taskId === taskId && task.eligibleCount === 1));
+  assert.deepEqual(planned.blueprint.requirements.mainScope, ['1.3']);
+  assert.deepEqual(planned.blueprint.requirements.learnedScope, legacy.learnedScope);
+  t.mock.method(repository, 'getQuestionBankChapters', () => [...chapters, ...chapters.map(chapter => ({ ...chapter, id: canonicalSectionId(chapter.id) }))]);
+  const intake = await createIntakeService({ root }).handle({ action: 'start', flow: 'quick', operationId: 'mixed-catalog-display',
+    answers: { mainScope: ['1.3'], learnedScope: ['1.1', '1.2', '1.3'], learnedScopeMode: 'custom' } });
+  assert.equal(intake.ok, true, JSON.stringify(intake));
+  assert.equal(intake.session.summary.mainScope.length, 1);
+  assert.equal(intake.session.summary.learnedScope.length, 3);
+  assert.equal(new Set(intake.session.progression.orderedIds.map(canonicalSectionId)).size, intake.session.progression.orderedIds.length);
+  assert.deepEqual(intake.session.answers.mainScope, ['1.3']);
+  assert.deepEqual(intake.session.answers.learnedScope, ['1.1', '1.2', '1.3']);
+  const wrongBook = { ...legacy, mainScope: ['other-book:1.3'], learnedScope: ['other-book:1.3'] };
+  assert.notEqual(slotCandidates(pool, { taskId, questionType: 'single_choice', goalIds: [] }, wrongBook)
+    .find(item => item.questionId === questionId).status, 'eligible');
+  const wrongChapter = { ...legacy, mainScope: ['rja-compulsory-1:2.3'], learnedScope: ['rja-compulsory-1:2.3'] };
+  assert.notEqual(slotCandidates(pool, { taskId, questionType: 'single_choice', goalIds: [] }, wrongChapter)
+    .find(item => item.questionId === questionId).status, 'eligible');
 });

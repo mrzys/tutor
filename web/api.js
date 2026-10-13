@@ -7,6 +7,7 @@ export async function api(url, body, signal) {
     const failure = new Error(result.error?.message || `请求失败（${response.status}）`);
     failure.status = response.status;
     failure.code = result.error?.code;
+    failure.details = result.error?.details;
     throw failure;
   }
   return result;

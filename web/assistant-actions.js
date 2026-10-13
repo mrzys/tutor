@@ -1,3 +1,4 @@
+import { includesSection } from '../src/curriculum/section-identity.mjs';
 import { addBlueprintSlot, removeBlueprintSlot, changeBlueprintTask } from './blueprint-review.js';
 
 // Resolve visible numbers to stable identities before any deletion can renumber them.
@@ -45,7 +46,7 @@ export function applyBlueprintActions(blueprint, actions, tasks, newId = () => c
         const existing = next.slots.filter(slot => slot.questionType === type);
         const wanted = action.counts[type];
         for (const slot of existing.slice(wanted).reverse()) next = removeBlueprintSlot(next, slot.slotId);
-        const task = tasks.find(item => item.questionType === type && item.sectionIds.some(id => next.requirements.mainScope.includes(id)));
+        const task = tasks.find(item => item.questionType === type && item.sectionIds.every(id => includesSection(next.requirements.mainScope, id)));
         for (let i = existing.length; i < wanted; i++) next = addBlueprintSlot(next, task, newId());
       }
     } else throw new Error('暂不支持这项调整，请补充希望修改的题目或要求。');

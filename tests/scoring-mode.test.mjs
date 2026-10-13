@@ -32,17 +32,18 @@ const assertUnscored = draft => {
   assert.ok(!draft.differences.some(item => /score|points/.test(item.code)));
 };
 
-test('new quick practice defaults to no scoring; assessment and mock exam are selectable and switchable', async () => {
+test('new practices default to no scoring and changing purpose preserves an explicit scoring choice', async () => {
   const service = createIntakeService();
   let session = (await service.handle({ action: 'start', flow: 'quick', operationId: op() })).session;
   assert.equal(session.answers.scoringMode, 'none'); assert.equal(session.requirements.targetScore, 0);
-  for (const purpose of ['assessment', 'mock_exam']) {
+  for (const purpose of ['targeted_practice', 'diagnostic', 'assessment', 'mock_exam', 'consolidation']) {
     session = await act(service, session, 'answer', { answers: { purpose } });
-    assert.equal(session.requirements.scoringMode, 'points'); assert.equal(session.requirements.targetScore, 100);
-    session = await act(service, session, 'answer', { answers: { scoringMode: 'none' } });
-    assert.equal(session.requirements.targetScore, 0);
-    session = await act(service, session, 'answer', { answers: { purpose: 'diagnostic' } });
-    assert.equal(session.requirements.scoringMode, 'none');
+    assert.equal(session.requirements.scoringMode, 'none'); assert.equal(session.requirements.targetScore, 0);
+  }
+  session = await act(service, session, 'answer', { answers: { scoringMode: 'points', targetScore: 80 } });
+  for (const purpose of ['targeted_practice', 'diagnostic', 'consolidation']) {
+    session = await act(service, session, 'answer', { answers: { purpose } });
+    assert.equal(session.requirements.scoringMode, 'points'); assert.equal(session.requirements.targetScore, 80);
   }
 });
 

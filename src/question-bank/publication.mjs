@@ -1,3 +1,4 @@
+import { includesSection } from '../curriculum/section-identity.mjs';
 import { randomUUID } from 'node:crypto';
 import { currentUser } from '../auth/access.mjs';
 import { hashContent } from './integrity.mjs';
@@ -160,7 +161,7 @@ export function publishQuestionImport(repository, importId, input) {
             sectionIds: primarySections, partIds: student.parts.map(value => value.partId), partWeights: student.parts.map(() => 1),
             provenance: 'reviewed_import', importId, reviewBasis: item.basis };
         }
-        if (task.sectionIds.some(id => !primarySections.includes(id))) reject('task_scope_mismatch', '已有任务的范围与复核主考小节不匹配。');
+        if (task.sectionIds.some(id => !includesSection(primarySections, id))) reject('task_scope_mismatch', '已有任务的范围与复核主考小节不匹配。');
         if (question.questionType === 'free_response' && hashContent(task.partIds ?? []) !== hashContent(student.parts.map(part => part.partId))) {
           reject('task_part_mismatch', '已有任务的小问结构与本题不匹配。');
         }

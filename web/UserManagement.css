@@ -15,7 +15,7 @@
 .user-management-toolbar{display:flex;gap:12px;align-items:center}
 .user-management-toolbar>.primary,.user-management-actions>.primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 16px;font-size:14px;font-weight:500;white-space:nowrap;border-radius:9999px}
 .user-management-search{display:flex;align-items:center;gap:8px;flex:1;min-width:0;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:9999px;color:var(--muted)}
-.user-management-search:focus-within{outline:var(--focus-width) solid var(--focus-color);outline-offset:var(--focus-offset)}
+.user-management-search:focus-within{border-color:var(--focus-color);outline:var(--focus-width) solid var(--focus-color);outline-offset:var(--field-focus-offset)}
 .user-management-search input{width:100%;min-width:0;min-height:42px;padding:7px 0;border:0;border-radius:0;outline:0;background:transparent;font:inherit;box-shadow:none}
 .user-management-count{margin:18px 0 8px;color:var(--muted);font-size:12px}
 .user-management-list{margin:0;padding:0;list-style:none}
@@ -33,7 +33,7 @@
 .user-management-form>input,.user-management-password{width:100%;min-height:44px;border:1px solid #d4d4d4;border-radius:10px}
 .user-management-form>input{padding:10px 12px;font-size:14px}
 .user-management-password{display:flex;align-items:center;overflow:hidden}
-.user-management-password:has(>input:focus){outline:var(--focus-width) solid var(--focus-color);outline-offset:var(--focus-offset)}
+.user-management-password:has(>input:focus){border-color:var(--focus-color);outline:var(--focus-width) solid var(--focus-color);outline-offset:var(--field-focus-offset)}
 .user-management-password>input{width:100%;min-width:0;min-height:44px;padding:10px 12px;border:0;outline:0;background:transparent;box-shadow:none;font-size:14px}
 .user-management-help{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
 .user-management-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}

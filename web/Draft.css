@@ -1,0 +1,66 @@
+.assembly-workbench .draft-editor .draft-toolbar {
+  align-items: center;
+  flex-wrap: nowrap;
+  height: 57px;
+  min-height: 57px;
+  gap: 12px;
+  padding: 0 0 12px;
+  margin: 0 0 24px;
+}
+.draft-selection-control { display: flex; align-items: center; gap: 16px; }
+.draft-selection-control .check-item { align-items: center; gap: 8px; font-size: 13px; }
+.draft-selection-control input[type="checkbox"] { margin: 0; }
+.draft-save-note { font-size: 12px; color: var(--muted); }
+.draft-selection-control { flex-shrink: 0; white-space: nowrap; }
+.assembly-workbench .draft-editor .toolbar-actions { width: auto; flex-wrap: nowrap; gap: 4px; margin-left: auto; }
+.draft-editor .toolbar-actions > button, .draft-tools-menu > button {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 6px 10px;
+  border: 0; border-radius: var(--control-radius, 8px); background: transparent;
+  font-size: 13px; color: #525252; cursor: pointer;
+}
+.draft-editor .toolbar-actions > button:hover:not(:disabled), .draft-tools-menu > button:hover:not(:disabled), .draft-tools-menu[data-open=true] > button { background: #f5f5f3; }
+.draft-tools-menu { position: relative; }
+.draft-tools-menu > div {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 21;
+  width: 190px; padding: 5px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+  box-shadow: 0 4px 16px #0000000d;
+}
+.draft-tools-menu > div > button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; border: 0; text-align: left; border-radius: 6px; }
+.draft-tools-menu > div > button:hover:not(:disabled) { background: #f5f5f3; }
+.assembly-workbench .draft-editor .batch-toolbar {
+  flex: 1; min-width: 0; width: auto; height: 44px; margin: 0; padding: 0 8px; gap: 4px;
+  flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+  border-radius: 8px; background: #f5f5f3; font-size: 13px;
+}
+.draft-editor .batch-toolbar::-webkit-scrollbar { display: none; }
+.draft-editor .batch-toolbar > span { flex-shrink: 0; margin-right: 8px; }
+.draft-editor .batch-toolbar > button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; min-height: 36px; border: 0; border-radius: 6px; background: transparent; }
+.draft-editor .batch-toolbar .link-button { margin-left: auto; text-decoration: none; }
+.batch-label-short { display: none; }
+.draft-editor > .draft-content > .score-difference { border: 0; padding: 0; font-size: 13px; color: var(--warning); margin-bottom: 16px; }
+.assembly-workbench .draft-editor .paper-section h2 { font-size: 17px; font-weight: 600; }
+.assembly-workbench .draft-editor .group-subtitle { font-size: 12px; margin: 3px 0 20px; }
+.assembly-workbench .draft-editor .question-stem { color: #262626; font-size: 16px; }
+.assembly-workbench .draft-editor .question-actions { opacity: 1; gap: 4px; }
+.assembly-workbench .draft-editor .question-actions > button { border-radius: 6px; min-height: 34px; font-size: 12px; color: #626262; }
+.assembly-workbench .draft-editor .question-actions > button:hover:not(:disabled) { background: #f5f5f3; color: #171717; }
+.assembly-workbench .draft-editor .question-action-menu {
+  top: auto; bottom: calc(100% + 4px); border-color: var(--line); border-radius: 8px;
+  box-shadow: 0 4px 16px #0000000d;
+}
+.assembly-workbench .draft-editor .question-action-menu > button { border-radius: 5px; }
+.assembly-workbench .draft-editor .editable-question .question-footer { margin-bottom: 20px; padding-bottom: 12px; }
+.assembly-workbench .draft-editor .coverage-review { border: 0; border-left: 2px solid var(--line); border-radius: 0; margin: 0 0 24px; }
+.draft-editor [hidden] { display: none; }
+@media (max-width: 760px) {
+  .assembly-workbench .draft-editor .draft-toolbar { align-items: center; gap: 8px; margin-bottom: 18px; }
+  .draft-save-note { display: none; }
+  .assembly-workbench .draft-editor .toolbar-actions { justify-content: flex-start; gap: 0; }
+  .draft-editor .toolbar-actions > button, .draft-tools-menu > button { min-height: 44px; padding-inline: 8px; font-size: 12px; }
+  .assembly-workbench .draft-editor .question-actions > button { min-height: 44px; }
+  .assembly-workbench .draft-editor .batch-toolbar { font-size: 12px; padding-inline: 4px; gap: 2px; }
+  .draft-editor .batch-toolbar > span { margin-right: 2px; }
+  .draft-editor .batch-toolbar > button { min-height: 44px; padding-inline: 6px; font-size: 12px; }
+  .batch-label-full { display: none; }
+  .batch-label-short { display: inline; }
+}

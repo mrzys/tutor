@@ -29,6 +29,25 @@ test('student projection excludes all teacher notes, traces, and unused assets',
   assert.match(JSON.stringify(projectPaper(paper,'teacher')),/TEACHER_SECRET_SENTINEL/);
 });
 
+test('source metadata is frozen, safely projected and retained in student and teacher PDF', async () => {
+  const paper = await fixture();
+  const slot = paper.draft.slots.find(item => item.question);
+  slot.question.student.stem = '判断集合元素关系，选择正确选项。';
+  slot.question.verification.origin = { sourceTitle: '2025学年五校十月联考数学', sourceQuestionNumber: '3', privateReviewNote: 'SOURCE_PRIVATE_SENTINEL' };
+  for (const kind of ['student', 'teacher']) {
+    const projection = projectPaper(paper, kind);
+    assert.equal(projection.slots[0].sourceCaption, '来源：2025学年五校十月联考数学 · 原卷第 3 题');
+    assert.doesNotMatch(JSON.stringify(projection), /SOURCE_PRIVATE_SENTINEL/);
+    const root = await mkdtemp(path.join(tmpdir(), 'tutor-source-pdf-'));
+    const output = await generatePaperOutput(paper, kind, { outputRoot: root });
+    assert.equal(output.ok, true, output.error?.message);
+    const text = (await inspect(output.artifact.path)).pages.map(page => page.text).join('\n');
+    assert.match(text, /2025学年五校十月联考数学/);
+    assert.match(text, /原卷第\s*3\s*题/);
+    assert.equal((text.match(/2025学年五校十月联考数学/g) ?? []).length, 1);
+  }
+});
+
 test('real A4 PDFs retain order and points; student leaks no teacher content, teacher has formal answer hierarchy and no technical metadata',async()=>{
   const paper = await fixture();
   paper.draft.slots[0].question.teacher.answers[0].text += ' TEACHER_SECRET_SENTINEL';
@@ -133,4 +152,53 @@ print(json.dumps(results))`;
   const values=JSON.parse((await exec(await findPdfPython(),['-c',script,renderer],{encoding:'utf8',windowsHide:true})).stdout);
   assert.deepEqual(values.map(x=>x.columns),[4,2,1,4,1]);
   assert.ok(values[3].height>values[0].height,'a tall fraction raises its option row height');
+});
+
+test('CJK-only font falls back for numbers, source years, option labels and SVG text',async()=>{
+  const root=await mkdtemp(path.join(tmpdir(),'tutor-font-fallback-'));
+  const file=path.join(root,'fallback.pdf');
+  const script=`import importlib.util,json,sys
+from reportlab.pdfgen import canvas
+from reportlab.graphics.shapes import Group,String
+s=importlib.util.spec_from_file_location('exam_renderer',sys.argv[1]);m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+# Reproduce DroidSansFallbackFull's missing Latin cmap on every platform.
+for name in [m.FONT,m.BOLD]:
+ face=m.pdfmetrics.getFont(name).face
+ face.charToGlyph={code:glyph for code,glyph in face.charToGlyph.items() if code>=128}
+text='1. 2025 ABCD 10'
+for preferred in [m.FONT,m.BOLD]:
+ runs=m.font_runs(text,preferred)
+ assert ''.join(run for run,font in runs)==text
+ assert all(font not in [m.FONT,m.BOLD] for run,font in runs)
+ assert all(m.pdfmetrics.getFont(font).face.charToGlyph.get(ord(c),0) for run,font in runs for c in run)
+ assert m.font_runs('中文',preferred)==[('中文',preferred)]
+ assert abs(m.text_width(text,preferred,12)-sum(m.pdfmetrics.stringWidth(run,font,12) for run,font in runs))<0.001
+g=Group();g.add(String(100,0,'中文2025',fontName=m.FONT,fontSize=12,textAnchor='middle'));m.fallback_svg_text(g)
+assert ''.join(item.text for item in g.contents[0].contents)=='中文2025'
+assert g.contents[0].contents[-1].fontName==m.LATIN
+c=canvas.Canvas(sys.argv[2]);m.draw_text(c,50,750,text,m.FONT,12);m.draw_text(c,50,720,text,m.BOLD,12);c.save()
+try: m.font_runs(chr(0x10ffff));raise AssertionError('unsupported glyph silently accepted')
+except RuntimeError: pass
+print(json.dumps({'ok':True}))`;
+  assert.equal(JSON.parse((await exec(await findPdfPython(),['-c',script,path.resolve('scripts/render-paper.py'),file],{encoding:'utf8',windowsHide:true})).stdout).ok,true);
+  const text=(await inspect(file)).pages.map(page=>page.text).join('\n');
+  assert.equal((text.match(/1\. 2025 ABCD 10/g)??[]).length,2);
+});
+
+
+test('diagnostic focus is teacher-only and bound to the frozen task, including real PDF output', async () => {
+  const paper = await fixture();
+  paper.draft.baseline.requirements.purpose = 'diagnostic';
+  paper.draft.slots[0].taskLabel = '诊断检查点_SENTINEL';
+  const student = projectPaper(paper, 'student');
+  const teacher = projectPaper(paper, 'teacher');
+  assert.equal(student.slots[0].diagnosticFocus, undefined);
+  assert.equal(teacher.slots[0].diagnosticFocus, '诊断检查点_SENTINEL');
+  const root = await mkdtemp(path.join(tmpdir(), 'tutor-diagnostic-output-'));
+  const result = await generatePaperOutput(paper, 'teacher', { outputRoot: root });
+  assert.equal(result.ok, true, result.error?.message);
+  const pdf = await inspect(result.artifact.path);
+  assert.match(pdf.pages.map(page => page.text).join('\n'), /诊断检查点_SENTINEL/);
+  paper.draft.baseline.requirements.purpose = 'consolidation';
+  assert.equal(projectPaper(paper, 'teacher').slots[0].diagnosticFocus, undefined);
 });

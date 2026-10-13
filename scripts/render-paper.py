@@ -1,5 +1,6 @@
 """Render a deliberately projected, frozen paper; never read the live question bank."""
 import base64
+import copy
 import io
 import json
 import os
@@ -13,6 +14,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import SimpleDocTemplate, Flowable, Spacer, KeepTogether, Image, PageBreak, Table, TableStyle
 from reportlab.graphics import renderPDF
+from reportlab.graphics.shapes import Group, String
+import reportlab
 from svglib.svglib import svg2rlg
 from svglib.fonts import register_font
 
@@ -27,11 +30,70 @@ BOLD = 'ExamHeading'
 bold_path = 'C:/Windows/Fonts/simhei.ttf'
 pdfmetrics.registerFont(TTFont(BOLD, bold_path if Path(bold_path).is_file() else font_path))
 
+# Linux CJK fallback fonts can deliberately omit all Latin glyphs. Embed separate
+# faces and use the same glyph runs for both measuring and painting every string.
+reportlab_fonts = Path(reportlab.__file__).parent / 'fonts'
+def register_fallback(name, candidates):
+    source = next((str(p) for p in candidates if p and Path(p).is_file()), None)
+    if source:
+        pdfmetrics.registerFont(TTFont(name, source))
+        return name
+    return None
+
+LATIN = register_fallback('TutorLatin', [os.environ.get('TUTOR_LATIN_FONT'),
+    'C:/Windows/Fonts/times.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf', reportlab_fonts / 'Vera.ttf'])
+LATIN_BOLD = register_fallback('TutorLatinBold', ['C:/Windows/Fonts/timesbd.ttf',
+    '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf', reportlab_fonts / 'VeraBd.ttf'])
+SYMBOL = register_fallback('TutorSymbols', [os.environ.get('TUTOR_SYMBOL_FONT'),
+    'C:/Windows/Fonts/seguisym.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'])
+
+def font_runs(text, preferred=FONT):
+    runs = []
+    candidates = list(dict.fromkeys(f for f in [preferred, LATIN_BOLD if preferred == BOLD else LATIN, SYMBOL, FONT] if f))
+    for character in text:
+        if character == '\n':
+            continue
+        face = next((f for f in candidates if pdfmetrics.getFont(f).face.charToGlyph.get(ord(character), 0)), None)
+        if face is None:
+            raise RuntimeError(f'PDF 字体缺少字符 U+{ord(character):04X}（{character}），请补充字体')
+        if runs and runs[-1][1] == face:
+            runs[-1] = (runs[-1][0] + character, face)
+        else:
+            runs.append((character, face))
+    return runs
+
+def text_width(text, preferred, size):
+    return sum(pdfmetrics.stringWidth(run, face, size) for run, face in font_runs(text, preferred))
+
+def draw_text(canvas, x, y, text, preferred, size):
+    for run, face in font_runs(text, preferred):
+        canvas.setFont(face, size)
+        canvas.drawString(x, y, run)
+        x += pdfmetrics.stringWidth(run, face, size)
+
+def fallback_svg_text(group):
+    # MathJax uses paths for math but SVG text for \text{...}; it needs the same
+    # fallback for mixed Chinese/Latin text as ordinary question content.
+    for index, item in enumerate(group.contents):
+        if isinstance(item, String):
+            runs = font_runs(item.text)
+            replacement = Group()
+            width = text_width(item.text, FONT, item.fontSize)
+            x = item.x - (width / 2 if item.textAnchor == 'middle' else width if item.textAnchor == 'end' else 0)
+            for run, face in runs:
+                segment = copy.copy(item)
+                segment.text, segment.fontName, segment.x, segment.textAnchor = run, face, x, 'start'
+                replacement.add(segment)
+                x += pdfmetrics.stringWidth(run, face, item.fontSize)
+            group.contents[index] = replacement
+        elif isinstance(item, Group):
+            fallback_svg_text(item)
+
 class RichText(Flowable):
     """Chinese wrapping plus vector TeX; formulas are indivisible line boxes."""
     def __init__(self, text, formulas, size=10.5, color=colors.black, gap=5, align='left', bold=False):
         super().__init__()
-        self.text = str(text)
+        self.text = str(text).replace('\t', '    ')
         self.formulas = formulas
         self.size = size
         self.color = color
@@ -48,6 +110,7 @@ class RichText(Flowable):
             tex = match.group(1) or match.group(2)
             svg = re.sub(r'font-family="[^"]*"', 'font-family="TutorCJK"', self.formulas[tex])
             drawing = svg2rlg(io.BytesIO(svg.encode('utf-8')))
+            fallback_svg_text(drawing)
             factor = self.size / 11
             if drawing.width * factor > width:
                 factor = width / drawing.width
@@ -69,7 +132,7 @@ class RichText(Flowable):
         used = 0
         high = self.size * 1.65
         for kind, value in tokens:
-            tw = pdfmetrics.stringWidth(value, self.font, self.size) if kind == 'text' else value.width
+            tw = text_width(value, self.font, self.size) if kind == 'text' else value.width
             th = self.size * 1.65 if kind == 'text' else max(self.size * 1.65, value.height + 4)
             closing = kind == 'text' and value in '。，；：！？、）)]'
             if (kind == 'text' and value == '\n') or (used + tw > width and line and not closing):
@@ -105,7 +168,6 @@ class RichText(Flowable):
         return [a, b]
 
     def draw(self):
-        self.canv.setFont(self.font, self.size)
         self.canv.setFillColor(self.color)
         y = self.height
         for line, high in self.lines:
@@ -113,7 +175,7 @@ class RichText(Flowable):
             x = (self.width - sum(tw for _, _, tw in line)) / 2 if self.align == 'center' else 0
             for kind, value, tw in line:
                 if kind == 'text':
-                    self.canv.drawString(x, y + (high - self.size) / 2 + 1, value)
+                    draw_text(self.canv, x, y + (high - self.size) / 2 + 1, value, self.font, self.size)
                 else:
                     renderPDF.draw(value, self.canv, x, y + (high - value.height) / 2)
                 x += tw
@@ -265,6 +327,8 @@ def main():
                         colWidths=[23,width-23-(52 if scored else 0),52 if scored else 0], hAlign='LEFT', splitInRow=1)
             row.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP'),('LEFTPADDING',(0,0),(-1,-1),0),('RIGHTPADDING',(0,0),(-1,-1),0),('TOPPADDING',(0,0),(-1,-1),0),('BOTTOMPADDING',(0,0),(-1,-1),5)]))
             question = [*section_intro,row, *stem_items]
+            if slot.get('sourceCaption'):
+                question.append(rich(slot['sourceCaption'], 8, gap=5))
             section_intro = []
             for asset in student['assets']:
                 frozen = next((a for a in model['assets'] if a['slotId'] == slot['slotId'] and a['assetId'] == asset['assetId']), None)
@@ -291,6 +355,8 @@ def main():
                 story.extend(question) if teacher else story.append(KeepTogether(question))
             if not teacher:
                 continue
+            if slot.get('diagnosticFocus'):
+                add('考查重点：' + slot['diagnosticFocus'], 9.5, gap=8)
             material = slot.get('teacher',{})
             for key,label in [('answers','参考答案'),('solutions','解析'),('scoringSuggestions','评分参考')]:
                 if key == 'scoringSuggestions' and not scored:
@@ -321,12 +387,12 @@ def main():
         page_count = doc.page
         canvas.saveState()
         canvas.setFillColor(colors.black)
-        canvas.setFont(FONT,8)
         if doc.page > 1:
             short_title = title if len(title)<=36 else title[:35]+'…'
-            canvas.drawString(52,A4[1]-27,short_title+(' · 参考答案与解析' if teacher else ''))
+            draw_text(canvas,52,A4[1]-27,short_title+(' · 参考答案与解析' if teacher else ''),FONT,8)
             canvas.setLineWidth(.35);canvas.line(52,A4[1]-33,A4[0]-52,A4[1]-33)
-        canvas.drawCentredString(A4[0]/2,23,f"第 {doc.page} 页")
+        footer = f"第 {doc.page} 页"
+        draw_text(canvas,(A4[0]-text_width(footer,FONT,8))/2,23,footer,FONT,8)
         canvas.restoreState()
     while story and isinstance(story[-1], Spacer):
         story.pop()

@@ -1,4 +1,5 @@
 import { allocateParts, typeLabels } from './api.js';
+import { scopesOverlap } from '../src/curriculum/section-identity.mjs';
 import { groupSlotsByType, questionTypeOrder } from '../src/assembly/slot-order.mjs';
 
 const questionTypes = questionTypeOrder;
@@ -47,7 +48,7 @@ export function changeBlueprintTask(blueprint, slotId, task, { preservePartPoint
 }
 
 export function goalTaskCompatible(goal, task) {
-  return Boolean(task) && goal.knowledgeScope?.some(id => task.sectionIds.includes(id))
+  return Boolean(task) && scopesOverlap(goal.knowledgeScope || [], task.sectionIds)
     && (goal.conditions?.response !== 'written_reasoning' || task.questionType === 'free_response');
 }
 

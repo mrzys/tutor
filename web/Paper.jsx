@@ -4,10 +4,13 @@ import { api, typeTitles } from './api.js';
 import { Modal } from './DraftEditor.jsx';
 import { MathText } from './MathText.jsx';
 import { QuestionOptions } from './QuestionOptions.jsx';
+import { QuestionSource } from './QuestionSource.jsx';
+import './Paper.css';
+import { purposeFor } from '../src/assembly/purposes.mjs';
 
 const PdfPreview = lazy(() => import('./PdfPreview.jsx'));
 
-const kindNames = { student: '学生版', teacher: '教师版' };
+const kindNames = { student: '学生卷', teacher: '教师卷' };
 const outputNames = { not_generated: '尚未生成', complete: '已生成', incomplete: '已生成 · 存在未满足项', failed: '生成失败' };
 const issueText = issue => {
   if (typeof issue === 'string') return issue;
@@ -49,16 +52,50 @@ export function Confirmation({ draft, onClose, onConfirmed, onReload }) {
     } finally { inFlight.current = false; if (mounted.current) setBusy(false); }
   }
   const footer = <><p className="help">保存后可生成学生卷和教师卷 PDF。</p><div className="action-row"><button disabled={busy} onClick={onClose}>返回调整</button><button className="primary" disabled={loading || !summary || busy || !!failure && !failure.retry || (summary?.requiresAcknowledgement && !acknowledged)} onClick={confirm}>{busy ? '正在保存成卷…' : failure?.retry ? '重试保存' : '确认并保存成卷'}</button></div></>;
-  return <Modal title="确认当前内容并保存成卷" onClose={onClose} busy={busy} className="paper-confirmation" footer={footer}>{loading ? <p role="status">正在核查当前内容与版本…</p> : <>{failure ? <div className="notice error" role="alert"><span>{failure.message}</span>{failure.status === 409 ? <button disabled={busy} onClick={onReload}>读取最新草稿</button> : null}</div> : null}{summary ? <><div className="confirmation-facts"><div><span>完整可作答题</span><strong>{summary.student.questionCount} 题</strong></div>{summary.scoringMode !== 'none' ? <div><span>有效分值</span><strong>{summary.student.points} 分</strong></div> : null}<div><span>确认修订</span><strong>{summary.revision}</strong></div></div><p className="help">保存当前题目、顺序{summary.scoringMode !== 'none' ? '、分值' : ''}和资料版本。成卷后内容固定，后续调整需派生新草稿。</p>{!summary.student.complete ? <div className="notice warning">学生版未完整，缺题位置保留题号及明确占位。<Issues items={summary.student.missing}/></div> : null}<details open><summary>计划差异与适配未知</summary><Issues items={summary.differences}/><Issues items={summary.unknown}/>{!summary.differences?.length && !summary.unknown?.length ? <p className="help">没有额外差异或未知项。</p> : null}</details><details><summary>教师资料待核对项</summary><Issues items={summary.teacher.issues}/><Issues items={summary.scoringIssues}/>{!summary.teacher.issues?.length && !summary.scoringIssues?.length ? <p className="help">没有记录的未满足项。</p> : null}</details>{summary.requiresAcknowledgement ? <label className="check-item confirmation-ack"><input type="checkbox" checked={acknowledged} disabled={busy || !!payload.current} onChange={event => setAcknowledged(event.target.checked)}/><span>我已检查上述差异、未知与缺项，确认保存当前内容。</span></label> : null}</> : null}</>}</Modal>;
+  const hasDifferences = !!(summary?.differences?.length || summary?.unknown?.length);
+  const hasTeacherIssues = !!(summary?.teacher?.issues?.length || summary?.scoringIssues?.length);
+  return <Modal title="确认当前内容并保存成卷" onClose={onClose} busy={busy} className="paper-confirmation" footer={footer}>
+    {loading ? <p role="status">正在检查试卷…</p> : <>
+      {failure ? <div className="notice error" role="alert"><span>{failure.message}</span>{failure.status === 409 ? <button disabled={busy} onClick={onReload}>读取最新草稿</button> : null}</div> : null}
+      {summary ? <>
+        <div className="confirmation-facts"><div><span>题目</span><strong>{summary.student.questionCount} 题</strong></div>{summary.scoringMode !== 'none' ? <div><span>总分</span><strong>{summary.student.points} 分</strong></div> : null}</div>
+        <p className="help">保存当前题目与顺序，之后仍可基于此卷继续编辑。</p>
+        {!summary.student.complete ? <div className="notice warning">试卷仍有缺题，请检查后再使用。<Issues items={summary.student.missing}/></div> : null}
+        {hasDifferences ? <details open><summary>需要留意的事项</summary><Issues items={summary.differences}/><Issues items={summary.unknown}/></details> : null}
+        {hasTeacherIssues ? <details><summary>答案与评分待核对</summary><Issues items={summary.teacher.issues}/><Issues items={summary.scoringIssues}/></details> : null}
+        {summary.requiresAcknowledgement ? <label className="check-item confirmation-ack"><input type="checkbox" checked={acknowledged} disabled={busy || !!payload.current} onChange={event => setAcknowledged(event.target.checked)}/><span>我已检查上述差异、未知与缺项，确认保存当前内容。</span></label> : null}
+      </> : null}
+    </>}
+  </Modal>;
 }
 
 export function SavedPapers({ papers, warnings, onOpen, busy }) {
   return <div className="saved-drafts"><div className="section-heading"><h2>已保存成卷</h2><span className="muted">内容与资料版本已固定</span></div><Issues items={warnings} className="warning-text"/>{papers.length ? <ul>{papers.map(paper => <li key={paper.paperId}><div><strong>{paper.title}</strong><small>{new Date(paper.createdAt).toLocaleString('zh-CN')} · {paper.summary?.student?.questionCount ?? paper.stats?.selectedQuestions ?? '—'} 题{paper.summary?.scoringMode !== 'none' ? ` / ${paper.summary?.student?.points ?? paper.stats?.availablePoints ?? '—'} 分` : ''}</small></div><button disabled={busy} onClick={() => onOpen(paper.paperId)}>打开成卷</button></li>)}</ul> : <p className="empty-message">尚未保存成卷。检查当前草稿后可确认保存。</p>}</div>;
 }
 
-function FrozenStudent({ draft }) {
+function FrozenStudent({ draft, title, kind = 'student', assets = [] }) {
   const scored = draft.baseline.requirements.scoringMode !== 'none';
-  return <section className="frozen-student" id="frozen-paper"><h2>已确认的学生题面</h2><p className="help">两版 PDF 采用以下固定顺序{scored ? '和分值' : ''}；此处只展示学生内容。</p>{draft.slots.map((slot, index) => <article className="question" id={`frozen-question-${slot.number}`} key={slot.slotId}>{index === 0 || draft.slots[index - 1].questionType !== slot.questionType ? <h3>{typeTitles[slot.questionType]}</h3> : null}<div className="question-top"><span className="question-number" aria-label={`第 ${slot.number} 题`}>{slot.number}</span><div className="question-stem">{slot.question ? <MathText text={slot.question.student.stem}/> : <span className="missing-stem">【第 {slot.number} 题缺题面】</span>}</div>{scored ? <span className="question-points">（{slot.points} 分）</span> : null}</div>{slot.question ? <div className="question-content"><QuestionOptions options={slot.question.student.options}/>{slot.question.student.parts.map((part, partIndex) => <p className="question-part" key={part.partId}>（{partIndex + 1}）<MathText text={part.prompt}/>{scored ? <span className="part-points">（{slot.partPoints.find(item => item.partId === part.partId)?.points ?? '—'} 分）</span> : null}</p>)}</div> : null}</article>)}</section>;
+  const teacher = kind === 'teacher';
+  const purpose = draft.baseline.requirements.purpose;
+  const teacherSections = [['answers', '参考答案'], ['solutions', '解析'], ...(scored ? [['scoringSuggestions', '评分参考']] : [])];
+  return <section className="frozen-student" id="frozen-paper" aria-label={`${kindNames[kind]}题面预览`}>
+    <h2>{title || draft.title || '试卷题面'}</h2>
+    <p className="paper-sheet-meta">{kindNames[kind]}{purpose ? ` · ${purposeFor(purpose)?.label || '练习'}` : ''} · {draft.slots.length} 题 · {draft.baseline.requirements.durationMinutes} 分钟{scored ? ` · ${draft.slots.reduce((sum, slot) => sum + slot.points, 0)} 分` : ''}</p>
+    {draft.slots.map((slot, index) => <article className="question" id={`frozen-question-${slot.number}`} key={slot.slotId}>
+      {index === 0 || draft.slots[index - 1].questionType !== slot.questionType ? <h3>{typeTitles[slot.questionType]}</h3> : null}
+      <div className="question-top"><span className="question-number" aria-label={`第 ${slot.number} 题`}>{slot.number}</span><div className="question-stem">{slot.question ? <MathText text={slot.question.student.stem}/> : <span className="missing-stem">【第 {slot.number} 题缺题面】</span>}</div>{scored ? <span className="question-points">（{slot.points} 分）</span> : null}</div>
+      {slot.question ? <div className="question-content">
+        <QuestionSource question={slot.question} manifest={draft.baseline.sourceManifest}/>
+        {assets.filter(asset => asset.slotId === slot.slotId).map(asset => <img className="paper-question-image" key={asset.assetId} alt={asset.alt || '题目配图'} src={`data:${asset.mimeType};base64,${asset.dataBase64}`}/>)}
+        <QuestionOptions options={slot.question.student.options}/>
+        {slot.question.student.parts.map((part, partIndex) => <p className="question-part" key={part.partId}>（{partIndex + 1}）<MathText text={part.prompt}/>{scored ? <span className="part-points">（{slot.partPoints.find(item => item.partId === part.partId)?.points ?? '—'} 分）</span> : null}</p>)}
+        {teacher ? <div className="paper-teacher-material" aria-label={`第 ${slot.number} 题教师资料`}>{purpose === 'diagnostic' ? <section className="paper-diagnostic-focus"><h4>考查重点</h4><p><MathText text={slot.taskLabel || '按本次确认范围检查学生作答'}/></p></section> : null}{teacherSections.map(([field, label]) => {
+          const entries = slot.question.teacher?.[field]?.filter(entry => entry.text?.trim()) || [];
+          return <section key={field}><h4>{label}</h4>{entries.length ? entries.map((entry, entryIndex) => <p key={entryIndex}>{entry.partId && entry.partId !== 'main' ? <span className="paper-answer-part">（{slot.question.student.parts.findIndex(part => part.partId === entry.partId) + 1 || entry.partId}）</span> : null}<MathText text={entry.text}/></p>) : <p className="warning-text">暂无{label}，需教师核对。</p>}</section>;
+        })}</div> : null}
+      </div> : null}
+    </article>)}
+  </section>;
 }
 
 function UserFeedback({ paperId, initialFeedback }) {
@@ -80,11 +117,12 @@ function UserFeedback({ paperId, initialFeedback }) {
     catch (failure) { if (mounted.current) setError(failure.message); }
     finally { pending.current = false; if (mounted.current) setBusy(false); }
   }
-  return <section className="user-feedback"><h2>当前用户实际使用反馈</h2><p className="help">打开两版文件并实际检查后，可以记录是否愿意使用。开发者检查不等于用户接受；未填写时保持待验证。</p>{record ? <div className="notice" role="status">已记录反馈：{{ yes: '愿意使用', after_changes: '修改后愿意使用', no: '暂不使用' }[record.willingToUse]}。{record.metrics?.replacementCount !== undefined ? `本次草稿换题 ${record.metrics.replacementCount} 次。` : ''}<small>记录于 {new Date(record.createdAt).toLocaleString('zh-CN')}</small></div> : <p className="feedback-pending">实际使用验证：待当前用户反馈。</p>}<form onSubmit={save}><label className="field">是否愿意实际使用此卷？<Select required value={willingToUse} disabled={busy} onChange={event => setWillingToUse(event.target.value)}><option value="" disabled>请选择实际判断</option><option value="yes">愿意使用</option><option value="after_changes">修改后愿意使用</option><option value="no">暂不使用</option></Select></label><label className="field">原因与缺项（可选）<textarea value={reason} maxLength={2000} rows="3" disabled={busy} onChange={event => setReason(event.target.value)} placeholder="哪些题目、分值或输出细节仍需调整？"/></label><label className="field">手工修正记录（可选）<textarea value={manualCorrections} maxLength={2000} rows="2" disabled={busy} onChange={event => setManualCorrections(event.target.value)} placeholder="记录系统外补充或修正的内容"/></label>{error ? <p className="error-text" role="alert">{error}</p> : null}<div className="action-row"><button disabled={busy || !willingToUse}>{busy ? '正在保存反馈…' : record ? '更新我的实际反馈' : '保存我的实际反馈'}</button></div></form></section>;
+  return <section className="user-feedback"><h2>使用反馈</h2><p className="help">检查试卷后，记录使用感受和仍需调整的内容。</p>{record ? <div className="notice" role="status">已记录反馈：{{ yes: '愿意使用', after_changes: '修改后愿意使用', no: '暂不使用' }[record.willingToUse]}。{record.metrics?.replacementCount !== undefined ? `本次草稿换题 ${record.metrics.replacementCount} 次。` : ''}<small>记录于 {new Date(record.createdAt).toLocaleString('zh-CN')}</small></div> : <p className="feedback-pending">尚未记录反馈。</p>}<form onSubmit={save}><label className="field">是否愿意实际使用此卷？<Select required value={willingToUse} disabled={busy} onChange={event => setWillingToUse(event.target.value)}><option value="" disabled>请选择实际判断</option><option value="yes">愿意使用</option><option value="after_changes">修改后愿意使用</option><option value="no">暂不使用</option></Select></label><label className="field">原因与缺项（可选）<textarea value={reason} maxLength={2000} rows="3" disabled={busy} onChange={event => setReason(event.target.value)} placeholder="哪些题目、分值或输出细节仍需调整？"/></label><label className="field">手工修正记录（可选）<textarea value={manualCorrections} maxLength={2000} rows="2" disabled={busy} onChange={event => setManualCorrections(event.target.value)} placeholder="记录系统外补充或修正的内容"/></label>{error ? <p className="error-text" role="alert">{error}</p> : null}<div className="action-row"><button disabled={busy || !willingToUse}>{busy ? '正在保存反馈…' : record ? '更新我的实际反馈' : '保存我的实际反馈'}</button></div></form></section>;
 }
 
 export function Paper({ paper, initialOutputs = {}, initialFeedback = null, initialWarnings = [], onDerived }) {
   const [outputs, setOutputs] = useState(initialOutputs);
+  const [activeKind, setActiveKind] = useState('student');
   const [previewKind, setPreviewKind] = useState(null);
   const [working, setWorking] = useState({});
   const [errors, setErrors] = useState({});
@@ -113,5 +151,70 @@ export function Paper({ paper, initialOutputs = {}, initialFeedback = null, init
     finally { deriveInFlight.current = false; if (mounted.current) setDeriving(false); }
   }
   const summary = paper.summary;
-  return <div className="paper-result">{initialWarnings.length ? <div className="notice warning" role="status"><Issues items={initialWarnings}/></div> : null}<div className="notice"><strong>成卷已保存，内容与版本固定。</strong><p>来源草稿修订 {paper.sourceRevision} · {new Date(paper.createdAt).toLocaleString('zh-CN')}</p></div><div className="paper-summary"><div className="confirmation-facts"><div><span>完整可作答题</span><strong>{summary.student.questionCount} 题</strong></div>{summary.scoringMode !== 'none' ? <div><span>有效分值</span><strong>{summary.student.points} 分</strong></div> : null}<div><span>学生题面</span><strong>{summary.student.complete ? '完整' : '未完整'}</strong></div></div><button disabled={deriving} onClick={derive}>{deriving ? '正在创建新草稿…' : errors.derive ? '重试派生新草稿' : '从此成卷派生新草稿'}</button>{errors.derive ? <p className="error-text" role="alert">{errors.derive}</p> : null}</div><section className="paper-output-section"><h2>试卷 PDF</h2><p className="help">学生卷含答题留白；教师卷含答案速查与解析。预览与下载使用同一份 A4 文件。</p><div className="paper-outputs">{Object.entries(kindNames).map(([kind, label]) => { const output = outputs[kind]; const attempted = output && output.status !== 'not_generated'; return <article className="paper-output" key={kind}><h3>{label}</h3><p className={output?.status === 'failed' ? 'error-text' : output?.status === 'incomplete' ? 'warning-text' : 'output-status'}>{working[kind] ? '正在生成 PDF…' : output ? outputNames[output.status] || output.status : '尚未生成'}</p>{output?.message ? <p className="help">{output.message}</p> : null}<Issues items={output?.issues} className="help"/>{kind === 'teacher' && (!output || output.status === 'not_generated') ? <Issues items={summary.teacher.issues} className="help"/> : null}{errors[kind] ? <p className="error-text" role="alert">{errors[kind]}。已保存成卷及另一版结果保留。</p> : null}<div className="output-actions"><button disabled={working[kind]} onClick={() => generate(kind)}>{working[kind] ? '正在生成…' : output?.layoutOutdated ? `更新${label}排版` : attempted || errors[kind] ? `重新生成${label}` : `生成${label} PDF`}</button>{output && ['complete', 'incomplete'].includes(output.status) && output.downloadUrl ? <><button onClick={() => setPreviewKind(kind)}>预览{label}</button><a href={output.downloadUrl} download>下载{label} PDF</a></> : null}</div>{output?.pages ? <small className="help">A4 · {output.pages} 页</small> : null}{output?.sha256 ? <details className="output-identity"><summary>文件身份</summary><code>{output.sha256}</code></details> : null}</article>; })}</div>{previewKind ? <Suspense fallback={<p role="status">正在加载 PDF 预览器…</p>}><PdfPreview key={`${previewKind}-${outputs[previewKind]?.sha256}`} kind={previewKind} onKindChange={setPreviewKind} onClose={() => setPreviewKind(null)} sources={Object.entries(kindNames).filter(([kind]) => outputs[kind]?.downloadUrl && ['complete', 'incomplete'].includes(outputs[kind].status)).map(([kind, label]) => ({ kind, label, url: outputs[kind].downloadUrl, downloadUrl: outputs[kind].downloadUrl }))}/></Suspense> : null}</section><details className="paper-confirmed-issues"><summary>确认时的差异与未知事项</summary><Issues items={summary.differences}/><Issues items={summary.unknown}/><Issues items={summary.scoringIssues}/></details><UserFeedback paperId={paper.paperId} initialFeedback={initialFeedback}/><FrozenStudent draft={paper.draft}/></div>;
+  const output = outputs[activeKind];
+  const label = kindNames[activeKind];
+  const available = !!output?.downloadUrl && ['complete', 'incomplete'].includes(output.status);
+  const attempted = output && output.status !== 'not_generated';
+  const sources = Object.entries(kindNames)
+    .filter(([kind]) => outputs[kind]?.downloadUrl && ['complete', 'incomplete'].includes(outputs[kind].status))
+    .map(([kind, name]) => ({ kind, label: name, url: outputs[kind].downloadUrl, downloadUrl: outputs[kind].downloadUrl }));
+  function switchKind(kind) {
+    setActiveKind(kind);
+    setPreviewKind(current => current && outputs[kind]?.downloadUrl && ['complete', 'incomplete'].includes(outputs[kind].status) ? kind : null);
+  }
+  function moveTab(event) {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const kind = event.key === 'Home' ? 'student' : event.key === 'End' ? 'teacher' : activeKind === 'student' ? 'teacher' : 'student';
+    switchKind(kind);
+    event.currentTarget.parentElement.querySelector(`[data-paper-kind="${kind}"]`)?.focus();
+  }
+  return <div className="paper-result paper-workspace">
+    {initialWarnings.length ? <div className="notice warning" role="status"><Issues items={initialWarnings}/></div> : null}
+    <div className="paper-saved-line">
+      <span>已保存</span>
+      <span>{new Date(paper.createdAt).toLocaleString('zh-CN')}</span>
+    </div>
+    {!summary.student.complete ? <div className="notice warning" role="alert"><strong>试卷仍有缺题，请检查后再使用。</strong><Issues items={summary.student.missing}/></div> : null}
+    <section className="paper-document" aria-label="已保存试卷">
+      <div className="paper-document-toolbar">
+        <div className="paper-version-tabs" role="tablist" aria-label="试卷版本">
+          {Object.entries(kindNames).map(([kind, name]) => <button key={kind} id={`paper-tab-${kind}`} data-paper-kind={kind} type="button" role="tab" aria-selected={activeKind === kind} aria-controls="paper-document-panel" tabIndex={activeKind === kind ? 0 : -1} onKeyDown={moveTab} onClick={() => switchKind(kind)}>{name}</button>)}
+        </div>
+        <div className="paper-document-actions">
+          {available ? <>
+            <button type="button" onClick={() => setPreviewKind(current => current ? null : activeKind)}>{previewKind ? '返回题面' : '预览 PDF'}</button>
+            <a className={output.layoutOutdated ? '' : 'primary'} href={output.downloadUrl} download>下载{label}</a>
+          </> : null}
+          {!available || output?.layoutOutdated ? <button className="primary" disabled={working[activeKind]} onClick={() => generate(activeKind)}>{working[activeKind] ? '正在生成 PDF…' : output?.layoutOutdated ? '更新 PDF 排版' : attempted || errors[activeKind] ? '重试生成 PDF' : `生成${label} PDF`}</button> : null}
+        </div>
+      </div>
+      {working[activeKind] || output && output.status !== 'not_generated' ? <div className="paper-document-status" aria-live="polite">
+        <span>{working[activeKind] ? '正在生成 PDF，可继续查看题面。' : outputNames[output.status] || output.status}</span>
+        {output?.pages ? <span>A4 · {output.pages} 页</span> : null}
+      </div> : null}
+      {output?.layoutOutdated ? <p className="warning-text" role="status">已有文件使用旧版排版，更新后可下载新版。试卷内容保持固定。</p> : null}
+      {output?.message ? <p className={output.status === 'failed' ? 'error-text' : 'help'}>{output.message}</p> : null}
+      <Issues items={output?.issues} className="warning-text"/>
+      {activeKind === 'teacher' && (!output || output.status === 'not_generated') ? <Issues items={summary.teacher.issues} className="warning-text"/> : null}
+      {errors[activeKind] ? <p className="error-text" role="alert">{errors[activeKind]}。已保存的试卷和文件仍然保留。</p> : null}
+      <div id="paper-document-panel" className="paper-document-panel" role="tabpanel" aria-labelledby={`paper-tab-${activeKind}`}>
+        {previewKind ? <Suspense fallback={<p role="status">正在加载 PDF 预览器…</p>}><PdfPreview key={`${previewKind}-${outputs[previewKind]?.sha256}`} kind={previewKind} onKindChange={switchKind} onClose={() => setPreviewKind(null)} sources={sources}/></Suspense> : <>
+          <FrozenStudent draft={paper.draft} title={paper.title} kind={activeKind} assets={paper.assets}/>
+        </>}
+      </div>
+      <details className="paper-output-tools"><summary>文件与版本</summary>
+        <p className="help">试卷内容与资料版本已固定 · 来源草稿修订 {paper.sourceRevision}</p>
+        <button disabled={working[activeKind]} onClick={() => generate(activeKind)}>{working[activeKind] ? '正在生成…' : available ? `重新生成${label} PDF` : `生成${label} PDF`}</button>
+        {output?.sha256 ? <p className="help">文件校验值 <code>{output.sha256}</code></p> : null}
+        <button disabled={deriving} onClick={derive}>{deriving ? '正在创建新草稿…' : errors.derive ? '重试创建新草稿' : '基于此卷继续编辑'}</button>
+        <p className="help">继续编辑会创建新草稿，保留当前成卷。</p>
+        {errors.derive ? <p className="error-text" role="alert">{errors.derive}</p> : null}
+      </details>
+    </section>
+    <div className="paper-secondary-content">
+      {summary.differences?.length || summary.unknown?.length || summary.scoringIssues?.length ? <details className="paper-confirmed-issues"><summary>查看确认事项（{(summary.differences?.length || 0) + (summary.unknown?.length || 0) + (summary.scoringIssues?.length || 0)} 项）</summary><Issues items={summary.differences}/><Issues items={summary.unknown}/><Issues items={summary.scoringIssues}/></details> : null}
+      <details className="paper-feedback-details"><summary>记录使用反馈</summary><UserFeedback paperId={paper.paperId} initialFeedback={initialFeedback}/></details>
+    </div>
+  </div>;
 }

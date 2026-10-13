@@ -269,9 +269,11 @@ test('fixed plans repair within their question type, and genuinely unavoidable g
   let impossibleCalls = 0;
   const impossible = await planBlueprint({ ...requirements, mainScope: ['1.2'], targetScore: 10, counts: { single_choice: 0, fill_blank: 0, free_response: 1 } },
     { gateway: createBlueprintGateway({ env, generate: async () => { impossibleCalls++; return { output: unfillable }; } }) });
-  assert.equal(impossible.ok, true, JSON.stringify(impossible));
-  assert.equal(impossibleCalls, 1);
-  assert.equal(impossible.blueprint.supply.distinctCandidateCapacity, 0);
-  assert.equal(impossible.blueprint.slots[0].taskId, 'root_set_subset_count');
-  assert.equal(impossible.blueprint.supply.slotSupply[0].eligibleCount, 0);
+  assert.equal(impossible.ok, false);
+  assert.equal(impossibleCalls, 0, 'A confirmed fixed type deficit should not spend model retries');
+  assert.equal(impossible.error.code, 'insufficient_supply');
+  assert.equal(impossible.error.details.requested, 1);
+  assert.equal(impossible.error.details.available, 0);
+  assert.equal(impossible.error.details.missing, 1);
+  assert.equal(impossible.blueprint, undefined);
 });

@@ -1,9 +1,13 @@
+import { planningCapacity } from './supply-capacity.mjs';
+import { typeCountsAllowed } from './type-constraints.mjs';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, normalizeRequirements, loadPool, slotCandidates, partAllocation, recheckBlueprint } from './engine.mjs';
 import { compatibleGoal } from './teaching-goals.mjs';
 import { blueprintProposalSchema, createBlueprintGateway } from '../llm/blueprint-gateway.mjs';
 import { difficultyView, difficultyDistribution } from './difficulty.mjs';
 import { groupSlotsByType } from './slot-order.mjs';
+import { purposeStrategy } from './purposes.mjs';
+import { includesSection } from '../curriculum/section-identity.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const types = ['single_choice', 'fill_blank', 'free_response'];
@@ -36,16 +40,18 @@ function distinctCapacity(slots, tasks, assessment) {
 // Ask the model to reconsider a demonstrably avoidable supply gap; never rewrite
 // its proposal in code. Required goals bypass this check because unknown support
 // is an honest gap, not a reason to weaken or avoid the teacher's requirement.
-function improvingReplacement(slots, tasks, countPolicy, capacity) {
+function improvingReplacement(slots, tasks, countPolicy, capacity, typeConstraints) {
   const counts = Object.fromEntries(types.map(type => [type, slots.filter(slot => tasks.find(task => task.taskId === slot.taskId).questionType === type).length]));
   for (let index = 0; index < slots.length; index++) {
     const original = tasks.find(task => task.taskId === slots[index].taskId);
     const alternatives = tasks.filter(task => task.taskId !== original.taskId && task.eligibleCount > 0
       && (countPolicy === 'suggested' || task.questionType === original.questionType)
       && (task.questionType === original.questionType || counts[task.questionType] < 30))
+      .filter(task => typeCountsAllowed({ ...counts, [original.questionType]: counts[original.questionType] - 1,
+        [task.questionType]: counts[task.questionType] + (task.questionType === original.questionType ? 0 : 1) }, typeConstraints))
       .sort((a, b) => {
         const alignment = task => slots[index].goalIds.filter(id => task.compatibleGoalIds.includes(id)).length * 10
-          + original.sectionIds.filter(id => task.sectionIds.includes(id)).length;
+          + original.sectionIds.filter(id => includesSection(task.sectionIds, id)).length;
         return alignment(b) - alignment(a) || b.eligibleCount - a.eligibleCount || a.taskId.localeCompare(b.taskId);
       }).filter(task => distinctCapacity(slots.map((slot, at) => at === index ? { ...slot, taskId: task.taskId } : slot), tasks) > capacity);
     if (alternatives.length) return { number: index + 1, taskId: original.taskId, alternatives: alternatives.slice(0, 8).map(task => task.taskId) };
@@ -62,6 +68,7 @@ export async function planBlueprint(requirements = {}, { root = defaultRoot, gat
     if (!loaded.ok) return loaded;
     const config = loaded.config;
     const normalized = normalizeRequirements(requirements, config, config.sources.map(item => item.sourceId));
+    if (countPolicy === 'fixed' && !typeCountsAllowed(normalized.counts, normalized.typeConstraints)) invalid('固定题型配比与明确的排除题型或局部数量冲突，请先调整需求。');
     if (!total(normalized.counts)) invalid('AI 蓝图规划至少需要一个题位。');
     if (normalized.scoringMode !== 'none' && normalized.targetScore < total(normalized.counts)) invalid('目标总分应不小于总题量，每题至少一分。');
     const pool = await loadPool(root);
@@ -69,7 +76,7 @@ export async function planBlueprint(requirements = {}, { root = defaultRoot, gat
     const candidateView = ({ questionId, contentVersion, duplicateGroup }) => ({ questionId, contentVersion, duplicateGroup,
       difficulty: difficultyView(records.get(questionId)?.annotation) });
     if (signal?.aborted) return cancelled();
-    const tasks = config.tasks.filter(task => task.sectionIds.length && task.sectionIds.every(id => normalized.mainScope.includes(id))).map(task => {
+    const tasks = config.tasks.filter(task => task.sectionIds.length && task.sectionIds.every(id => includesSection(normalized.mainScope, id))).map(task => {
       const goalIds = normalized.teachingGoals.filter(goal => compatibleGoal(goal, task)).map(goal => goal.id);
       const candidates = slotCandidates(pool, { questionType: task.questionType, taskId: task.id, goalIds }, normalized);
       const eligible = candidates.filter(candidate => candidate.status === 'eligible');
@@ -96,9 +103,14 @@ export async function planBlueprint(requirements = {}, { root = defaultRoot, gat
     const requiredGoalIds = new Set(normalized.teachingGoals.filter(goal => goal.priority === 'required').map(goal => goal.id));
     const modelTasks = tasks.filter(task => task.eligibleCount > 0 || task.foundationEligibleCount > 0
       || task.compatibleGoalIds.some(id => requiredGoalIds.has(id)));
+    if (!requiredGoalIds.size) {
+      const capacity = planningCapacity(tasks, normalized, countPolicy);
+      if (capacity.missing) return { ok: false, error: { code: 'insufficient_supply',
+        message: `当前范围和题型条件下，同卷去重后最多可安排 ${capacity.available} 题，需求 ${capacity.requested} 题，缺少 ${capacity.missing} 题。请调整题量、范围或题型条件后再确认。`, details: capacity } };
+    }
     const equalPoints = Math.floor(normalized.targetScore / questionCount);
     const pointRemainder = normalized.targetScore % questionCount;
-    const context = { requirements: normalized, countPolicy, totalQuestions: questionCount,
+    const context = { requirements: normalized, purposeStrategy: purposeStrategy(normalized.purpose), countPolicy, totalQuestions: questionCount,
       scoreReference: { note: '可直接使用的整数均分参考，仅供模型规划，不自动修改模型输出；也可自行分配但必须核对合计。',
         slotPoints: Array.from({ length: questionCount }, (_, index) => equalPoints + (index < pointRemainder ? 1 : 0)),
         verifiedTotal: normalized.targetScore },
@@ -121,6 +133,7 @@ export async function planBlueprint(requirements = {}, { root = defaultRoot, gat
         counts[task.questionType]++;
         if (new Set(slot.goalIds).size !== slot.goalIds.length || slot.goalIds.some(id => !task.compatibleGoalIds.includes(id))) invalid('题位目标包含未知、重复或不兼容的关联。');
       }
+      if (!typeCountsAllowed(counts, normalized.typeConstraints)) invalid('蓝图不符合教师明确的排除题型或指定题型数量；未指定的其他题型可在总题量内安排，不得改变明确条件。');
       if (types.some(type => counts[type] > 30)) invalid('每种题型最多 30 题。');
       if (countPolicy === 'fixed' && types.some(type => counts[type] !== normalized.counts[type])) invalid(`固定题量策略不能改变各题型数量。实际 ${JSON.stringify(counts)}，目标 ${JSON.stringify(normalized.counts)}。`);
       for (const goal of normalized.teachingGoals.filter(goal => goal.priority === 'required')) {
@@ -129,7 +142,7 @@ export async function planBlueprint(requirements = {}, { root = defaultRoot, gat
       if (!normalized.teachingGoals.some(goal => goal.priority === 'required')) {
         const capacity = distinctCapacity(proposal.slots, tasks);
         if (capacity < proposal.slots.length) {
-          const improvement = improvingReplacement(proposal.slots, tasks, countPolicy, capacity);
+          const improvement = improvingReplacement(proposal.slots, tasks, countPolicy, capacity, normalized.typeConstraints);
           if (improvement) invalid(`当前同卷去重后最多可填 ${capacity}/${proposal.slots.length} 题，存在可改善的缺口。第 ${improvement.number} 题原任务 ${improvement.taskId} 可改为以下任务之一提升实际容量：${improvement.alternatives.join('、')}。请结合教学偏好与范围重新规划，不改变其他约束${countPolicy === 'suggested' ? '；本次允许改变各题型配比，无须保留原解答题数量' : '；各题型题量保持不变'}。`);
         }
       }

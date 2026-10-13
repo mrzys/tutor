@@ -33,6 +33,17 @@ test('PDF preview worker and decoder static assets use browser-compatible MIME t
   assert.equal((await fetch(`${url}/assets/decoder.wasm`)).headers.get('content-type'), 'application/wasm');
 });
 
+test('workspace config loads independently of an unreadable history store', async t => {
+  const { request } = await app(t, true);
+  const result = await request('/api/config');
+  assert.equal(result.status, 200);
+  assert.ok(result.config.defaultRequirements);
+  assert.ok(result.config.supply.ready > 0);
+  assert.equal(Object.hasOwn(result.config, 'drafts'), false);
+  assert.equal(Object.hasOwn(result.config, 'draftWarnings'), false);
+  assert.equal((await request('/api/drafts')).status, 500, 'history errors stay in their own endpoint');
+});
+
 test('business POST accepts HTTPS origin through the configured loopback proxy', async t => {
   const previous = process.env.TUTOR_TRUST_PROXY;
   process.env.TUTOR_TRUST_PROXY = 'loopback';
@@ -187,8 +198,8 @@ test('API rejects malformed plans and unrelated origins; no success on save fail
     body: '{}',
   });
   assert.equal(response.status, 403);
-  // Bootstrap includes stored drafts and correctly fails for an unreadable store.
-  assert.equal((await request('/api/config')).status, 500);
+  // A broken history store cannot prevent opening the composer; saves still fail honestly.
+  assert.equal((await request('/api/config')).status, 200);
   const preview = await request('/api/blueprint', { requirements: {} });
   const saved = await request('/api/drafts', { blueprint: preview.blueprint });
   assert.equal(saved.ok, false);

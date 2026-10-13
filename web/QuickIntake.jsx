@@ -5,18 +5,19 @@ import { ScopeTree } from './ScopeTree.jsx';
 import { Select } from './Select.jsx';
 import './Composer.css';
 import { availableScopeSelection } from '../src/curriculum/availability.mjs';
+import { assemblyPurposes, purposeFor } from '../src/assembly/purposes.mjs';
+import { Explanation } from './Explanation.jsx';
 
 const storageKey = 'tutor-intake-session';
-const purposeOptions = [
-  { id: 'consolidation', label: '课后巩固', description: '围绕所学内容练习，巩固概念和常规方法。' },
-  { id: 'diagnostic', label: '学情诊断', description: '了解学生的掌握情况，关注易错点和薄弱环节。' },
-  { id: 'assessment', label: '单元测验', description: '围绕单元内容，检查知识理解与综合运用。' },
-  { id: 'mock_exam', label: '模拟考试', description: '按考试要求安排练习，可补充题型、分值和时长。' }
-];
+const purposeOptions = assemblyPurposes;
 const countFields = [['singleChoiceCount', '单选'], ['fillBlankCount', '填空'], ['freeResponseCount', '解答']];
 const cognitionLabels = { understand: '理解概念', apply: '常规运用', reason: '推理与论证' };
 function remember(id) { try { localStorage.setItem(storageKey, id); } catch { /* Server persistence remains available. */ } }
 function remembered() { try { return localStorage.getItem(storageKey); } catch { return null; } }
+function freshAnswers(config) {
+  return { mainScope: availableScopeSelection(config.chapters, config.defaultRequirements.mainScope),
+    purpose: 'consolidation', scoringMode: 'none', targetScore: 0 };
+}
 function changesOnly(next, previous) { return Object.fromEntries(Object.entries(next).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(previous[key]))); }
 function toggle(ids, id) { return ids.includes(id) ? ids.filter(value => value !== id) : [...ids, id]; }
 
@@ -40,10 +41,12 @@ function Clarification({ block, value, onChange, disabled }) {
 
 export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onBusyChange, onSession, onReviseWorkflow, workflowContent, hideEmptyConversation = false, workflowStage = 'requirements', workflowRequirements, workflowSummary, onWorkflowMessage, selectionContext = [], onClearSelectionContext, editSession = null, resetKey = 0, disabled = false }) {
   const [session, setSession] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState(() => freshAnswers(config));
   const [message, setMessage] = useState('');
   const [proposalEdits, setProposalEdits] = useState({});
-  const [busy, setBusy] = useState('loading');
+  const [resumeId, setResumeId] = useState(() => remembered());
+  const [restoreId, setRestoreId] = useState(() => editSession?.sessionId || null);
+  const [busy, setBusy] = useState(() => editSession?.sessionId ? 'loading' : '');
   const [error, setError] = useState('');
   const [elapsed, setElapsed] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
@@ -56,7 +59,10 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
   const inFlight = useRef(false);
   const controller = useRef(null);
   const initialEdit = useRef(editSession);
+  const pendingScopeEdit = useRef(editSession?.stage === 'scope');
+  const startRequest = useRef(null);
   const callbacks = useRef({ onRequirements, onConfirm, onSession }); callbacks.current = { onRequirements, onConfirm, onSession };
+  useEffect(() => () => controller.current?.abort(), []);
   useEffect(() => {
     if (!started) return;
     requestAnimationFrame(() => document.querySelector(workflowStage !== 'requirements' ? '.chat-workflow-turn' : busy === 'prepare' ? '.chat-working' : '#quick-suggestion')?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
@@ -73,30 +79,40 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
     if (next.requirements) callbacks.current.onRequirements(next.requirements);
   }
   useEffect(() => {
-    setBusy('loading'); setError('');
+    setError('');
     if (['blueprint', 'draft', 'paper'].includes(workflowStage)) {
-      setAnswers({ mainScope: workflowRequirements?.mainScope || [], purpose: 'consolidation', scoringMode: workflowRequirements?.scoringMode || 'points' });
+      setAnswers({ mainScope: workflowRequirements?.mainScope || [], purpose: workflowRequirements?.purpose || 'consolidation', scoringMode: workflowRequirements?.scoringMode || 'points' });
       setStarted(true); setBusy(''); return;
     }
+    const edit = initialEdit.current;
+    // A new composer must not silently reopen or revise a previously confirmed request.
+    // Explicit workflow edits still restore immediately; home offers a resume action.
+    const id = restoreId;
+    if (!id) {
+      setAnswers(freshAnswers(config)); setBusy(''); return;
+    }
+    setBusy('loading');
     const activeController = new AbortController(); controller.current = activeController;
     let active = true;
     (async () => {
       let result;
-      const edit = initialEdit.current;
-      const id = edit?.sessionId || remembered();
       if (id) {
         try { result = await api(`/api/intake/${encodeURIComponent(id)}`, undefined, activeController.signal); }
         catch (failure) { if (failure.status !== 404) throw failure; }
       }
+      if (!active) return;
       if (!result || result.session.mode !== 'quick') {
-        result = await api('/api/intake', { action: 'start', flow: 'quick', operationId: crypto.randomUUID(),
-          ...(result ? { answers: { ...result.session.answers, learnedScopeMode: 'custom' } } : {}) }, activeController.signal);
+        try { localStorage.removeItem(storageKey); } catch { /* The next send can still create a session. */ }
+        setResumeId(null);
+        setAnswers(result ? { ...result.session.answers, learnedScopeMode: 'custom' } : freshAnswers(config));
+        return;
       } else if (result.session.status === 'confirmed') {
         result = await api('/api/intake', { action: 'revise', sessionId: result.session.sessionId, revision: result.session.revision,
           stage: edit?.stage || 'review', operationId: edit?.operationId || crypto.randomUUID() }, activeController.signal);
       }
       if (active) {
         adopt(result.session);
+        if (edit?.message) setMessage(edit.message);
         const original = result.session.teacherRequest || result.session.assistantMessage;
         if (original || result.session.proposal) {
           setStarted(true);
@@ -110,13 +126,19 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
       }
     })().catch(failure => { if (active && failure.name !== 'AbortError') setError(failure.message); }).finally(() => { if (active) setBusy(''); });
     return () => { active = false; activeController.abort(); controller.current?.abort(); };
-  }, [resetKey, retryKey]);
+  }, [resetKey, retryKey, restoreId]);
+  useEffect(() => {
+    if (pendingScopeEdit.current && !busy && !disabled && workflowStage === 'requirements') {
+      pendingScopeEdit.current = false;
+      setScopeOpen(true);
+    }
+  }, [busy, disabled, workflowStage]);
   useEffect(() => {
     if (busy !== 'prepare') { setElapsed(0); return; }
     const started = Date.now(); const timer = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => clearInterval(timer);
   }, [busy]);
-  const locked = Boolean(busy || disabled || (!session && !['blueprint', 'draft', 'paper'].includes(workflowStage)));
+  const locked = Boolean(busy || disabled);
   const configured = Boolean(config.intake?.configured);
   const localChanges = changesOnly(answers, session?.answers || {});
   const dirty = Object.keys(localChanges).length > 0 || Boolean(message.trim());
@@ -129,7 +151,6 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
   const existingGoal = Boolean(session?.answers.observable?.trim());
   function change(field, value) {
     setAnswers(current => ({ ...current, [field]: value,
-      ...(field === 'purpose' ? { scoringMode: ['assessment', 'mock_exam'].includes(value) ? 'points' : 'none', targetScore: ['assessment', 'mock_exam'].includes(value) ? current.targetScore || 100 : 0 } : {}),
       ...(field === 'scoringMode' ? { targetScore: value === 'points' ? current.targetScore || 100 : 0 } : {}) }));
     if (['questionCount', 'targetScore', 'durationMinutes', 'scoringMode'].includes(field)) setLockedFields(current => [...new Set([...current, field])]);
   }
@@ -153,10 +174,14 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
       finally { inFlight.current = false; }
       return;
     }
-    if (!sessionRef.current) return;
     inFlight.current = true; controller.current = new AbortController(); setBusy(action); setError('');
     let submittedInput = null;
     try {
+      if (!sessionRef.current) {
+        startRequest.current ??= { action: 'start', flow: 'quick', operationId: crypto.randomUUID(), answers };
+        const result = await api('/api/intake', startRequest.current, controller.current.signal);
+        adopt(result.session, true);
+      }
       if (sessionRef.current.status === 'confirmed') await request('revise', { stage: 'review' });
       const patch = changesOnly(answers, sessionRef.current.answers);
       if (action === 'prepare') {
@@ -194,24 +219,40 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
     } finally { inFlight.current = false; setBusy(''); }
   }
   const inWorkflow = started || workflowStage !== 'requirements';
-  const selectedPurpose = purposeOptions.find(item => item.id === answers.purpose) || purposeOptions[0];
+  const selectedPurpose = purposeFor(answers.purpose) || purposeOptions[0];
+  const legacyPurpose = answers.purpose && !purposeOptions.some(item => item.id === answers.purpose) ? purposeFor(answers.purpose) : null;
   const scored = (proposed.scoringMode || answers.scoringMode || 'points') === 'points';
   const working = busy === 'prepare' || workflowStage === 'planning' || disabled;
+  const suggestedScope = proposed.mainScope || answers.mainScope || [];
+  const suggestedPurpose = purposeFor(proposed.purpose || answers.purpose);
+  const hasSuggestedTypes = countFields.every(([field]) => Number.isInteger(proposed[field])) || answers.size === 'custom';
+  const constraints = proposed.typeConstraints || answers.typeConstraints;
+  const constraintLabels = constraints ? [
+    ...(constraints.excludedTypes || []).map(type => `不含${typeLabels[type]}题`),
+    ...Object.entries(constraints.exactCounts || {}).map(([type, count]) => `${typeLabels[type]} ${count} 题`),
+  ] : [];
+  const scaleSummary = `规模：${proposed.questionCount ?? count} 题${scored ? ` · ${proposed.targetScore ?? answers.targetScore} 分` : ' · 不计分'} · ${proposed.durationMinutes ?? answers.durationMinutes} 分钟。`;
   function focusComposer() { document.getElementById('quick-goal')?.focus({ preventScroll: true }); }
-  return <section className={`quick-intake composer-intake ${inWorkflow ? 'intake-in-workflow' : 'intake-empty'}`} aria-label="组卷助手对话">
-    {!inWorkflow ? <div className="quick-heading"><h1>今天想组一份什么练习？</h1><span>选好范围和用途，其他要求直接告诉组卷助手。</span></div> : null}
+  return <section className={`quick-intake composer-intake ${inWorkflow ? 'intake-in-workflow' : 'intake-empty'}`} aria-label={inWorkflow ? "组卷调整" : "新建组卷"}>
+    {!inWorkflow ? <div className="quick-heading"><h1>新建组卷</h1><span>选择范围和用途，补充题量或考查重点。</span></div> : null}
+    {!inWorkflow && resumeId && !restoreId ? <div className="intake-resume"><button type="button" className="link-button" disabled={locked} onClick={() => setRestoreId(resumeId)}>继续上次需求</button></div> : null}
     {error ? <p className="notice error" role="alert">{error}{!session ? <button type="button" disabled={Boolean(busy)} onClick={() => setRetryKey(value => value + 1)}>重新连接</button> : null}</p> : null}
     {busy === 'loading' ? <p role="status"><LoaderCircle size={18} className="spinning"/>正在恢复需求…</p> : null}
     {inWorkflow && (!hideEmptyConversation || turns.length > 0 || workflowContent) ? <div className="intake-conversation" aria-label="本次组卷对话">
-      {turns.map((turn,index) => turn.role === 'teacher' ? <div className="intake-teacher-turn" key={index}><p>{turn.text}</p>{turn.scope ? <span>{chapterNames(turn.scope)} · {purposeOptions.find(item => item.id === turn.purpose)?.label}</span> : null}</div> : <div className="chat-assistant-history" key={index}><p>{turn.text}</p></div>)}
+      {turns.map((turn,index) => turn.role === 'teacher' ? <div className="intake-teacher-turn" key={index}><p>{turn.text}</p>{turn.scope ? <span>{chapterNames(turn.scope)} · {purposeFor(turn.purpose)?.label || purposeOptions[0].label}</span> : null}</div> : <div className="chat-assistant-history" key={index}><p>{turn.text}</p></div>)}
       {proposal && workflowStage === 'requirements' ? <div className="chat-assistant-turn">
-        <section id="quick-suggestion" className="quick-proposal" aria-label="AI 整理的需求建议"><div className="suggestion-heading"><h2>本次考查重点</h2><span>待你确认</span></div><p className="suggestion-objective">{proposedGoal || proposal.summary}</p>
+        <section id="quick-suggestion" className="quick-proposal" aria-label="AI 整理的需求建议"><div className="suggestion-heading"><h2>本次考查重点</h2><span>待你确认</span></div><Explanation className="suggestion-objectives" text={proposedGoal || proposal.summary}/>
           <div className="quick-proposal-meta"><span>{proposed.questionCount ?? count} 题</span><span>{proposed.durationMinutes ?? answers.durationMinutes} 分钟</span><span>{scored ? `${proposed.targetScore ?? answers.targetScore} 分` : '不计分练习'}</span>{cognitionLabels[proposed.cognition] ? <span>{cognitionLabels[proposed.cognition]}</span> : null}{proposed.priority === 'required' ? <span>必须考查</span> : null}</div>
-          {countFields.every(([field]) => Number.isInteger(proposed[field])) || answers.size === 'custom' ? <p className="help">题型安排：{countFields.map(([field, label]) => `${label} ${proposed[field] ?? answers[field] ?? 0} 题`).join(' · ')}</p> : null}
-          <div className="suggestion-explanation"><strong>安排说明</strong><p>{proposal.summary}</p></div>
+          <section className="suggestion-explanation" aria-label="安排说明"><strong>安排说明</strong><dl>
+            <div><dt>考查范围</dt><dd><ul className="suggestion-scope-list">{suggestedScope.map(id => <li key={id}>{chapterNames([id])}</li>)}</ul></dd></div>
+            <div><dt>练习用途</dt><dd>{suggestedPurpose?.label || selectedPurpose.label}</dd></div>
+            {constraintLabels.length ? <div><dt>题型要求</dt><dd>{constraintLabels.join(' · ')}</dd></div> : null}
+            {hasSuggestedTypes ? <div><dt>{constraintLabels.length && answers.size !== 'custom' ? '建议配比' : '题型安排'}</dt><dd>{countFields.map(([field, label]) => `${label} ${proposed[field] ?? answers[field] ?? 0} 题`).join(' · ')}</dd></div> : null}
+            <div><dt>安排建议</dt><dd><Explanation text={proposal.summary} omitLine={scaleSummary}/></dd></div>
+          </dl></section>
           {(proposal.blocks || []).map(block => <Clarification key={block.id} block={block} value={proposalEdits[block.field]} onChange={value => setProposalEdits(current => ({...current,[block.field]:value}))} disabled={locked}/>)}
           {dirty ? <p className="quick-stale">有新的补充或条件变更，发送后会更新这份建议。</p> : null}
-          <div className="quick-actions"><button className="primary" type="button" disabled={locked || dirty} onClick={() => act('accept')}>确认需求，规划蓝图<ArrowRight size={16}/></button><button type="button" className="link-button" disabled={locked} onClick={focusComposer}>补充或修改</button></div>
+          <div className="quick-actions"><button className="primary" type="button" disabled={locked || dirty} onClick={() => act('accept')}>确认需求，安排练习<ArrowRight size={16}/></button><button type="button" className="link-button" disabled={locked} onClick={focusComposer}>补充或修改</button></div>
         </section></div> : null}
       {busy === 'prepare' ? <div className="chat-working" role="status"><LoaderCircle size={19} className="spinning"/><div><strong>正在整理需求</strong><p>结合范围和用途，形成考查重点 · {elapsed} 秒</p></div><button type="button" onClick={() => controller.current?.abort()}><Square size={14}/>停止</button></div> : null}
       {!proposal && !busy && !workflowContent && !error && workflowStage === 'requirements' ? <div className="chat-assistant-turn"><p>已恢复上次需求。可以直接重新整理，也可以在下方补充要求。</p><button type="button" disabled={locked || !configured} onClick={() => act('prepare')}><Sparkles size={16}/>重新整理需求</button></div> : null}
@@ -220,7 +261,7 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
     </div> : null}
     <div className={`chat-composer-dock ${inWorkflow ? 'is-docked' : ''}`}><div className="chat-composer-inner"><div className="chat-composer-card">
       {workflowStage === 'requirements' ? <div className="chat-context-controls"><ScopeTree chapters={config.chapters} selected={answers.mainScope} disabled={locked || workflowStage !== 'requirements'} onChange={value => change('mainScope', value)} open={scopeOpen} onToggle={setScopeOpen}/>
-        <label className="composer-purpose"><span className="sr-only">组卷用途</span><Select aria-label="组卷用途" triggerLabel="组卷用途" value={answers.purpose || 'consolidation'} disabled={locked || workflowStage !== 'requirements'} onChange={event => change('purpose',event.target.value)}>{purposeOptions.map(item => <option key={item.id} value={item.id} data-description={item.description}>{item.label}</option>)}</Select></label>
+        <label className="composer-purpose"><span className="sr-only">组卷用途</span><Select aria-label="组卷用途" triggerLabel="组卷用途" value={answers.purpose || 'consolidation'} disabled={locked || workflowStage !== 'requirements'} onChange={event => change('purpose',event.target.value)}>{[...purposeOptions, ...(legacyPurpose ? [legacyPurpose] : [])].map(item => <option key={item.id} value={item.id} data-description={item.description}>{item.label}</option>)}</Select></label>
         <button className="composer-scoring" type="button" disabled={locked || workflowStage !== 'requirements'} aria-pressed={answers.scoringMode === 'points'} onClick={() => change('scoringMode',answers.scoringMode === 'points' ? 'none' : 'points')}>{answers.scoringMode === 'points' ? '计分' : '不计分'}</button>
 
       </div> : <div className="composer-stage-context"><Sparkles size={14} aria-hidden="true"/><span>{workflowStage === 'blueprint' ? '选题蓝图' : workflowStage === 'draft' ? '试卷草稿' : workflowStage === 'paper' ? '已确认试卷' : '正在组卷'}</span><span className="composer-stage-hint">继续对话，随时调整</span></div>}
@@ -237,15 +278,15 @@ export function QuickIntake({ config, onRequirements, onConfirm, onAdvanced, onB
           <button type="button" className="composer-context-clear" aria-label="清除题目上下文" title="清除引用" disabled={locked} onClick={onClearSelectionContext}><X size={13} aria-hidden="true"/></button>
         </div> : null}
         <div className="composer-writing-area">
-        {workflowStage === 'requirements' ? <p id="quick-purpose-description" className="composer-purpose-description" aria-live="polite"><span>{selectedPurpose.label}</span>{selectedPurpose.description}</p> : null}
+        {workflowStage === 'requirements' ? <p id="quick-purpose-description" className="sr-only">{selectedPurpose.label}：{selectedPurpose.description}</p> : null}
         <label htmlFor="quick-goal" className="sr-only">组卷需求</label><textarea id="quick-goal" className="intake-request-text" aria-describedby={workflowStage === 'requirements' ? 'quick-purpose-description' : undefined} rows="4" maxLength={2000} disabled={locked} value={message} onChange={event => setMessage(event.target.value)} onKeyDown={event => {
           if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
-        }} placeholder={inWorkflow ? '继续调整，例如：第 2 题换一题；增加 2 道填空题…' : '例如：10 道集合基础题，检测概念和包含关系的掌握情况。也可以只选范围和用途，直接发送。'}/>
+        }} placeholder={workflowStage !== 'requirements' ? '继续调整，例如：第 2 题换一题；增加 2 道填空题…' : selectedPurpose.placeholder}/>
         </div>
-        <div className="intake-request-footer"><span className="composer-keyboard-hint">{working ? '正在处理…' : 'Enter 发送 · Shift+Enter 换行'}</span><div className="composer-send-tools"><span className="composer-ai-status"><Sparkles size={14} aria-hidden="true"/>AI 组卷</span><button className="primary intake-send" type="submit" disabled={locked || !configured || !answers.mainScope?.length} aria-label="发送组卷需求" title="发送组卷需求"><ArrowUp size={19}/><span className="sr-only">发送</span></button></div></div>
+        <div className="intake-request-footer"><span className="composer-keyboard-hint">{working ? '正在处理…' : 'Enter 发送 · Shift+Enter 换行'}</span><div className="composer-send-tools"><span className="composer-ai-status">{inWorkflow ? "发送调整" : "开始组卷"}</span><button className="primary intake-send" type="submit" disabled={locked || !configured || !answers.mainScope?.length} aria-label="发送组卷需求" title="发送组卷需求"><ArrowUp size={19}/><span className="sr-only">发送</span></button></div></div>
       </form>
       </div>
-      <p className="composer-footnote">{inWorkflow ? '随时补充要求，确认修改建议后更新蓝图或试卷。' : `题库当前可用 ${config.supply?.ready ?? '—'} 道题 · 计分可按需开启`}</p>
+      <p className="composer-footnote">{inWorkflow ? '随时补充要求，确认修改建议后更新蓝图或试卷。' : `题库可用 ${config.supply?.ready ?? '—'} 道题`}</p>
     </div></div>
     {workflowStage === 'requirements' && (!configured || error) ? <div className="quick-actions"><button type="button" className="link-button" disabled={locked || !answers.mainScope?.length} onClick={() => act('plain')}>{existingGoal ? '沿用已有目标预览' : '仅按点选条件继续'}</button></div> : null}
   </section>;

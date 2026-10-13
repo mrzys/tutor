@@ -1,3 +1,5 @@
+import { includesSection, scopesOverlap } from '../curriculum/section-identity.mjs';
+
 // Project-local planning vocabulary; these are not official curriculum codes.
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const invalid = message => { throw Object.assign(new Error(message), { code: 'invalid_plan' }); };
@@ -23,7 +25,7 @@ export function normalizeTeachingGoals(input = [], chapterIds) {
     ids.add(goal.id);
     if (!Number.isInteger(goal.version) || goal.version < 1) invalid('教学目标版本需为正整数。');
     const knowledgeScope = list(goal.knowledgeScope, '目标知识范围');
-    if (knowledgeScope.some(id => !chapterIds.includes(id))) invalid('目标知识范围包含未登记章节。');
+    if (knowledgeScope.some(id => !includesSection(chapterIds, id))) invalid('目标知识范围包含未登记章节。');
     if (!object(goal.conditions) || !object(goal.source) || goal.source.kind !== 'teacher') invalid('目标需保留教师来源及完成条件。');
     return {
       id: goal.id, version: goal.version, knowledgeScope,
@@ -41,7 +43,7 @@ export function normalizeTeachingGoals(input = [], chapterIds) {
 }
 
 export function compatibleGoal(goal, task) {
-  return Boolean(task) && goal.knowledgeScope.some(id => task.sectionIds.includes(id))
+  return Boolean(task) && scopesOverlap(goal.knowledgeScope, task.sectionIds)
     && (goal.conditions.response !== 'written_reasoning' || task.questionType === 'free_response');
 }
 
@@ -59,8 +61,8 @@ export function goalReview(requirements, slots, tasks) {
     if (!goal.observable) issues.push('尚未说明学生需要完成的可观察表现，需澄清。');
     if (vague) issues.push('目标表述仍需澄清：是解释概念、在常规问题中运用，还是独立选择方法并说明理由？请补充具体表现。');
     if (!goal.knowledgeScope.length) issues.push('尚未指定目标知识范围，需澄清。');
-    if (goal.knowledgeScope.some(id => !requirements.mainScope.includes(id))) issues.push('目标知识范围超出本次主考范围，请明确保留目标还是调整范围。');
-    if (goal.knowledgeScope.some(id => !requirements.learnedScope.includes(id))) issues.push('目标涉及尚未确认已学的章节，需核对允许解法。');
+    if (goal.knowledgeScope.some(id => !includesSection(requirements.mainScope, id))) issues.push('目标知识范围超出本次主考范围，请明确保留目标还是调整范围。');
+    if (goal.knowledgeScope.some(id => !includesSection(requirements.learnedScope, id))) issues.push('目标涉及尚未确认已学的章节，需核对允许解法。');
     if (linked.some(slot => !compatibleGoal(goal, tasks.find(task => task.id === slot.taskId)))) issues.push('关联题位的章节或作答形式与目标不兼容，请调整题位或关联。');
     if (!linked.length) issues.push('尚无关联题位；保留原优先级，不计为已覆盖。');
     return { goalId: goal.id, observable: goal.observable, priority: goal.priority,

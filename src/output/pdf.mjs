@@ -12,6 +12,7 @@ import { liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js';
 import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
 import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages.js';
 import { studentProblem } from '../assembly/papers.mjs';
+import { questionSource, sourceCaption } from '../question-bank/source-label.mjs';
 
 const exec = promisify(execFile);
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -20,7 +21,7 @@ RegisterHTMLHandler(adaptor);
 const math = mathjax.document('', { InputJax: new TeX({ packages: AllPackages.filter(x => !['require','autoload','html','noerrors','noundefined'].includes(x)), formatError: (_jax,error) => { throw error; } }), OutputJax: new SVG({ fontCache: 'none' }) });
 
 // Layout revisions do not alter the frozen paper; explicit regeneration writes a new file.
-export const PDF_LAYOUT_VERSION = 'formal-exam-v2';
+export const PDF_LAYOUT_VERSION = 'formal-exam-v5-question-source';
 
 export async function findPdfPython() {
   if (process.env.TUTOR_PYTHON) return process.env.TUTOR_PYTHON;
@@ -43,9 +44,12 @@ export function projectPaper(paper, kind) {
     const base = { number: slot.number, slotId: slot.slotId, questionType: slot.questionType, points: slot.points, partPoints: structuredClone(slot.partPoints ?? []), missing: Boolean(problem) };
     if (base.missing) { issues.push(`第 ${slot.number} 题：${problem}`); return { ...base, student: null }; }
     const student = q.student;
+    const source = questionSource(q, draft.baseline.sourceManifest);
     const result = { ...base, student: { stem: student.stem, options: (student.options ?? []).map(x => ({label:x.label,text:x.text})), parts: (student.parts ?? []).map(x => ({partId:x.partId,prompt:x.prompt})), assets: (student.assets ?? []).map(x => ({assetId:x.assetId,alt:x.alt ?? ''})) } };
+    if (!source.embedded) result.sourceCaption = sourceCaption(source);
     if (kind === 'teacher') {
       result.teacher = structuredClone(q.teacher ?? {answers:[],solutions:[],scoringSuggestions:[]});
+      if (draft.baseline.requirements.purpose === 'diagnostic' && slot.taskLabel) result.diagnosticFocus = slot.taskLabel;
       if (!scored) delete result.teacher.scoringSuggestions;
       result.sourceRefs = structuredClone(q.sourceRefs ?? []);
       result.versions = { questionId:q.questionId, contentVersion:q.contentVersion, teacherVersion:q.teacherVersion };

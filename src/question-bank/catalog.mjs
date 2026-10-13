@@ -1,9 +1,11 @@
+import { canonicalSectionId, includesSection } from '../curriculum/section-identity.mjs';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, loadPool, normalizeRequirements } from '../assembly/engine.mjs';
 import { questionBankStorage } from '../storage/registry.mjs';
 import { getQuestion } from './reader.mjs';
 import { pedagogyForQuestion, readPedagogySeed } from './pedagogy.mjs';
+import { questionSource } from './source-label.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const clone = value => structuredClone(value);
@@ -23,7 +25,7 @@ async function loadCatalog(root) {
   return { config: configured.config, pool, annotations, ready, repository: questionBankStorage(root) };
 }
 
-function publicQuestion(record, repository) {
+function publicQuestion(record, repository, manifest) {
   const question = record.result.question;
   const annotation = record.annotation;
   return {
@@ -44,6 +46,7 @@ function publicQuestion(record, repository) {
     literacies: clone(record.pedagogy?.literacies ?? []),
     pedagogyStatus: record.pedagogy?.status ?? 'unknown',
     sourceRefs: clone(question.sourceRefs.map(({ sourceId, pages, locator }) => ({ sourceId, pages, locator }))),
+    source: questionSource(question, manifest ?? repository?.getQuestionBankConfig('source_manifest')),
   };
 }
 
@@ -101,6 +104,7 @@ function databaseFilterOptions(repository, from, baseConditions) {
 }
 
 async function databaseCatalog(repository, root, options) {
+  const sourceManifest = repository.getQuestionBankConfig('source_manifest');
   // SQL filters before materialising question bodies; placeholders keep teacher text literal.
   const from = `FROM question_bank_questions q
     JOIN annotation_rows a ON a.question_id=q.question_id
@@ -113,7 +117,7 @@ async function databaseCatalog(repository, root, options) {
   const parameters = [];
   if (options.sectionId) {
     conditions.push('EXISTS (SELECT 1 FROM question_section_mappings m WHERE m.question_id=q.question_id AND m.section_id=?)');
-    parameters.push(options.sectionId);
+    parameters.push(canonicalSectionId(options.sectionId));
   }
   if (options.questionType) { conditions.push("json_extract(q.payload,'$.questionType')=?"); parameters.push(options.questionType); }
   if (options.difficulty) { conditions.push(`${difficultySql}=?`); parameters.push(options.difficulty); }
@@ -146,14 +150,16 @@ async function databaseCatalog(repository, root, options) {
     const result = await getQuestion(row.question_id, { root });
     if (!result.ok) reject(result.error.code, result.error.message);
     return publicQuestion({ result, entry: entries.get(row.question_id), annotation: annotations.get(row.question_id),
-      pedagogy: pedagogyForQuestion(pedagogy, result.question) }, repository);
+      pedagogy: pedagogyForQuestion(pedagogy, result.question) }, repository, sourceManifest);
   }));
   const chapterCounts = new Map(repository.database.prepare(`${snapshotCtes}
-    SELECT s.value AS section_id,COUNT(DISTINCT q.question_id) AS count ${from}
-    JOIN json_each(a.value,'$.primarySections') s WHERE ${baseConditions.join(' AND ')} GROUP BY s.value`)
+    SELECT CASE s.value
+      WHEN '1.1' THEN 'rja-compulsory-1:1.1' WHEN '1.2' THEN 'rja-compulsory-1:1.2'
+      WHEN '1.3' THEN 'rja-compulsory-1:1.3' ELSE s.value END AS section_id,COUNT(DISTINCT q.question_id) AS count ${from}
+    JOIN json_each(a.value,'$.primarySections') s WHERE ${baseConditions.join(' AND ')} GROUP BY section_id`)
     .all().map(row => [row.section_id, row.count]));
   const chapters = repository.getQuestionBankChapters().map(chapter => ({ ...chapter,
-    questionCount: chapterCounts.get(chapter.id) ?? 0 }));
+    questionCount: chapterCounts.get(canonicalSectionId(chapter.id)) ?? 0 }));
   const ready = ledger.entries.filter(entry => entry.status === 'ready').length;
   return { ok: true, chapters, textbooks: repository.getQuestionBankTextbooks(), questions,
     filterOptions: databaseFilterOptions(repository, from, baseConditions),
@@ -171,9 +177,9 @@ export async function listQuestionBankCatalog({ root = defaultRoot, ...input } =
     if (registered) return await databaseCatalog(registered, root, options);
     const { config, pool, ready, repository } = await loadCatalog(root);
     const pedagogy = await readPedagogySeed(root);
-    const allQuestions = ready.map(record => publicQuestion({ ...record, pedagogy: pedagogyForQuestion(pedagogy, record.result.question) }, repository))
+    const allQuestions = ready.map(record => publicQuestion({ ...record, pedagogy: pedagogyForQuestion(pedagogy, record.result.question) }, repository, config.sourceManifest))
       .sort((a, b) => a.questionId.localeCompare(b.questionId));
-    const matching = allQuestions.filter(question => (!options.sectionId || question.chapters.includes(options.sectionId))
+    const matching = allQuestions.filter(question => (!options.sectionId || includesSection(question.chapters, options.sectionId))
       && (!options.questionType || question.questionType === options.questionType)
       && (!options.difficulty || question.difficulty.level === options.difficulty)
       && (!options.ability || (options.ability === 'unknown' ? !question.abilities.length : question.abilities.includes(options.ability)))
@@ -184,7 +190,7 @@ export async function listQuestionBankCatalog({ root = defaultRoot, ...input } =
     const page = Math.min(options.page, totalPages);
     const questions = matching.slice((page - 1) * pageSize, page * pageSize);
     return { ok: true,
-      chapters: config.chapters.map(chapter => ({ ...clone(chapter), questionCount: allQuestions.filter(item => item.chapters.includes(chapter.id)).length })),
+      chapters: config.chapters.map(chapter => ({ ...clone(chapter), questionCount: allQuestions.filter(item => includesSection(item.chapters, chapter.id)).length })),
       textbooks: repository?.getQuestionBankTextbooks() ?? [],
       questions,
       filterOptions: publicFilterOptions(allQuestions),
@@ -257,7 +263,7 @@ export async function createManualQuestionDraft(input, { root = defaultRoot } = 
     const counts = { single_choice: 0, fill_blank: 0, free_response: 0 };
     selected.forEach(record => { counts[record.result.question.questionType]++; });
     const chapters = [...new Set(selected.flatMap(record => record.annotation.primarySections))]
-      .sort((a, b) => config.chapters.findIndex(item => item.id === a) - config.chapters.findIndex(item => item.id === b));
+      .sort((a, b) => config.chapters.findIndex(item => includesSection([item.id], a)) - config.chapters.findIndex(item => includesSection([item.id], b)));
     const requirements = normalizeRequirements({ ...config.defaultRequirements,
       title: input.title?.trim() || '题库手动组卷', scoringMode: 'none', targetScore: 0,
       goal: '由用户从题库中手动选择题目组成试卷。', teacherRequest: '从题库手动选择；不执行自动候选替换。',

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MathText } from './MathText.jsx';
 import { supplyPresentation } from './question-supply.js';
+import { questionSource, sourceCaption } from '../src/question-bank/source-label.mjs';
 
 const cognitionLabels = { understand: '理解与解释', apply: '应用与操作', reason: '推理与论证', unspecified: '未指定' };
 
@@ -28,6 +29,7 @@ export function QuestionSummary({ slot, draft, supply, expanded = false }) {
   const solutionExample = path?.basis || question?.scopeEvidence?.allowedSolution;
   const body = <div className="question-summary-body">
       <dl className="question-profile">
+        <div><dt>题目来源</dt><dd>{sourceCaption(questionSource(question, draft.baseline.sourceManifest))}</dd></div>
         <div><dt>考查内容</dt><dd><MathText text={topics}/></dd></div>
         <div><dt>题位任务</dt><dd><MathText text={slot.taskLabel}/></dd></div>
         <div><dt>题目难度</dt><dd>未标定{Number.isFinite(slot.targetDifficulty ?? draft.baseline.requirements.targetDifficulty) ? ` · 目标 ${(slot.targetDifficulty ?? draft.baseline.requirements.targetDifficulty).toFixed(2)}` : ''}</dd></div>

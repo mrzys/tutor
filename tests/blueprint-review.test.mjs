@@ -26,3 +26,10 @@ test('two goal links on one slot count as one target-bearing question and preser
     { goalIds: [required.id, preferred.id] }, { goalIds: [] }, { goalIds: ['stale-id'] },
   ], [required, preferred]), { linkedCount: 1, practiceCount: 2 });
 });
+
+
+test('switching to an imported task preserves the same physical section goal without crossing textbooks', () => {
+  const slot = { goalIds: [required.id] };
+  assert.deepEqual(retainedGoalIds(slot, { ...task, sectionIds: ['rja-compulsory-1:1.2'] }, [required]), [required.id]);
+  assert.deepEqual(retainedGoalIds(slot, { ...task, sectionIds: ['another-textbook:1.2'] }, [required]), []);
+});

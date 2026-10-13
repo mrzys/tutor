@@ -61,6 +61,8 @@ try {
         checks: { sourceMatched: true, answerChecked: true, solutionChecked: true, formulaChecked: true },
         basis: `旧库 ${source.question_id} / 内容版本 ${source.content_version_id}；题干选项及单选答案已逐题比对，公式通过KaTeX解析；答案解析与上传的旧库参考材料对应。独立数学验算仅限全语料样本，本题${passedSamples.has(source.question_id) ? '属于通过样本' : '未经独立数学验算'}。${manual?.reason ?? ''}`,
         origin: { sourceQuestionId: String(source.question_id), sourceContentVersionId: source.content_version_id,
+          ...(source.source_title?.trim() ? { sourceTitle: source.source_title.trim() } : {}),
+          ...(source.question_number !== null && source.question_number !== undefined ? { sourceQuestionNumber: String(source.question_number) } : {}),
           sourceExamId: source.source_exam_id, sourceOccurrenceId: source.source_occurrence_id,
           studentContentHash: source.student_content_hash, sourceEvidenceHash: source.source_evidence_hash,
           legacyAnswerProvenance: source.answers.map(answer => ({ sourceType: answer.sourceType, reviewStatus: answer.reviewStatus })),

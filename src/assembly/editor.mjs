@@ -1,3 +1,4 @@
+import { includesSection } from '../curriculum/section-identity.mjs';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { hashContent, getQuestion } from '../question-bank/reader.mjs';
@@ -114,13 +115,13 @@ export function assessDraftReplacementCandidates(draft, slot, pool, config) {
   const originalTask = config.tasks.find(task => task.id === slot.taskId);
   const sections = originalTask?.sectionIds ?? [];
   const alternatives = config.tasks.filter(task => task.id !== slot.taskId && task.questionType === slot.questionType
-    && task.sectionIds.length && task.sectionIds.every(id => sections.includes(id)));
+    && task.sectionIds.length && task.sectionIds.every(id => includesSection(sections, id)));
   const seen = new Set(sameTask.filter(item => item.status === 'eligible').map(item => item.questionId));
   const sameKnowledge = alternatives.flatMap(task => candidatesFor(draft, { ...slot, taskId: task.id }, pool)
     .filter(candidate => candidate.canSelect && candidate.status === 'eligible')
     .filter(candidate => {
       const annotation = pool.records.find(item => item.entry.questionId === candidate.questionId)?.annotation;
-      return annotation?.primarySections?.every(id => sections.includes(id));
+      return annotation?.primarySections?.every(id => includesSection(sections, id));
     })
     .map(candidate => ({ ...candidate, candidateScope: 'same_knowledge', replacementTaskId: task.id,
       replacementTaskLabel: task.label })))

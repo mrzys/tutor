@@ -1,5 +1,6 @@
 import { selectionProposalSchema, createSelectionGateway } from '../llm/selection-gateway.mjs';
 import { difficultyView } from './difficulty.mjs';
+import { purposeStrategy } from './purposes.mjs';
 
 const MAX_CANDIDATES = 8;
 const MAX_BATCH_SLOTS = 8;
@@ -209,7 +210,7 @@ export async function selectWithLlm({ slots, requirements, pool, candidatesBySlo
   if (signal?.aborted) return fail(cancelled());
   const contextFor = batch => {
     const ids = [...new Set(batch.flatMap(slot => shortlists.find(list => list.slotId === slot.slotId).candidates.map(item => item.questionId)))];
-    return { task: 'candidate_selection', requirements,
+    return { task: 'candidate_selection', requirements, purposeStrategy: purposeStrategy(requirements.purpose),
       slots: batch.map(({ slotId, questionType, taskLabel, goalIds, points, planningReason }) => ({ slotId, questionType, taskLabel, goalIds, points, planningReason,
         candidates: shortlists.find(list => list.slotId === slotId).candidates.map(item => item.questionId),
         candidateGoalSupport: shortlists.find(list => list.slotId === slotId).candidates.map(item => ({ questionId: item.questionId, goalSupport: item.goalSupport })) })),

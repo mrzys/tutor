@@ -1,3 +1,4 @@
+import { includesSection } from '../curriculum/section-identity.mjs';
 import { z } from 'zod';
 import { fileURLToPath } from 'node:url';
 import { getAssemblyConfig, recheckBlueprint, loadPool, slotCandidates } from './engine.mjs';
@@ -130,7 +131,7 @@ export async function proposeAssemblyAdjustment(raw, { root = defaultRoot, store
     const pool = await loadPool(root); abort(signal);
     const occupiedIds = new Set(slots.flatMap(slot => slot.question ? [slot.question.questionId] : []));
     const occupiedGroups = new Set(pool.records.filter(item => occupiedIds.has(item.entry.questionId)).map(item => item.annotation?.duplicateGroup).filter(Boolean));
-    const tasks = config.tasks.filter(task => task.sectionIds.length && task.sectionIds.every(id => requirements.mainScope.includes(id))).map(task => ({
+    const tasks = config.tasks.filter(task => task.sectionIds.length && task.sectionIds.every(id => includesSection(requirements.mainScope, id))).map(task => ({
       taskId: task.id, label: task.label, questionType: task.questionType,
       eligibleCount: slotCandidates(pool, { questionType: task.questionType, taskId: task.id, goalIds: suggestedGoalIds(requirements.teachingGoals ?? [], task) }, requirements, occupiedIds, occupiedGroups).filter(item => item.status === 'eligible').length,
     }));

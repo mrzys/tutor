@@ -1,3 +1,4 @@
+import { normalizeTypeConstraints } from './type-constraints.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +8,8 @@ import { normalizeTeachingGoals, compatibleGoal, suggestedGoalIds, goalReview, g
 import { selectWithLlm, combineRankings } from './selector.mjs';
 import { questionBankStorage } from '../storage/registry.mjs';
 import { groupSlotsByType } from './slot-order.mjs';
+import { assemblyPurposes, purposeFor } from './purposes.mjs';
+import { includesSection, scopesOverlap } from '../curriculum/section-identity.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const types = ['single_choice', 'fill_blank', 'free_response'];
@@ -87,8 +90,8 @@ function number(value, label, min, max, integer = false) {
   return value;
 }
 
-function knownIds(value, allowed, label) {
-  if (!Array.isArray(value) || value.some(id => typeof id !== 'string' || !allowed.includes(id))
+function knownIds(value, allowed, label, sectionIdentity = false) {
+  if (!Array.isArray(value) || value.some(id => typeof id !== 'string' || !(sectionIdentity ? includesSection(allowed, id) : allowed.includes(id)))
       || new Set(value).size !== value.length) reject(`${label}包含未知或重复项目。`);
   return [...value];
 }
@@ -103,13 +106,20 @@ export function normalizeRequirements(input, config, sourceIds) {
     reject('教师原话需为不超过 2000 字符的文本。');
   }
   if (values.automaticFoundation !== undefined && typeof values.automaticFoundation !== 'boolean') reject('基础依赖策略无效。');
-  if (values.purpose !== undefined && !['consolidation', 'diagnostic', 'assessment', 'mock_exam'].includes(values.purpose)) reject('组卷用途无效。');
+  if (values.purpose !== undefined && !purposeFor(values.purpose)) reject('组卷用途无效。');
+  // Purpose-aware new requests default to unscored practice. Existing records
+  // without a purpose retain their historical point semantics. Explicit totals
+  // or scoring choices continue to win over this default.
+  if (assemblyPurposes.some(item => item.id === values.purpose) && input.scoringMode === undefined) {
+    values.scoringMode = input.targetScore > 0 ? 'points' : 'none';
+  }
   if (values.scoringMode !== undefined && !['none', 'points'].includes(values.scoringMode)) reject('计分方式无效。');
   return {
     ...(values.scoringMode !== undefined ? { scoringMode: values.scoringMode } : {}),
     ...(values.automaticFoundation !== undefined ? { automaticFoundation: values.automaticFoundation,
       foundationPremises: values.automaticFoundation ? ['quadratic_basics', 'absolute_root', 'basic_geometry'].filter(id => config.premises.some(item => item.id === id)) : [] } : {}),
     ...(values.purpose !== undefined ? { purpose: values.purpose } : {}),
+    ...(values.typeConstraints !== undefined ? { typeConstraints: normalizeTypeConstraints(values.typeConstraints, Object.values(counts).reduce((sum, count) => sum + count, 0)) } : {}),
     title: boundedText(values.title, '标题', 120), grade: boundedText(values.grade, '年级', 60),
     goal: boundedText(values.goal, '教学目的', 1000),
     ...(values.teacherRequest !== undefined ? { teacherRequest: values.teacherRequest } : {}),
@@ -117,8 +127,8 @@ export function normalizeRequirements(input, config, sourceIds) {
     targetScore: values.scoringMode === 'none' ? 0 : number(values.targetScore, '目标总分', 1, 1000, true),
     targetDifficulty: values.targetDifficulty === null ? null : number(values.targetDifficulty, '目标难度', 0, 1),
     teachingGoals: normalizeTeachingGoals(values.teachingGoals, config.chapters.map(item => item.id)),
-    mainScope: knownIds(values.mainScope, config.chapters.map(item => item.id), '主考范围'),
-    learnedScope: knownIds(values.learnedScope, config.chapters.map(item => item.id), '已学边界'),
+    mainScope: knownIds(values.mainScope, config.chapters.map(item => item.id), '主考范围', true),
+    learnedScope: knownIds(values.learnedScope, config.chapters.map(item => item.id), '已学边界', true),
     premises: knownIds(values.premises, config.premises.map(item => item.id), '显式前提'),
     sourceIds: knownIds(values.sourceIds, sourceIds, '来源范围'), counts,
   };
@@ -186,11 +196,11 @@ function assess(item, slot, requirements, usedIds = new Set(), usedGroups = new 
     return { ...base, status: 'unknown', reasons: [...reasons, '缺少与题面版本绑定的完整适配依据'] };
   }
   if (!annotation.tasks.includes(slot.taskId)) reasons.push('具体考查任务不同');
-  if (!annotation.primarySections.every(section => requirements.mainScope.includes(section))) reasons.push('主要考查内容不在主考范围');
+  if (!annotation.primarySections.every(section => includesSection(requirements.mainScope, section))) reasons.push('主要考查内容不在主考范围');
   const completePaths = annotation.solutionPaths.filter(solution => object(solution) && typeof solution.id === 'string'
     && Array.isArray(solution.requiredSections) && Array.isArray(solution.requiredPremises)
     && typeof solution.basis === 'string' && solution.basis.trim());
-  const allowedPaths = completePaths.filter(solution => solution.requiredSections.every(section => requirements.learnedScope.includes(section))
+  const allowedPaths = completePaths.filter(solution => solution.requiredSections.every(section => includesSection(requirements.learnedScope, section))
     && solution.requiredPremises.every(premise => (requirements.premises.includes(premise) || requirements.foundationPremises?.includes(premise))));
   if (!allowedPaths.length) return { ...base, status: 'unknown', reasons: [...reasons, '尚无覆盖全部必要小问且符合本次已学边界的已证实解法'],
     solutionPaths: completePaths.map(({ id, requiredSections, requiredPremises }) => ({ id, requiredSections, requiredPremises })) };
@@ -229,7 +239,7 @@ export async function previewBlueprint(requirements = {}, { root = defaultRoot }
     for (const type of types) {
       const goals = normalized.teachingGoals;
       const targeted = config.tasks.filter(task => task.questionType === type
-        && task.sectionIds.some(id => normalized.mainScope.includes(id))
+        && scopesOverlap(task.sectionIds, normalized.mainScope)
         && goals.some(goal => compatibleGoal(goal, task)));
       const taskIds = targeted.length ? targeted.map(task => task.id) : config.defaultTasks[type];
       for (let i = 0; i < normalized.counts[type]; i++) {
