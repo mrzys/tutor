@@ -6,6 +6,7 @@ import { Select } from './Select.jsx';
 import { MathText } from './MathText.jsx';
 import { Explanation } from './Explanation.jsx';
 import './Blueprint.css';
+import './BlueprintSummary.css';
 import { includesSection } from '../src/curriculum/section-identity.mjs';
 
 const cognitionLabels = { unspecified: '暂不指定', understand: '理解与解释', apply: '应用与操作', reason: '推理与论证' };
@@ -20,34 +21,32 @@ function TeachingGoalReview({ config, blueprint, checking, busy, onEdit, onShowS
   const goals = blueprint.requirements.teachingGoals || [];
   const reviews = new Map((blueprint.goalReview?.items || []).map(item => [item.goalId, item]));
   const chapters = new Map(config.chapters.map(item => [item.id, item.label]));
-  const needsReview = [...reviews.values()].filter(item => item.status !== 'planned' || item.issues?.length).length;
   const chapterNames = ids => ids.map(id => chapters.get(id) || id).join('、') || '未指定';
   const assignment = goalAssignmentSummary(blueprint.slots, goals);
   const scored = blueprint.requirements.scoringMode !== 'none';
   const edit = (step, label) => <button type="button" className="link-button requirement-edit" disabled={busy} onClick={() => onEdit(step)}>{label}</button>;
-  return <details className="blueprint-requirements">
-    <summary><span>本次需求与教学目标</span><span className={needsReview ? 'warning-text' : 'muted'}>{goals.length} 个目标{needsReview ? ` · ${needsReview} 项待核对` : ''}</span><ChevronDown size={16}/></summary>
+  return <section className="blueprint-requirements">
     <section className="goal-review" aria-label="需求与教学目标核对">
     <dl className="blueprint-scope"><dt>教学用途 {edit('purpose', '修改用途')}</dt><dd>{blueprint.requirements.goal}</dd><dt>主考范围 {edit('scope', '修改范围')}</dt><dd>{chapterNames(blueprint.requirements.mainScope)}</dd><dt>{scored ? '题量与分值' : '题量'} {edit('size', scored ? '修改题量与分值' : '修改题量')}</dt><dd>{blueprint.slots.length} 题{scored ? ` · ${blueprint.requirements.targetScore} 分` : ''} · {blueprint.requirements.durationMinutes} 分钟</dd></dl>
-    <div className="goal-review-title"><strong>关键教学目标</strong>{edit('goal', '修改教学目标')}</div>
-    <p className="help">{assignment.linkedCount} 个题位承担目标 · {assignment.practiceCount} 个题位用于基础练习</p>
+    {goals.length ? <><div className="goal-review-title"><strong>考查目标</strong>{edit('goal', '修改教学目标')}</div>
+    <p className="help">{assignment.linkedCount} 个题位承担目标 · {assignment.practiceCount} 个题位用于基础练习</p></> : null}
     {goals.length ? <ol className="goal-review-list">{goals.map((goal, index) => {
       const review = reviews.get(goal.id);
       const slotNumbers = blueprint.slots.filter(slot => (slot.goalIds || []).includes(goal.id)).map(slot => slot.number);
       return <li key={goal.id}>
         <div className="goal-review-title"><strong>目标 {index + 1}{goal.priority === 'required' ? ' · 必须考查' : ''}</strong><span className={review?.status === 'planned' ? 'muted' : 'warning-text'}>{checking ? '正在核查…' : goalStatusLabels[review?.status] || '待核查'}</span></div>
         <p><MathText text={goal.observable || '尚未描述学生要做到什么'}/></p>
-        <p className="help">{cognitionLabels[goal.cognition] || '认知要求待明确'}</p>
         <div className="goal-slot-summary"><span>{slotNumbers.length ? `关联题位：${slotNumbers.join('、')}` : '暂未关联题位'}</span>{blueprint.slots.some(slot => (slot.goalIds || []).includes(goal.id) || goalTaskCompatible(goal, config.tasks.find(task => task.id === slot.taskId))) ? <button type="button" className="link-button" disabled={busy} onClick={() => onShowSlots(goal)}>调整关联题位</button> : <span className="warning-text">暂无兼容题位</span>}</div>
       </li>;
-    })}</ol> : <p className="help">本次按范围安排练习，可补充教学目标。</p>}
+    })}</ol> : null}
     {goals.length ? <p className="help">目标关联是规划建议，题目支持证据仍待复核；必须考查的目标缺少证据时保留缺题。</p> : null}
-    <details className="goal-review-details"><summary>目标细节与依据</summary>
+    {goals.length ? <details className="goal-review-details"><summary>目标细节与依据</summary>
       {goals.map((goal, index) => {
         const conditions = [promptLabels[goal.conditions?.prompt], responseLabels[goal.conditions?.response]].filter(Boolean);
         const review = reviews.get(goal.id);
         return <div key={goal.id} className="goal-evidence-detail">
           <strong>目标 {index + 1}</strong>
+          <p className="help">认知要求：{cognitionLabels[goal.cognition] || '待明确'}</p>
           <p className="help">知识范围：{chapterNames(goal.knowledgeScope || [])}</p>
           {conditions.length ? <p className="help">{conditions.join(' · ')}</p> : null}
           {goal.abilities?.length ? <p className="help">能力：{goal.abilities.join('、')}</p> : null}
@@ -56,16 +55,16 @@ function TeachingGoalReview({ config, blueprint, checking, busy, onEdit, onShowS
           {!checking && review?.issues?.length ? <ul className="goal-issues">{review.issues.map((issue, issueIndex) => <li key={issueIndex}>{issueText(issue)}</li>)}</ul> : null}
         </div>;
       })}
-    </details>
+    </details> : null}
     </section>
-  </details>;
+  </section>;
 }
 
 function BlueprintOrigin({ generation }) {
   const ai = generation?.mode === 'llm';
   const summary = generation?.summary || (ai ? '按本次需求安排考查任务，并核查题库中的可选题。' : '按预设安排考查任务，可逐项修改。');
   return <section className="blueprint-origin" aria-label="蓝图规划来源">
-    <details className="blueprint-planning-thought"><summary><span>安排说明</span><span className="blueprint-origin-source">{ai ? `AI 建议${generation.edited ? ' · 已调整' : ''}` : '预设安排'}</span><ChevronDown size={14} aria-hidden="true"/></summary><Explanation className="blueprint-advice-summary" text={summary}/></details>
+    <strong className="blueprint-explanation-heading">安排说明</strong><Explanation className="blueprint-advice-summary" text={summary}/>
   </section>;
 }
 
@@ -87,6 +86,7 @@ export function Blueprint({ config, value, onChange, onConfirm, onBack, onAiAdju
   const activeGroup = groups.find(group => group.type === activeType);
   const missingSlots = value.slots.filter(slot => !(supply.get(slot.slotId)?.eligibleCount > 0));
   const unassignedRequired = goals.filter(goal => goal.priority === 'required' && !value.slots.some(slot => (slot.goalIds || []).includes(goal.id)));
+  const requiredIssues = (value.goalReview?.items || []).filter(item => item.priority === 'required' && item.issues?.length && !unassignedRequired.some(goal => goal.id === item.goalId));
   function toggleSlot(id) { setExpandedSlots(current => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }); }
   function navigateTabs(event, type) {
     const index = questionTypes.indexOf(type);
@@ -157,8 +157,14 @@ export function Blueprint({ config, value, onChange, onConfirm, onBack, onAiAdju
   }
   return <section className="blueprint-editor" aria-label="蓝图编辑">
     <div className="blueprint-context">
-    <BlueprintOrigin generation={value.generation}/>
-    {goals.length ? <div className="blueprint-review-bar"><TeachingGoalReview config={config} blueprint={value} checking={checking} busy={busy} onEdit={onBack} onShowSlots={showGoalSlots}/></div> : null}
+    <details className="blueprint-summary-details">
+      <summary><span>需求与安排说明</span><ChevronDown size={14} aria-hidden="true"/></summary>
+      <div className="blueprint-summary-content">
+        <BlueprintOrigin generation={value.generation}/>
+        <TeachingGoalReview config={config} blueprint={value} checking={checking} busy={busy} onEdit={onBack} onShowSlots={showGoalSlots}/>
+      </div>
+    </details>
+    {!checking && requiredIssues.length ? <div className="blueprint-goal-warning" role="status"><strong>必须考查的目标仍需核对</strong><ul>{requiredIssues.map(item => <li key={item.goalId}><MathText text={item.observable || '尚未明确考查目标'}/>：{item.issues.map(issueText).join('；')} <button type="button" className="link-button" disabled={busy} onClick={() => onBack('goal')}>修改目标</button></li>)}</ul></div> : null}
     {!checking && !checkError && !invalid && missingSlots.length ? <p className="blueprint-supply-warning" role="status">{missingSlots.length} 个题位暂无合格候选，确认后将保留缺题。可调整考查任务，或修改范围与教学目标。</p> : null}
     </div>
     <div className="blueprint-detailed-plan">
@@ -178,7 +184,7 @@ export function Blueprint({ config, value, onChange, onConfirm, onBack, onAiAdju
           <td><div className="blueprint-slot-actions"><button type="button" className="blueprint-slot-ai" aria-label={`AI 调整第 ${slot.number} 题位`} title="AI 调整本题位" disabled={busy} onClick={() => onAiAdjust?.(slot)}><Sparkles size={14} aria-hidden="true"/><span>AI 调整</span></button><button type="button" className="slot-details-toggle" aria-label={`第 ${slot.number} 题详情`} aria-expanded={expanded} aria-controls={`slot-detail-${slot.slotId}`} onClick={() => toggleSlot(slot.slotId)}>详情<ChevronDown size={14}/></button></div></td>
         </tr>
         {expanded ? <tr className="slot-detail-row"><td colSpan={columnCount}><div id={`slot-detail-${slot.slotId}`}>
-          {slot.planningReason ? <p className="slot-planning-reason"><strong>规划理由：</strong>{slot.planningReason}</p> : null}
+          {slot.planningReason ? <p className="slot-planning-reason"><strong>规划理由：</strong><MathText text={slot.planningReason}/></p> : null}
           {goals.length ? <fieldset className="slot-goals" disabled={busy}><legend>本题承担的教学目标</legend><div className="check-list">{goals.map((goal, index) => { const linked = (slot.goalIds || []).includes(goal.id); const lastRequired = linked && !canRemoveGoalLink(value.slots, slot, goal); return <label className="check-item" key={goal.id}><input type="checkbox" checked={linked} disabled={lastRequired || !goalTaskCompatible(goal, config.tasks.find(task => task.id === slot.taskId))} onChange={event => changeGoalLink(slot, goal.id, event.target.checked)}/><span>目标 {index + 1}{goal.priority === 'required' ? ' · 必须考查' : ''}<small>{goal.observable || '待澄清目标'}{lastRequired ? '（唯一关联题位）' : ''}</small></span></label>; })}</div><p className="help">不关联目标时，本题按已确认范围安排基础练习。必须目标至少保留一个合适题位；先关联其他题位后，可解除此处关联。</p></fieldset> : null}
           {scored && slot.partPoints.length ? <div className="part-controls"><span>小问分值</span>{slot.partPoints.map((part, index) => <label key={part.partId}>第 {index + 1} 问<input type="number" aria-label={`第 ${slot.number} 题第 ${index + 1} 问分值`} min="0" max="1000" className="point-input" value={part.points} disabled={busy} onChange={event => changePart(slot, part.partId, Number(event.target.value))}/></label>)}</div> : null}
           {!checking && !checkError && !invalid ? <p className="help slot-evidence-note">{item?.eligibleCount ?? 0} 题符合条件{item?.unknownCount ? `，${item.unknownCount} 题证据不足` : ''}。可选数按题位独立核算，同卷去重后可能减少。</p> : null}

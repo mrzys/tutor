@@ -1,0 +1,22 @@
+.history-entry{position:relative;min-width:0}
+.history-entry-editable>.history-item{padding-right:48px}
+.history-entry-menu{position:absolute;right:3px;top:6px;z-index:2}
+.history-entry-more{display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:0;background:transparent;color:var(--muted);border-radius:var(--pill-radius)}
+.history-entry-more:hover:not(:disabled),.history-entry-menu[data-open=true]>.history-entry-more{background:#eaeaea}
+.history-entry-actions{position:absolute;right:0;top:44px;min-width:132px;padding:4px;background:#fff;border:1px solid var(--line);border-radius:var(--control-radius);box-shadow:0 4px 16px #00000012;z-index:5}
+.history-entry-actions>button{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;border:0;padding:8px 12px;font-size:14px;text-align:left}
+.history-entry-actions>button:hover{background:#f5f5f5}
+.history-entry:has(.history-entry-menu[data-open=true]){z-index:4}
+.history-item-details{position:absolute;bottom:calc(100% - 3px);left:10px;right:10px;z-index:6;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:var(--control-radius);box-shadow:0 4px 16px #00000012;color:#525252;font-size: var(--font-caption);line-height:1.6;overflow-wrap:anywhere;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .15s}
+.history-entry:first-child>.history-item-details{top:calc(100% - 3px);bottom:auto}
+.history-item:hover~.history-item-details,.history-item:focus-visible~.history-item-details{visibility:visible;opacity:1;transition-delay:.35s}
+.history-rename-dialog{max-width:520px}
+.history-rename-form{display:flex;flex-direction:column;gap:8px}
+.history-rename-form>label{font-size:15px;font-weight:500}
+.history-rename-form>input{width:100%;min-height:44px}
+.history-rename-form>.help,.history-rename-form>.error-text{margin:0}
+.history-rename-dialog .dialog-footer>.primary{display:inline-flex;align-items:center;gap:8px}
+.history-rename-conflict{font-size:14px}
+.history-rename-conflict>p{margin:0 0 8px}
+@media(hover:none){.history-item:hover~.history-item-details{visibility:hidden;opacity:0}}
+@media(max-width:760px){.history-entry-menu{top:7px}}

@@ -7,6 +7,7 @@ import { suggestedGoalIds } from './teaching-goals.mjs';
 import { readDraft } from './store.mjs';
 import { hashContent } from '../question-bank/reader.mjs';
 import { createAssistantGateway, assistantProposalSchema } from '../llm/assistant-gateway.mjs';
+import { quantityDirective } from '../intake/quantity-authority.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const requestSchema = z.discriminatedUnion('stage', [
@@ -101,6 +102,9 @@ function validateProposal(output, context) {
     if (action.type === 'replace' && (/能力|素养|认知|更难|简单|容易|降低难度|提高难度|难一点|难些|数学抽象|逻辑推理|数据分析|建模|分类讨论|证明|新解法|换个解法/.test(context.message) || (!action.taskId && /知识点|考查任务|考察任务/.test(context.message)))) invalid('新考查维度或未标定难度不能用同任务换题表达；请澄清考查要求。');
   }
   if (count < 1 || count > 60) invalid('调整后总题量需为1到60。');
+  const quantity = quantityDirective(context.message);
+  if (count !== context.slots.length && !quantity.allowsChange) invalid('教师没有明确修改题量；题型或任务调整必须保留当前总题量，不能因供给不足自动增减题目。');
+  if (quantity.exactTotal !== null && count !== quantity.exactTotal) invalid(`教师要求 ${quantity.exactTotal} 题，提案为 ${count} 题；必须保留教师指定总题量，供给不足时说明缺口，不得自动减题。`);
   if (touched.some(item => deleted.has(item.number) && item.type !== 'delete')) invalid('删除题位不能同时执行其他修改。');
   if (proposal.actions.some(action => action.type === 'add' && deleted.has(action.afterNumber))) invalid('新增位置不能指向同时删除的题位。');
   if (supplyClarification) return supplyClarification;

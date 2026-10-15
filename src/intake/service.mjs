@@ -10,6 +10,8 @@ import { createMemoryIntakeStorage } from './storage.mjs';
 import { requestSchema, answerSchema, proposalSchema, stages } from './schema.mjs';
 import { assemblyPurposes, purposeFor, purposeStrategy } from '../assembly/purposes.mjs';
 import { canonicalSectionId, includesSection } from '../curriculum/section-identity.mjs';
+import { quantityDirective } from './quantity-authority.mjs';
+import { automaticTitle, legacyAutomaticTitle } from '../assembly/title.mjs';
 
 const defaultRoot = fileURLToPath(new URL('../../', import.meta.url));
 const copy = value => structuredClone(value);
@@ -54,7 +56,7 @@ const block = (kind, field, title, value, options, description) => ({ kind, id: 
 const notice = (id, title, description) => ({ kind: 'notice', id, title, description });
 
 function defaultAnswers(config) {
-  return { title: config.defaultRequirements.title, purpose: 'consolidation',
+  return { title: automaticTitle(config.defaultRequirements.mainScope, 'consolidation', config), purpose: 'consolidation',
     mainScope: [...config.defaultRequirements.mainScope], learnedScope: [...config.defaultRequirements.learnedScope], premises: [],
     size: 'recommend', singleChoiceCount: 6, fillBlankCount: 2, freeResponseCount: 2, scoringMode: 'none', targetScore: 0, durationMinutes: 45,
     cognition: 'unspecified', priority: 'preferred', observable: '', response: 'answer', prompt: 'independent', abilities: [], literacies: [] };
@@ -107,11 +109,11 @@ function checkAnswers(input, config) {
   return answers;
 }
 
-function applyAnswers(existing, patch, config) {
+function applyAnswers(existing, patch, config, { preserveTitle = false } = {}) {
   let next = { ...existing, ...checkAnswers(patch, config) };
-  if (patch.mainScope && patch.title === undefined
-      && [config.defaultRequirements.title, scopeTitle(existing.mainScope, config)].includes(existing.title)) {
-    next.title = scopeTitle(next.mainScope, config);
+  if (!preserveTitle && (patch.mainScope || patch.purpose) && patch.title === undefined
+      && [config.defaultRequirements.title, scopeTitle(existing.mainScope, config), automaticTitle(existing.mainScope, existing.purpose, config), legacyAutomaticTitle(existing.mainScope, existing.purpose, config)].includes(existing.title)) {
+    next.title = automaticTitle(next.mainScope, next.purpose, config);
   }
   // A purpose change is pedagogical, not a scoring instruction. Preserve the
   // teacher's current mode (including an explicit no-score selection).
@@ -274,7 +276,7 @@ function safeProposal(input, config, answers) {
   return proposal;
 }
 
-function safeQuickProposal(input, config, answers, lockedFields = [], typesEditable = answers.size === 'recommend', partialTypesEditable = typesEditable) {
+function safeQuickProposal(input, config, answers, lockedFields = [], typesEditable = answers.size === 'recommend', partialTypesEditable = typesEditable, quantity = { allowsChange: false, exactTotal: null }) {
   // A total explicitly extracted from the teacher's words is still a visible, pending points suggestion.
   const candidate = copy(input);
   if (candidate?.changes?.targetScore > 0 && candidate.changes.scoringMode === undefined && answers.scoringMode === 'none' && !lockedFields.includes('scoringMode')) candidate.changes.scoringMode = 'points';
@@ -305,6 +307,12 @@ function safeQuickProposal(input, config, answers, lockedFields = [], typesEdita
     fail('invalid_model_output', '必须保留教师明确的必须目标，不能降为偏好。');
   }
   const proposed = applyAnswers(answers, proposal.changes, config);
+  if (!quantity.allowsChange && proposed.questionCount !== answers.questionCount) {
+    fail('invalid_model_output', `教师未要求修改题量，必须保持 ${answers.questionCount} 题；题库不足只能告知缺口，不能自行增减。`);
+  }
+  if (quantity.exactTotal !== null && !lockedFields.includes('questionCount') && proposed.questionCount !== quantity.exactTotal) {
+    fail('invalid_model_output', `教师明确要求 ${quantity.exactTotal} 题，必须在建议中保持该总量；不能使用默认题量或根据题库供给减少题量。`);
+  }
   const scaleSummary = `规模：${proposed.questionCount} 题${proposed.scoringMode === 'none' ? ' · 不计分' : ` · ${proposed.targetScore} 分`} · ${proposed.durationMinutes} 分钟。`;
   if (!proposal.summary.endsWith(scaleSummary)) proposal.summary += `\n${scaleSummary}`;
   proposalSchema.parse(proposal);
@@ -372,6 +380,21 @@ function present(session, config) {
     output.blocks = [];
     output.progression = { ...copy(session.progression ?? config.progression), mode: output.answers.learnedScopeMode,
       inferredScope: copy(output.answers.learnedScope), automatic: output.answers.learnedScopeMode === 'progress' };
+    if (output.proposalKind === 'quick_intake' && output.proposal) {
+      const proposed = applyAnswers(output.answers, output.proposal.changes, config, { preserveTitle: output.titleSource !== 'auto' });
+      output.proposalPlanning = { questionCount: proposed.questionCount, countPolicy: proposed.size === 'recommend' ? 'suggested' : 'fixed',
+        counts: { single_choice: proposed.singleChoiceCount, fill_blank: proposed.fillBlankCount, free_response: proposed.freeResponseCount } };
+      // Numeric and supply narration is not authoritative. Keep the original in
+      // storage for audit; present quantity facts from the validated proposal.
+      const lines = output.proposal.summary.split(/\n+|(?<=[。；！？])\s*/).filter(line => line.trim()
+        && !/题量|配比|题型数量|\d+\s*[/／]\s*\d+\s*[/／]\s*\d+|[0-9零〇一二两三四五六七八九十百]+\s*(?:道|题|分钟|分[。；\s])|计分|供给|题库.*(?:不足|足够|可用)/.test(line));
+      const directive = quantityDirective(output.teacherRequest || output.assistantMessage || '');
+      if (effectiveQuickLocks(output).includes('questionCount') && directive.exactTotal !== null && directive.exactTotal !== proposed.questionCount) {
+        lines.push(`题量冲突：原话要求 ${directive.exactTotal} 题，当前明确设置为 ${proposed.questionCount} 题，请修改题量或原话后重新确认。`);
+      }
+      lines.push(`规模：${proposed.questionCount} 题${proposed.scoringMode === 'none' ? ' · 不计分' : ` · ${proposed.targetScore} 分`} · ${proposed.durationMinutes} 分钟。`);
+      output.proposal.summary = lines.join('\n');
+    }
   }
   const requirements = output.requirements;
   output.planning = { countPolicy: output.answers.size === 'recommend' ? 'suggested' : 'fixed' };
@@ -446,12 +469,14 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
                 : source.requirements?.teacherRequest !== undefined ? { teacherRequest: source.requirements.teacherRequest } : {}),
               ...(source.lockedFields ? { lockedFields: copy(source.lockedFields) } : {}),
               ...(source.quickTypeCountSource ? { quickTypeCountSource: source.quickTypeCountSource } : {}),
+              titleSource: source.titleSource ?? 'saved',
               sourceSessionId: source.sessionId, proposal: null, proposalKind: null, llmRun: null,
               operations: {}, createdAt: new Date().toISOString() };
           } else if (input.action === 'start') {
             if (session) fail('session_exists', '需求会话已经存在，请读取后继续。');
             const quick = input.flow === 'quick';
             session = { sessionId: id, revision: 0, stage: quick ? 'scope' : 'purpose', status: 'collecting',
+              titleSource: input.answers?.title !== undefined ? 'teacher' : 'auto',
               ...(quick ? { mode: 'quick' } : {}),
               answers: applyAnswers({ ...defaultAnswers(config), ...(quick
                 ? { learnedScopeMode: 'progress', scoringMode: 'none', targetScore: 0, questionCount: 10, response: 'unspecified', prompt: 'unspecified' } : {}) }, input.answers ?? {}, config), confirmedStages: [],
@@ -466,7 +491,8 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
               if (quick && session.mode !== 'quick') fail('invalid_intake', '快速整理只用于快速需求会话。');
               if (quick && (input.next || input.stage || input.acceptProposal)) fail('invalid_intake', '请先整理需求，再明确采纳建议。');
               if (quick) {
-                session.answers = applyAnswers(session.answers, input.answers ?? {}, config);
+                session.answers = applyAnswers(session.answers, input.answers ?? {}, config, { preserveTitle: session.titleSource !== 'auto' });
+                if (input.answers?.title !== undefined) session.titleSource = 'teacher';
                 rememberManualTypeCounts(session, input.answers);
                 session.lockedFields = copy(input.lockedFields ?? session.lockedFields ?? []);
                 validateStep('review', session.answers);
@@ -481,8 +507,10 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
               if (signal?.aborted) fail('cancelled', '已取消本次操作。');
               const typeExtractionAllowed = canExtractQuickTypes(session, input.message ?? session.assistantMessage);
               const partialTypeExtractionAllowed = canExtractTypeConstraints(session, input.message ?? session.assistantMessage);
+              const quantity = quantityDirective(input.message ?? session.assistantMessage ?? '');
+              const quickLocks = [...new Set([...effectiveQuickLocks(session), ...(!quantity.allowsChange ? ['questionCount'] : [])])];
               const validate = candidate => methodsOnly ? safeMethodsProposal(candidate, config, session.answers, dependencies)
-                : quick ? safeQuickProposal(candidate, config, session.answers, effectiveQuickLocks(session), typeExtractionAllowed, partialTypeExtractionAllowed) : safeProposal(candidate, config, session.answers);
+                : quick ? safeQuickProposal(candidate, config, session.answers, quickLocks, typeExtractionAllowed, partialTypeExtractionAllowed, quantity) : safeProposal(candidate, config, session.answers);
               if (!methodsOnly) {
                 session.assistantMessage = input.message ?? (quick ? session.assistantMessage ?? '' : '');
                 if (input.message !== undefined) session.teacherRequest = input.message;
@@ -491,13 +519,17 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
                 : session.assistantMessage;
               session.proposalKind = methodsOnly ? 'methods' : quick ? 'quick_intake' : 'intake';
               let result;
-              try { result = await gateway.propose({ task: methodsOnly ? 'suggest_methods' : quick ? 'quick_intake' : 'intake', message: modelMessage, stage: session.stage, answers: session.answers,
+              const modelAnswers = copy(session.answers);
+              if (quick && session.answers.size === 'recommend') quickTypeFields.forEach(field => { delete modelAnswers[field]; });
+              try { result = await gateway.propose({ task: methodsOnly ? 'suggest_methods' : quick ? 'quick_intake' : 'intake', message: modelMessage, stage: session.stage, answers: modelAnswers,
                 purposeStrategy: purposeStrategy(session.answers.purpose),
                 confirmedStages: session.confirmedStages, chapters: config.chapters, premises: config.premises,
                 availableCounts: config.availableCounts, supportedFields: methodsOnly ? ['premises'] : quick
-                  ? [...quickGoalFields, ...(!effectiveQuickLocks(session).includes('scoringMode') ? ['scoringMode'] : []), ...quickNumericFields.filter(field => !effectiveQuickLocks(session).includes(field)),
+                  ? [...quickGoalFields, ...(!quickLocks.includes('scoringMode') ? ['scoringMode'] : []), ...quickNumericFields.filter(field => !quickLocks.includes(field)),
                     ...(typeExtractionAllowed ? quickTypeFields : []), ...(partialTypeExtractionAllowed ? ['typeConstraints'] : [])] : Object.keys(answerSchema.shape),
-                ...(quick ? { lockedFields: effectiveQuickLocks(session), typeCountsEditable: typeExtractionAllowed, partialTypeConstraintsEditable: partialTypeExtractionAllowed,
+                ...(quick ? { lockedFields: quickLocks, quantityPolicy: { ...quantity, currentTotal: session.answers.questionCount, automaticQuantityChange: false,
+                  typeAllocation: session.answers.size === 'recommend' ? 'suggested_in_blueprint' : 'teacher_fixed', supplyVerification: 'not_checked_for_current_requirements' },
+                  typeCountsEditable: typeExtractionAllowed, partialTypeConstraintsEditable: partialTypeExtractionAllowed,
                   typeCountSource: session.quickTypeCountSource ?? (session.answers.size === 'recommend' ? 'suggested' : 'manual_or_legacy') } : {}),
                 ...(methodsOnly ? { premises: dependencies.methods.map(({ id, label, description }) => ({ id, label, description })),
                   methodDependencies: dependencies, foundation: config.courseContext.foundation } : {}),
@@ -537,7 +569,8 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
                 patch = { ...session.proposal.changes, ...patch };
               }
               const previousAnswers = session.answers;
-              session.answers = applyAnswers(session.answers, patch, config);
+              session.answers = applyAnswers(session.answers, patch, config, { preserveTitle: session.titleSource !== 'auto' });
+              if (patch.title !== undefined) session.titleSource = 'teacher';
               if (session.mode === 'quick') {
                 if (input.acceptProposal && session.proposal.changes.typeConstraints !== undefined) session.quickTypeCountSource = 'partial';
                 if (input.acceptProposal && quickTypeFields.some(field => session.proposal.changes[field] !== undefined)) session.quickTypeCountSource = 'model';
@@ -554,7 +587,11 @@ export function createIntakeService({ root = defaultRoot, storage = createMemory
                   && ['mainScope', 'learnedScope', 'premises'].some(field => JSON.stringify(previousAnswers[field]) !== JSON.stringify(session.answers[field]))) {
                 session.proposal = null; session.proposalKind = null; delete session.assistantError;
               }
-              const changedStages = Object.keys(fieldsByStage).filter(stage => fieldsByStage[stage].some(field => JSON.stringify(previousAnswers[field]) !== JSON.stringify(session.answers[field])));
+              const changedStages = Object.keys(fieldsByStage).filter(stage => fieldsByStage[stage].some(field =>
+                // A generated display title follows scope/purpose; it is not a
+                // separate purpose decision that invalidates earlier consent.
+                !(field === 'title' && patch.title === undefined)
+                && JSON.stringify(previousAnswers[field]) !== JSON.stringify(session.answers[field])));
               // Earlier decisions affect later planning. Changing scope must also re-confirm boundaries and goals.
               const firstChanged = Math.min(...changedStages.map(stage => stages.indexOf(stage)));
               session.confirmedStages = session.confirmedStages.filter(stage => session.editing

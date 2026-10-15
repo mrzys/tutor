@@ -3,6 +3,8 @@ import path from 'node:path';
 import { hashContent } from '../question-bank/reader.mjs';
 import { randomUUID } from 'node:crypto';
 import { sqliteStorage } from '../storage/sqlite.mjs';
+import { purposeFor } from './purposes.mjs';
+import { canonicalSectionId } from '../curriculum/section-identity.mjs';
 
 const validId = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const updates = new Map();
@@ -72,7 +74,19 @@ export async function listDrafts(storeRoot) {
     const draftId = filename.slice(0, -5);
     try {
       const draft = await readDraft(storeRoot, draftId);
-      drafts.push({ draftId, title: draft.title, createdAt: draft.createdAt, stats: draft.stats, scoringMode: draft.baseline.requirements.scoringMode ?? 'points' });
+      const requirements = draft.baseline.requirements;
+      const chapters = draft.baseline.taskCatalogSnapshot?.chapters ?? [];
+      const seen = new Set();
+      const scopeLabels = (requirements.mainScope ?? []).flatMap(id => {
+        const canonical = canonicalSectionId(id);
+        if (seen.has(canonical)) return [];
+        seen.add(canonical);
+        const chapter = chapters.find(item => canonicalSectionId(item.id) === canonical);
+        return typeof chapter?.label === 'string' ? [chapter.label] : [];
+      });
+      drafts.push({ draftId, title: draft.title, createdAt: draft.createdAt, stats: draft.stats, revision: draft.revision ?? 0,
+        scoringMode: requirements.scoringMode ?? 'points', scopeSummary: scopeLabels.join('、').slice(0, 400),
+        purposeLabel: purposeFor(requirements.purpose)?.label ?? '' });
     } catch (error) { warnings.push({ draftId, code: error.code, message: error.message }); }
   }
   drafts.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.draftId.localeCompare(b.draftId));

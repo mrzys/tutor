@@ -3,7 +3,7 @@
 .floating-assistant-header { display: flex; align-items: center; flex-shrink: 0; padding: 4px 8px; gap: 4px; border-bottom: 1px solid #e5e5e5; }
 .floating-assistant-header > button { border: 0; background: transparent; min-height: 32px; }
 .floating-assistant-drag { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 6px; cursor: grab; touch-action: none; user-select: none; text-align: left; font-size: 13px; color: #000; }
-.floating-assistant-drag small { margin-left: auto; font-size: 11px; color: #737373; font-weight: 400; }
+.floating-assistant-drag small { margin-left: auto; font-size: var(--font-caption); color: #737373; font-weight: 400; }
 .floating-assistant[data-moving] .floating-assistant-drag { cursor: grabbing; }
 .floating-assistant-close { display: grid; place-items: center; width: 32px; padding: 4px; border-radius: 9999px; }
 .floating-assistant .assembly-assistant-content { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 10px 14px; }

@@ -1,0 +1,24 @@
+.editor-dialog > .dialog-heading { align-items: center; }
+
+button.ui-close-button,
+.dialog-heading button.ui-close-button,
+.paper-preview-header button.ui-close-button,
+.pdf-preview-actions button.ui-close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius, 8px);
+  background: transparent;
+  color: var(--muted, #737373);
+}
+button.ui-close-button:hover:not(:disabled) {
+  background: var(--surface-hover, #f5f5f5);
+  color: var(--accent, #000);
+}
+.ui-close-button > svg { flex-shrink: 0; }

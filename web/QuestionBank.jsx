@@ -4,6 +4,8 @@ import { api, typeLabels } from './api.js';
 import { MathText } from './MathText.jsx';
 import { Select } from './Select.jsx';
 import { QuestionOptions } from './QuestionOptions.jsx';
+import { QuestionStem } from './QuestionSource.jsx';
+import { CloseButton } from './CloseButton.jsx';
 import { questionSource, sourceCaption } from '../src/question-bank/source-label.mjs';
 import { availableTextbooks } from '../src/curriculum/availability.mjs';
 import './QuestionBank.css';
@@ -48,7 +50,7 @@ function QuestionCard({ question, selected, disabled, onToggle }) {
 
   return <article className={`bank-question ${selected ? 'is-selected' : ''}`}>
     <div className="bank-question-body">
-      <p className="bank-question-stem"><MathText text={question.student.stem}/></p>
+      <p className="bank-question-stem"><QuestionStem question={question}/></p>
       {question.student.options.length ? <div className="bank-question-options"><QuestionOptions options={question.student.options}/></div> : null}
       {question.student.parts.length ? <div className="bank-question-parts">{question.student.parts.map((part, index) =>
         <p key={part.partId}><span>（{index + 1}）</span><span className="bank-part-prompt"><MathText text={part.prompt}/></span></p>)}</div> : null}
@@ -56,7 +58,6 @@ function QuestionCard({ question, selected, disabled, onToggle }) {
         <div className="bank-question-information-line">
           <span className="bank-question-type">{typeLabels[question.questionType] ?? question.questionType}</span>
           <span><MathText text={question.topics.join('、') || question.taskSummary}/></span>
-          <span>{sourceCaption(questionSource(question))}</span>
           <button ref={evidenceTriggerRef} type="button" className="bank-question-evidence-trigger" aria-expanded={evidenceOpen} aria-controls={evidenceId} onPointerDown={event => event.preventDefault()} onClick={toggleEvidence}>
             <ChevronRight size={13}/><span>知识与来源信息</span>
           </button>
@@ -64,7 +65,7 @@ function QuestionCard({ question, selected, disabled, onToggle }) {
             {selected ? <><Check size={14}/>已加入 · 移出</> : <><Plus size={14}/>加入组卷篮</>}
           </button>
         </div>
-        {evidenceOpen ? <dl id={evidenceId} className="bank-question-evidence-panel"><dt>考查摘要</dt><dd><MathText text={question.taskSummary}/></dd><dt>相关知识</dt><dd>{question.requiredKnowledge.join('、') || '未单独标注'}</dd><dt>来源定位</dt><dd>{sourceRefs.length ? sourceRefs.map(ref => `${ref.locator}${ref.pages?.length ? `（${ref.pages.join('、')} 页）` : ''}`).join('；') : '题库收录'}</dd></dl> : null}
+        {evidenceOpen ? <dl id={evidenceId} className="bank-question-evidence-panel"><dt>考查摘要</dt><dd><MathText text={question.taskSummary}/></dd><dt>相关知识</dt><dd><MathText text={question.requiredKnowledge.join('、') || '未单独标注'}/></dd><dt>题目来源</dt><dd>{sourceCaption(questionSource(question))}</dd><dt>来源定位</dt><dd>{sourceRefs.length ? sourceRefs.map(ref => `${ref.locator}${ref.pages?.length ? `（${ref.pages.join('、')} 页）` : ''}`).join('；') : '题库收录'}</dd></dl> : null}
       </div>
     </div>
   </article>;
@@ -158,7 +159,7 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
     <aside ref={basketRef} className={`bank-basket ${open ? 'is-open' : ''}`} role="dialog" aria-modal={open || undefined} aria-hidden={!open} aria-label="组卷篮">
       <div className="bank-basket-heading">
         <div><span className="bank-basket-icon"><ShoppingBasket size={18}/>{questions.length ? <b>{questions.length}</b> : null}</span><div><strong>组卷篮</strong><span aria-live="polite">已选 {questions.length} 道题</span></div></div>
-        <button ref={closeButtonRef} type="button" className="bank-basket-close" aria-label="关闭组卷篮" onClick={onClose}><X size={18}/></button>
+        <CloseButton ref={closeButtonRef} label="关闭组卷篮" onClick={onClose}/>
       </div>
       <div className="bank-basket-list">
         {questions.length ? questions.map((question, index) => {
@@ -167,14 +168,14 @@ function SelectionBasket({ questions, locations, selectedOrigins, title, creatin
           return <article className="bank-basket-item" key={question.questionId}>
             <div className="bank-basket-item-heading"><span>{index + 1}</span><strong>{typeLabels[question.questionType] ?? question.questionType}</strong><button type="button" aria-label={`移除第 ${index + 1} 题`} title="移出组卷篮" onClick={() => onRemove(question.questionId)}><X size={15}/></button></div>
             <div className="bank-basket-question">
-              <p className="bank-basket-stem"><MathText text={question.student.stem}/></p>
+              <p className="bank-basket-stem"><QuestionStem question={question}/></p>
               {question.student.options.length ? <div className="bank-basket-options"><QuestionOptions options={question.student.options}/></div> : null}
-              {question.student.parts.length ? <div className="bank-basket-parts">{question.student.parts.map((part, partIndex) => <p key={part.partId}><span>（{partIndex + 1}）</span><MathText text={part.prompt}/></p>)}</div> : null}
+              {question.student.parts.length ? <div className="bank-basket-parts">{question.student.parts.map((part, partIndex) => <p key={part.partId}><span>（{partIndex + 1}）</span><span className="bank-part-prompt"><MathText text={part.prompt}/></span></p>)}</div> : null}
             </div>
             <dl className="bank-basket-detail">
               <dt>章节</dt><dd>{location ? `${location.textbook} / ${location.chapter} / ${location.section}` : '题库题目'}</dd>
               <dt>考查</dt><dd><MathText text={question.taskSummary}/></dd>
-              <dt>知识</dt><dd>{question.requiredKnowledge.join('、') || question.topics.join('、') || '未单独标注'}</dd>
+              <dt>知识</dt><dd><MathText text={question.requiredKnowledge.join('、') || question.topics.join('、') || '未单独标注'}/></dd>
               <dt>来源</dt><dd>{sourceCaption(questionSource(question))}</dd>
             </dl>
           </article>;

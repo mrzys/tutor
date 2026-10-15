@@ -106,7 +106,7 @@ export async function planBlueprint(requirements = {}, { root = defaultRoot, gat
     if (!requiredGoalIds.size) {
       const capacity = planningCapacity(tasks, normalized, countPolicy);
       if (capacity.missing) return { ok: false, error: { code: 'insufficient_supply',
-        message: `当前范围和题型条件下，同卷去重后最多可安排 ${capacity.available} 题，需求 ${capacity.requested} 题，缺少 ${capacity.missing} 题。请调整题量、范围或题型条件后再确认。`, details: capacity } };
+        message: `你要求 ${capacity.requested} 题，当前范围和题型条件下，同卷去重后最多可安排 ${capacity.available} 题，还缺 ${capacity.missing} 题。原题量已保留；可补充题库或由你调整范围、题型条件或题量后重新确认。`, details: capacity } };
     }
     const equalPoints = Math.floor(normalized.targetScore / questionCount);
     const pointRemainder = normalized.targetScore % questionCount;

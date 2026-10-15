@@ -3,13 +3,13 @@ import { MathText } from './MathText.jsx';
 
 const columnGap = 24;
 
-function Option({ option, measuring = false }) {
+function Option({ option, measuring = false, renderText: RenderText }) {
   return <div className={`option${measuring ? ' option-measure' : ''}`}>
-    <span>{option.label}.</span><div className="option-text"><MathText text={option.text} readableFractions/></div>
+    <span>{option.label}.</span><div className="option-text"><RenderText text={option.text} readableFractions/></div>
   </div>;
 }
 
-export function QuestionOptions({ options }) {
+export function QuestionOptions({ options, renderText = MathText }) {
   const containerRef = useRef(null);
   const probeRef = useRef(null);
   const [layout, setLayout] = useState({ columns: 1, width: undefined });
@@ -39,10 +39,10 @@ export function QuestionOptions({ options }) {
   if (!options.length) return null;
   return <div className="options-layout" ref={containerRef}>
     <div className="options options-adaptive" role="group" aria-label="选项" data-columns={layout.columns} style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`, maxWidth: layout.width, columnGap }}>
-      {options.map(option => <Option key={option.label} option={option}/>)}
+      {options.map(option => <Option key={option.label} option={option} renderText={renderText}/>)}
     </div>
     <div className="option-width-probe" aria-hidden="true" inert ref={probeRef}>
-      {options.map(option => <Option key={option.label} option={option} measuring/>)}
+      {options.map(option => <Option key={option.label} option={option} renderText={renderText} measuring/>)}
     </div>
   </div>;
 }

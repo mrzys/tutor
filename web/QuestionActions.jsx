@@ -1,9 +1,11 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { MoreHorizontal, Sparkles } from 'lucide-react';
 import { supplyPresentation } from './question-supply.js';
+import './QuestionActions.css';
 
 export function QuestionActions({ slot, supply, busy, onDetails, onCandidates, onCriteria, onDifficulty, onPoints, onDelete, onLock, onAiAdjust }) {
   const [menu, setMenu] = useState(null);
+  const [placement, setPlacement] = useState('below');
   const root = useRef(null);
   const trigger = useRef(null);
   const menuId = useId();
@@ -17,16 +19,22 @@ export function QuestionActions({ slot, supply, busy, onDetails, onCandidates, o
   const run = action => { setMenu(null); action(); };
   const toggle = (name, event) => {
     trigger.current = event.currentTarget;
+    const bounds = root.current?.closest('.draft-content')?.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const below = Math.min(window.innerHeight, bounds?.bottom ?? window.innerHeight) - rect.bottom;
+    const above = rect.top - Math.max(0, bounds?.top ?? 0);
+    setPlacement(below < 310 && above > below ? 'above' : 'below');
     setMenu(current => current === name ? null : name);
   };
-  return <div className="question-actions" ref={root} data-open={!!menu}
+  return <div className="question-actions" ref={root} data-open={!!menu} data-placement={placement}
     onBlur={event => { if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) setMenu(null); }}
     onKeyDown={event => {
       if (event.key === 'Escape' && menu) { event.stopPropagation(); setMenu(null); trigger.current?.focus(); }
     }}>
     {onAiAdjust ? <button className="question-ai-adjust" disabled={busy} onClick={() => run(onAiAdjust)} aria-label={`AI 调整第 ${slot.number} 题`}><Sparkles size={13} aria-hidden="true"/>AI 调整</button> : null}
     {availability.exhausted ? <>
-      <button className="question-supply-empty" disabled={busy} onClick={onCriteria} aria-label={`第 ${slot.number} 题暂无合格备选，调整要求`} title={availability.detail}>调整要求 · 暂无备选</button>
+      <span className="question-supply-state" title={availability.detail}>暂无备选</span>
+      <button className="question-supply-empty" disabled={busy} onClick={onCriteria} aria-label={`调整第 ${slot.number} 题要求`}>调整要求</button>
     </> : <button disabled={busy} onClick={onCandidates} aria-label={`更换第 ${slot.number} 题，${availability.label}`} title={availability.detail}>换题</button>}
     <button className="question-more" disabled={busy} onClick={event => toggle('more', event)} aria-expanded={menu === 'more'}
       aria-controls={menu === 'more' ? menuId : undefined} aria-label={`第 ${slot.number} 题更多操作`}><MoreHorizontal size={18} aria-hidden="true"/></button>

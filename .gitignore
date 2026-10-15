@@ -7,7 +7,7 @@ dist/
 .env.local
 
 # Generated verification artifacts and local agent state
-output/
+/output/
 .workbuddy/
 __pycache__/
 *.py[cod]

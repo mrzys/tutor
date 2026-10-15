@@ -2,6 +2,7 @@ import { Select } from './Select.jsx';
 import React, { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
 import { allocateParts, api, sourceLabel, statusLabels, typeLabels } from './api.js';
 import { MathText } from './MathText.jsx';
+import { CloseButton } from './CloseButton.jsx';
 const renderTaskLabel = label => <MathText text={label}/>;
 
 export const DraftOperationContext = createContext(null);
@@ -20,7 +21,7 @@ export function Modal({ title, onClose, children, busy, className = '', footer }
     };
   }, []);
   const content = <>{operations?.failure ? <div className="notice error" role="alert"><span>{operations.failure.message}</span>{operations.failure.retry ? <button disabled={busy} onClick={operations.retry}>重试同一操作</button> : null}<button disabled={busy} onClick={operations.reload}>读取最新草稿</button></div> : null}{children}</>;
-  return <dialog ref={dialog} aria-labelledby={titleId} className={`editor-dialog ${footer ? 'has-footer' : ''} ${className}`} onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}><div className="dialog-heading"><h2 id={titleId}>{title}</h2><button aria-label="关闭" disabled={busy} onClick={onClose}>关闭</button></div>{footer ? <><div className="dialog-body">{content}</div><footer className="dialog-footer">{footer}</footer></> : content}</dialog>;
+  return <dialog ref={dialog} aria-labelledby={titleId} className={`editor-dialog ${footer ? 'has-footer' : ''} ${className}`} onCancel={event => { event.preventDefault(); if (!busy) onClose(); }}><div className="dialog-heading"><h2 id={titleId}>{title}</h2><CloseButton disabled={busy} onClick={onClose}/></div>{footer ? <><div className="dialog-body">{content}</div><footer className="dialog-footer">{footer}</footer></> : content}</dialog>;
 }
 
 export function PointFields({ value, onChange }) {
@@ -136,7 +137,10 @@ export function Candidates({ slot, scored = true, data, loading, error, onApply,
 const outcomeLabels = { replaced: '已换题', unchanged: '保留现题', skipped_locked: '已跳过锁定题', deleted: '已删除', added: '已添加', updated: '已更新', unknown: '证据不足', read_failed: '读取失败', failed: '未完成' };
 export function OperationResult({ result }) {
   if (!result) return null;
-  return <div className="notice operation-result" role="status"><strong>{result.replayed ? '已恢复同一操作的结果' : '操作结果已保存'}</strong>{result.entries?.length ? <ul>{result.entries.map((entry, index) => <li key={index}>{outcomeLabels[entry.status] || entry.status}：{entry.message || entry.reasons?.join('；') || entry.slotId}{entry.toQuestionId ? `（${entry.toQuestionId}）` : ''}</li>)}</ul> : <p>{result.message || '草稿已更新。'}</p>}</div>;
+  const entries = result.entries || [];
+  const needsAttention = entries.some(entry => !['replaced', 'deleted', 'added', 'updated'].includes(entry.status));
+  const content = entries.length ? <ul>{entries.map((entry, index) => <li key={index}>{outcomeLabels[entry.status] || entry.status}：{entry.message || entry.reasons?.join('；') || entry.slotId}</li>)}</ul> : <p>{result.message || '草稿已更新。'}</p>;
+  return <div className="notice operation-result" role="status">{needsAttention ? <><strong>部分操作需要留意</strong>{content}</> : <details><summary>已更新 · 查看操作记录</summary>{content}</details>}</div>;
 }
 
 export function useDraftOperations(draft, onChange) {

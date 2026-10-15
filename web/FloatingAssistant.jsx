@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { GripHorizontal, MoveDiagonal2, X } from 'lucide-react';
+import { GripHorizontal, MoveDiagonal2 } from 'lucide-react';
+import { CloseButton } from './CloseButton.jsx';
 import { containPanel, fitPanel, placePanel } from './floating-panel.js';
 import './FloatingAssistant.css';
 
@@ -117,7 +118,7 @@ export function FloatingAssistant({ open, anchor, onClose, children }) {
         onPointerDown={event => start(event, 'move')} onPointerMove={move} onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop} onKeyDown={event => keyboard(event, 'move')}>
         <GripHorizontal size={16} aria-hidden="true"/><span id={titleId}>AI 调整</span><small>拖动移动</small>
       </button>
-      <button type="button" className="floating-assistant-close" aria-label="关闭 AI 调整窗口" onClick={onClose}><X size={16} aria-hidden="true"/></button>
+      <CloseButton label="关闭 AI 调整窗口" onClick={onClose}/>
     </header>
     <div className="assembly-assistant-content">{children}</div>
     <button type="button" className="floating-assistant-resize" aria-label="调整 AI 窗口大小，使用方向键" title="拖动调整大小，也可使用方向键"

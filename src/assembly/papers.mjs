@@ -158,6 +158,12 @@ export async function findPaperForDraft(papersRoot, draftId) {
   return summary ? getPaper(papersRoot, summary.paperId) : { ok: true, paper: null };
 }
 
+export async function prepareDraftPreview(draft, { root = defaultRoot } = {}) {
+  try {
+    return { ok: true, draftId: draft.draftId, revision: revisionOf(draft), assets: await freezeAssets(draft, root) };
+  } catch (cause) { return failure(cause); }
+}
+
 async function freezeAssets(draft, root) {
   const assets = []; const resolvedRoot = await realpath(root);
   for (const slot of draft.slots) {

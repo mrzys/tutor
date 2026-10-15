@@ -12,7 +12,8 @@ import { liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js';
 import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
 import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages.js';
 import { studentProblem } from '../assembly/papers.mjs';
-import { questionSource, sourceCaption } from '../question-bank/source-label.mjs';
+import { questionSourcePresentation } from '../question-bank/source-label.mjs';
+import { paperTextBlocks } from './rich-text.mjs';
 
 const exec = promisify(execFile);
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -21,7 +22,7 @@ RegisterHTMLHandler(adaptor);
 const math = mathjax.document('', { InputJax: new TeX({ packages: AllPackages.filter(x => !['require','autoload','html','noerrors','noundefined'].includes(x)), formatError: (_jax,error) => { throw error; } }), OutputJax: new SVG({ fontCache: 'none' }) });
 
 // Layout revisions do not alter the frozen paper; explicit regeneration writes a new file.
-export const PDF_LAYOUT_VERSION = 'formal-exam-v5-question-source';
+export const PDF_LAYOUT_VERSION = 'formal-exam-v7-rich-tables';
 
 export async function findPdfPython() {
   if (process.env.TUTOR_PYTHON) return process.env.TUTOR_PYTHON;
@@ -44,14 +45,15 @@ export function projectPaper(paper, kind) {
     const base = { number: slot.number, slotId: slot.slotId, questionType: slot.questionType, points: slot.points, partPoints: structuredClone(slot.partPoints ?? []), missing: Boolean(problem) };
     if (base.missing) { issues.push(`第 ${slot.number} 题：${problem}`); return { ...base, student: null }; }
     const student = q.student;
-    const source = questionSource(q, draft.baseline.sourceManifest);
-    const result = { ...base, student: { stem: student.stem, options: (student.options ?? []).map(x => ({label:x.label,text:x.text})), parts: (student.parts ?? []).map(x => ({partId:x.partId,prompt:x.prompt})), assets: (student.assets ?? []).map(x => ({assetId:x.assetId,alt:x.alt ?? ''})) } };
-    if (!source.embedded) result.sourceCaption = sourceCaption(source);
+    const presentation = questionSourcePresentation(q, draft.baseline.sourceManifest);
+    const sourceBreak = paperTextBlocks(presentation.stem)[0]?.type === 'table' ? '\n' : '';
+    const result = { ...base, student: { stem: `（${presentation.label}）${sourceBreak}${presentation.stem}`, options: (student.options ?? []).map(x => ({label:x.label,text:x.text})), parts: (student.parts ?? []).map(x => ({partId:x.partId,prompt:x.prompt})), assets: (student.assets ?? []).map(x => ({assetId:x.assetId,alt:x.alt ?? ''})) } };
     if (kind === 'teacher') {
       result.teacher = structuredClone(q.teacher ?? {answers:[],solutions:[],scoringSuggestions:[]});
       if (draft.baseline.requirements.purpose === 'diagnostic' && slot.taskLabel) result.diagnosticFocus = slot.taskLabel;
       if (!scored) delete result.teacher.scoringSuggestions;
       result.sourceRefs = structuredClone(q.sourceRefs ?? []);
+      result.sourceDescription = presentation.caption;
       result.versions = { questionId:q.questionId, contentVersion:q.contentVersion, teacherVersion:q.teacherVersion };
       if (!result.teacher.answers?.length && !hasSummaryIssue(slot.slotId,'answer_missing')) issues.push(`第 ${slot.number} 题缺参考答案`);
       if (!result.teacher.solutions?.length && !hasSummaryIssue(slot.slotId,'solution_missing')) issues.push(`第 ${slot.number} 题缺参考解析`);
@@ -90,25 +92,37 @@ export async function generatePaperOutput(paper, kind, {outputRoot = path.join(r
   try {
     const model = projectPaper(paper, kind);
     const formulas = new Map();
+    const richTextBlocks = Object.create(null);
+    const scanFormulas = value => {
+      for (const match of value.matchAll(/\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g)) {
+        const tex = match[1] ?? match[2];
+        if (!formulas.has(tex)) {
+          const node = math.convert(tex,{display:Boolean(match[1]),em:11,ex:5.5,containerWidth:500});
+          let svg = adaptor.outerHTML(adaptor.firstChild(node));
+          if (svg.includes('data-mjx-error') || svg.includes('data-mml-node="merror"')) throw new Error(`公式无法排版：${tex}`);
+          svg = svg.replace(/(width|height)="([\d.]+)ex"/g, (_m,key,n)=>`${key}="${Number(n)*5.5}pt"`);
+          formulas.set(tex,svg);
+        }
+      }
+    };
     const scan = value => {
       if (typeof value === 'string') {
-        for (const match of value.matchAll(/\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g)) {
-          const tex = match[1] ?? match[2];
-          if (!formulas.has(tex)) {
-            const node = math.convert(tex,{display:Boolean(match[1]),em:11,ex:5.5,containerWidth:500});
-            let svg = adaptor.outerHTML(adaptor.firstChild(node));
-            if (svg.includes('data-mjx-error') || svg.includes('data-mml-node="merror"')) throw new Error(`公式无法排版：${tex}`);
-            // MathJax ex units become PDF points; paths remain vectors.
-            svg = svg.replace(/(width|height)="([\d.]+)ex"/g, (_m,key,n)=>`${key}="${Number(n)*5.5}pt"`);
-            formulas.set(tex,svg);
-          }
+        const blocks = paperTextBlocks(value);
+        if (blocks.some(block => block.type === 'table')) richTextBlocks[value] = blocks;
+        for (const block of blocks) {
+          if (block.type === 'text') scanFormulas(block.text);
+          else for (const row of block.rows) for (const cell of row) scanFormulas(cell.text);
         }
+        // The renderer removes this known system disclaimer from scoring text.
+        // Keep a parsed entry for the remaining question-specific material too.
+        const disclaimer = '仅引用本次标杆的建议赋分，非原卷评分，也不是题目固定分值；新草稿另设题位分值。';
+        if (value.startsWith(disclaimer)) scan(value.slice(disclaimer.length).trim());
       } else if (Array.isArray(value)) value.forEach(scan);
       else if (value && typeof value === 'object') Object.values(value).forEach(scan);
     };
     scan(model);
     temp = await mkdtemp(path.join(tmpdir(),'tutor-pdf-'));
-    await writeFile(path.join(temp,'input.json'),JSON.stringify({...model,formulas:Object.fromEntries(formulas)}),'utf8');
+    await writeFile(path.join(temp,'input.json'),JSON.stringify({...model,richTextBlocks,formulas:Object.fromEntries(formulas)}),'utf8');
     await mkdir(outputRoot,{recursive:true});
     const target = path.resolve(outputRoot,`${paper.paperId}-${kind}-${PDF_LAYOUT_VERSION}-${randomUUID()}.pdf`);
     targetTemp = `${target}.${randomUUID()}.tmp`;

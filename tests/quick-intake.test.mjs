@@ -268,6 +268,55 @@ test('quick natural-language scale suggestions remain pending and preserve sugge
   assert.equal(session.summary.questionCount, 8);
 });
 
+test('teacher quantity is authoritative even without a manual lock and cannot be changed by unrelated model suggestions', async () => {
+  const service = createIntakeService({ gateway: { async propose() {
+    return { ok: true, proposal: { summary: '题目不足，建议自动减为8题。', changes: { questionCount: 8 }, blocks: [] } };
+  } } });
+  let session = await begin(service, { questionCount: 12 });
+  session = (await request(service, session, 'prepare', { message: '围绕集合概念复习' })).session;
+  assert.equal(session.proposal, null);
+  assert.equal(session.assistantError.code, 'invalid_model_output');
+  assert.equal(session.answers.questionCount, 12);
+  assert.equal(Object.values(session.requirements.counts).reduce((sum, count) => sum + count, 0), 12);
+  const accept = await request(service, session, 'answer', { acceptProposal: true });
+  assert.equal(accept.ok, false);
+});
+
+test('an explicit twelve-question request rejects a smaller model total and missing extraction instead of reverting to default ten', async () => {
+  for (const changes of [{ questionCount: 8 }, {}]) {
+    const service = createIntakeService({ gateway: { async propose() {
+      return { ok: true, proposal: { summary: '安排基础练习。', changes, blocks: [] } };
+    } } });
+    const session = (await request(service, await begin(service), 'prepare', { message: '12道题目' })).session;
+    assert.equal(session.proposal, null);
+    assert.equal(session.assistantError.code, 'invalid_model_output');
+    assert.equal(session.answers.questionCount, 10, 'Unaccepted suggestions never alter the baseline');
+  }
+});
+
+test('quantity facts are presented from a validated pending proposal, not a stale model ratio or invented shortage', async () => {
+  let context;
+  const service = createIntakeService({ gateway: { async propose(input, { validate }) {
+    context = input;
+    return { ok: true, proposal: validate({ summary: '练习安排：关注基本不等式的成立条件。\n教师关注：当前题量已从10题调整为12题，题型配比仍为系统建议的6/2/2，如与预期不符需手动调整；题库最多只有8道题。',
+      changes: { questionCount: 12, observable: '说明基本不等式的成立条件。' }, blocks: [] }) };
+  } } });
+  let session = await begin(service);
+  session = (await request(service, session, 'prepare', { message: '12道题目' })).session;
+  assert.equal(context.answers.singleChoiceCount, undefined, 'Unconfirmed placeholder ratios must not look like teacher requirements');
+  assert.equal(context.quantityPolicy.exactTotal, 12);
+  assert.equal(context.quantityPolicy.supplyVerification, 'not_checked_for_current_requirements');
+  assert.equal(session.answers.questionCount, 10);
+  assert.equal(session.proposalPlanning.questionCount, 12);
+  assert.equal(session.proposalPlanning.countPolicy, 'suggested');
+  assert.match(session.proposal.summary, /关注基本不等式的成立条件/);
+  assert.doesNotMatch(session.proposal.summary, /6\/2\/2|手动调整|已从|只有8/);
+  assert.match(session.proposal.summary, /规模：12 题/);
+  session = (await request(service, session, 'answer', { acceptProposal: true })).session;
+  assert.equal(session.answers.questionCount, 12);
+  assert.equal(Object.values(session.requirements.counts).reduce((sum, count) => sum + count, 0), 12);
+});
+
 test('a total-only teacher request cannot acquire a model-invented fixed type ratio', async () => {
   let context;
   const service = createIntakeService({ gateway: { async propose(input, { validate }) {

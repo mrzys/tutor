@@ -1,0 +1,78 @@
+.draft-type-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.draft-type-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--font-body);
+  white-space: nowrap;
+}
+.draft-type-tabs > button[aria-selected="true"] { border-bottom-color: var(--accent); color: #171717; }
+.draft-type-tabs > button > span { font-size: var(--font-caption); color: var(--muted); }
+.assembly-workbench .draft-editor .draft-type-panel { margin-top: 0; }
+.draft-type-empty { padding: 32px 0; color: var(--muted); font-size: var(--font-body); }
+
+.assembly-workbench .draft-editor .editable-question { position: relative; }
+.assembly-workbench .draft-editor .editable-question .question-footer {
+  min-height: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+.assembly-workbench .draft-editor .question-action-menu {
+  top: calc(100% + 6px);
+  bottom: auto;
+  max-height: min(320px, 60dvh);
+  overflow-y: auto;
+}
+.assembly-workbench .draft-editor .question-actions[data-placement="above"] .question-action-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+/* Desktop actions float across the card edge, with no footer row in the flow. */
+@media (hover: hover) and (pointer: fine) and (min-width: 761px) {
+  .assembly-workbench .draft-editor .editable-question { padding-bottom: 16px; }
+  .assembly-workbench .draft-editor .editable-question .question-content { margin-bottom: 0; }
+  .assembly-workbench .draft-editor .editable-question .question-content > :last-child { margin-bottom: 0; }
+  .assembly-workbench .draft-editor .editable-question .question-footer {
+    position: absolute;
+    top: -20px;
+    right: 16px;
+    z-index: 2;
+    margin: 0;
+  }
+  .assembly-workbench .draft-editor .editable-question .question-actions {
+    opacity: 0;
+    pointer-events: none;
+    padding: 1px 4px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 3px 10px #0000000d;
+  }
+  .assembly-workbench .draft-editor .editable-question .question-actions > button { min-height: 36px; }
+  .assembly-workbench .draft-editor .editable-question:hover .question-actions,
+  .assembly-workbench .draft-editor .editable-question:focus-within .question-actions,
+  .assembly-workbench .draft-editor .editable-question .question-actions[data-open="true"] { opacity: 1; pointer-events: auto; }
+}
+@media (max-width: 600px) {
+  .draft-type-tabs { gap: 2px; }
+  .draft-type-tabs > button { gap: 6px; padding-inline: 10px; }
+}

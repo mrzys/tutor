@@ -6,7 +6,7 @@ import { getAssemblyConfig, previewBlueprint, recheckBlueprint, createDraft } fr
 import { listQuestions } from './question-bank/reader.mjs';
 import { saveDraft, readDraft, listDrafts, updateDraft } from './assembly/store.mjs';
 import { applyDraftOperation, previewDraftCandidates, previewDraftCandidateSupply } from './assembly/editor.mjs';
-import { confirmPaper, preparePaperConfirmation, getPaper, listPapers, derivePaperDraft, findPaperForDraft } from './assembly/papers.mjs';
+import { confirmPaper, preparePaperConfirmation, prepareDraftPreview, getPaper, listPapers, derivePaperDraft, findPaperForDraft } from './assembly/papers.mjs';
 import { readFeedback, saveFeedback } from './assembly/feedback.mjs';
 import { getPaperOutputs, generateOutput, readOutputFile } from './output/manager.mjs';
 import { createIntakeService } from './intake/service.mjs';
@@ -255,6 +255,11 @@ export function createAppServer({ root = repoRoot, storeRoot = path.join(root, '
           const result = await updateDraft(storeRoot, draft.draftId, current => attachCoverageReview(current, review, input.expectedRevision));
           return json(response, editorStatus(result), result);
         } finally { response.off('close', cancel); }
+      }
+      const previewRoute = url.pathname.match(/^\/api\/drafts\/([^/]+)\/preview$/);
+      if (previewRoute && request.method === 'GET') {
+        const result = await prepareDraftPreview(await readDraft(storeRoot, previewRoute[1]), { root });
+        return json(response, editorStatus(result), result);
       }
       const confirmationRoute = url.pathname.match(/^\/api\/drafts\/([^/]+)\/(confirmation|confirm)$/);
       if (confirmationRoute?.[2] === 'confirmation' && request.method === 'GET') {

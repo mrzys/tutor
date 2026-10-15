@@ -3,7 +3,10 @@ const text = value => typeof value === 'string' ? value.trim() : '';
 // A subquestion number or a mathematical condition is never a source citation.
 export function embeddedExamSource(stem) {
   const match = text(stem).match(/^(?:[（(]\d+[）)]\s*)?[（(]([^（）()\n]{3,160})[）)]/u);
-  return match && /(?:19|20)\d{2}|期[中末]|月考|联考|模拟|高考|校级|一模|二模|开学考/u.test(match[1]) ? match[1].trim() : '';
+  const label = match?.[1] || '';
+  const exam = /期[中末]|月考|联考|模拟|高考|校级|一模|二模|开学考/u.test(label);
+  const datedSource = /(?:19|20)\d{2}/u.test(label) && /\p{Script=Han}/u.test(label);
+  return exam || datedSource ? label.trim() : '';
 }
 
 export function questionSource(question, manifest) {
@@ -30,4 +33,36 @@ export function questionSource(question, manifest) {
 export function sourceCaption(source) {
   if (source.kind === 'unknown') return source.label;
   return `${source.kind === 'exam' ? '来源' : '收录材料'}：${source.label}${source.number ? ` · 原卷第 ${source.number} 题` : ''}`;
+}
+
+// Display-only wording. The full source and original question number stay intact.
+export function compactSourceLabel(source) {
+  if (source.kind === 'unknown') return source.label;
+  if (source.kind !== 'exam') return source.label;
+  let label = text(source.label).replace(/[“”"《》]/gu, '');
+  // An enrolment cohort (2023级) must not become an asserted examination year.
+  const year = label.match(/(?:19|20)\d{2}(?:[-—–至](?:19|20)\d{2})?(?!\d|级)/u)?.[0] || '';
+  if (year) label = label.replace(year, '').replace(/^[年届学期秋春·\s-]+|^[学年]+/u, '');
+  label = label
+    .replace(/(?:第?[一二三四五六七八九十\d]+次|第[一二三四五六七八九十\d]+轮)模拟(?:考试|测试)?/gu, match => /[二2]/u.test(match) ? '二模' : /[三3]/u.test(match) ? '三模' : /[一1]/u.test(match) ? '一模' : match)
+    .replace(/第一次诊断(?:性)?(?:考试|测试)|一诊(?:断)?(?:性)?(?:考试|测试)/gu, '一诊')
+    .replace(/第二次诊断(?:性)?(?:考试|测试)/gu, '二诊')
+    .replace(/第三次诊断(?:性)?(?:考试|测试)/gu, '三诊')
+    .replace(/高[一二三]|[一二三]年级|校级|数学(?:试卷|试题)?|试题及答案|试题|试卷/gu, '')
+    .replace(/学年度?|年度|届/gu, '')
+    .replace(/^[\s·:：,，;；—–-]+|[\s·:：,，;；—–-]+$/gu, '')
+    .replace(/\s+/gu, '');
+  return [year, label].filter(Boolean).join('·') || source.label;
+}
+
+export function questionSourcePresentation(question, manifest) {
+  const source = questionSource(question, manifest);
+  let stem = text(question?.student?.stem);
+  const embedded = embeddedExamSource(stem);
+  if (embedded) {
+    // Preserve any leading subquestion number; remove only the detected citation.
+    const start = stem.indexOf(embedded);
+    stem = `${stem.slice(0, start - 1)}${stem.slice(start + embedded.length + 1)}`.trim();
+  }
+  return { source, label: compactSourceLabel(source), caption: sourceCaption(source), stem };
 }

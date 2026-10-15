@@ -8,6 +8,7 @@ import { AssemblyWorkbench } from './AssemblyWorkbench.jsx';
 import { AuthGate } from './AuthGate.jsx';
 import './conversation.css';
 import { GenerationProgress } from './GenerationProgress.jsx';
+import { createSelectionProgress } from './selection-progress.js';
 import { Brand } from './Brand.jsx';
 import { applyBlueprintActions, draftOperationsFor } from './assistant-actions.js';
 import { navigateRoute, normalizeRoute } from './routes.js';
@@ -45,18 +46,18 @@ function PlanningNotice({ planning, configured, onCancel, onRetry, onPreset, onA
   if (!planning) return null;
   const loading = planning.status === 'loading';
   if (planning.code === 'insufficient_supply' && planning.details) {
-    const { requested, available, missing, byType = {}, typeShortages = [], suggestedQuestionCount } = planning.details;
+    const { requested, available, missing, byType = {}, typeShortages = [] } = planning.details;
     const labels = { single_choice: '单选', fill_blank: '填空', free_response: '解答' };
     return <section className="blueprint-planning-notice planning-supply-gap" aria-label="题库供给不足">
       <div className="planning-status" role="alert"><div><strong>当前题库还不够</strong>
-        <p>{typeShortages.length ? `本次需要 ${requested} 道题，指定题型的可用数量不足。` : `当前条件下最多可选 ${available} 道不重复的题目，需要 ${requested} 道，还缺 ${missing} 道。`}</p>
+        <p>{`你要求 ${requested} 道题，当前条件下最多可安排 ${available} 道不重复的题目，还缺 ${missing} 道。`}</p>
         {typeShortages.length ? <ul className="planning-type-shortages">{typeShortages.map(item => <li key={item.questionType}>{labels[item.questionType]}要求 {item.requested} 道，最多可选 {item.available} 道，还缺 {item.missing} 道。</li>)}</ul> : null}
         {Object.values(byType).some(count => count > 0) ? <ul className="planning-supply-types">{[['single_choice', '单选'], ['fill_blank', '填空'], ['free_response', '解答']].filter(([type]) => byType[type] > 0).map(([type, label]) => <li key={type}>{label} {byType[type]} 道</li>)}</ul> : null}
-        <p className="planning-supply-hint">修改需求后，发送并确认即可重新规划。</p>
+        <p className="planning-supply-hint">{requested} 题的需求已保留。可以扩大考查范围或调整题型条件；题量只有在你修改并确认后才会改变。</p>
       </div></div>
       <div className="planning-controls">
-        {suggestedQuestionCount > 0 ? <button className="primary" type="button" onClick={() => onAdjust('goal', `保持原有考查范围和题型限制，将总题量改为 ${suggestedQuestionCount} 题。`)}>按 {suggestedQuestionCount} 题调整需求</button> : <button type="button" onClick={() => onAdjust('goal')}>修改需求</button>}
-        <button type="button" onClick={() => onAdjust('scope')}>调整考查范围</button>
+        <button className="primary" type="button" onClick={() => onAdjust('scope')}>调整考查范围</button>
+        <button type="button" onClick={() => onAdjust('goal')}>修改题量或要求</button>
       </div>
     </section>;
   }
@@ -86,6 +87,7 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
   const [requirements, setRequirements] = useState(null);
   const [blueprint, setBlueprint] = useState(null);
   const [draft, setDraft] = useState(null);
+  const [derivedDraftId, setDerivedDraftId] = useState(null);
   const [paperResult, setPaperResult] = useState(null);
   const [papers, setPapers] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 760);
@@ -110,6 +112,7 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
   const [planning, setPlanning] = useState(null);
   const [selection, setSelection] = useState(null);
   const selectionRequest = useRef(null);
+  const selectionSaved = useRef(null);
   const planningRequest = useRef(null);
   const lastPlanning = useRef(null);
   useEffect(() => () => { planningRequest.current?.abort(); selectionRequest.current?.abort(); chatRequest.current?.abort(); }, []);
@@ -165,7 +168,13 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     Promise.allSettled([api('/api/drafts', undefined, controller.signal), api('/api/papers', undefined, controller.signal)]).then(results => {
       if (controller.signal.aborted) return;
       const [savedDrafts, savedPapers] = results;
-      if (savedDrafts.status === 'fulfilled') setDrafts(savedDrafts.value.drafts);
+      if (savedDrafts.status === 'fulfilled') setDrafts(current => {
+        const acknowledged = new Map(current.map(item => [item.draftId, item]));
+        return savedDrafts.value.drafts.map(item => {
+          const newer = acknowledged.get(item.draftId);
+          return newer && (newer.revision ?? 0) > (item.revision ?? 0) ? newer : item;
+        });
+      });
       if (savedPapers.status === 'fulfilled') setPapers(savedPapers.value.papers);
       const failures = results.flatMap(result => result.status === 'rejected' ? [result.reason.message] : (result.value.warnings || []).map(item => typeof item === 'string' ? item : item.message));
       setHistoryError(failures.join('；')); setHistoryLoading(false);
@@ -193,7 +202,7 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     finally { setBusy(false); actionRef.current = false; }
   }
   function confirmed(paper) { setPaperResult({ paper, outputs: {} }); refreshHistory(); setConfirming(false); setScreen('paper'); setLocation(paper.paperId, 'paper'); window.scrollTo(0, 0); }
-  function derived(draft) { setDraft(draft); refreshHistory(); setScreen('draft'); setLocation(draft.draftId); window.scrollTo(0, 0); }
+  function derived(draft) { setDerivedDraftId(draft.draftId); setDraft(draft); refreshHistory(); setScreen('draft'); setLocation(draft.draftId); window.scrollTo(0, 0); }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -295,7 +304,9 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     const controller = selectionRequest.current;
     if (!controller) return;
     controller.abort(); selectionRequest.current = null; actionRef.current = false; setBusy(false);
-    setSelection(current => ({ ...current, status: 'cancelled', endedAt: Date.now() }));
+    const saved = selectionSaved.current?.controller === controller;
+    if (saved) refreshHistory();
+    setSelection(current => ({ ...current, status: 'cancelled', endedAt: Date.now(), ...(saved ? { error: '已停止等待，保存的草稿可从左侧历史组卷打开。' } : {}) }));
   }
   async function confirm(requestedMode) {
     if (actionRef.current || checking || checkError || !blueprint?.slots.length || blueprintError(blueprint)) return;
@@ -303,21 +314,28 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
       && !blueprint.slots.some(slot => (slot.goalIds || []).includes(goal.id)))) return;
     const mode = requestedMode || (blueprint.generation?.mode === 'llm' ? 'llm' : 'rule');
     const controller = new AbortController(); selectionRequest.current = controller;
+    selectionSaved.current = null;
     actionRef.current = true; setBusy(true); setError('');
     setSelection({ status: 'loading', mode, startedAt: Date.now(), progress: { stage: 'retrieving', totalQuestions: blueprint.slots.length } }); window.scrollTo(0, 0);
-    try {
-      const generated = await streamApi('/api/drafts', { blueprint, selectionMode: mode }, controller.signal, progress => {
-        if (controller.signal.aborted || selectionRequest.current !== controller) return;
-        setSelection(current => current?.status === 'loading' ? { ...current, progress: { ...current.progress, ...progress } } : current);
-      });
+    const presenter = createSelectionProgress({ signal: controller.signal, onProgress: progress => {
       if (controller.signal.aborted || selectionRequest.current !== controller) return;
+      setSelection(current => current?.status === 'loading' ? { ...current, progress: { ...current.progress, ...progress } } : current);
+    } });
+    try {
+      const generated = await streamApi('/api/drafts', { blueprint, selectionMode: mode }, controller.signal, presenter.push);
+      if (controller.signal.aborted || selectionRequest.current !== controller) return;
+      selectionSaved.current = { controller, draftId: generated.draft?.draftId || generated.draftId };
+      await presenter.show({ stage: 'saving' });
       const result = generated.draft ? generated : await api(`/api/drafts/${generated.draftId}`, undefined, controller.signal);
+      await presenter.finish();
       if (controller.signal.aborted || selectionRequest.current !== controller) return;
       setSelection(null); setDraft(result.draft); refreshHistory(); setChatProposal(null); setAssistantReply(''); setAssistantOpen(false); setAssistantTargets([]); setScreen('draft'); setLocation(result.draft.draftId); window.scrollTo(0, 0);
     } catch (failure) {
       if (controller.signal.aborted || selectionRequest.current !== controller) return;
       setSelection(current => ({ ...current, status: 'error', endedAt: Date.now(), error: `${failure.message} 蓝图已保留。${mode === 'llm' ? '系统未自动切换为规则选题。' : ''}` }));
     } finally {
+      presenter.dispose();
+      if (selectionSaved.current?.controller === controller) selectionSaved.current = null;
       if (selectionRequest.current === controller) { selectionRequest.current = null; actionRef.current = false; setBusy(false); }
     }
   }
@@ -356,6 +374,15 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
     setScreen('requirements'); setError(''); setSelection(null);
   }
   function updateDraft(next) { setDraft(next); refreshHistory(); setChatProposal(null); setAssistantReply('试卷已更新并保存。'); }
+  function renamedDraft(next) {
+    setDrafts(current => current.map(item => item.draftId === next.draftId && (item.revision ?? 0) <= (next.revision ?? 0) ? { ...item, title: next.title, revision: next.revision, confirmedPaperId: next.confirmedPaperId } : item));
+    setDraft(current => current?.draftId === next.draftId && (current.revision ?? 0) <= (next.revision ?? 0) ? next : current);
+    if (screen === 'draft' && draft?.draftId === next.draftId) {
+      setChatProposal(null); setAssistantReply('');
+      if (next.confirmedPaperId) openDraft(next.draftId);
+    }
+    if (next.confirmedPaperId) refreshHistory();
+  }
   useEffect(() => {
     if (!chatProposal && !chatWorking && !assistantReply) return;
     const frame = requestAnimationFrame(() => document.querySelector(chatProposal ? '.chat-adjustment' : chatWorking ? '.chat-working' : '.assembly-reply-summary')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
@@ -427,9 +454,9 @@ function WorkspaceApp({ user, onLogout, logoutPending, logoutError }) {
   // The document is the primary surface. The assistant only proposes confirmed changes.
   const assistantContent = assistantReply || chatProposal || chatWorking ? <>{assistantReply ? <p className="assembly-reply-summary" role="status">{assistantReply}</p> : null}{adjustmentView}</> : null;
   const intake = config && requirements ? <QuickIntake key={intakeKey} resetKey={intakeKey} config={config} editSession={intakeEdit} onSession={next => { intakeSession.current = next; setIntakeEdit(null); }} onRequirements={next => { setRequirements(next); if (planning?.status !== 'loading') setPlanning(null); }} onBusyChange={setIntakeBusy} onConfirm={generate} onReviseWorkflow={reviseWorkflow} workflowRequirements={currentRequirements} workflowSummary={assistantReply} onWorkflowMessage={proposeAdjustment} workflowStage={inWorkbench ? screen : planning?.status === 'loading' ? 'planning' : planning ? 'planning-stopped' : 'requirements'} hideEmptyConversation={inWorkbench} workflowContent={inWorkbench ? assistantContent : blueprintView} selectionContext={contextTargets} onClearSelectionContext={() => setAssistantTargets([])} disabled={busy || chatWorking}/> : null;
-  const product = screen === 'blueprint' ? <Suspense fallback={<p role="status">正在加载蓝图…</p>}>{blueprintView}</Suspense> : <div inert={chatWorking || undefined}><Suspense fallback={<p role="status">正在加载试卷…</p>}>{screen === 'paper' && paperResult ? <Paper key={paperResult.paper.paperId} paper={paperResult.paper} initialOutputs={paperResult.outputs || {}} initialFeedback={paperResult.feedback || null} initialWarnings={paperResult.warnings || []} onDerived={derived}/> : draft ? <Draft key={draft.draftId} draft={draft} config={config} onChange={updateDraft} onSelectionChange={setAssistantTargets} onAiAdjust={openAiAdjustment} onConfirm={() => setConfirming(true)}/> : null}</Suspense></div>;
+  const product = screen === 'blueprint' ? <Suspense fallback={<p role="status">正在加载蓝图…</p>}>{blueprintView}</Suspense> : <div inert={chatWorking || undefined} className={screen === 'draft' && derivedDraftId === draft?.draftId ? 'paper-edit-enter' : undefined} onAnimationEnd={event => { if (event.target === event.currentTarget) setDerivedDraftId(null); }}><Suspense fallback={<p role="status">正在加载试卷…</p>}>{screen === 'paper' && paperResult ? <Paper key={paperResult.paper.paperId} paper={paperResult.paper} initialOutputs={paperResult.outputs || {}} initialFeedback={paperResult.feedback || null} initialWarnings={paperResult.warnings || []} onDerived={derived}/> : draft ? <Draft key={draft.draftId} draft={draft} config={config} onChange={updateDraft} onSelectionChange={setAssistantTargets} onAiAdjust={openAiAdjustment} onConfirm={() => setConfirming(true)}/> : null}</Suspense></div>;
   return <div className={`app-shell ${screen === 'question-bank' ? 'question-bank-shell' : ''} ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-    {sidebarOpen ? <><button className="sidebar-backdrop" aria-label="关闭组卷历史" onClick={() => setSidebarOpen(false)}/><HistorySidebar drafts={drafts} papers={papers} activeDraftId={screen === 'draft' ? draft?.draftId : null} activePaperId={screen === 'paper' ? paperResult?.paper?.paperId : null} activeView={['question-bank', 'question-import'].includes(screen) ? screen : null} busy={busy || intakeBusy || chatWorking || !config} loading={historyLoading} error={historyError} onRetry={() => setHistoryRefresh(value => value + 1)} onNew={newTask} onQuestionBank={() => openUtility('question-bank')} onQuestionImport={() => openUtility('question-import')} onOpenDraft={async id => { await openDraft(id); closeMobileSidebar(); }} onOpenPaper={async id => { await openPaper(id); closeMobileSidebar(); }} onClose={() => setSidebarOpen(false)} user={user} onLogout={onLogout} logoutPending={logoutPending} logoutError={logoutError}/></> : null}
+    {sidebarOpen ? <><button className="sidebar-backdrop" aria-label="关闭组卷历史" onClick={() => setSidebarOpen(false)}/><HistorySidebar drafts={drafts} papers={papers} activeDraftId={screen === 'draft' ? draft?.draftId : null} activePaperId={screen === 'paper' ? paperResult?.paper?.paperId : null} activeView={['question-bank', 'question-import'].includes(screen) ? screen : null} busy={busy || intakeBusy || chatWorking || !config} loading={historyLoading} error={historyError} onRetry={() => setHistoryRefresh(value => value + 1)} onNew={newTask} onQuestionBank={() => openUtility('question-bank')} onQuestionImport={() => openUtility('question-import')} onOpenDraft={async id => { await openDraft(id); closeMobileSidebar(); }} onOpenPaper={async id => { await openPaper(id); closeMobileSidebar(); }} onRenamed={renamedDraft} onClose={() => setSidebarOpen(false)} user={user} onLogout={onLogout} logoutPending={logoutPending} logoutError={logoutError}/></> : null}
     <div className="app-main">{!sidebarOpen ? <header className="app-header app-header-compact"><div className="header-inner"><div className="workspace-brand"><button ref={sidebarToggle} className="sidebar-icon sidebar-toggle" data-state="collapsed" title="展开组卷历史" aria-label="展开组卷历史" aria-expanded="false" aria-controls="assembly-history" onClick={() => setSidebarOpen(true)}><PanelLeft size={22} aria-hidden="true"/></button><Brand/></div></div></header> : null}
     <main className={`workspace ${inWorkbench ? 'product-workspace' : quickFlow ? 'chat-workspace' : ''}`} aria-busy={busy || chatWorking}>
       {error ? <div className="notice error" role="alert">{error}{!config ? <button disabled={busy} onClick={() => setBootstrapAttempt(value => value + 1)}>重新加载</button> : null}</div> : null}

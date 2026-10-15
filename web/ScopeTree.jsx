@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, FolderOpen, ListTree, X } from 'lucide-react';
+import { ChevronDown, FolderOpen, ListTree } from 'lucide-react';
+import { CloseButton } from './CloseButton.jsx';
 import { availableScopeGroups, availableScopeSelection } from '../src/curriculum/availability.mjs';
 
 function BranchCheck({ label, selected, total, disabled, onChange }) {
@@ -47,7 +48,7 @@ export function ScopeTree({ chapters, selected = [], disabled, onChange, open = 
         const bounds = event.currentTarget.getBoundingClientRect();
         if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) close();
       }}>
-      <header className="scope-tree-dialog-header"><div><h2 id={titleId}>选择考查范围</h2><p id={descriptionId}>选择章节或小节，可多选。</p></div><button ref={closeButton} type="button" className="scope-tree-close" aria-label="关闭考查范围" onClick={close}><X size={18} aria-hidden="true"/></button></header>
+      <header className="scope-tree-dialog-header"><div><h2 id={titleId}>选择考查范围</h2><p id={descriptionId}>选择章节或小节，可多选。</p></div><CloseButton ref={closeButton} label="关闭考查范围" onClick={close}/></header>
     <fieldset disabled={disabled} className="scope-tree-panel"><legend className="sr-only">选择考查范围</legend><div className="scope-tree-scroll"><div className="scope-tree-root"><FolderOpen size={15} aria-hidden="true"/>人教 A 版 · 必修第一册<span>已开放前两章</span></div>
       {groups.map(group => {
         const ids = group.children.map(item => item.id);

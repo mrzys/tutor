@@ -65,11 +65,22 @@ test('Nest auth protects business APIs and isolates drafts, papers, PDF files an
   const saved = await request('/api/question-bank/manual-draft', { cookie: teacher.cookie, body });
   assert.equal(saved.status, 201, JSON.stringify(saved.value));
   const draftId = saved.value.draft.draftId;
+  const previewAssets = await request(`/api/drafts/${draftId}/preview`, { cookie: teacher.cookie });
+  assert.equal(previewAssets.status, 200); assert.equal(previewAssets.value.draftId, draftId);
+  assert.equal((await request(`/api/drafts/${draftId}/preview`)).status, 401);
   assert.equal((await request(`/api/drafts/${draftId}`, { cookie: teacher.cookie })).status, 200);
+  const rename = await request(`/api/drafts/${draftId}/operations`, { cookie: teacher.cookie,
+    body: { type: 'rename', title: '教师私人诊断卷', operationId: 'rename-private-draft', expectedRevision: saved.value.draft.revision ?? 0 } });
+  assert.equal(rename.status, 200, JSON.stringify(rename.value));
+  assert.equal(rename.value.draft.title, '教师私人诊断卷');
+  assert.deepEqual(rename.value.draft.baseline, saved.value.draft.baseline);
+  assert.deepEqual(rename.value.draft.slots, saved.value.draft.slots);
   const confirmation = await request(`/api/drafts/${draftId}/confirm`, { cookie: teacher.cookie,
-    body: { operationId: 'confirm-private-paper', expectedRevision: saved.value.draft.revision ?? 0, acknowledgeDifferences: true } });
+    body: { operationId: 'confirm-private-paper', expectedRevision: rename.value.draft.revision, acknowledgeDifferences: true } });
   assert.equal(confirmation.value.ok, true, JSON.stringify(confirmation.value));
   const paperId = confirmation.value.paper.paperId;
+  assert.equal((await request(`/api/drafts/${draftId}/operations`, { cookie: teacher.cookie,
+    body: { type: 'rename', title: 'cannot-rename-frozen', operationId: 'rename-frozen', expectedRevision: confirmation.value.draft?.revision ?? 2 } })).status, 409);
   assert.equal((await request(`/api/papers/${paperId}`, { cookie: teacher.cookie })).status, 200);
   const output = await generateOutput(confirmation.value.paper, 'student', { outputRoot: path.join(base, 'outputs'),
     generate: async (_paper, _kind, { outputRoot }) => {
@@ -92,11 +103,13 @@ test('Nest auth protects business APIs and isolates drafts, papers, PDF files an
     const cookie = user.cookie;
     assert.equal((await request('/api/drafts', { cookie })).value.drafts.some(draft => draft.draftId === draftId), false);
     assert.equal((await request('/api/papers', { cookie })).value.papers.some(paper => paper.paperId === paperId), false);
-    for (const route of [`/api/drafts/${draftId}`, `/api/drafts/${draftId}/confirmation`, `/api/papers/${paperId}`,
+    for (const route of [`/api/drafts/${draftId}`, `/api/drafts/${draftId}/preview`, `/api/drafts/${draftId}/confirmation`, `/api/papers/${paperId}`,
       `/api/papers/${paperId}/outputs/student/file`, '/api/intake/private-intake']) {
       assert.equal((await request(route, { cookie })).status, 404, route);
     }
     assert.equal((await request(`/api/drafts/${draftId}/candidates`, { cookie, body: {} })).status, 404);
+    assert.equal((await request(`/api/drafts/${draftId}/operations`, { cookie,
+      body: { type: 'rename', title: 'steal', operationId: 'steal-rename', expectedRevision: 2 } })).status, 404);
     assert.equal((await request(`/api/papers/${paperId}/derive`, { cookie, body: { operationId: 'steal-derive' } })).status, 404);
     assert.equal((await request('/api/intake', { cookie, body: { sessionId: 'private-intake', action: 'answer' } })).status, 404);
   }

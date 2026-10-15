@@ -4,11 +4,15 @@
 .pdf-kind-switch { padding: 3px; border: 1px solid #dedede; border-radius: 12px; background: #f6f6f6; }
 .pdf-kind-switch button { border: 0; border-radius: 8px; background: transparent; }
 .pdf-kind-switch button[aria-pressed="true"] { background: #fff; color: #111; box-shadow: inset 0 0 0 1px #d4d4d4; font-weight: 600; }
-.pdf-page-controls span { min-width: 70px; text-align: center; font-variant-numeric: tabular-nums; font-size: 13px; }
+.pdf-page-controls span { text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
 .pdf-preview-actions { margin-left: auto; font-size: 13px; }
-.pdf-canvas-stage { position: relative; overflow: auto; max-height: 78vh; min-height: 260px; padding: 20px; border: 1px solid #e3e3e3; border-radius: 12px; background: #ececec; }
-.pdf-canvas-page { width: 100%; max-width: 960px; margin-inline: auto; }
-.pdf-canvas-page canvas { display: block; max-width: 100%; background: #fff; border: 1px solid #dedede; }
+.pdf-canvas-stage { position: relative; overflow: auto; max-height: 78vh; min-height: 260px; padding: 20px; border: 1px solid #e3e3e3; border-radius: 8px; background: #ececec; scrollbar-width: thin; scrollbar-color: #aaa transparent; }
+.pdf-canvas-pages { width: 100%; max-width: 960px; margin-inline: auto; }
+.pdf-canvas-page { width: 100%; margin: 0 0 20px; }
+.pdf-canvas-page:last-child { margin-bottom: 0; }
+.pdf-canvas-page canvas { display: block; max-width: 100%; background: #fff; box-shadow: 0 1px 5px #00000015; outline: 1px solid #dedede; }
+.pdf-canvas-page figcaption { margin-top: 10px; text-align: center; color: #666; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pdf-page-error { padding: 32px 16px; margin: 0; background: #fff; color: #873030; text-align: center; }
 .pdf-preview-status { position: sticky; top: 0; z-index: 1; width: fit-content; margin: 0 auto 12px; padding: 8px 14px; border-radius: 8px; background: #fff; border: 1px solid #dedede; font-size: 13px; }
 .pdf-preview-error { padding: 16px; margin-bottom: 16px; border: 1px solid #e3bcbc; border-radius: 8px; background: #fff; color: #873030; }
 .pdf-preview-error button { margin-right: 12px; }

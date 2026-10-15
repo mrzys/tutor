@@ -15,18 +15,18 @@
   border-radius: 8px 8px 0 0;
   background: #f5f5f5;
   color: #525252;
-  font-size: 12px;
+  font-size: var(--font-caption);
 }
 .composer-intake .chat-composer-card .scope-tree-trigger,
 .composer-intake .chat-composer-card .composer-purpose .tutor-select-trigger,
 .composer-intake .chat-composer-card .composer-scoring {
   border-color: transparent;
   background: transparent;
-  height: 30px;
-  min-height: 30px;
+  height: 44px;
+  min-height: 44px;
   padding: 3px 7px;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--font-caption);
   line-height: 20px;
 }
 .composer-intake .chat-composer-card .scope-tree-trigger:hover:not(:disabled),
@@ -35,7 +35,13 @@
   border-color: #d4d4d4;
   background: #fff;
 }
-.composer-intake .chat-composer-card .composer-scoring { margin-left: auto; }
+.composer-intake .chat-composer-card .composer-scoring { display: inline-flex; align-items: center; gap: 7px; margin-left: 0; }
+.scoring-switch-track { position: relative; display: inline-block; width: 30px; height: 18px; border-radius: var(--pill-radius, 9999px); background: #d4d4d4; border: 1px solid #a3a3a3; }
+.scoring-switch-track > span { position: absolute; width: 12px; height: 12px; top: 2px; left: 2px; border-radius: 50%; background: #fff; }
+.composer-scoring[aria-checked="true"] .scoring-switch-track { background: var(--accent, #000); border-color: var(--accent, #000); }
+.composer-scoring[aria-checked="true"] .scoring-switch-track > span { left: auto; right: 2px; }
+.scoring-switch-value { min-width: 1em; color: var(--muted, #737373); }
+
 .composer-intake .chat-composer-card .composer-purpose,
 .composer-intake .chat-composer-card .composer-purpose > .tutor-select { max-width: 240px; }
 .composer-intake .chat-composer-card .composer-purpose { display: flex; align-items: center; }
@@ -46,12 +52,12 @@
 .composer-intake .chat-composer-card .composer-purpose .tutor-select-prefix { flex: 0 0 auto; color: #000; }
 .composer-intake .chat-composer-card .scope-tree-value { max-width: 170px; }
 .composer-stage-context > svg { flex-shrink: 0; }
-.composer-stage-hint { margin-left: auto; font-size: 11px; }
+.composer-stage-hint { margin-left: auto; font-size: var(--font-small, 12px); }
 .composer-intake .chat-composer-card .intake-request {
   margin: 0;
   padding: 10px 16px 12px;
   border: 1px solid #e5e5e5;
-  border-radius: 14px;
+  border-radius: var(--surface-radius, 12px);
   background: #fff;
 }
 .composer-intake .chat-composer-card .intake-request:has(.intake-request-text:focus) { border-color: var(--focus-color); }
@@ -84,7 +90,7 @@
   border-radius: 6px;
   background: #f5f5f5;
   color: #525252;
-  font-size: 11px;
+  font-size: var(--font-small, 12px);
   line-height: 1.5;
 }
 .composer-intake .composer-context-target { flex-shrink: 0; color: #262626; font-weight: 500; }
@@ -132,29 +138,33 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  min-height: 36px;
-  height: 36px;
+  min-height: 44px;
+  height: auto;
   margin-top: 2px;
 }
-.composer-keyboard-hint { color: #737373; font-size: 11px; }
+.composer-keyboard-hint { color: #737373; font-size: var(--font-small, 12px); }
 .composer-send-tools { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-.composer-ai-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #525252; }
+.composer-ai-status { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-caption); color: #525252; }
 .composer-intake .chat-composer-card .intake-send {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  min-height: 34px;
-  padding: 0;
-  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-width: 104px;
+  height: 44px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: var(--control-radius, 8px);
+  font-size: var(--font-caption, 13px);
+  white-space: nowrap;
   background: #000;
   color: #fff;
   border-color: #000;
 }
 .composer-intake .chat-composer-card .intake-send:hover:not(:disabled) { background: #262626; color: #fff; }
 .composer-intake .chat-composer-card .intake-send:disabled { background: #d4d4d4; border-color: #d4d4d4; color: #fff; opacity: 1; }
-.composer-intake .composer-footnote { font-size: 11px; margin-top: 8px; }
+.composer-intake .composer-footnote { font-size: var(--font-small, 12px); margin-top: 8px; }
 .intake-resume { text-align: center; margin: -12px 0 16px; }
 .intake-resume .link-button { min-height: 44px; padding: 8px 12px; color: var(--muted, #737373); font-size: 13px; text-decoration: none; }
 .intake-resume .link-button:hover:not(:disabled) { color: var(--text, #171717); background: var(--surface-subtle, #f5f5f5); }
@@ -163,9 +173,11 @@
   .composer-intake .chat-composer-card .chat-context-controls .scope-tree { flex: 1 1 100%; max-width: 100%; }
   .composer-intake .chat-composer-card .scope-tree-trigger { width: auto; max-width: 100%; }
   .composer-intake .chat-composer-card .composer-stage-context { padding-inline: 8px; gap: 6px; }
-  .composer-stage-hint { font-size: 10px; }
+  .composer-stage-hint { font-size: var(--font-small, 12px); }
   .composer-send-tools { gap: 8px; }
-  .composer-ai-status { font-size: 11px; }
+  .composer-intake .chat-composer-card .intake-request-footer { flex-wrap: wrap; gap: 4px 8px; }
+  .composer-send-tools { margin-left: auto; }
+  .composer-ai-status { font-size: var(--font-small, 12px); }
   .composer-intake .chat-composer-card .intake-request { padding-inline: 12px; }
-  .composer-intake .composer-keyboard-hint { font-size: 10px; }
+  .composer-intake .composer-keyboard-hint { font-size: var(--font-small, 12px); }
 }

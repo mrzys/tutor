@@ -1,7 +1,16 @@
 .question-source {
-  margin: 0 0 8px;
-  color: #737373;
-  font-size: 12px;
-  line-height: 1.6;
+  display: inline;
+  margin-right: .2em;
+  color: var(--muted);
+  font-size: .92em;
+  line-height: inherit;
   overflow-wrap: anywhere;
+}
+
+.question-type-count {
+  margin-left: .6em;
+  color: var(--muted);
+  font-size: var(--font-body);
+  font-weight: 400;
+  white-space: nowrap;
 }

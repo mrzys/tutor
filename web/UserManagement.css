@@ -4,26 +4,26 @@
 .account-menu{position:absolute;bottom:calc(100% + 10px);right:0;z-index:40;min-width:180px;padding:5px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 8px 28px #0000000d}
 .account-menu>button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:8px;background:transparent;text-align:left;font-size:14px}
 .account-menu>button:hover,.account-menu>button:focus-visible{background:#f5f5f5}
-.user-management{width:min(640px,calc(100vw - 32px));max-height:calc(100dvh - 48px);padding:0;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--green);overflow:hidden}
+.user-management{width:min(640px,calc(100vw - 32px));max-height:calc(100dvh - 48px);padding:0;border:1px solid var(--line);border-radius:20px;background:#fff;color:var(--accent);overflow:hidden}
 .user-management::backdrop{background:#0005}
 .user-management-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:24px 24px 20px;border-bottom:1px solid var(--line)}
 .user-management-header h2{display:flex;align-items:center;gap:9px;margin:0;font-size:20px;line-height:1.5}
 .user-management-header p{margin:5px 0 0;font-size:13px;color:var(--muted)}
 .user-management .user-management-icon{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;min-height:44px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--muted)}
-.user-management .user-management-icon:hover{background:#f5f5f5;color:var(--green)}
+.user-management .user-management-icon:hover{background:#f5f5f5;color:var(--accent)}
 .user-management-body{max-height:calc(100dvh - 165px);padding:24px;overflow:auto;overscroll-behavior:contain;font-size:14px}
 .user-management-toolbar{display:flex;gap:12px;align-items:center}
 .user-management-toolbar>.primary,.user-management-actions>.primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 16px;font-size:14px;font-weight:500;white-space:nowrap;border-radius:9999px}
 .user-management-search{display:flex;align-items:center;gap:8px;flex:1;min-width:0;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:9999px;color:var(--muted)}
 .user-management-search:focus-within{border-color:var(--focus-color);outline:var(--focus-width) solid var(--focus-color);outline-offset:var(--field-focus-offset)}
 .user-management-search input{width:100%;min-width:0;min-height:42px;padding:7px 0;border:0;border-radius:0;outline:0;background:transparent;font:inherit;box-shadow:none}
-.user-management-count{margin:18px 0 8px;color:var(--muted);font-size:12px}
+.user-management-count{margin:18px 0 8px;color:var(--muted);font-size: var(--font-caption)}
 .user-management-list{margin:0;padding:0;list-style:none}
 .user-management-list>li{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
 .user-management-list>li:last-child{border-bottom:0}
 .user-management-identity{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
 .user-management-identity strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}
-.user-management-identity>span{color:var(--muted);font-size:12px}
+.user-management-identity>span{color:var(--muted);font-size: var(--font-caption)}
 .user-management-reset{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:9999px;background:#fff;font-size:13px}
 .user-management-back{display:inline-flex;align-items:center;gap:7px;min-height:44px;margin:-10px 0 8px;padding:7px 0;border:0;background:transparent;font-size:13px;color:var(--muted)}
 .user-management-body h3{margin:0 0 16px;font-size:18px;font-weight:600}
@@ -35,7 +35,7 @@
 .user-management-password{display:flex;align-items:center;overflow:hidden}
 .user-management-password:has(>input:focus){border-color:var(--focus-color);outline:var(--focus-width) solid var(--focus-color);outline-offset:var(--field-focus-offset)}
 .user-management-password>input{width:100%;min-width:0;min-height:44px;padding:10px 12px;border:0;outline:0;background:transparent;box-shadow:none;font-size:14px}
-.user-management-help{margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+.user-management-help{margin:0;color:var(--muted);font-size: var(--font-caption);line-height:1.6}
 .user-management-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
 .user-management-actions>button{min-height:44px;padding:10px 18px;border-radius:9999px;font-size:14px}
 .user-management-error{margin:8px 0;color:var(--error);font-size:13px;overflow-wrap:anywhere}

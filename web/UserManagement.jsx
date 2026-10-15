@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Check, Eye, EyeOff, KeyRound, LoaderCircle, Plus, RefreshCw, Search, Users, X } from 'lucide-react';
+import { ArrowLeft, Check, Eye, EyeOff, KeyRound, LoaderCircle, Plus, RefreshCw, Search, Users } from 'lucide-react';
+import { CloseButton } from './CloseButton.jsx';
 import { api } from './api.js';
 import './UserManagement.css';
 
@@ -84,7 +85,7 @@ export function UserManagement({ currentUser, onClose }) {
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) onClose();
     }}>
     <header className="user-management-header"><div><h2 id="user-management-title"><Users size={20} aria-hidden="true"/>用户管理</h2><p>创建教师账号，管理登录密码。</p></div>
-      <button type="button" className="user-management-icon" aria-label="关闭用户管理" disabled={pending} onClick={onClose} autoFocus><X size={20} aria-hidden="true"/></button></header>
+      <CloseButton label="关闭用户管理" disabled={pending} onClick={onClose} autoFocus/></header>
     <div className="user-management-body">
       {notice ? <p className="user-management-notice" role="status"><Check size={18} aria-hidden="true"/>{notice}</p> : null}
       {editor ? <>

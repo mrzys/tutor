@@ -1,0 +1,38 @@
+/* Match the plain numbering used in printed student and teacher papers. */
+.assembly-workbench .draft-editor .question .question-number,
+.assembly-workbench .draft-editor .question[data-selected="true"] .question-number,
+.paper-workspace .frozen-student .question-number {
+  display: inline-block;
+  flex: 0 0 24px;
+  width: 24px;
+  min-width: 24px;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #171717;
+  font-family: inherit;
+  font-size: var(--font-reading);
+  font-weight: 400;
+  line-height: inherit;
+  text-align: left;
+}
+.draft-editor .question .option > span:first-child,
+.paper-workspace .frozen-student .question .option > span:first-child {
+  display: inline-block;
+  flex: 0 0 20px;
+  min-width: 20px;
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+}

@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { ChevronRight, PencilLine } from 'lucide-react';
 import { FloatingAssistant } from './FloatingAssistant.jsx';
+import { WorkbenchHeaderActionsContext } from './WorkbenchHeaderActions.jsx';
 import './AssemblyWorkbench.css';
 import { purposeFor } from '../src/assembly/purposes.mjs';
 
@@ -10,6 +11,7 @@ const stages = [{ id: 'requirements', label: '需求' }, { id: 'blueprint', labe
 
 export function AssemblyWorkbench({ config, reviewConfig, requirements, confirmedRequirements, stage, plannedSlots, documentId, assistantOpen, assistantAnchor, onToggleAssistant, onEditRequirements, busy, assistant, children }) {
   const [reviewStage, setReviewStage] = useState(null);
+  const [headerActions, setHeaderActions] = useState(null);
   useEffect(() => setReviewStage(null), [stage, documentId]);
   const stageIndex = stages.findIndex(item => item.id === stage);
   const chapters = new Map((config?.chapters || []).map(chapter => [chapter.id, chapter.label]));
@@ -30,13 +32,14 @@ export function AssemblyWorkbench({ config, reviewConfig, requirements, confirme
         {index > 0 ? <ChevronRight size={12} aria-hidden="true"/> : null}
         {index < stageIndex ? <button type="button" disabled={busy} aria-label={`查看已确认${item.label}`} onClick={() => setReviewStage(item.id)}>{item.label}</button> : <span aria-current={index === stageIndex ? 'step' : undefined}>{item.label}</span>}
       </li>)}</ol></nav> : null}
-        <h1>{requirements?.title || '本次组卷'}</h1>
+        <h1 title={requirements?.title || '本次组卷'}>{requirements?.title || '本次组卷'}</h1>
         {summary.length ? <p>{summary.join(' · ')}</p> : null}
       </div>
       {onEditRequirements ? <button type="button" className="assembly-assistant-trigger" title="返回修改范围、用途或题量，确认后重新规划" disabled={busy} onClick={onEditRequirements}><PencilLine size={15} aria-hidden="true"/>修改需求</button> : null}
+      {stage === 'paper' ? <div className="assembly-header-actions" ref={setHeaderActions}/> : null}
     </header>
     <div className="assembly-workbench-body">
-      <div className="assembly-workbench-product">{children}</div>
+      <div className="assembly-workbench-product"><WorkbenchHeaderActionsContext.Provider value={headerActions}>{children}</WorkbenchHeaderActionsContext.Provider></div>
     </div>
     {reviewStage ? <Suspense fallback={<p role="status">正在加载确认记录…</p>}><AssemblyReview stage={reviewStage} config={reviewConfig || config} requirements={confirmedRequirements || requirements} slots={plannedSlots || []} onClose={() => setReviewStage(null)}/></Suspense> : null}
     <FloatingAssistant open={assistantOpen} anchor={assistantAnchor} onClose={onToggleAssistant}>{assistant}</FloatingAssistant>

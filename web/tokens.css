@@ -1,0 +1,36 @@
+/* Shared UI tokens. Question mathematics and exported papers keep their own typography. */
+:root {
+  --font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-small: 13px;
+  --font-caption: 13px;
+  --font-body: 14px;
+  --font-reading: 16px;
+  --font-heading: 20px;
+  --font-title: 24px;
+  --font-display: 32px;
+
+  --accent: #000;
+  --text: #525252;
+  --muted: #737373;
+  --line: #e5e5e5;
+  --control-border: #d4d4d4;
+  --surface: #fff;
+  --surface-subtle: #fafafa;
+  --surface-hover: #f5f5f5;
+  --warning: #b45309;
+  --error: #dc2626;
+
+  --control-radius: 8px;
+  --surface-radius: 12px;
+  --pill-radius: 9999px;
+  --dialog-width: 790px;
+  --paper-output-spacing: 24px;
+  --focus-color: #3b82f6;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --field-focus-offset: calc(-1 * var(--focus-width));
+}
+
+@media (forced-colors: active) {
+  :root { --focus-color: Highlight; }
+}

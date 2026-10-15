@@ -22,7 +22,7 @@ function ParsedQuestion({ question, index }) {
   return <article className="import-question-card">
     <div className="import-question-title"><strong>第 {question.number ?? index + 1} 题</strong><span>{typeLabels[questionType] ?? questionType ?? '题型待确认'}</span>{issues.length ? <b>需审核</b> : <em>待审核</em>}</div>
     <p className="import-question-stem"><MathText text={stem}/></p>
-    <dl><dt>章节建议</dt><dd>{chapters.join('、') || '未识别'}</dd><dt>任务建议</dt><dd>{tasks.join('、') || '未识别'}</dd><dt>知识点建议</dt><dd>{knowledge.join('、') || '未识别'}</dd></dl>
+    <dl><dt>章节建议</dt><dd><MathText text={chapters.join('、') || '未识别'}/></dd><dt>任务建议</dt><dd><MathText text={tasks.join('、') || '未识别'}/></dd><dt>知识点建议</dt><dd><MathText text={knowledge.join('、') || '未识别'}/></dd></dl>
     {issues.length ? <div className="import-review-issues"><AlertTriangle size={16}/><div><strong>人工审核项</strong><ul>{issues.map((issue, issueIndex) => <li key={`${issue}-${issueIndex}`}>{issue}</li>)}</ul></div></div> : null}
   </article>;
 }
@@ -94,6 +94,7 @@ export function QuestionImport() {
       <label className="import-file-drop"><FileUp size={27}/><span><strong>{file ? file.name : '选择一份试卷文件'}</strong><small>{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '支持 TXT、MD、PDF、DOCX，最大 15MB'}</small></span><input ref={inputRef} type="file" accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={event => chooseFile(event.target.files?.[0])} disabled={busy}/></label>
       <button className="primary" type="submit" disabled={!file || busy}>{busy ? <><LoaderCircle className="spinning" size={17}/>正在上传并解析…</> : '开始解析'}</button>
     </form>
+    {!file && !busy ? <p className="help import-file-help">先选择试卷文件，再开始解析。</p> : null}
     {busy ? <div className="import-progress" role="status"><LoaderCircle className="spinning" size={19}/><div><strong>正在处理试卷</strong><p>文件已提交，正在提取文本、拆分题目并生成维度建议，请稍候。</p></div></div> : null}
     {error ? <div className="notice error" role="alert">{error}</div> : null}
     {result ? <section className="import-result" aria-label="解析结果">

@@ -54,6 +54,15 @@ async function fixture(t) {
   return { root };
 }
 
+test('baseline recheck preserves a separately renamed display title', async () => {
+  const original = await baseline();
+  const renamed = await apply(original, 'rename', { title: '教师命名的专项训练' });
+  const rechecked = await apply(renamed.draft, 'baseline', { requirements: { durationMinutes: 30 } });
+  assert.equal(rechecked.draft.title, '教师命名的专项训练');
+  assert.equal(rechecked.draft.baseline.requirements.title, original.baseline.requirements.title);
+  assert.deepEqual(rechecked.draft.slots.map(slot => slot.question?.questionId), original.slots.map(slot => slot.question?.questionId));
+});
+
 test('real controlled benchmark candidates respect complete task, pending partial material and occupied questions', async () => {
   const draft = await baseline();
   const preview = slotId => previewDraftCandidates(draft, { slotId, expectedRevision: 0 });

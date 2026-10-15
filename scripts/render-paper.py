@@ -222,6 +222,47 @@ class ChoiceGrid(Flowable):
             y -= 7
 
 
+def rich_table(rows, formulas, width, size=10.5):
+    """Render safe, shared-parser cells, retaining imported row/column spans."""
+    occupied, placements, columns = set(), [], 0
+    for row_index, row in enumerate(rows):
+        column = 0
+        for cell in row:
+            col_span = max(1, min(20, int(cell.get('colSpan', 1))))
+            row_span = max(1, min(20, len(rows)-row_index, int(cell.get('rowSpan', 1))))
+            while any((row_index, column+offset) in occupied for offset in range(col_span)):
+                column += 1
+            placements.append((row_index, column, row_span, col_span, cell))
+            occupied.update((r, c) for r in range(row_index, row_index+row_span)
+                            for c in range(column, column+col_span))
+            column += col_span
+            columns = max(columns, column)
+    if not columns:
+        return None
+    data = [['']*columns for _ in rows]
+    styles = [('GRID',(0,0),(-1,-1),0.45,colors.black),
+              ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
+              ('TOPPADDING',(0,0),(-1,-1),5),('BOTTOMPADDING',(0,0),(-1,-1),5)]
+    for row, column, row_span, col_span, cell in placements:
+        data[row][column] = RichText(cell.get('text', ''), formulas, size=size-0.5,
+                                     gap=0, bold=bool(cell.get('header')))
+        if row_span > 1 or col_span > 1:
+            styles.append(('SPAN',(column,row),(column+col_span-1,row+row_span-1)))
+    headers = 0
+    for row in rows:
+        if not all(cell.get('header') for cell in row):
+            break
+        headers += 1
+    # A spanning header cannot be repeated separately from the rows it joins.
+    if any(row < headers <= row+row_span-1 for row, _, row_span, _, _ in placements):
+        headers = 0
+    table = Table(data, colWidths=[width/columns]*columns, repeatRows=headers,
+                  hAlign='LEFT', splitInRow=1)
+    table.setStyle(TableStyle(styles))
+    table.spaceAfter = 8
+    return table
+
+
 def main():
     model = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
     output, formulas = sys.argv[2], model['formulas']
@@ -234,32 +275,24 @@ def main():
         return RichText(text, formulas, size=size, **kw)
     def add(text, size=10.5, **kw):
         story.append(rich(text, size, **kw))
-    def content(text, size=10.5, available_width=None):
-        # Preserve ordinary source lines. Recognized Markdown tables become real ruled tables.
-        lines = str(text).splitlines()
-        result, plain, index = [], [], 0
-        def flush():
-            if plain:
-                result.append(rich('\n'.join(plain), size))
-                plain.clear()
-        def cells(line):
-            return [cell.strip() for cell in re.split(r'(?<!\\)\|', line.strip().strip('|'))]
-        while index < len(lines):
-            if index+1 < len(lines) and '|' in lines[index] and re.fullmatch(r'\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*', lines[index+1]):
-                flush()
-                rows = [cells(lines[index])]
-                index += 2
-                while index < len(lines) and '|' in lines[index] and lines[index].strip():
-                    rows.append(cells(lines[index])); index += 1
-                columns = max(map(len, rows))
-                data = [[rich(cell, size-0.5, gap=0) for cell in row+['']*(columns-len(row))] for row in rows]
-                table = Table(data, colWidths=[(available_width or width-26)/columns]*columns, repeatRows=1, hAlign='LEFT', splitInRow=1)
-                table.setStyle(TableStyle([('GRID',(0,0),(-1,-1),0.45,colors.black),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('TOPPADDING',(0,0),(-1,-1),5),('BOTTOMPADDING',(0,0),(-1,-1),5)]))
-                table.spaceAfter = 8
-                result.append(table)
+    def content(text, size=10.5, available_width=None, prefix='', suffix=''):
+        # Exactly the same pure parser as browser preview supplies these blocks;
+        # imported HTML is data, never interpreted as executable markup.
+        blocks = model.get('richTextBlocks', {}).get(str(text), [{'type':'text','text':str(text)}])
+        result = []
+        for index, block in enumerate(blocks):
+            leading = prefix if index == 0 else ''
+            trailing = suffix if index == len(blocks)-1 else ''
+            if block['type'] == 'text':
+                result.append(rich(leading+block['text']+trailing, size))
             else:
-                plain.append(lines[index]); index += 1
-        flush()
+                if leading:
+                    result.append(rich(leading, size))
+                table = rich_table(block['rows'], formulas, available_width or width-26, size)
+                if table is not None:
+                    result.append(table)
+                if trailing:
+                    result.append(rich(trailing, size))
         return result
 
     add(title, 18, align='center', bold=True, gap=8)
@@ -288,7 +321,7 @@ def main():
             else:
                 answers = slot.get('teacher',{}).get('answers',[])
                 answer = '；'.join(item.get('text','') for item in answers) or '待补充'
-                if len(answer) > 80 or '\n' in answer:
+                if len(answer) > 80 or '\n' in answer or any(block['type'] == 'table' for block in model.get('richTextBlocks', {}).get(answer, [])):
                     answer = '见详解'
             cells.append(rich(f"{slot['number']}. {answer}", 9.5, gap=0))
         grid = Table([cells[i:i+2]+['']*(2-len(cells[i:i+2])) for i in range(0,len(cells),2)], colWidths=[width/2]*2, hAlign='LEFT')
@@ -339,18 +372,22 @@ def main():
                 image.drawWidth, image.drawHeight = image.imageWidth*factor,image.imageHeight*factor
                 image.hAlign = 'CENTER'; image.spaceAfter = 7; question.append(image)
             if student['options']:
-                question.append(ChoiceGrid(student['options'], formulas))
+                if any(option['text'] in model.get('richTextBlocks', {}) for option in student['options']):
+                    for option in student['options']:
+                        question.extend(content(option['text'], prefix=f"{option['label']}. "))
+                else:
+                    question.append(ChoiceGrid(student['options'], formulas))
             if not teacher and student['parts']:
                 for index, part in enumerate(student['parts']):
                     points = next((p['points'] for p in slot['partPoints'] if p['partId']==part['partId']),None)
-                    prompt = f"（{index+1}）{part['prompt']}"+(f"（{points} 分）" if scored and points is not None else '')
-                    question.extend([*content(prompt),Spacer(1,100 if len(student['parts'])>1 else 150)])
+                    suffix = f"（{points} 分）" if scored and points is not None else ''
+                    question.extend([*content(part['prompt'], prefix=f"（{index+1}）", suffix=suffix),Spacer(1,100 if len(student['parts'])>1 else 150)])
                 # A normal two-part problem stays on one page. Oversized problems may
                 # split at flowable boundaries instead of overflowing the A4 frame.
                 story.append(KeepTogether(question))
             else:
                 for index,part in enumerate(student['parts']):
-                    question.extend(content(f"（{index+1}）{part['prompt']}"))
+                    question.extend(content(part['prompt'], prefix=f"（{index+1}）"))
                 question.append(Spacer(1,13 if student['options'] else 24))
                 story.extend(question) if teacher else story.append(KeepTogether(question))
             if not teacher:
@@ -377,7 +414,7 @@ def main():
                 for item in items:
                     part_id = item.get('partId','main')
                     prefix = f"（{part_id.removeprefix('p')}）" if part_id != 'main' else ''
-                    story.extend(content(prefix+item.get('text','【内容待补充】'),10))
+                    story.extend(content(item.get('text','【内容待补充】'),10,prefix=prefix))
             story.append(Spacer(1,12))
             story[question_start:] = [KeepTogether(story[question_start:])]
 

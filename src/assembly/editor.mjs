@@ -276,10 +276,11 @@ async function correctBaseline(draft, operation, root, recheckSlotIds = null) {
     slot.goalIds = (slot.goalIds ?? []).filter(id => requirements.teachingGoals.some(goal => goal.id === id));
   }
   if (requirements.scoringMode === 'none') draft.slots.forEach(slot => { slot.points = 0; slot.partPoints = (slot.partPoints ?? []).map(part => ({ ...part, points: 0 })); delete slot.scoringStatus; });
+  const followsBaselineTitle = draft.title === requirementsOf(draft).title;
   draft.baseline = { requirements, slots: draft.slots.map(planSlot), confirmedAt: new Date().toISOString(), version: (draft.baseline.version ?? 1) + 1,
     courseContext: clone(config.courseContext), sourceManifest: clone(config.sourceManifest), questionIndexSnapshot: clone(pool.questionIndexSnapshot),
     taskCatalogSnapshot: clone({ catalogId: config.catalogId, chapters: config.chapters, premises: config.premises, tasks: config.tasks }) };
-  draft.title = requirements.title;
+  if (followsBaselineTitle) draft.title = requirements.title;
   draft.retrieval = { ...draft.retrieval, conditions: clone(requirements), sourceUnits: pool.totals.sourceUnits, ready: pool.totals.ready,
     pendingCount: pool.pending.length, pending: clone(pool.pending), failures: clone(pool.failures) };
   const entries = [];
@@ -342,6 +343,13 @@ export async function applyDraftOperation(input, operation, { root = defaultRoot
     checkRevision(input, operation.expectedRevision);
     const draft = clone(input); let entries;
     switch (operation.type) {
+      case 'rename': {
+        if (typeof operation.title !== 'string' || !operation.title.trim() || operation.title.trim().length > 120
+            || /[\u0000-\u001f\u007f]/.test(operation.title)) reject('试卷名称需为 1～120 个字符，不能包含换行或控制字符。');
+        draft.title = operation.title.trim();
+        entries = [{ status: 'updated', message: '已修改试卷名称，题目及已确认需求保持不变。' }];
+        break;
+      }
       case 'lock': {
         if (typeof operation.locked !== 'boolean') reject('锁定值需为布尔值。');
         const slot = slotById(draft, operation.slotId); slot.locked = operation.locked;
@@ -405,7 +413,7 @@ export async function applyDraftOperation(input, operation, { root = defaultRoot
       case 'criteria': entries = await changeSlotCriteria(draft, operation, root); break;
       default: reject('不支持的草稿操作。');
     }
-    refreshStats(draft, { groupByType: ['add', 'delete', 'group_by_type'].includes(operation.type) });
+    if (operation.type !== 'rename') refreshStats(draft, { groupByType: ['add', 'delete', 'group_by_type'].includes(operation.type) });
     draft.revision = revisionOf(input) + 1;
     draft.updatedAt = new Date().toISOString();
     const result = { type: operation.type, entries };

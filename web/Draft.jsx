@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { MathText } from './MathText.jsx';
 import { QuestionOptions } from './QuestionOptions.jsx';
 import { QuestionSummary } from './QuestionSummary.jsx';
-import { QuestionSource } from './QuestionSource.jsx';
+import { QuestionStem } from './QuestionSource.jsx';
 import { QuestionActions } from './QuestionActions.jsx';
-import { LockKeyhole, ListChecks, Sparkles } from 'lucide-react';
+import { Eye, LockKeyhole, ListChecks, Sparkles } from 'lucide-react';
+import { ExamPreview } from './ExamPreview.jsx';
 import { api, sourceLabel, statusLabels, typeLabels, typeTitles } from './api.js';
 import { draftSupplyKey, slotSupply, validateCandidateSupply } from './question-supply.js';
 import { AddEditor, BaselineEditor, Candidates, CriteriaEditor, DifficultyEditor, DraftOperationContext, Modal, OperationResult, PointsEditor, useDraftOperations } from './DraftEditor.jsx';
@@ -12,6 +13,10 @@ import { slotsAreGroupedByType } from '../src/assembly/slot-order.mjs';
 import { CoverageReview } from './CoverageReview.jsx';
 import { ActionMenu } from './ActionMenu.jsx';
 import './Draft.css';
+import './DraftTabs.css';
+import './ExamLabels.css';
+
+const questionTypes = ['single_choice', 'fill_blank', 'free_response'];
 
 function Evidence({ slot, config, expanded = false }) {
   const reason = slot.selection?.selectedReason;
@@ -40,12 +45,11 @@ function Question({ slot, scored, supply, checked, onSelect, onDetails, onCandid
   return <article className="question editable-question" data-selected={checked} id={`question-${slot.number}`}>
     {warning ? <p className="applicability-warning">当前基线：{statusLabels[slot.applicability.status] || slot.applicability.status}。{slot.applicability.reasons?.join('；')}</p> : null}
     <div className="question-top">
-      <label className="question-select"><input type="checkbox" checked={checked} onChange={event => onSelect(event.target.checked)} aria-label={`选择第 ${slot.number} 题`}/><span className="question-number" aria-label={`第 ${slot.number} 题`}>{slot.number}</span></label>
-      <div className="question-stem">{slot.question ? <MathText text={slot.question.student.stem}/> : <span className="missing-stem">【第 {slot.number} 题缺题面 · {slot.status === 'search_failed' ? '读取失败，尚不能判断无题' : '暂无符合条件的候选'}】</span>}</div>
+      <label className="question-select"><input type="checkbox" checked={checked} onChange={event => onSelect(event.target.checked)} aria-label={`选择第 ${slot.number} 题`}/><span className="question-number" aria-label={`第 ${slot.number} 题`}>{slot.number}.</span></label>
+      <div className="question-stem">{slot.question ? <QuestionStem question={slot.question} manifest={sourceManifest}/> : <span className="missing-stem">【第 {slot.number} 题缺题面 · {slot.status === 'search_failed' ? '读取失败，尚不能判断无题' : '暂无符合条件的候选'}】</span>}</div>
       <span className="question-points">{slot.locked ? <LockKeyhole className="question-lock" size={13} role="img" aria-label="本题已锁定"/> : null}{scored ? `（${slot.points} 分）` : null}</span>
     </div>
     {slot.question ? <div className="question-content">
-      <QuestionSource question={slot.question} manifest={sourceManifest}/>
       {slot.question.student.options.length ? <QuestionOptions options={slot.question.student.options}/> : null}
       {slot.question.student.parts.map((part, partIndex) => <p className="question-part" key={part.partId}>（{partIndex + 1}）<MathText text={part.prompt}/>{scored ? <span className="part-points">（{slot.partPoints.find(item => item.partId === part.partId)?.points ?? '—'} 分）</span> : null}</p>)}
     </div> : null}
@@ -82,9 +86,9 @@ function GroupSummary({ slots, scored }) {
   const missing = slots.length - available.length;
   const points = slots.reduce((sum, slot) => sum + slot.points, 0);
   const availablePoints = available.reduce((sum, slot) => sum + slot.points, 0);
-  return <p className="group-subtitle">{missing ? `已选 ${available.length} / ${slots.length} 题` : `${slots.length} 题`}
-    {scored ? missing ? ` · ${availablePoints} / ${points} 分` : ` · ${points} 分` : ''}
-    {missing ? <span className="warning-text"> · 缺 {missing} 题</span> : null}
+  if (!missing && !scored) return null;
+  return <p className="group-subtitle">{scored ? missing ? `${availablePoints} / ${points} 分` : `${points} 分` : ''}
+    {missing ? <span className="warning-text">{scored ? ' · ' : ''}缺 {missing} 题</span> : null}
   </p>;
 }
 
@@ -92,7 +96,13 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
   const scored = draft.baseline.requirements.scoringMode !== 'none';
   config = { ...config, ...draft.baseline.taskCatalogSnapshot };
   const [selected, setSelected] = useState([]);
+  const [activeType, setActiveType] = useState(() => draft.slots[0]?.questionType || 'single_choice');
+  const tabsId = useId();
+  const tabRefs = useRef({});
+  const contentRef = useRef(null);
+  useEffect(() => { setActiveType(draft.slots[0]?.questionType || 'single_choice'); setSelected([]); }, [draft.draftId]);
   const [editor, setEditor] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [coverageOpen, setCoverageOpen] = useState(false);
   const [candidateState, setCandidateState] = useState({ loading: false, data: null, error: '' });
   const [supplyState, setSupplyState] = useState({ key: '', loading: true, rows: null, error: '' });
@@ -127,11 +137,20 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
   useEffect(() => {
     onSelectionChange?.(draft.slots.filter(slot => selected.includes(slot.slotId)).map(({ slotId, number }) => ({ slotId, number })));
   }, [selected, draft.draftId, draft.revision, onSelectionChange]);
-  const groups = [];
-  for (const slot of draft.slots) {
-    const last = groups.at(-1);
-    if (last?.type === slot.questionType) last.slots.push(slot);
-    else groups.push({ type: slot.questionType, title: typeTitles[slot.questionType], slots: [slot] });
+  const groups = questionTypes.map(type => ({ type, title: typeTitles[type], slots: draft.slots.filter(slot => slot.questionType === type) }));
+  const activeSlots = groups.find(group => group.type === activeType)?.slots || [];
+  function changeType(type) {
+    if (type === activeType) return;
+    setActiveType(type); setSelected([]);
+    contentRef.current?.scrollTo({ top: 0 });
+  }
+  function navigateTypes(event, type) {
+    const index = questionTypes.indexOf(type);
+    const next = event.key === 'ArrowRight' ? (index + 1) % questionTypes.length
+      : event.key === 'ArrowLeft' ? (index + questionTypes.length - 1) % questionTypes.length
+      : event.key === 'Home' ? 0 : event.key === 'End' ? questionTypes.length - 1 : null;
+    if (next === null) return;
+    event.preventDefault(); changeType(questionTypes[next]); tabRefs.current[questionTypes[next]]?.focus();
   }
   function close() { if (operations.busy) return; candidateRequest.current++; setEditor(null); }
   async function apply(operation) {
@@ -152,9 +171,9 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
     } catch (error) { if (candidateRequest.current === token) setCandidateState({ loading: false, data: null, error: `${error.message}${error.status === 409 ? ' 请关闭候选并重新读取草稿。' : ''}` }); }
   }
   const currentSlot = editor?.slot ? draft.slots.find(slot => slot.slotId === editor.slot.slotId) : null;
-  return <DraftOperationContext.Provider value={operations}><div className="paper draft-editor"><div className="draft-content">
+  return <DraftOperationContext.Provider value={operations}><div className="paper draft-editor"><div className="draft-content" ref={contentRef}>
     <div className="draft-toolbar">
-      <div className="draft-selection-control"><label className="check-item"><input type="checkbox" disabled={operations.busy} checked={draft.slots.length > 0 && selectedIds.length === draft.slots.length} onChange={event => setSelected(event.target.checked ? draft.slots.map(slot => slot.slotId) : [])}/><span>全选</span></label></div>
+      <div className="draft-selection-control"><label className="check-item"><input type="checkbox" aria-label={`选择全部${typeLabels[activeType]}题`} disabled={operations.busy || !activeSlots.length} checked={activeSlots.length > 0 && activeSlots.every(slot => selectedIds.includes(slot.slotId))} onChange={event => setSelected(event.target.checked ? activeSlots.map(slot => slot.slotId) : [])}/><span>全选</span></label></div>
       {selectedIds.length ? <div className="batch-toolbar" role="region" aria-label="所选题目操作">
       <span>已选 {selectedIds.length} 题</span>
       {onAiAdjust && selectedIds.length > 1 ? <button className="question-ai-adjust" disabled={operations.busy} onClick={() => onAiAdjust(draft.slots.filter(slot => selectedIds.includes(slot.slotId)))}><Sparkles size={13} aria-hidden="true"/>AI 调整</button> : null}
@@ -163,6 +182,7 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
       <button className="link-button" disabled={operations.busy} onClick={() => { setSelected([]); document.querySelector('.draft-selection-control input')?.focus({ preventScroll: true }); }} aria-label="取消选择"><span className="batch-label-full">取消选择</span><span className="batch-label-short" aria-hidden="true">取消</span></button>
     </div> : (
       <div className="toolbar-actions">
+        <button type="button" disabled={operations.busy} onClick={() => setPreviewOpen(true)}><Eye size={15} aria-hidden="true"/>预览</button>
         <button className="assembly-details-trigger" disabled={operations.busy} onClick={() => setEditor({ type: 'add' })}>添加题目</button>
         <ActionMenu label="更多操作" className="draft-tools-menu" disabled={operations.busy}>
           <button role="menuitem" onClick={() => setEditor({ type: 'assembly-details' })}><ListChecks size={15} aria-hidden="true"/>组卷详情</button>
@@ -180,13 +200,15 @@ export function Draft({ draft, config, onChange, onConfirm, onSelectionChange, o
     <div id="draft-coverage-panel" hidden={!coverageOpen}><CoverageReview draft={draft} onChange={onChange} disabled={operations.busy}/></div>
     {operations.busy ? <p className="help" role="status">正在处理并保存草稿…</p> : null}
     {draft.stats.missingQuestions ? <div className="notice warning" role="status">未完整卷：实际可用 {draft.stats.selectedQuestions} 题{scored ? `，有效分值 ${draft.stats.availablePoints} 分` : ''}。缺题保留原题号及明确占位。</div> : null}
-    {groups.map((group, index) => <section className="paper-section" key={`${group.type}-${index}`}><h2>{index + 1}、{group.title}</h2><GroupSummary slots={group.slots} scored={scored}/>{group.slots.map(slot => <Question key={slot.slotId} sourceManifest={draft.baseline.sourceManifest} slot={slot} scored={scored} supply={slotSupply(supplyState, draft, slot.slotId)} busy={operations.busy} checked={selectedIds.includes(slot.slotId)} onSelect={checked => setSelected(ids => checked ? [...new Set([...ids, slot.slotId])] : ids.filter(id => id !== slot.slotId))} onDetails={() => setEditor({ type: 'details', slot })} onCandidates={() => candidates(slot)} onCriteria={() => setEditor({ type: 'criteria', slot })} onDifficulty={() => setEditor({ type: 'difficulty', slotIds: [slot.slotId] })} onPoints={scored ? () => setEditor({ type: 'points', slot }) : undefined} onDelete={() => setEditor({ type: 'delete', slot })} onLock={() => apply({ type: 'lock', slotId: slot.slotId, locked: !slot.locked })} onAiAdjust={onAiAdjust ? () => { setSelected([slot.slotId]); onAiAdjust(slot); } : undefined}/>)}</section>)}
+    <div className="draft-type-tabs" role="tablist" aria-label="试卷题型">{groups.map(group => <button type="button" role="tab" key={group.type} id={`${tabsId}-tab-${group.type}`} aria-selected={activeType === group.type} aria-controls={`${tabsId}-panel-${group.type}`} tabIndex={activeType === group.type ? 0 : -1} ref={element => { tabRefs.current[group.type] = element; }} disabled={operations.busy} onClick={() => changeType(group.type)} onKeyDown={event => navigateTypes(event, group.type)}>{typeLabels[group.type]}<span>{group.slots.length} 题</span></button>)}</div>
+    {groups.map(group => <section className="paper-section draft-type-panel" role="tabpanel" key={group.type} id={`${tabsId}-panel-${group.type}`} aria-labelledby={`${tabsId}-tab-${group.type}`} hidden={activeType !== group.type} tabIndex={0}>{activeType === group.type ? <><h2 className="sr-only">{group.title}<span className="question-type-count">{group.slots.length} 题</span></h2><GroupSummary slots={group.slots} scored={scored}/>{!group.slots.length ? <p className="draft-type-empty">暂无{typeLabels[group.type]}题，可通过“添加题目”补充。</p> : null}{group.slots.map(slot => <Question key={slot.slotId} sourceManifest={draft.baseline.sourceManifest} slot={slot} scored={scored} supply={slotSupply(supplyState, draft, slot.slotId)} busy={operations.busy} checked={selectedIds.includes(slot.slotId)} onSelect={checked => setSelected(ids => checked ? [...new Set([...ids, slot.slotId])] : ids.filter(id => id !== slot.slotId))} onDetails={() => setEditor({ type: 'details', slot })} onCandidates={() => candidates(slot)} onCriteria={() => setEditor({ type: 'criteria', slot })} onDifficulty={() => setEditor({ type: 'difficulty', slotIds: [slot.slotId] })} onPoints={scored ? () => setEditor({ type: 'points', slot }) : undefined} onDelete={() => setEditor({ type: 'delete', slot })} onLock={() => apply({ type: 'lock', slotId: slot.slotId, locked: !slot.locked })} onAiAdjust={onAiAdjust ? () => { setSelected([slot.slotId]); onAiAdjust(slot); } : undefined}/>)}</> : null}</section>)}
     {!draft.slots.length ? <p className="empty-message">当前草稿没有题位，可添加题位继续组卷。</p> : null}
     </div>
     <footer className="draft-confirm-footer" aria-label="成卷操作">
       <p><strong>{draft.stats.selectedQuestions} 题</strong>{scored ? ` · ${draft.stats.availablePoints} 分` : ''}<span>{draft.stats.missingQuestions ? `还缺 ${draft.stats.missingQuestions} 题，可添加题目或调整要求` : '已自动保存'}</span></p>
       <button className="primary" disabled={operations.busy} onClick={onConfirm}>确认成卷</button>
     </footer>
+    {previewOpen ? <ExamPreview draft={draft} onClose={() => setPreviewOpen(false)}/> : null}
     {editor?.type === 'assembly-details' ? <Modal title="组卷详情" className="question-detail-drawer assembly-detail-drawer" onClose={close} busy={operations.busy}>
       <AssemblyDetails draft={draft} config={config}/>
     </Modal> : null}

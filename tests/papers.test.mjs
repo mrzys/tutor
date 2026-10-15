@@ -8,7 +8,7 @@ import { previewBlueprint, createDraft } from '../src/assembly/engine.mjs';
 import { applyDraftOperation } from '../src/assembly/editor.mjs';
 import { hashContent } from '../src/question-bank/reader.mjs';
 import { saveDraft, readDraft, updateDraft } from '../src/assembly/store.mjs';
-import { preparePaperConfirmation, confirmPaper, getPaper, listPapers, findPaperForDraft, deriveDraftFromPaper, derivePaperDraft } from '../src/assembly/papers.mjs';
+import { preparePaperConfirmation, prepareDraftPreview, confirmPaper, getPaper, listPapers, findPaperForDraft, deriveDraftFromPaper, derivePaperDraft } from '../src/assembly/papers.mjs';
 
 let sequence = 0;
 const request = (draft, extra = {}) => ({ operationId: `confirm-${++sequence}`, expectedRevision: draft.revision ?? 0, acknowledgeDifferences: true, ...extra });
@@ -163,6 +163,22 @@ test('required asset bytes are embedded and checked, so later asset changes cann
   assert.equal(mismatched.error.code, 'integrity_error');
   await rm(path.join(f.root, 'assets', 'test.png'));
   assert.equal((await confirmPaper(f.storeRoot, newDraft.draftId, request(newDraft), f.options)).error.code, 'read_error');
+});
+
+test('draft preview checks image bytes without saving a paper or changing its draft', async t => {
+  const f = await fixture(t); const draft = structuredClone(f.draft);
+  const bytes = Buffer.from('PREVIEW_IMAGE'); const sha256 = createHash('sha256').update(bytes).digest('hex');
+  await mkdir(path.join(f.root, 'assets')); await writeFile(path.join(f.root, 'assets', 'preview.png'), bytes);
+  draft.slots[0].question.student.assets = [{ assetId: 'preview', path: 'assets/preview.png', sha256, mimeType: 'image/png' }];
+  const before = structuredClone(draft);
+  const result = await prepareDraftPreview(draft, { root: f.root });
+  assert.equal(result.ok, true); assert.equal(result.revision, draft.revision ?? 0);
+  assert.equal(result.assets[0].dataBase64, bytes.toString('base64'));
+  assert.deepEqual(draft, before); assert.equal((await listPapers(f.papersRoot)).papers.length, 0);
+  await writeFile(path.join(f.root, 'assets', 'preview.png'), 'CHANGED');
+  assert.equal((await prepareDraftPreview(draft, { root: f.root })).error.code, 'integrity_error');
+  draft.slots[0].question.student.assets[0].path = '../outside.png';
+  assert.equal((await prepareDraftPreview(draft, { root: f.root })).error.code, 'integrity_error');
 });
 
 test('tampering is detected and an unreadable original snapshot is not silently regenerated on retry', async t => {
