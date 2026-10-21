@@ -300,6 +300,10 @@
   gap: 10px;
 }
 .desktop-bank .bank-basket-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.desktop-bank .bank-question-difficulty { color: var(--muted); font-size: var(--font-caption); }
+.bank-detail-preview { border-top: 1px solid var(--line); padding-top: 20px; }
+.bank-detail-preview > summary { cursor: pointer; margin-bottom: 16px; }
+.bank-detail-preview .bank-question-stem { padding-right: 0; }
 .desktop-bank .bank-basket-tools .bank-basket-clear { flex: 0 0 auto; min-height: 36px; padding: 4px 8px; }
 .desktop-bank .bank-basket-tools .bank-basket-order-note { min-width: 0; }
 @media (max-width: 760px) {

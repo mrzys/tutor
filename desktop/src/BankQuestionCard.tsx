@@ -1,4 +1,4 @@
-import { For, Show, createMemo, createSignal, createUniqueId } from "solid-js";
+import { For, Show, createMemo } from "solid-js";
 import { Check, ChevronRight, Plus } from "lucide-solid";
 import { typeLabels } from "./bridge";
 import { Asset, RichText } from "./Paper";
@@ -6,6 +6,7 @@ import { assetKey, assetReferences, inlineAssetIds, resolveAsset } from "./rich-
 import { questionSourcePresentation } from "./shared/source-label.mjs";
 import { AdaptiveOptions } from "./AdaptiveOptions";
 import { choicePresentation } from "./choice-presentation";
+import { difficultyLevels } from "./assembly-details";
 
 export function bankMetadata(row: any) {
   const question = row.question || row;
@@ -15,7 +16,15 @@ export function bankMetadata(row: any) {
     topics: metadata.topics || row.topics || question.topics || [],
     requiredKnowledge: metadata.requiredKnowledge || row.requiredKnowledge || question.requiredKnowledge || [],
     sectionIds: metadata.sectionIds || row.sectionIds || question.sectionIds || [],
+    sectionLabels: metadata.sectionLabels || [],
     sourceRefs: metadata.sourceRefs || row.sourceRefs || question.sourceRefs || [],
+    difficulty: metadata.difficulty || {},
+    taskLabels: metadata.taskLabels || [],
+    knowledgeLabel: metadata.knowledgeLabel || "相关知识",
+    solutionPaths: metadata.solutionPaths || [],
+    abilities: metadata.abilities || [],
+    literacies: metadata.literacies || [],
+    pedagogyStatus: metadata.pedagogyStatus || "unknown",
   };
 }
 
@@ -36,33 +45,19 @@ export function BankQuestionPreview(props: { question: any; manifest?: any; bask
   </>;
 }
 
-export function BankQuestionCard(props: { row: any; manifest?: any; selected: boolean; disabled: boolean; onToggle: () => void }) {
-  const [open, setOpen] = createSignal(false);
-  const evidenceId = createUniqueId();
+export function BankQuestionCard(props: { row: any; manifest?: any; selected: boolean; disabled: boolean; onToggle: () => void; onDetails: () => void }) {
   const question = () => props.row.question || props.row;
   const metadata = () => bankMetadata(props.row);
-  const presentation = () => questionSourcePresentation(question(), props.manifest);
-  let trigger!: HTMLButtonElement;
-  function toggleEvidence() {
-    const list = trigger.closest(".bank-question-list");
-    const scroll = list?.scrollTop;
-    setOpen(!open());
-    // Expanding provenance should not move the list's reading position.
-    requestAnimationFrame(() => { if (list && scroll !== undefined) list.scrollTop = scroll; });
-  }
-  const refs = () => metadata().sourceRefs.filter((ref: any) => !/^tutor-set(?:-|$)/i.test(ref.locator || ""));
+  const difficulty = () => difficultyLevels.find(level => level.id === metadata().difficulty.level)?.label || "未评估";
   return <article class={`bank-question ${props.selected ? "is-selected" : ""}`}>
     <div class="bank-question-body"><BankQuestionPreview question={question()} manifest={props.manifest} />
       <div class="bank-question-information"><div class="bank-question-information-line">
         <span class="bank-question-type">{typeLabels[question().questionType] || question().questionType}</span>
+        <span class="bank-question-difficulty" title="题目难度（内容估计）">{difficulty()}</span>
         <span><RichText text={metadata().topics.join("、") || metadata().taskSummary} question={question()} /></span>
-        <button ref={trigger} type="button" class="bank-question-evidence-trigger" aria-expanded={open()} aria-controls={evidenceId} onPointerDown={event => event.preventDefault()} onClick={toggleEvidence}><ChevronRight size={13} /><span>知识与来源信息</span></button>
+        <button type="button" class="bank-question-evidence-trigger" aria-haspopup="dialog" onClick={props.onDetails}><ChevronRight size={13} /><span>题目信息</span></button>
         <button type="button" class="bank-question-add" disabled={props.disabled} aria-pressed={props.selected} aria-label={props.selected ? "从组卷篮移出此题" : "将此题加入组卷篮"} onClick={props.onToggle}>{props.selected ? <><Check size={14} />已加入 · 移出</> : <><Plus size={14} />加入组卷篮</>}</button>
-      </div><Show when={open()}><dl id={evidenceId} class="bank-question-evidence-panel">
-        <dt>考查摘要</dt><dd><RichText text={metadata().taskSummary} question={question()} /></dd>
-        <dt>相关知识</dt><dd><RichText text={metadata().requiredKnowledge.join("、") || "未单独标注"} question={question()} /></dd>
-        <dt>题目来源</dt><dd>{presentation().caption}</dd><dt>来源定位</dt><dd>{refs().length ? refs().map((ref: any) => `${ref.locator || "题库收录"}${ref.pages?.length ? `（${ref.pages.join("、")} 页）` : ""}`).join("；") : "题库收录"}</dd>
-      </dl></Show></div>
+      </div></div>
     </div>
   </article>;
 }

@@ -1,6 +1,6 @@
 [package]
 name = "tutor-desktop"
-version = "0.1.34"
+version = "0.1.35"
 edition = "2024"
 rust-version = "1.90"
 default-run = "tutor-desktop"
@@ -38,6 +38,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"
 tauri = { version = "=2.12.4", optional = true , features = [] }
 tauri-plugin-dialog = { version = "=2.8.3", optional = true }
 tauri-plugin-opener = { version = "=2.5.5", optional = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "=3.7.0"
+ring = "=0.17.14"
+zeroize = "=1.9.1"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Security_Cryptography", "Win32_System_Memory", "Win32_Foundation"] }

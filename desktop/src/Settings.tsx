@@ -3,10 +3,12 @@ import { ArrowLeft, Check, Database, Plus, ScanText, SlidersHorizontal, Trash2, 
 import { request } from "./bridge";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import { BankAnnotation } from "./BankAnnotation";
+import { deepseekPreset, llmProviders, modelProfilePayload, modelProvider, newModelProfile } from "./model-presets";
 
 type ModelDraft = {
   id: string;
   name: string;
+  provider: string | null;
   baseUrl: string;
   model: string;
   apiKey: string;
@@ -61,7 +63,7 @@ export function Settings(props: {
 
   function modelState() {
     return JSON.stringify({ activeProfileId: activeId(), profiles: profiles().map((item) => ({
-      id: item.id, name: item.name.trim(), baseUrl: item.baseUrl.trim(), model: item.model.trim(), apiKey: item.apiKey,
+      ...modelProfilePayload(item),
     })) });
   }
   const personalDirty = () => nickname().trim() !== personalBaseline();
@@ -87,6 +89,7 @@ export function Settings(props: {
       return {
         id: item.id,
         name: item.name || "",
+        provider: item.provider || modelProvider(item.baseUrl || ""),
         baseUrl: item.baseUrl || "",
         model: item.model || "",
         apiKey: "",
@@ -167,14 +170,17 @@ export function Settings(props: {
 
   function update(field: "name" | "baseUrl" | "model" | "apiKey", value: string) {
     setSavedMessage("");
-    setProfiles((items) => items.map((item) => item.id === editingId() ? { ...item, [field]: value } : item));
+    setProfiles((items) => items.map((item) => {
+      if (item.id !== editingId()) return item;
+      const automaticName = !item.name || deepseekPreset.models.some(model => model.label === item.name);
+      return { ...item, [field]: value,
+        ...(field === "model" && automaticName ? { name: deepseekPreset.models.find(model => model.id === value)?.label || item.name } : {}) };
+    }));
   }
   function add() {
     setSavedMessage("");
     const id = crypto.randomUUID();
-    setProfiles((items) => [...items, {
-      id, name: "", baseUrl: "", model: "", apiKey: "", hasApiKey: false, configured: false,
-    }]);
+    setProfiles((items) => [...items, newModelProfile(id)]);
     setEditingId(id);
     setDeletingId(null);
     if (!activeId()) setActiveId(id);
@@ -211,10 +217,7 @@ export function Settings(props: {
       const result = await request("model_save", {
         expectedRevision: revision(),
         activeProfileId: activeId(),
-        profiles: profiles().map((item) => ({
-          id: item.id, name: item.name.trim(), baseUrl: item.baseUrl.trim(), model: item.model.trim(),
-          ...(item.apiKey ? { apiKey: item.apiKey } : {}),
-        })),
+        profiles: profiles().map(modelProfilePayload),
       });
       applySettings(result);
       await props.onSaved(props.profile);
@@ -267,7 +270,7 @@ export function Settings(props: {
             <Show when={loaded()} fallback={
               <button type="button" class="secondary" onClick={() => load()} disabled={loading()}>重新读取模型设置</button>
             }>
-              <p class="muted">支持多个 OpenAI 兼容配置，用于整理需求、规划、选题和导入试卷。保存后使用所选配置。</p>
+              <p class="muted">选择 DeepSeek 模型并填写 API Key，保存后使用所选配置。</p>
               <Show when={modelWarning()}><p class="warning-text" role="alert">{modelWarning()}</p></Show>
               <div class="model-config-list" aria-label="模型配置列表">
                 <For each={profiles()}>{(item) => (
@@ -289,18 +292,23 @@ export function Settings(props: {
               <Show when={!activeId()}><p class="muted">当前未启用模型，可使用规则预设；导入试卷前需选择完整配置。</p></Show>
               <Show when={editing()}>{(item) => (
                 <section class="model-config-editor" aria-label="编辑模型配置">
-                  <label class="field-label">配置名称
-                    <input maxLength={60} value={item().name} onInput={(event) => update("name", event.currentTarget.value)} placeholder="例如：日常组卷" />
+                  <label class="field-label">LLM 服务商
+                    <select aria-label="LLM 服务商" value={item().provider || "legacy"} disabled={item().provider !== "deepseek"}>
+                      <Show when={item().provider !== "deepseek"}><option value="legacy">原有服务商配置</option></Show>
+                      <For each={llmProviders}>{provider => <option value={provider.id}>{provider.label}</option>}</For>
+                    </select>
                   </label>
-                  <label class="field-label">接口地址
-                    <input type="url" value={item().baseUrl} onInput={(event) => update("baseUrl", event.currentTarget.value)} placeholder="https://api.example.com/v1" spellcheck={false} />
-                  </label>
+                  <Show when={item().provider === "deepseek"} fallback={<p class="muted">原配置已保留。当前新增配置支持 DeepSeek，可添加后切换使用。</p>}>
                   <label class="field-label">模型
-                    <input value={item().model} onInput={(event) => update("model", event.currentTarget.value)} placeholder="模型名称" spellcheck={false} />
+                    <select aria-label="DeepSeek 模型" value={item().model} onChange={event => update("model", event.currentTarget.value)}>
+                      <Show when={!deepseekPreset.models.some(model => model.id === item().model)}><option value={item().model}>原配置：{item().model}</option></Show>
+                      <For each={deepseekPreset.models}>{model => <option value={model.id}>{model.label}</option>}</For>
+                    </select>
                   </label>
                   <label class="field-label">API Key
                     <input type="password" autocomplete="new-password" value={item().apiKey} onInput={(event) => update("apiKey", event.currentTarget.value)} placeholder={item().hasApiKey ? "留空保留此配置的密钥" : "输入此配置的密钥"} spellcheck={false} />
                   </label>
+                  </Show>
                   <Show when={item().warning}><p class="warning-text" role="alert">{item().warning}</p></Show>
                   <div class="model-config-editor-footer">
                     <span class="muted">{item().hasApiKey ? "此配置已有密钥，本机加密保存。" : "密钥仅保存在本机，不会回显。"}</span>

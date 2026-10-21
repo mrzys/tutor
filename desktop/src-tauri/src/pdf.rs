@@ -9,7 +9,7 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::sync::oneshot;
 
 // Native PDF layout version, independent of the legacy Python renderer.
-pub const PDF_LAYOUT_VERSION: &str = "desktop-a4-webview-v3";
+pub const PDF_LAYOUT_VERSION: &str = "desktop-a4-webview-v4";
 struct PdfJob {
     path: PathBuf,
     temporary: PathBuf,

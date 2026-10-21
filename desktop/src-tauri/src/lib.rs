@@ -12,6 +12,8 @@ pub mod ocr;
 pub mod ocr_settings;
 #[cfg(feature = "desktop")]
 mod pdf;
+mod request_diagnostics;
+mod requirements_summary;
 pub mod storage;
 pub mod student_work;
 
@@ -106,6 +108,27 @@ fn catalog_metadata(
         .all(|key| scope[*key] == question[*key] && scope[*key].is_string());
     let modern = knowledge::uses_knowledge(annotation);
     let valid_knowledge = modern && knowledge::validate_annotation(annotation, config).is_ok();
+    let section_ids = knowledge::primary_sections(annotation, config);
+    let section_names = |ids: &[String]| -> Vec<String> {
+        ids.iter()
+            .filter_map(|id| {
+                config["chapters"]
+                .as_array()?
+                .iter()
+                .find(|chapter| intake::includes(&json!([id]), intake::s(chapter, "id")))?["label"]
+                .as_str()
+                .map(str::to_owned)
+            })
+            .collect()
+    };
+    let section_labels = section_names(&section_ids);
+    let paths: Vec<_> = annotation["solutionPaths"].as_array().into_iter().flatten()
+        .filter(|_| !modern || valid_knowledge)
+        .map(|path| json!({
+            "knowledge":if modern {knowledge::names(config,&path["requiredKnowledgeUids"])}else{section_names(&catalog_strings(&path["requiredSections"]))},
+            "premises":catalog_strings(&path["requiredPremises"]).iter().map(|id|config["premises"].as_array().into_iter().flatten().find(|premise|premise["id"]==*id).and_then(|premise|premise["label"].as_str()).unwrap_or("未记录名称")).collect::<Vec<_>>(),
+            "basis":path["basis"]
+        })).collect();
     let required_uids = json!(
         annotation["solutionPaths"]
             .as_array()
@@ -121,8 +144,12 @@ fn catalog_metadata(
         "abilities":catalog_strings(&pedagogy["abilities"]),
         "literacies":catalog_strings(&pedagogy["literacies"]),
         "pedagogyStatus":pedagogy["status"].as_str().unwrap_or("unknown"),
-        "difficulty":{"level":level,"estimate":annotation["difficultyEstimate"].as_f64()},
-        "sectionIds":knowledge::primary_sections(annotation,config),
+        "difficulty":{"level":level,"estimate":annotation["difficultyEstimate"].as_f64(),"basis":if level=="unknown" {Value::Null}else{annotation["difficultyBasis"].clone()}},
+        "knowledgeLabel":if modern {"主考知识"}else{"相关知识"},
+        "solutionPaths":paths,
+        "taskLabels":catalog_strings(&annotation["tasks"]).iter().filter_map(|id|config["tasks"].as_array()?.iter().find(|task|task["id"]==*id)?["label"].as_str().map(str::to_owned)).collect::<Vec<_>>(),
+        "sectionIds":section_ids,
+        "sectionLabels":section_labels,
         "tasks":catalog_strings(&annotation["tasks"])
     })
 }
@@ -703,6 +730,27 @@ mod tests {
             "assembly mutex stayed held throughout independent requests"
         );
         drop(held);
+    }
+    #[test]
+    fn simulated_catalog_details_use_only_the_current_annotation_version() {
+        let question =
+            json!({"questionId":"simulated-details","contentVersion":"c1","teacherVersion":"t1"});
+        let config = json!({"tasks":[{"id":"task-1","label":"模拟考查点"}],"chapters":[{"id":"rja-compulsory-1:1.1","label":"模拟小节"}]});
+        let annotation = json!({"questionId":"simulated-details","contentVersion":"c1","teacherVersion":"t1","difficultyLevel":"medium_hard","difficultyBasis":{"rationale":"模拟关键关口依据"},"tasks":["task-1"],"primarySections":["1.1"]});
+        let metadata = catalog_metadata(&question, &[annotation.clone()], &Value::Null, &config);
+        assert_eq!(
+            metadata["difficulty"]["basis"]["rationale"],
+            "模拟关键关口依据"
+        );
+        assert_eq!(metadata["taskLabels"], json!(["模拟考查点"]));
+        assert_eq!(metadata["sectionLabels"], json!(["模拟小节"]));
+        let mut stale = annotation;
+        stale["teacherVersion"] = json!("old");
+        let metadata = catalog_metadata(&question, &[stale], &Value::Null, &config);
+        assert_eq!(metadata["difficulty"]["level"], "unknown");
+        assert!(metadata["difficulty"]["basis"].is_null());
+        assert_eq!(metadata["taskLabels"], json!([]));
+        assert_eq!(metadata["sectionLabels"], json!([]));
     }
     #[test]
     fn simulated_five_level_catalog_facets_keep_original_levels_and_version_checks() {

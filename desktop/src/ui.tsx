@@ -17,7 +17,7 @@ function useOverlay(
   const focusable = () =>
     Array.from(
       element().querySelectorAll<HTMLElement>(
-        'button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[contenteditable="true"],[tabindex]:not([tabindex="-1"])',
+        'button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],summary,[contenteditable="true"],[tabindex]:not([tabindex="-1"])',
       ),
     ).filter((node) => node.tabIndex >= 0 && node.getClientRects().length > 0 && !node.closest('[inert],[aria-hidden="true"]'));
   const active = () => overlayStack.at(-1) === element();

@@ -866,6 +866,15 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
 .requirements-review details {
   margin: 24px 0;
 }
+.quantity-plan-reason {
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 16px 0;
+}
+.quantity-plan-reason > span {
+  color: var(--accent);
+  margin-right: 12px;
+}
 .explanation-list {
   display: flex;
   flex-direction: column;
@@ -1198,7 +1207,8 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.question-source {
+.question-source,
+.question-difficulty {
   color: var(--muted);
   font-size: 0.9em;
   margin-right: 6px;

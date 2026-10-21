@@ -4851,7 +4851,7 @@ checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "tutor-desktop"
-version = "0.1.34"
+version = "0.1.35"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -4862,7 +4862,9 @@ dependencies = [
  "quick-xml 0.38.4",
  "regex",
  "reqwest",
+ "ring",
  "rusqlite",
+ "security-framework",
  "serde",
  "serde_json",
  "sha2",
@@ -4876,6 +4878,7 @@ dependencies = [
  "webview2-com",
  "windows 0.62.2",
  "windows-sys 0.61.2",
+ "zeroize",
  "zip",
 ]
 

@@ -6,6 +6,7 @@ import { Busy, ErrorBanner } from "./ui";
 import { BankNavigation } from "./BankNavigation";
 import { BankBasket } from "./BankBasket";
 import { BankQuestionCard } from "./BankQuestionCard";
+import { BankQuestionDetails } from "./BankQuestionDetails";
 import "./BankReading.css";
 
 type FilterOption = { value: string; label: string; count?: number };
@@ -89,6 +90,7 @@ export function Bank(props: { config: any; initial?: any; onState?: (state: any)
   const [selections, setSelections] = createSignal<any[]>(props.initial?.selections || []);
   const [title, setTitle] = createSignal(props.initial?.title || "题库手动组卷");
   const [basketOpen, setBasketOpen] = createSignal(false);
+  const [detailRow, setDetailRow] = createSignal<any>(null);
   const [creating, setCreating] = createSignal(false);
   const [selectionError, setSelectionError] = createSignal("");
   const [createError, setCreateError] = createSignal("");
@@ -168,11 +170,12 @@ export function Bank(props: { config: any; initial?: any; onState?: (state: any)
           <Show when={ability() || literacy()} fallback={<Show when={difficulty() === "unknown"}><p class="bank-annotation-note">这些题目尚无独立难度评估。</p></Show>}><p class="bank-annotation-note">能力与素养按已有教研标注筛选，待复核标注仅供检索参考。</p></Show>
           <ErrorBanner message={error()} retry={() => search(page())} />
           <div class="bank-result-summary"><span role="status" aria-live="polite">{busy() ? "正在查询…" : `共 ${total()} 道匹配题`}</span><span>已选 {selections().length} 道 · 切换章节保留</span></div>
-          <Show when={rows().length} fallback={<div class="bank-empty"><strong>{busy() ? "正在查询题目…" : hasFilters() ? "没有找到匹配题目" : "本小节暂无题目"}</strong><span>{hasFilters() ? "可清除筛选条件，或切换其他小节。" : "可切换其他小节，或上传试卷补充题目。"}</span><Show when={hasFilters()} fallback={<button onClick={props.onImport}>上传试卷</button>}><button onClick={clearFilters}>清除筛选</button></Show></div>}><div ref={list} class="bank-question-list" aria-label="题目列表" aria-busy={busy()}><For each={rows()}>{row => <BankQuestionCard row={row} manifest={props.config.sourceManifest} selected={selections().some(item => item.questionId === (row.question || row).questionId)} disabled={busy() || creating() || !typeIds.includes((row.question || row).questionType)} onToggle={() => toggle(row)} />}</For></div></Show>
+          <Show when={rows().length} fallback={<div class="bank-empty"><strong>{busy() ? "正在查询题目…" : hasFilters() ? "没有找到匹配题目" : "本小节暂无题目"}</strong><span>{hasFilters() ? "可清除筛选条件，或切换其他小节。" : "可切换其他小节，或上传试卷补充题目。"}</span><Show when={hasFilters()} fallback={<button onClick={props.onImport}>上传试卷</button>}><button onClick={clearFilters}>清除筛选</button></Show></div>}><div ref={list} class="bank-question-list" aria-label="题目列表" aria-busy={busy()}><For each={rows()}>{row => <BankQuestionCard row={row} manifest={props.config.sourceManifest} selected={selections().some(item => item.questionId === (row.question || row).questionId)} disabled={busy() || creating() || !typeIds.includes((row.question || row).questionType)} onToggle={() => toggle(row)} onDetails={() => setDetailRow(row)} />}</For></div></Show>
           <nav class="bank-pagination" aria-label="题目分页"><button type="button" disabled={busy() || page() <= 1} onClick={() => search(page() - 1)}><ChevronLeft size={16} />上一页</button><span>第 {page()} / {Math.max(1, Math.ceil(total() / PAGE_SIZE))} 页</span><button type="button" disabled={busy() || page() * PAGE_SIZE >= total()} onClick={() => search(page() + 1)}>下一页<ChevronRight size={16} /></button></nav>
         </div>
       </section>
       <Show when={basketOpen()}><BankBasket selections={selections()} manifest={props.config.sourceManifest} catalog={catalog()} title={title()} busy={creating()} error={createError()} onTitle={setTitle} onRemove={id => { if (!creating()) { setSelections(previous => previous.filter(question => question.questionId !== id)); setCreateError(""); } }} onClear={() => { if (!creating()) { setSelections([]); setCreateError(""); } }} onCreate={createDraft} onClose={closeBasket} /></Show>
     </div>
+    <Show when={detailRow()}>{row => <BankQuestionDetails row={row()} config={props.config} onClose={() => setDetailRow(null)} />}</Show>
   </section>;
 }

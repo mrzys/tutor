@@ -27,8 +27,10 @@ export function resizeQuestionCounts(requirements: any, amount: number) {
   }
   const constraints = requirements.typeConstraints;
   const exact = constraints?.exactCounts;
-  return { ...requirements, counts, questionCount: amount,
+  const { quantityPlan, ...updated } = requirements;
+  return { ...updated, counts, questionCount: amount,
     ...(constraints ? { typeConstraints: { ...constraints,
+      ...(typeof constraints.choiceCount === "number" ? { choiceCount: counts.single_choice + counts.multiple_choice } : {}),
       ...(exact ? { exactCounts: Object.fromEntries(Object.keys(exact).map(type => [type, counts[type] ?? 0])) } : {}) } } : {}) };
 }
 
@@ -39,14 +41,14 @@ export function slotDifficulty(slot: any, requirements: any, snapshot: any) {
   const level = hasLevel ? slot.targetDifficultyLevel : typeof slot.targetDifficulty === "number" ? null : requirements?.targetDifficultyLevel;
   const target = hasLevel ? slot.targetDifficulty : slot.targetDifficulty ?? requirements?.targetDifficulty;
   const numericLabel = typeof target === "number" && Number.isFinite(target) && target >= 0 && target <= 1
-    ? `目标 ${target.toFixed(2)}` : "";
+    ? `旧版目标 ${target.toFixed(2)}` : "";
   const targetLabel = levels[level] || numericLabel;
   const question = slot.question;
   const annotation = frozenAnnotation(question, snapshot);
   const estimate = levels[annotation?.difficultyLevel] || "";
   return {
     label: targetLabel || estimate || (question ? "未评估" : "未指定"),
-    detail: targetLabel ? (estimate ? `题目：${estimate}` : question ? "题目未评估" : "尚未选题") : estimate ? "内容估计" : "",
+    detail: targetLabel ? (estimate ? `题目：${estimate}` : numericLabel ? "旧版数值，未经难度标定" : question ? "题目未评估" : "尚未选题") : estimate ? "内容估计" : "",
     selectValue: levels[level] ? level : numericLabel ? "legacy" : "",
     legacyLabel: numericLabel ? `原目标 ${target.toFixed(2)}` : "",
     estimateLabel: estimate ? `题目：${estimate}` : question ? "题目未评估" : "尚未选题",

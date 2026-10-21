@@ -1,0 +1,13 @@
+{
+  "providers": [
+    {
+      "id": "deepseek",
+      "label": "DeepSeek",
+      "baseUrl": "https://api.deepseek.com",
+      "models": [
+        { "id": "deepseek-flash", "label": "DeepSeek Flash" },
+        { "id": "deepseek-v4-pro", "label": "DeepSeek V4 Pro" }
+      ]
+    }
+  ]
+}

@@ -42,7 +42,7 @@ export function QuestionDetails(props: { slot: any; draft: any; onClose: () => v
       <h3>题位要求</h3>
       <dl class="explanation-list">
         <div><dt>考查点</dt><dd><RichText text={task()} /></dd></div>
-        <div><dt>难度要求</dt><dd>{difficulty().targetLabel || "未指定"}</dd></div>
+        <div><dt>难度要求</dt><dd>{difficulty().targetLabel || "未指定"}<Show when={difficulty().selectValue === "legacy"}><small class="question-detail-note">旧版 0～1 选题参数，越大越偏基础；未经作答标定，不代表正确率，不与五档题目难度直接换算。</small></Show></dd></div>
       </dl>
     </section>
   </Drawer>;

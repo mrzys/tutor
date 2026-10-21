@@ -365,6 +365,7 @@ export default function App() {
           requirements,
           message,
           mode,
+          quantityAuthority: requirements.quantityAuthority || {},
         });
         setDraft(null);
         setPaper(null);
@@ -384,7 +385,7 @@ export default function App() {
   function plan(mode: string) {
     perform("正在安排题位…", async () => {
       const result = await request("blueprint_plan", {
-        requirements: req(),
+        requirements: { ...req(), quantityAuthority: { questionCount: true, counts: true, typeConstraints: true } },
         mode,
       });
       setBlueprint(result.blueprint);
@@ -960,7 +961,9 @@ export default function App() {
                             value={counts(req())}
                             onInput={(event) => {
                               const amount = Number(event.currentTarget.value);
-                              setReq(resizeQuestionCounts(req(), amount));
+                              const previous = req();
+                              const next = resizeQuestionCounts(previous, amount);
+                              if (next !== previous) setReq({ ...next, quantityAuthority: { ...previous.quantityAuthority, questionCount: true } });
                             }}
                           />
                         </label>
@@ -987,7 +990,15 @@ export default function App() {
                             ? "不计分"
                             : `${req()?.targetScore} 分`}
                         </span>
+                        <div class="assembly-type-summary" aria-label="题型安排">
+                          <For each={typeIds.filter(type => req()?.counts?.[type] > 0)}>
+                            {type => <span>{typeLabels[type]} {req().counts[type]} 题</span>}
+                          </For>
+                        </div>
                       </div>
+                      <Show when={req()?.quantityPlan?.source === "model_suggestion" && typeIds.every(type => req().quantityPlan.counts?.[type] === req().counts?.[type])}>
+                        <p class="quantity-plan-reason"><span>AI 配比建议</span>{req().quantityPlan.rationale}</p>
+                      </Show>
                       <details>
                         <summary>安排说明</summary>
                         <dl class="explanation-list">

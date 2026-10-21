@@ -20,6 +20,7 @@ import {
 import { operationId, purposeLabel, purposes, request } from "./bridge";
 import { ErrorBanner, Modal, Popover } from "./ui";
 import { ScopeTree } from "./ScopeTree";
+import { composerRequirements } from "./composer-requirements";
 
 type Mention = { start: number; end: number; query: string };
 const CARET_ANCHOR = "\u200b";
@@ -344,11 +345,9 @@ export function Composer(props: {
   }
   function submit() {
     if (props.busy || !scope().length) return;
-    const { title: defaultTitle, ...preset } = defaults();
     props.onSubmit(
       {
-        ...preset,
-        ...props.initial,
+        ...composerRequirements(defaults(), props.initial, scope(), text()),
         subject: "math",
         mainScope: scope(),
         learnedScope: scope(),

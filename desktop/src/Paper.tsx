@@ -23,6 +23,7 @@ import { purposeLabel, typeTitles } from "./bridge";
 import { AdaptiveOptions } from "./AdaptiveOptions";
 import { choicePresentation } from "./choice-presentation";
 import { partDisplayLabel } from "./part-presentation";
+import { slotDifficulty } from "./assembly-details";
 
 export function MathText(props: { text: any }) {
   // The existing native PDF layout is versioned separately. These readability
@@ -239,6 +240,7 @@ export function QuestionBody(props: {
   showPoints?: boolean;
   hideMissingTeacherMaterials?: boolean;
   hideSource?: boolean;
+  difficultyLabel?: string;
 }) {
   const presentation = () =>
     questionSourcePresentation(props.question, props.manifest);
@@ -279,6 +281,11 @@ export function QuestionBody(props: {
             <Show when={!props.hideSource}>
               <span class="question-source" title={presentation().caption}>
                 （{presentation().label}）
+              </span>
+            </Show>
+            <Show when={props.difficultyLabel}>
+              <span class="question-difficulty" title="题目内容估计，未经学生作答标定">
+                （难度：{props.difficultyLabel}）
               </span>
             </Show>
             <RichText text={choices().stem} question={props.question} />
@@ -431,6 +438,10 @@ export function PaperSheet(props: {
               points={slot.points}
               showPoints={req().scoringMode !== "none"}
               teacher={props.kind === "teacher"}
+              hideSource={props.kind !== "teacher"}
+              difficultyLabel={props.kind === "teacher" ? slotDifficulty(
+                slot, req(), props.draft?.baseline?.questionIndexSnapshot,
+              ).estimate : undefined}
             />
           </article>
         )}

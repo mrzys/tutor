@@ -423,7 +423,7 @@ mod tests {
             b"externally changed simulated settings"
         );
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[test]
     fn credentials_are_encrypted_redacted_preserved_and_explicitly_cleared() {
         let dir = tempfile::tempdir().unwrap();
@@ -453,7 +453,7 @@ mod tests {
                 .unwrap()
         );
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[test]
     fn corrupted_encrypted_key_requires_explicit_repair_and_keeps_a_backup() {
         let dir = tempfile::tempdir().unwrap();

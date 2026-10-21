@@ -464,6 +464,130 @@ fn manual_draft_create(
 fn supply(pool: &[Value], slots: &[Value], r: &Value, config: &Value) -> Value {
     json!({"ready":pool.len(),"slotSupply":slots.iter().map(|slot|{let c=candidates(pool,slot,r,config,&[]);json!({"slotId":slot["slotId"],"eligibleCount":c.iter().filter(|x|s(x,"status")=="eligible").count(),"unknownCount":c.iter().filter(|x|s(x,"status")=="unknown").count(),"relatedCount":c.iter().filter(|x|s(x,"status")=="related").count(),"readFailures":[]})}).collect::<Vec<_>>()})
 }
+// Type-level reference supply before the teacher confirms a split. Count real,
+// version-checked questions under the current scope and learned boundary, with
+// duplicate groups counted once. A later task/goal assignment may reduce supply.
+pub(crate) fn intake_supply(store: &Store, r: &Value, config: &Value) -> AppResult<Value> {
+    let mut reference = r.clone();
+    reference.as_object_mut().unwrap().remove("typeConstraints");
+    let requirements = intake::normalize(store, &reference)?;
+    let pool = store.bank.questions()?;
+    let mut by_type = serde_json::Map::new();
+    for kind in TYPES {
+        let mut eligible = HashSet::new();
+        let mut unknown = HashSet::new();
+        for question in pool.iter().filter(|q| s(q, "questionType") == kind) {
+            let Some(annotation) =
+                config["assemblyIndex"]["entries"]
+                    .as_array()
+                    .and_then(|entries| {
+                        entries
+                            .iter()
+                            .find(|entry| entry["questionId"] == question["questionId"])
+                    })
+            else {
+                continue;
+            };
+            let mut unresolved = false;
+            for task_id in strings(&annotation["tasks"]) {
+                let Ok(task) = task(config, &task_id) else {
+                    continue;
+                };
+                if s(&task, "questionType") != kind
+                    || !intake::overlaps(&task["sectionIds"], &requirements["mainScope"])
+                {
+                    continue;
+                }
+                let candidate = assess(
+                    question,
+                    &json!({"taskId":task_id,"goalIds":[]}),
+                    &requirements,
+                    config,
+                    &HashSet::new(),
+                    &HashSet::new(),
+                );
+                if s(&candidate, "status") == "eligible" {
+                    eligible.insert(s(&candidate, "duplicateGroup").to_owned());
+                    unresolved = false;
+                    break;
+                }
+                unresolved |= s(&candidate, "status") == "unknown";
+            }
+            if unresolved {
+                unknown.insert(s(question, "questionId").to_owned());
+            }
+        }
+        by_type.insert(
+            kind.into(),
+            json!({"eligibleCount":eligible.len(),"unknownCount":unknown.len()}),
+        );
+    }
+    Ok(
+        json!({"byType":by_type,"basis":"verified_bank_scope_and_learned_boundary","limitation":"题型供给为去重后的参考上限；未核实题不计入可用量，后续具体考查任务、教学目标和整卷去重仍可能产生缺口。"}),
+    )
+}
+fn blueprint_model_context(pool: &[Value], slots: &[Value], r: &Value, config: &Value) -> Value {
+    // Keep every legal task, including tasks without supply. Import review,
+    // provenance and scoring metadata do not help choose teaching targets.
+    let tasks: Vec<_> = list(&config["tasks"])
+        .iter()
+        .filter(|t| {
+            r["counts"][s(t, "questionType")].as_u64().unwrap_or(0) > 0
+                && intake::overlaps(&t["sectionIds"], &r["mainScope"])
+        })
+        .map(|t| json!({"id":t["id"],"label":t["label"],"questionType":t["questionType"],"sectionIds":t["sectionIds"]}))
+        .collect();
+    let reference_slots: Vec<_> = slots
+        .iter()
+        .map(|slot| json!({"taskId":slot["taskId"],"goalIds":slot["goalIds"]}))
+        .collect();
+    let slot_supply: Vec<_> = list(&supply(pool, slots, r, config)["slotSupply"])
+        .iter()
+        .map(|row| json!({"eligibleCount":row["eligibleCount"],"unknownCount":row["unknownCount"],"relatedCount":row["relatedCount"]}))
+        .collect();
+    intake::model_context(
+        &json!({"requirements":r,"tasks":tasks,"slots":reference_slots,"supply":{"referenceSlotSupply":slot_supply}}),
+    )
+}
+fn model_blueprint_slots(output: &Value, config: &Value) -> AppResult<Vec<Value>> {
+    let generated = output["slots"]
+        .as_array()
+        .ok_or_else(|| invalid("AI 未返回有效题位规划。"))?;
+    generated
+        .iter()
+        .enumerate()
+        .map(|(index, slot)| {
+            if !slot.is_object() {
+                return Err(invalid("AI 未返回有效题位规划。"));
+            }
+            let t = task(config, s(slot, "taskId"))?;
+            // Older model responses may include the type. Reject conflicting
+            // values rather than silently repairing an inconsistent response.
+            if slot.get("questionType").is_some_and(|kind| kind != &t["questionType"]) {
+                return Err(invalid("题型与考查任务不匹配。"));
+            }
+            Ok(intake::merge(slot, &json!({"slotId":format!("slot-{}",index+1),"number":index+1,"questionType":t["questionType"],"points":0,"partPoints":[]})))
+        })
+        .collect()
+}
+fn allocate_plan_points(slots: &mut [Value], r: &Value, config: &Value) -> AppResult<()> {
+    let weights: Vec<u64> = slots
+        .iter()
+        .map(|slot| match s(slot, "questionType") {
+            "single_choice" => 8,
+            "multiple_choice" => 10,
+            "fill_blank" => 10,
+            _ => 16,
+        })
+        .collect();
+    let allocations = intake::distribute(r["targetScore"].as_u64().unwrap_or(0), &weights);
+    for (i, slot) in slots.iter_mut().enumerate() {
+        let t = task(config, s(slot, "taskId"))?;
+        slot["points"] = json!(allocations[i]);
+        slot["partPoints"] = parts(t, allocations[i]);
+    }
+    Ok(())
+}
 fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
     let config = store.bank.config()?;
     let r = intake::normalize(store, &input["requirements"])?;
@@ -673,29 +797,16 @@ fn plan(
     match s(input, "mode") {
         "rule" => {}
         "llm" => {
-            let output=model.propose("blueprint",&intake::model_context(&json!({"requirements":r,"tasks":config["tasks"],"supply":supply(&pool,&slots,&r,&config),"slots":slots})),cancel)?;
-            let generated = output["slots"]
-                .as_array()
-                .ok_or_else(|| invalid("AI 未返回有效题位规划。"))?;
-            slots=generated.iter().enumerate().map(|(i,v)|intake::merge(v,&json!({"slotId":format!("slot-{}",i+1),"number":i+1,"points":0,"partPoints":[]}))).collect();
+            let output = model.propose(
+                "blueprint",
+                &blueprint_model_context(&pool, &slots, &r, &config),
+                cancel,
+            )?;
+            slots = model_blueprint_slots(&output, &config)?;
         }
         _ => return Err(invalid("请明确选择 AI 规划或规则预设。")),
     }
-    let weights: Vec<u64> = slots
-        .iter()
-        .map(|slot| match s(slot, "questionType") {
-            "single_choice" => 8,
-            "multiple_choice" => 10,
-            "fill_blank" => 10,
-            _ => 16,
-        })
-        .collect();
-    let allocations = intake::distribute(r["targetScore"].as_u64().unwrap_or(0), &weights);
-    for (i, slot) in slots.iter_mut().enumerate() {
-        let t = task(&config, s(slot, "taskId"))?;
-        slot["points"] = json!(allocations[i]);
-        slot["partPoints"] = parts(t, allocations[i]);
-    }
+    allocate_plan_points(&mut slots, &r, &config)?;
     check_cancel(cancel)?;
     check_blueprint(
         store,
@@ -1693,6 +1804,148 @@ mod tests {
                 rusqlite::params![question.to_string(), s(question, "questionId")],
             )
             .unwrap();
+    }
+    #[test]
+    fn simulated_blueprint_context_keeps_all_legal_tasks_without_import_metadata() {
+        let requirements = json!({"mainScope":["1.1"],"counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0},"teachingGoals":[{"id":"required-goal","priority":"required","observable":"模拟必须目标","knowledgeScope":["1.1"]}],"student":{"name":"不得发送"}});
+        let config = json!({"tasks":[
+            {"id":"reference-task","label":"模拟参考任务","questionType":"single_choice","sectionIds":["1.1"],"partIds":[],"review":{"summary":"私有审核说明"},"sourceRefs":["私有来源"]},
+            {"id":"no-supply-task","label":"模拟暂无供给的合法任务","questionType":"single_choice","sectionIds":["1.1"],"partWeights":[1],"importId":"私有导入身份","reviewedBy":"私有审核者"},
+            {"id":"outside-scope","label":"模拟范围外任务","questionType":"single_choice","sectionIds":["1.2"]},
+            {"id":"unused-type","label":"模拟零题量题型任务","questionType":"free_response","sectionIds":["1.1"]}
+        ]});
+        let slots = vec![
+            json!({"slotId":"slot-1","number":1,"taskId":"reference-task","taskLabel":"模拟参考任务","questionType":"single_choice","goalIds":["required-goal"],"points":0,"partPoints":[]}),
+        ];
+        let context = blueprint_model_context(&[], &slots, &requirements, &config);
+        assert_eq!(
+            context["tasks"],
+            json!([
+                {"id":"reference-task","label":"模拟参考任务","questionType":"single_choice","sectionIds":["1.1"]},
+                {"id":"no-supply-task","label":"模拟暂无供给的合法任务","questionType":"single_choice","sectionIds":["1.1"]}
+            ])
+        );
+        assert_eq!(
+            context["slots"],
+            json!([{"taskId":"reference-task","goalIds":["required-goal"]}])
+        );
+        assert_eq!(
+            context["supply"],
+            json!({"referenceSlotSupply":[{"eligibleCount":0,"unknownCount":0,"relatedCount":0}]})
+        );
+        assert_eq!(
+            context["requirements"],
+            intake::model_context(&requirements)
+        );
+        assert_eq!(
+            context["requirements"]["teachingGoals"],
+            requirements["teachingGoals"]
+        );
+        assert!(context.to_string().chars().count() < json!({"requirements":requirements,"tasks":config["tasks"],"slots":slots,"supply":supply(&[], &slots, &requirements, &config)}).to_string().chars().count());
+    }
+    #[test]
+    fn simulated_compact_model_slots_backfill_types_and_preserve_blueprint_checks() {
+        let (_dir, store, model) = simulated_store();
+        let mut blueprint = plan(
+            &store,
+            &json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":"rule"}),
+            &model,
+            &AtomicBool::new(false),
+        ).unwrap();
+        blueprint["requirements"]["teachingGoals"] =
+            json!([simulated_goal("required", "answer", "1.1")]);
+        let config = store.bank.config().unwrap();
+        let generated = json!({"slots":[{"taskId":blueprint["slots"][0]["taskId"],"goalIds":["simulated-goal"],"planningReason":"模拟安排依据"}]});
+        blueprint["slots"] = json!(model_blueprint_slots(&generated, &config).unwrap());
+        let checked = check_blueprint(&store, &blueprint).unwrap();
+        assert_eq!(checked["slots"][0]["questionType"], "single_choice");
+        assert_eq!(checked["slots"][0]["goalIds"], json!(["simulated-goal"]));
+        assert_eq!(checked["slots"][0]["planningReason"], "模拟安排依据");
+
+        let mut legacy = generated.clone();
+        legacy["slots"][0]["questionType"] = json!("single_choice");
+        assert_eq!(
+            model_blueprint_slots(&legacy, &config).unwrap(),
+            list(&blueprint["slots"])
+        );
+        legacy["slots"][0]["questionType"] = json!("free_response");
+        assert!(model_blueprint_slots(&legacy, &config).is_err());
+        legacy["slots"][0]["questionType"] = Value::Null;
+        assert!(model_blueprint_slots(&legacy, &config).is_err());
+        assert!(model_blueprint_slots(&json!({"slots":[null]}), &config).is_err());
+        assert!(
+            model_blueprint_slots(&json!({"slots":[{"taskId":"invented-task"}]}), &config).is_err()
+        );
+
+        blueprint["slots"][0]["goalIds"] = json!([]);
+        assert!(
+            check_blueprint(&store, &blueprint)
+                .unwrap_err()
+                .message
+                .contains("必须教学目标")
+        );
+        blueprint["slots"] = json!(model_blueprint_slots(&generated, &config).unwrap());
+        let extra = blueprint["slots"][0].clone();
+        blueprint["slots"]
+            .as_array_mut()
+            .unwrap()
+            .push(intake::merge(
+                &extra,
+                &json!({"slotId":"slot-2","number":2}),
+            ));
+        assert!(
+            check_blueprint(&store, &blueprint)
+                .unwrap_err()
+                .message
+                .contains("题量不一致")
+        );
+    }
+    #[test]
+    fn simulated_seed_compact_blueprints_validate_twenty_and_sixty_slots() {
+        let (_dir, store, model) = simulated_store();
+        let config = store.bank.config().unwrap();
+        let pool = store.bank.questions().unwrap();
+        for count in [20, 60] {
+            let (single_choice, fill_blank, free_response) = if count == 20 {
+                (12, 4, 4)
+            } else {
+                (30, 15, 15)
+            };
+            let blueprint = plan(
+                &store,
+                &json!({"requirements":{"counts":{"single_choice":single_choice,"multiple_choice":0,"fill_blank":fill_blank,"free_response":free_response},"targetDifficultyLevel":"medium_hard"},"mode":"rule"}),
+                &model,
+                &AtomicBool::new(false),
+            ).unwrap();
+            let requirements = blueprint["requirements"].clone();
+            let references = list(&blueprint["slots"]);
+            let compact_context =
+                blueprint_model_context(&pool, &references, &requirements, &config);
+            let old_context = intake::model_context(
+                &json!({"requirements":requirements,"tasks":config["tasks"],"supply":supply(&pool,&references,&requirements,&config),"slots":references}),
+            );
+            let old_bytes = old_context.to_string().len();
+            let compact_bytes = compact_context.to_string().len();
+            eprintln!(
+                "simulated blueprint slots={count} catalogTasks={} projectedTasks={} oldInputBytes={old_bytes} compactInputBytes={compact_bytes}",
+                list(&config["tasks"]).len(),
+                list(&compact_context["tasks"]).len()
+            );
+            assert!(compact_bytes < old_bytes);
+            assert_eq!(compact_context["requirements"], requirements);
+
+            // Simulate the compact model response through the same decoding,
+            // deterministic scoring and validation used by the planning path.
+            let generated = json!({"slots":references.iter().map(|slot|json!({"taskId":slot["taskId"],"goalIds":slot["goalIds"]})).collect::<Vec<_>>()});
+            let mut slots = model_blueprint_slots(&generated, &config).unwrap();
+            allocate_plan_points(&mut slots, &requirements, &config).unwrap();
+            let checked =
+                check_blueprint(&store, &json!({"requirements":requirements,"slots":slots}))
+                    .unwrap();
+            assert_eq!(checked["requirements"], requirements);
+            assert_eq!(checked["plannedStats"]["questionCount"], count);
+            assert_eq!(checked["slots"], blueprint["slots"]);
+        }
     }
     #[test]
     fn simulated_five_level_targets_validate_and_inherit_without_guessing_legacy_numbers() {
