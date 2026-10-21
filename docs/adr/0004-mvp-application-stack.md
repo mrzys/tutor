@@ -1,6 +1,6 @@
 # ADR-0004：MVP 应用框架与模型接入
 
-- 状态：已采纳
+- 状态：主应用栈已由 [ADR-0005](0005-local-desktop-solid-rust.md) 取代（2026-10-17）；本文保留网页版本的历史决策。
 - 日期：2026-10-10
 - 已明确约束：使用用户提供的 [DESGIN.md](../../DESGIN.md)，前端 React + Vite + Lucide，数据库 SQLite。
 - 选型：后端 NestJS + TypeScript，使用默认 Express 适配器；模型接入 Vercel AI SDK；SQLite 使用 better-sqlite3、SQL migrations 与 Repository。

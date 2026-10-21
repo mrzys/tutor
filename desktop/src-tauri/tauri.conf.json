@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "智教",
+  "version": "0.1.33",
+  "identifier": "fun.mrzys.tutor",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "智教",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 800,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; worker-src 'self' blob:",
+      "capabilities": [
+        "main"
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "useLocalToolsDir": true,
+    "shortDescription": "本地教师组卷工作台",
+    "category": "Education",
+    "windows": {
+      "nsis": {
+        "languages": [
+          "SimpChinese"
+        ],
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

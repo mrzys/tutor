@@ -1,0 +1,101 @@
+/* Workspace dialogs keep their frame stable while tabs or filters change. */
+.modal.modal-stable {
+  height: min(780px, 90dvh);
+  max-height: calc(100dvh - 48px);
+  overflow: hidden;
+}
+.modal.modal-stable:not(.modal-wide) {
+  height: min(520px, 90dvh);
+}
+
+.modal.modal-stable .modal-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  background: #0006;
+  animation: fade-in 0.16s;
+}
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  width: min(620px, 100%);
+  height: 100dvh;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--surface, #fff);
+  border-left: 1px solid var(--line, #e5e5e5);
+  box-shadow: -12px 0 40px #0002;
+  animation: drawer-slide-in 0.18s ease-out;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+  padding: 18px 20px 14px 26px;
+  border-bottom: 1px solid var(--line, #e5e5e5);
+}
+
+.drawer-header h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.drawer-content {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 26px 28px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+.drawer-footer {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px 26px;
+  border-top: 1px solid var(--line, #e5e5e5);
+}
+
+@keyframes drawer-slide-in {
+  from { transform: translateX(32px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 760px) {
+  .modal.modal-stable {
+    height: 92dvh;
+    max-height: calc(100dvh - 28px);
+  }
+  .modal.modal-stable:not(.modal-wide) {
+    height: min(520px, 92dvh);
+  }
+  .drawer-header { padding: 12px 12px 12px 20px; }
+  .drawer-content { padding: 16px 20px 24px; }
+  .drawer-footer { padding: 14px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-backdrop,
+  .drawer,
+  .modal-backdrop.modal-backdrop,
+  .modal.modal { animation: none; }
+}

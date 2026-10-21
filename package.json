@@ -6,46 +6,16 @@
   "engines": {
     "node": ">=24"
   },
-  "dependencies": {
-    "@ai-sdk/openai-compatible": "3.0.67",
-    "@nestjs/common": "12.1.2",
-    "@nestjs/core": "12.1.2",
-    "@nestjs/platform-express": "12.1.2",
-    "ai": "7.0.137",
-    "better-sqlite3": "13.0.3",
-    "dotenv": "18.0.7",
-    "katex": "0.19.0",
-    "lucide-react": "1.55.0",
-    "mathjax-full": "3.2.2",
-    "pdfjs-dist": "6.4.299",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2",
-    "zod": "4.6.5"
-  },
-  "devDependencies": {
-    "@types/better-sqlite3": "9.6.0",
-    "@types/express": "5.0.6",
-    "@types/node": "26.6.5",
-    "tsx": "4.23.15",
-    "typescript": "7.0.2",
-    "vite": "8.3.4"
-  },
-  "overrides": {
-    "@xmldom/xmldom": "0.9.12"
-  },
   "scripts": {
-    "analysis:receive": "node scripts/receive-analysis.mjs",
-    "analysis:check": "python scripts/verify_pedagogy_analysis.py",
-    "dev": "node scripts/dev.mjs",
-    "build": "npm run typecheck && vite build",
-    "typecheck": "tsc -p tsconfig.server.json",
-    "start": "node --import tsx scripts/server.mjs",
-    "bank:list": "node scripts/question-bank.mjs list",
-    "bank:get": "node scripts/question-bank.mjs get",
-    "bank:check": "node scripts/question-bank.mjs check",
-    "blueprint:check": "node scripts/check-blueprint-supply.mjs",
-    "test": "node --import tsx --test tests/*.test.mjs"
+    "dev": "npm --prefix desktop run desktop:dev",
+    "build": "node scripts/build-desktop.mjs",
+    "typecheck": "npm --prefix desktop run typecheck",
+    "start": "npm --prefix desktop run desktop:dev",
+    "pretest": "npm run test:ui",
+    "test": "cargo test --manifest-path desktop/src-tauri/Cargo.toml --no-default-features --lib",
+    "test:ui": "npm --prefix desktop run test:blueprint",
+    "test:tools": "node --test scripts/tests/*.test.mjs",
+    "desktop:build": "npm --prefix desktop run desktop:build",
+    "desktop:install": "npm ci --prefix desktop"
   }
 }

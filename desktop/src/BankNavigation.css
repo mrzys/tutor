@@ -1,0 +1,130 @@
+/* Bank reading workspace uses the available window, independently of paper width. */
+.main-panel.bank-main-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.bank-main-panel .main-content.bank-content {
+  flex: 1;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 24px 28px;
+}
+.bank-main-panel .desktop-bank {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  flex: 1;
+}
+.bank-main-panel .desktop-bank .bank-browser {
+  grid-template-columns: clamp(300px, 22vw, 380px) minmax(0, 1fr);
+  gap: 0;
+}
+.bank-main-panel .bank-navigation-slot {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  padding-right: 20px;
+  border-right: 1px solid var(--line);
+}
+.bank-navigation-slot .catalog-panel {
+  position: static;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+.bank-navigation-slot .catalog-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.bank-navigation-slot .catalog-tabs {
+  flex-shrink: 0;
+  margin: 0;
+}
+.bank-navigation-slot .catalog-tabs button {
+  min-height: 48px;
+  font-size: 15px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+}
+.bank-navigation-slot .catalog-tabs button[aria-selected="true"] { border-bottom-color: #171717; }
+.bank-navigation-slot .catalog-search {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 44px;
+  margin: 14px 0 12px;
+  border-radius: 6px;
+}
+.bank-navigation-slot .catalog-search svg { flex-shrink: 0; }
+.bank-navigation-slot .catalog-search input { font-size: 14px; }
+.bank-navigation-slot .catalog-note {
+  flex-shrink: 0;
+  margin: 0 6px 12px;
+  font-size: 13px;
+}
+.bank-navigation-slot .catalog-tree {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 6px 16px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #b9b9b9 transparent;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+.bank-navigation-slot .catalog-node {
+  min-height: 44px;
+  gap: 7px;
+  padding: 10px 7px 10px calc(7px + var(--tree-level, 0) * 14px);
+  font-size: 15px;
+  line-height: 1.5;
+  border: 0;
+  font-weight: 400;
+  background: transparent;
+  border-radius: 6px;
+}
+.bank-navigation-slot .catalog-arrow { width: 16px; align-self: flex-start; margin-top: 3px; }
+.bank-navigation-slot .catalog-label { min-width: 0; overflow-wrap: anywhere; }
+.bank-navigation-slot .catalog-node small {
+  flex-shrink: 0;
+  min-width: 22px;
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.bank-navigation-slot .catalog-node.active { background: #f1f2f1; }
+.bank-navigation-slot .catalog-node:hover { background: #f7f7f7; }
+.sidebar-collapsed .bank-content .question-bank-heading > div:first-child { padding-left: 42px; }
+@media (min-width: 761px) and (max-width: 1200px) {
+  .bank-main-panel .main-content.bank-content { padding: 22px 20px; }
+  .bank-main-panel .desktop-bank .bank-browser { grid-template-columns: 280px minmax(0, 1fr); }
+  .bank-main-panel .bank-navigation-slot { padding-right: 14px; }
+}
+@media (max-width: 760px) {
+  .main-panel.bank-main-panel { display: block; overflow-y: auto; }
+  .bank-main-panel .main-content.bank-content { display: block; height: auto; padding: 18px 16px 28px; }
+  .bank-main-panel .desktop-bank .bank-browser { grid-template-columns: minmax(0, 1fr); }
+  .bank-main-panel .bank-navigation-slot { display: block; border: 0; padding: 0; }
+  .bank-navigation-slot .catalog-panel { display: block; border: 1px solid var(--line); border-radius: 6px; }
+  .bank-navigation-slot .catalog-mobile-toggle { font-size: 15px; min-height: 48px; }
+  .bank-navigation-slot .catalog-content { display: none; padding: 0 10px; }
+  .bank-navigation-slot .catalog-mobile-open .catalog-content { display: flex; }
+  .bank-navigation-slot .catalog-tree { flex: none; max-height: min(50dvh, 420px); }
+}

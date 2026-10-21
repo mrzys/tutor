@@ -1,0 +1,31 @@
+{
+  "name": "tutor-desktop",
+  "version": "0.1.33",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 1420 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 1420 --strictPort",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build --no-bundle",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --no-default-features",
+    "test:blueprint": "node --experimental-strip-types --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.4",
+    "solid-js": "1.9.17",
+    "lucide-solid": "1.59.0",
+    "katex": "0.19.0",
+    "pdfjs-dist": "6.4.299"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.3",
+    "@types/katex": "0.16.8",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vite-plugin-solid": "2.11.14"
+  }
+}

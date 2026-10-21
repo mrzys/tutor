@@ -20,6 +20,14 @@ __pycache__/
 *.sqlite3
 .env.*
 !.env.example
+/desktop/src-tauri/target/
+/desktop/src-tauri/gen/
+/desktop/src-tauri/icons/android/
+/desktop/src-tauri/icons/ios/
+/deliveries/
+/docs/review/**/*.png
+/docs/review/**/*.jpg
+/docs/review/**/*.jpeg
 
 # Downloaded source documents stay local; keep provenance README files.
 /materials/**/*.pdf

@@ -1,0 +1,7 @@
+.guide-entry { min-height: 44px; color: var(--muted); gap: 8px; }
+.guide-sidebar-entry { flex-shrink: 0; justify-content: flex-start; padding: 8px 12px; margin-top: 8px; }
+.guide-context-entry { font-size: 14px; margin-top: 0; }
+.guide-heading-actions { display: flex; flex-shrink: 0; align-items: center; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .guide-heading-actions { width: 100%; justify-content: space-between; }
+}
