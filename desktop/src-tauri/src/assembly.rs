@@ -3056,7 +3056,7 @@ mod tests {
         let cancel = AtomicBool::new(false);
         assert_eq!(
             pool.len(),
-            358,
+            378,
             "migration regression uses the exported ready bank, not a teacher adoption case"
         );
         let mut chosen = 0;

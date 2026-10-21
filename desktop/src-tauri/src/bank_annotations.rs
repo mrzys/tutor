@@ -381,7 +381,7 @@ mod tests {
         assert_eq!(actual_ids, expected_ids);
         assert_eq!(manifest["sourceMigrationId"], seed["migration"]["id"]);
         let dir = tempfile::tempdir().unwrap();
-        let store = Store::open(dir.path(), &seed).unwrap();
+        let store = Store::open_with_annotation_manifest(dir.path(), &seed, Some(&manifest)).unwrap();
         assert!(store.bank_warning.is_none(), "{:?}", store.bank_warning);
         assert!(store.profile().unwrap().is_none());
         let actual_questions = store.bank.questions().unwrap();
@@ -423,7 +423,7 @@ mod tests {
         assert_eq!(count, 1);
         assert_eq!(manifest_hash, hash_json(&manifest));
         drop(store);
-        let reopened = Store::open(dir.path(), &seed).unwrap();
+        let reopened = Store::open_with_annotation_manifest(dir.path(), &seed, Some(&manifest)).unwrap();
         assert!(
             reopened.bank_warning.is_none(),
             "{:?}",

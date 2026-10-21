@@ -263,7 +263,7 @@ pub(crate) fn verify_embedded_assets(question: &Value) -> AppResult<()> {
 // catalogue. Local additions survive; competing edits to the same fact fail
 // rather than silently choosing either side. Lists of identifiable records are
 // merged by identity, never by their changing display positions.
-fn merge_config(base: &Value, local: &Value, incoming: &Value) -> AppResult<Value> {
+pub(crate) fn merge_config(base: &Value, local: &Value, incoming: &Value) -> AppResult<Value> {
     if local == incoming || incoming == base {
         return Ok(local.clone());
     }
@@ -614,7 +614,7 @@ fn apply_migration(transaction: &rusqlite::Transaction<'_>, seed: &Value) -> App
     Ok(())
 }
 
-fn verify_question(question: &Value) -> AppResult<()> {
+pub(crate) fn verify_question(question: &Value) -> AppResult<()> {
     let id = question["questionId"].as_str().unwrap_or_default();
     if !question.is_object()
         || question["schemaVersion"] != 1

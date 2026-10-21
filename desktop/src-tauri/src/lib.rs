@@ -2,6 +2,7 @@ pub mod annotations;
 pub mod assembly;
 pub mod bank;
 pub mod bank_annotations;
+pub mod bank_supplement;
 pub mod error;
 pub mod imports;
 pub mod intake;
@@ -768,7 +769,7 @@ mod tests {
         let initial = runtime
             .request("bank_search", &json!({"pageSize":12}), &cancel)
             .unwrap();
-        assert_eq!(initial["total"], 358);
+        assert_eq!(initial["total"], 378);
         for (category, field) in [
             ("difficulty", "difficulty"),
             ("abilities", "ability"),
@@ -974,7 +975,7 @@ mod tests {
         );
         assert_eq!(
             runtime.request("bank_search", &json!({}), &cancel).unwrap()["total"],
-            358
+            378
         );
         assert_eq!(
             runtime
@@ -1030,7 +1031,7 @@ mod tests {
         let catalog = runtime
             .request("bank_catalog", &json!({}), &cancel)
             .unwrap();
-        assert_eq!(catalog["readyCount"], 358);
+        assert_eq!(catalog["readyCount"], 378);
         assert_eq!(catalog["textbooks"].as_array().unwrap().len(), 5);
         fn count(nodes: &Value) -> usize {
             nodes
@@ -1107,7 +1108,7 @@ mod tests {
         );
         assert_eq!(
             runtime.request("bank_search", &json!({}), &cancel).unwrap()["total"],
-            358
+            378
         );
     }
     #[test]

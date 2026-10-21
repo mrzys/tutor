@@ -7,6 +7,7 @@
 | `build-desktop.mjs` | 根构建命令，检查桌面前端和 Rust |
 | `export-desktop-bank.mjs` | 从显式指定的旧库只读导出共享白名单及已校验素材，不导出个人记录 |
 | `export-desktop-annotations.mjs` | 只读导出题目标注，核验版本与哈希 |
+| `export-desktop-supplement.mjs` | 从明确指定的本机共享题库只读导出已发布新增题、内嵌素材和原始发布凭据；不打开个人库，输出不可覆盖 |
 | `prepare-legacy-exam-bundles.mjs` | 准备明确来源的旧整卷材料，不冒充真实文件上传流程 |
 | `lib/integrity.mjs` | 迁移工具使用的规范 JSON 与哈希，不进入浏览器 |
 | `tests/` | 模拟隔离维护回归，执行 `npm run test:tools` |

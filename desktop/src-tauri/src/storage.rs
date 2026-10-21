@@ -68,7 +68,20 @@ fn student_notes(input: &Value) -> AppResult<String> {
 impl Store {
     pub fn open(data_dir: &Path, seed: &Value) -> AppResult<Self> {
         let manifest = crate::bank_annotations::bundled_for_seed(seed)?;
-        Self::open_with_annotation_manifest(data_dir, seed, manifest.as_ref())
+        let mut store = Self::open_with_annotation_manifest(data_dir, seed, manifest.as_ref())?;
+        if store.bank_warning.is_none()
+            && let Err(cause) = crate::bank_supplement::apply_bundled(&store.bank, seed)
+        {
+            let warning = format!(
+                "内置题目补充未完成：{} 当前题库、个人记录与原试卷均已保留。",
+                cause.message
+            );
+            store.bank_warning = Some(match store.bank_warning {
+                Some(previous) => format!("{previous} {warning}"),
+                None => warning,
+            });
+        }
+        Ok(store)
     }
     pub fn open_with_annotation_manifest(
         data_dir: &Path,

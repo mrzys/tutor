@@ -4,6 +4,16 @@ SolidJS + Tauri 2 + Rust，首个交付目标为 Windows。首次使用只设置
 无登录、注册、邮箱、管理员或远程个人数据服务。
 仓库只维护桌面应用；token、来源显示与富文本解析均在 `desktop/src/`，不再引用旧网页或 Node 服务。
 
+0.1.34 内置 378 道已入库题目：原种子 358 道保留不变，另以 `bank-supplement-v1.json`
+追加本机已发布的 20 道题与 6 个图片素材，原始发布凭据和映射一并保留。
+补充包在标注升级后事务应用，重复启动幂等；本地冲突回滚并显示提示，不覆盖已有数据。
+本次按用户明确要求使用 `npm --prefix desktop run tauri -- build --bundles nsis` 生成安装包，
+常规 `npm run desktop:build` 仍只生成 EXE。
+
+开发调试／维护二进制需显式启用 Cargo 的 `dev-tools` feature，例如
+`cargo build --manifest-path desktop/src-tauri/Cargo.toml --no-default-features --features dev-tools --bin tutor-desktop-driver`。
+默认桌面构建及安装包不启用该 feature，只分发正式主程序。
+
 ## 开发与构建
 
 需要 Node.js 24、Rust 1.90+、Windows C++ 构建工具及 WebView2。
