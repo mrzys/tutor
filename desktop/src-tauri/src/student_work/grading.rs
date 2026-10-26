@@ -171,12 +171,18 @@ pub(super) fn expected_items(record: &Value) -> AppResult<Vec<Value>> {
         .is_some_and(|mode| mode != "none");
     let mut expected = vec![];
     let mut identities = HashSet::new();
+    let mut printed_number = 0u64;
     for slot in rows(&paper["draft"]["slots"]) {
         let sid = s(&slot, "slotId");
         if sid.is_empty() {
             return Err(err("integrity_error", "冻结成卷题位身份缺失。"));
         }
         let question = &slot["question"];
+        // Final paper/PDF projects only real questions. Keep original slot
+        // identities for persistence, and expose old numbers only as aliases.
+        if !question.is_object() { continue; }
+        printed_number += 1;
+        let original_number = slot["number"].as_u64().unwrap_or(printed_number);
         let parts = rows(&question["student"]["parts"]);
         let target_parts = if parts.is_empty() {
             vec![Value::Null]
@@ -231,13 +237,31 @@ pub(super) fn expected_items(record: &Value) -> AppResult<Vec<Value>> {
             } else {
                 Value::Null
             };
-            expected.push(json!({"itemId":item_id,"slotId":sid,"partId":if pid.is_empty(){Value::Null}else{json!(pid)},"questionType":question["questionType"],"questionLabel":if pid.is_empty(){slot["number"].to_string()}else if !s(&part,"label").is_empty(){format!("{} {}",slot["number"],s(&part,"label"))}else{format!("{}（{}）",slot["number"],part_index+1)},"questionText":format!("{}{}",s(&question["student"],"stem"),if part.is_null(){String::new()}else{format!("\n{}",s(&part,"prompt"))}),"options":question["student"]["options"],"referenceAnswer":reference,"referenceOrigin":"frozen_reference_not_official_guarantee","referenceSolutions":solutions,"maxPoints":max,"missingQuestion":!question.is_object(),"visualRequired":!rows(&question["student"]["assets"]).is_empty()||s(&question["student"],"stem").contains("asset:")}));
+            let label = |number:u64| if pid.is_empty(){number.to_string()}else if !s(&part,"label").is_empty(){format!("{} {}",number,s(&part,"label"))}else{format!("{}（{}）",number,part_index+1)};
+            let question_label=label(printed_number);
+            let original_label=label(original_number);
+            let aliases=if question_label==original_label{vec![question_label.clone()]}else{vec![question_label.clone(),original_label.clone()]};
+            expected.push(json!({"itemId":item_id,"slotId":sid,"partId":if pid.is_empty(){Value::Null}else{json!(pid)},"questionType":question["questionType"],"questionLabel":question_label,"printedNumber":printed_number,"originalSlotNumber":original_number,"originalQuestionLabel":original_label,"questionLabelAliases":aliases,"numberingBasis":"current_printed_real_questions_with_legacy_slot_aliases","questionText":format!("{}{}",s(&question["student"],"stem"),if part.is_null(){String::new()}else{format!("\n{}",s(&part,"prompt"))}),"options":question["student"]["options"],"referenceAnswer":reference,"referenceOrigin":"frozen_reference_not_official_guarantee","referenceSolutions":solutions,"maxPoints":max,"missingQuestion":false,"visualRequired":!rows(&question["student"]["assets"]).is_empty()||s(&question["student"],"stem").contains("asset:")}));
         }
     }
     if expected.is_empty() || expected.len() > 240 {
         return Err(err("invalid_work", "成卷没有可定位题目或小问数量超过240。"));
     }
+    let numbering = expected.clone();
+    for item in &mut expected {
+        item["numberingAmbiguous"] = json!(numbering.iter().any(|other| {
+            other["slotId"] != item["slotId"]
+                && ["printedNumber", "originalSlotNumber"].iter().any(|left| {
+                    ["printedNumber", "originalSlotNumber"].iter().any(|right| item[*left] == other[*right])
+                })
+        }));
+    }
     Ok(expected)
+}
+fn preserve_numbering(result: &mut Value, expected: &Value) {
+    for field in ["printedNumber","originalSlotNumber","originalQuestionLabel","questionLabelAliases","numberingBasis","numberingAmbiguous"] {
+        if let Some(value)=expected.get(field) {result[field]=value.clone();}
+    }
 }
 fn context_documents(materials: &[Value]) -> Vec<Value> {
     materials.iter().map(|m|json!({"fileId":m["fileId"],"role":m["role"],"pages":rows(&m["pages"]).iter().map(|p|json!({"page":p["page"],"text":p["text"],"blocks":rows(&p["blocks"]).iter().map(|b|json!({"id":b["id"],"type":b["type"],"text":b["text"],"bbox":b["bbox"]})).collect::<Vec<_>>()})).collect::<Vec<_>>(),"issues":m["issues"]})).collect()
@@ -281,104 +305,55 @@ pub(super) fn normalize(
         "legacy_external",
     )
 }
-fn actual_quote(e: &Value, materials: &[Value], source_preferred: bool) -> bool {
-    let quote = s(e, "quote").trim();
-    !quote.is_empty()
-        && quote.chars().count() <= 3000
-        && materials.iter().any(|m| {
-            m["fileId"] == e["fileId"]
-                && (!source_preferred || m["role"] == "source")
-                && rows(&m["pages"])
-                    .iter()
-                    .any(|p| p["page"] == e["page"] && s(p, "text").contains(quote))
-        })
+fn locate_question_quote<'a>(source: &'a str, quote: &str) -> Option<&'a str> {
+    if let Some(start) = source.find(quote) {
+        return Some(&source[start..start + quote.len()]);
+    }
+    // A model may join OCR paragraphs while quoting them. Only Unicode
+    // whitespace can differ: retain every mathematical/LaTeX/punctuation
+    // character and save the located original substring, never a rewritten quote.
+    let needle: String = quote.chars().filter(|c| !c.is_whitespace()).collect();
+    if needle.is_empty() {
+        return None;
+    }
+    let normalized: String = source.chars().filter(|c| !c.is_whitespace()).collect();
+    let normalized_start = normalized.find(&needle)?;
+    let normalized_end = normalized_start + needle.len();
+    let mut normalized_offset = 0;
+    let mut original_start = None;
+    for (offset, character) in source.char_indices() {
+        if character.is_whitespace() {
+            continue;
+        }
+        if normalized_offset == normalized_start {
+            original_start = Some(offset);
+        }
+        normalized_offset += character.len_utf8();
+        if normalized_offset == normalized_end {
+            let actual = &source[original_start?..offset + character.len_utf8()];
+            return (actual.chars().count() <= 3000).then_some(actual);
+        }
+    }
+    None
 }
-fn plausible_question_fragment(question: &str, answer: &str) -> bool {
-    let question = compact(question);
-    let answer = compact(answer);
-    if question.chars().count() < 3
-        || question == answer
-        || matches!(
-            question.as_str(),
-            "计算"
-                | "计算："
-                | "判断"
-                | "判断："
-                | "化简"
-                | "化简："
-                | "证明"
-                | "证明："
-                | "填空"
-                | "填空："
-                | "选择"
-                | "选择："
-        )
-    {
-        return false;
+fn actual_quote(e: &Value, materials: &[Value], source_preferred: bool) -> Option<Value> {
+    let quote = s(e, "quote").trim();
+    if quote.is_empty() || quote.chars().count() > 3000 {
+        return None;
     }
-    // A located number/letter/result is still an answer, not evidence that the
-    // unseen original question was recovered. This is only a conservative
-    // syntax boundary; the model must separately report actual completeness.
-    if regex::Regex::new(r"^(?:第?[0-9]+[.、:：)）])?(?:答案|答|解|结果|学生作答)[:：]")
-        .unwrap()
-        .is_match(&question)
-    {
-        return false;
-    }
-    let only_answer=regex::Regex::new(r"(?i)^(?:(?:第?[0-9]+[.、:：)）])|(?:答案|答|结果|选项|学生作答)[:：]?|解[:：])*(?:[A-D]+|[+-]?[0-9]+(?:\.[0-9]+)?(?:/[+-]?[0-9]+(?:\.[0-9]+)?)?|[a-z]=[+-]?[0-9]+(?:\.[0-9]+)?|正确|错误|对|错|true|false|[{}｛｝0-9,.，、+-]+)[.。]?$" ).unwrap();
-    if only_answer.is_match(&question) {
-        return false;
-    }
-    [
-        "求",
-        "计算",
-        "判断",
-        "已知",
-        "证明",
-        "化简",
-        "解",
-        "下列",
-        "以下",
-        "选择",
-        "填空",
-        "函数",
-        "方程",
-        "不等式",
-        "若",
-        "设",
-        "集合",
-        "比较",
-        "大小",
-        "值",
-        "几何",
-        "三角",
-        "角",
-        "长",
-        "面积",
-        "周长",
-        "体积",
-    ]
-    .iter()
-    .any(|word| question.contains(word))
-        || question.chars().any(|c| {
-            matches!(
-                c,
-                '+' | '-'
-                    | '×'
-                    | '÷'
-                    | '*'
-                    | '/'
-                    | '^'
-                    | '√'
-                    | '∈'
-                    | '⊆'
-                    | '<'
-                    | '>'
-                    | '≤'
-                    | '≥'
-                    | '='
-            )
-        })
+    materials.iter().find_map(|m| {
+        if m["fileId"] == e["fileId"] && (!source_preferred || m["role"] == "source") {
+            rows(&m["pages"]).iter().find_map(|p| {
+                if p["page"] != e["page"] {
+                    return None;
+                }
+                locate_question_quote(s(p, "text"), quote)
+                    .map(|actual| json!({"fileId":e["fileId"],"page":e["page"],"quote":actual}))
+            })
+        } else {
+            None
+        }
+    })
 }
 pub(super) fn normalize_for_source(
     raw: &Value,
@@ -426,8 +401,7 @@ pub(super) fn normalize_for_source(
         let source_present = materials.iter().any(|m| m["role"] == "source");
         let question_evidence: Vec<Value> = rows(&raw_item["questionEvidence"])
             .into_iter()
-            .filter(|e| actual_quote(e, materials, source_present))
-            .map(|e| json!({"fileId":e["fileId"],"page":e["page"],"quote":e["quote"]}))
+            .filter_map(|e| actual_quote(&e, materials, source_present))
             .collect();
         let external_question_present = if expected.is_empty() {
             let original = text(raw_item, "questionText", 30000)?;
@@ -442,7 +416,6 @@ pub(super) fn normalize_for_source(
             located
                 && (!answer_only
                     || (s(raw_item, "questionStatus") == "complete"
-                        && plausible_question_fragment(&original, &answer)
                         && question_evidence
                             .iter()
                             .any(|e| compact(s(e, "quote")).contains(&needle))))
@@ -452,6 +425,10 @@ pub(super) fn normalize_for_source(
         let unusable = force_unable.or_else(|| {
             if expected_item.is_some_and(|e| e["missingQuestion"] == true) {
                 Some("本机成卷此题位缺少原题，无法批改。")
+            } else if expected_item.is_some_and(|e| e["visualRequired"] == true && (!image_review || e["visualReviewAvailable"] == false)) {
+                Some("此题位的实际题面配图未交付给模型，保留为暂无法判断。")
+            } else if expected_item.is_some_and(|e| e["numberingAmbiguous"] == true) && question_evidence.is_empty() {
+                Some("当前连续题号与旧版题号存在歧义，缺少可定位题干引文，不能仅凭题号匹配作答。")
             } else if !external_question_present {
                 Some(if answer_only {
                     "未能可靠定位完整题干，暂无法判断；可补充原题。"
@@ -478,8 +455,6 @@ pub(super) fn normalize_for_source(
                 || judgement == "unanswered" && !answer.is_empty()
             {
                 Some("模型对空白与实际作答的描述相互矛盾，保留为暂无法判断。")
-            } else if confidence == "low" {
-                Some("模型自身置信不足，保留为暂无法判断。")
             } else {
                 None
             }
@@ -525,10 +500,14 @@ pub(super) fn normalize_for_source(
             }
         }
         output.push(json!({"itemId":id,"slotId":expected_item.map_or(Value::Null,|e|e["slotId"].clone()),"partId":expected_item.map_or(Value::Null,|e|e["partId"].clone()),"questionLabel":if let Some(e)=expected_item{e["questionLabel"].clone()}else{json!(text(raw_item,"questionLabel",200)?)},"questionText":if let Some(e)=expected_item{e["questionText"].clone()}else{json!(text(raw_item,"questionText",30000)?)},"questionStatus":if expected_item.is_some(){json!("frozen")}else if answer_only&&!external_question_present{json!(if s(raw_item,"questionStatus")=="unreadable"{"unreadable"}else{"insufficient"})}else{raw_item.get("questionStatus").cloned().unwrap_or(Value::Null)},"questionEvidence":question_evidence,"studentAnswer":answer,"referenceAnswer":expected_item.map_or(Value::Null,|e|e["referenceAnswer"].clone()),"judgement":judgement,"reason":reason,"confidence":confidence,"evidence":evidence,"maxPoints":maximum,"earnedPoints":earned}));
+        if let Some(item) = expected_item {
+            preserve_numbering(output.last_mut().unwrap(), item);
+        }
     }
     for item in expected {
         if !known.contains(s(item, "itemId")) {
             output.push(json!({"itemId":item["itemId"],"slotId":item["slotId"],"partId":item["partId"],"questionLabel":item["questionLabel"],"questionText":item["questionText"],"studentAnswer":"","referenceAnswer":item["referenceAnswer"],"judgement":"unable","reason":"模型未返回此题位的可核对结果，保留为暂无法判断。","confidence":"low","evidence":[],"maxPoints":item["maxPoints"],"earnedPoints":null}));
+            preserve_numbering(output.last_mut().unwrap(), item);
         }
     }
     if output.is_empty() {
@@ -558,8 +537,7 @@ pub(super) fn grade(
     verify(&record)?;
     let mut materials = vec![];
     let mut model_assets = vec![];
-    let mut has_visual = false;
-    let mut source_incomplete = false;
+    let mut content_limitations = vec![];
     let mut total_text = 0usize;
     for file in all_files(&record) {
         cancelled(cancel)?;
@@ -570,12 +548,14 @@ pub(super) fn grade(
         if total_text > 400_000 {
             return Err(err("work_too_large", "识别文字超过40万字，请分拆练习。"));
         }
-        source_incomplete |= rows(&material["issues"])
-            .iter()
-            .any(|i| i["blocking"] == true);
-        has_visual |= rows(&material["assets"])
-            .iter()
-            .any(|a| a["role"] != "source_page");
+        for source_issue in rows(&material["issues"]) {
+            content_limitations.push(json!({"fileId":file["fileId"],"role":material["role"],"page":source_issue["page"],"issue":source_issue,"blocking":source_issue["blocking"] == true}));
+        }
+        if !model.grading_images_supported() {
+            for asset in rows(&material["assets"]).iter().filter(|asset|asset["role"]!="source_page") {
+                content_limitations.push(json!({"fileId":file["fileId"],"page":asset["page"],"assetId":asset["id"],"code":"visual_not_delivered","message":"本素材未交付图像；由模型逐题判断受影响范围，不能据此把其它完整文字题改判无法判断。","blocking":true}));
+            }
+        }
         if model.grading_images_supported() {
             for asset in rows(&material["assets"]) {
                 let bytes = std::fs::read(store.data_dir.join(s(&asset, "relativePath")))?;
@@ -585,8 +565,8 @@ pub(super) fn grade(
         materials.push(material);
     }
     cancelled(cancel)?;
-    let expected = expected_items(&record)?;
-    has_visual |= expected.iter().any(|i| i["visualRequired"] == true);
+    let mut expected = expected_items(&record)?;
+    let mut unavailable_visual_slots = HashSet::new();
     if record["source"]["kind"] == "paper" && model.grading_images_supported() {
         for slot in rows(&record["source"]["paperSnapshot"]["draft"]["slots"]) {
             for asset in rows(&slot["question"]["assetPayloads"]) {
@@ -594,7 +574,8 @@ pub(super) fn grade(
                     .decode(s(&asset, "dataBase64"))
                     .map_err(|_| err("integrity_error", "冻结题目配图编码损坏。"))?;
                 if !bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
-                    source_incomplete = true;
+                    content_limitations.push(json!({"slotId":slot["slotId"],"assetId":asset["assetId"],"role":asset["role"],"code":"visual_not_delivered","message":"当前批改请求未交付此冻结素材，不能宣称已查看。","blocking":true}));
+                    if asset["role"] == "student" { unavailable_visual_slots.insert(s(&slot,"slotId").to_owned()); }
                     continue;
                 }
                 model_assets.push(json!({"id":format!("paper-{}-{}-{}",s(&slot,"slotId"),s(&asset,"role"),s(&asset,"assetId")),"page":1,"role":"figure","contentBase64":base64::engine::general_purpose::STANDARD.encode(bytes)}));
@@ -602,15 +583,16 @@ pub(super) fn grade(
         }
     }
     let image_review = model.grading_images_supported() && !model_assets.is_empty();
-    let force = if source_incomplete {
-        Some("识别材料含缺图、漏页或解析不完整提示，暂不能可靠判题。")
-    } else if has_visual && !image_review {
-        Some("本练习含必要图表，当前模型没有接收实际配图，保留为无法判断。")
-    } else {
-        None
-    };
+    for item in &mut expected {
+        if item["visualRequired"] == true {
+            item["visualReviewAvailable"] = json!(image_review && !unavailable_visual_slots.contains(s(item,"slotId")));
+            if item["visualReviewAvailable"] != true {
+                content_limitations.push(json!({"itemId":item["itemId"],"slotId":item["slotId"],"code":"visual_not_delivered","message":"此冻结题位所需的实际配图未交付，仅此受影响题位保留无法判断。","blocking":true}));
+            }
+        }
+    }
     set_stage(store, id, job, "grading")?;
-    let context = json!({"schemaVersion":1,"sourceMode":record["source"]["kind"],"externalSourceMode":record["source"]["externalSourceMode"],"questionCompleteness":if record["source"]["externalSourceMode"]=="answer_only"{"not_asserted"}else if record["source"]["kind"]=="paper"{"frozen_snapshot"}else{"provided_or_declared_not_verified"},"expectedItems":expected,"documents":context_documents(&materials),"imageReviewAvailable":image_review,"includeSourcePagesForReview":true,"contentLimitations":force});
+    let context = json!({"schemaVersion":1,"sourceMode":record["source"]["kind"],"externalSourceMode":record["source"]["externalSourceMode"],"questionCompleteness":if record["source"]["externalSourceMode"]=="answer_only"{"not_asserted"}else if record["source"]["kind"]=="paper"{"frozen_snapshot"}else{"provided_or_declared_not_verified"},"expectedItems":expected,"documents":context_documents(&materials),"imageReviewAvailable":image_review,"includeSourcePagesForReview":true,"contentLimitations":content_limitations,"limitationInstructions":"逐项按fileId/page/slotId定位材料限制，只将受影响且缺少可靠依据的题保留unable；完整文字题独立判断，不因其它题缺图或某页识别问题一律改判。","numberingInstructions":"questionLabel和printedNumber为当前隐藏缺题位后的连续打印号；originalSlotNumber、originalQuestionLabel和questionLabelAliases仅兼容旧版纸面编号。必须结合实际题干和作答引文定位真实itemId、slotId和partId；仅凭题号在两种编号间发生歧义时保留unable，不猜测或将答案串题。缺题位未印入当前试卷，不生成其批改项目。"});
     // Only this deliberately assembled academic context is sent.
     // Local student, title, notes, dates, paths and uploaded filenames stay local.
     let input_hash = hash_json(&context);
@@ -642,9 +624,14 @@ pub(super) fn grade(
         &expected,
         &materials,
         image_review,
-        force,
+        None,
         s(&record["source"], "externalSourceMode"),
     )?;
+    if content_limitations.iter().any(|limitation|limitation["blocking"] == true) {
+        result["completePaperVerified"] = json!(false);
+        result["limitations"].as_array_mut().unwrap().push(json!("部分材料存在识别或素材交付限制，已按题独立判断，不宣称完成全卷。"));
+    }
+    result["contentLimitations"] = json!(content_limitations);
     result["jobId"] = json!(job);
     result["inputSha256"] = json!(input_hash);
     result["model"] = snapshot["model"].clone();

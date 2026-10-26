@@ -33,10 +33,12 @@ impl PlanningDiagnostics {
                 "schemaVersion": 1,
                 "observedAt": chrono::Utc::now().to_rfc3339(),
                 "taskCount": context["tasks"].as_array().map(Vec::len),
+                "chapterCount": context["chapters"].as_array().map(Vec::len),
+                "confirmedQuestionCount": context["requirements"]["questionCount"].as_u64(),
                 "slotCount": context["slots"].as_array().map(Vec::len),
                 "requestBytes": serde_json::to_vec(body).ok().map(|bytes| bytes.len()),
-                "maxTokens": body["max_tokens"].as_u64(),
-                "thinkingDisabled": body["thinking"]["type"] == "disabled",
+                "maxTokens": body.get("max_tokens").or_else(|| body.get("max_completion_tokens")).and_then(Value::as_u64),
+                "thinkingDisabled": body["thinking"]["type"] == "disabled" || body["enable_thinking"] == false,
             }),
         })
     }
@@ -88,7 +90,7 @@ mod tests {
     fn planning_diagnostics_keep_usage_without_teacher_text_or_provider_output() {
         let directory = tempfile::tempdir().unwrap();
         let settings = directory.path().join("model-settings.json");
-        let context = json!({"tasks":[{"label":"private-teacher-text"}],"slots":[{}]});
+        let context = json!({"tasks":[{"label":"private-teacher-text"}],"slots":[{}],"chapters":[{"id":"simulated-confirmed-scope"}],"requirements":{"questionCount":8,"teacherRequest":"private-teacher-text"}});
         let body = json!({"messages":[{"content":"private-request"}],"max_tokens":4096,"thinking":{"type":"disabled"}});
         let mut diagnostic =
             PlanningDiagnostics::start("blueprint", &settings, &context, &body).unwrap();
@@ -110,8 +112,16 @@ mod tests {
         assert_eq!(saved["reasoningTokens"], 4096);
         assert_eq!(saved["promptTokens"], 400);
         assert_eq!(saved["slotCount"], 1);
+        assert_eq!(saved["chapterCount"], 1);
+        assert_eq!(saved["confirmedQuestionCount"], 8);
         assert_eq!(saved["errorCode"], "model_output_truncated");
         assert_eq!(saved["success"], false);
+        assert_eq!(saved["maxTokens"], 4096);
+
+        let mimo = PlanningDiagnostics::start("blueprint", &settings, &context, &json!({"max_completion_tokens":16000})).unwrap();
+        assert_eq!(mimo.counters["maxTokens"], 16000);
+        let bailian = PlanningDiagnostics::start("blueprint", &settings, &context, &json!({"enable_thinking":false})).unwrap();
+        assert_eq!(bailian.counters["thinkingDisabled"], true);
 
         let fresh = PlanningDiagnostics::start("blueprint", &settings, &json!({}), &body).unwrap();
         fresh.finish(&Ok(json!({"slots":[]})));

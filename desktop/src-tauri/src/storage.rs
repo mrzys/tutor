@@ -81,6 +81,14 @@ impl Store {
                 None => warning,
             });
         }
+        if store.bank_warning.is_none()
+            && let Err(cause) = crate::bank_teaching::normalize_focus(&store.bank)
+        {
+            store.bank_warning = Some(format!(
+                "教学信息字段升级未完成：{} 当前题库、个人记录与原试卷均已保留。",
+                cause.message
+            ));
+        }
         Ok(store)
     }
     pub fn open_with_annotation_manifest(

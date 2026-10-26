@@ -16,27 +16,78 @@ fn main() {
             std::process::exit(1)
         }
     };
-    let cancel = AtomicBool::new(false);
+    let diagnostic_directory = std::path::PathBuf::from(&path);
+    let cancel = std::sync::Arc::new(AtomicBool::new(false));
+    fn output(response: &Value) {
+        let mut stdout = std::io::stdout().lock();
+        let _ = writeln!(stdout, "{response}");
+        let _ = stdout.flush();
+    }
+    let (sender, receiver) = std::sync::mpsc::channel::<Value>();
+    let worker_cancel = cancel.clone();
+    let worker = std::thread::spawn(move || {
+        for input in receiver {
+            let id = input["id"].clone();
+            let run_id = input["payload"]["runId"]
+                .as_str()
+                .filter(|id| uuid::Uuid::parse_str(id).is_ok())
+                .unwrap_or_default()
+                .to_owned();
+            let channel = tutor_desktop::workflow_progress_channel(
+                input["action"].as_str().unwrap_or_default(),
+            );
+            let result = tutor_desktop::workflow_progress::observe(
+                move |step, status| {
+                    if let Some(channel) = channel.filter(|_| !run_id.is_empty()) {
+                        output(
+                            &json!({"event":channel.replace('-', "_"),"payload":{"runId":run_id,"step":step,"status":status}}),
+                        );
+                    }
+                },
+                || {
+                    runtime.request(
+                        input["action"].as_str().unwrap_or_default(),
+                        input.get("payload").unwrap_or(&json!({})),
+                        &worker_cancel,
+                    )
+                },
+            );
+            output(&match result {
+                Ok(value) => json!({"id":id,"result":value}),
+                Err(error) => json!({"id":id,"error":error}),
+            });
+        }
+    });
     for line in std::io::stdin().lock().lines() {
         let result = line
             .ok()
             .and_then(|line| serde_json::from_str::<Value>(&line).ok());
-        let response = if let Some(input) = result {
-            let id = input["id"].clone();
-            match runtime.request(
-                input["action"].as_str().unwrap_or_default(),
-                input.get("payload").unwrap_or(&json!({})),
-                &cancel,
-            ) {
-                Ok(value) => json!({"id":id,"result":value}),
-                Err(error) => json!({"id":id,"error":error}),
+        if let Some(input) = result {
+            if tutor_desktop::assembly_log::is_developer_action(input["action"].as_str().unwrap_or_default()) {
+                let result = tutor_desktop::assembly_log::developer_request(&diagnostic_directory, input["action"].as_str().unwrap_or_default(), input.get("payload").unwrap_or(&json!({}))).unwrap();
+                output(&match result { Ok(value) => json!({"id":input["id"],"result":value}), Err(error) => json!({"id":input["id"],"error":error}) });
+                continue;
+            }
+            if input["action"] == "__cancel" {
+                cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+                output(&json!({"id":input["id"],"result":{}}));
+            } else {
+                if matches!(
+                    input["action"].as_str(),
+                    Some("intake_prepare" | "blueprint_plan" | "draft_create" | "draft_candidates" | "draft_operation" | "manual_draft_create")
+                ) {
+                    cancel.store(false, std::sync::atomic::Ordering::Relaxed);
+                }
+                if sender.send(input).is_err() {
+                    break;
+                }
             }
         } else {
-            json!({"error":{"code":"invalid_request","message":"invalid JSON"}})
-        };
-        println!("{}", response);
-        let _ = std::io::stdout().flush();
+            output(&json!({"error":{"code":"invalid_request","message":"invalid JSON"}}));
+        }
     }
+    drop(sender);
+    let _ = worker.join();
 }
 #[cfg(not(debug_assertions))]
 fn main() {

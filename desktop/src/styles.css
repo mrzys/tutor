@@ -799,6 +799,7 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
 }
 .editable-title button {
   font-size: 24px;
+  min-height: 44px;
   line-height: 1.4;
   font-weight: 700;
   text-align: left;
@@ -808,12 +809,13 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
   color: black;
 }
 .editable-title button > svg {
-  opacity: 0;
   color: var(--muted);
+  flex-shrink: 0;
+  opacity: 1;
 }
 .editable-title:hover button > svg,
 .editable-title button:focus-visible > svg {
-  opacity: 1;
+  color: var(--accent);
 }
 .editable-title button:hover {
   background: none;
@@ -1546,6 +1548,26 @@ details summary {
   font-size: 22px;
 }
 .export-page .paper-question {
+  break-inside: avoid;
+}
+/* Teacher evidence/solutions may span pages. Keeping an entire question
+   together can otherwise push its stem off an almost empty first page. */
+.export-page .teacher-paper .paper-question {
+  break-inside: auto;
+  orphans: 3;
+  widows: 3;
+}
+.export-page .teacher-paper .question-top {
+  break-inside: avoid;
+  break-after: avoid;
+}
+.export-page .teacher-paper .teacher-material h4,
+.export-page .teacher-paper .original-teacher-solution > summary {
+  break-after: avoid;
+}
+.export-page .teacher-paper .paper-image,
+.export-page .teacher-paper .paper-table-scroll tr,
+.export-page .teacher-paper .question-option {
   break-inside: avoid;
 }
 .export-page .paper-question h3 {

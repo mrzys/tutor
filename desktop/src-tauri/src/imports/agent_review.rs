@@ -10,6 +10,17 @@ const CHECKS: [&str; 4] = [
     "formulaChecked",
 ];
 
+fn source_audit_hash(record: &Value) -> Value {
+    if record["sourceTrialAdoption"].is_object() {return super::source_trial_adoption::audit_hash(record);}
+    if record["structuredSource"].is_object() {
+        record["structuredSource"]["auditSha256"].clone()
+    } else {
+        json!(hash_json(&json!({"ocrSource":record["ocrSource"],
+            "modelAttempts":record["modelAttempts"],"sourceStructuring":record["sourceStructuring"],
+            "extractedPages":record["extractedPages"]})))
+    }
+}
+
 fn verify_source(store: &Store, record: &Value) -> AppResult<()> {
     let bytes = read_source(store, record)?;
     if record["source"]["extension"] != "pdf" || !bytes.starts_with(b"%PDF-") {
@@ -20,7 +31,18 @@ fn verify_source(store: &Store, record: &Value) -> AppResult<()> {
     if pdf.get_pages().len() as u64 != record["source"]["physicalPages"].as_u64().unwrap_or(0) {
         return Err(err("source_changed", "原 PDF 页数与核验记录不一致。"));
     }
-    structured::verify_audit(store, record)
+    if record["sourceTrialAdoption"].is_object() {
+        super::source_trial_adoption::verify(store,record)
+    } else if record["structuredSource"].is_object() {
+        structured::verify_audit(store, record)
+    } else if record["ocrSource"].is_object()
+        && rows(&record["questions"]).iter().all(paddle::uses)
+    {
+        paddle::verify_audit(store, record)?;
+        source_batches::verify_completed_source(store, record)
+    } else {
+        Err(err("invalid_source", "代理核验必须绑定完整来源整理与原卷审计。"))
+    }
 }
 
 /// Read-only report bindings use the same canonical JSON hash as publication.
@@ -30,7 +52,7 @@ pub fn snapshot(store: &Store, import_id: &str) -> AppResult<Value> {
     let mut current = rows(&record["questions"]);
     duplicates::annotate(&store.bank, &mut current)?;
     Ok(
-        json!({"schemaVersion":1,"importId":record["importId"],"revision":record["revision"],"sourceSha256":record["source"]["sha256"],"auditSha256":record["structuredSource"]["auditSha256"],"bankSnapshotSha256":store.bank.publication_snapshot_sha256()?,"questions":rows(&record["questions"]).iter().zip(current.iter()).map(|(q,checked)|json!({"questionId":q["questionId"],"questionSha256":hash_json(q),"sourceLabel":q["sourceLabel"],"pages":q["pages"],"sourceIssues":question_issues(q,&record["sourceIssues"]),"duplicateCandidates":checked["duplicateCandidates"]})).collect::<Vec<_>>()}),
+        json!({"schemaVersion":1,"importId":record["importId"],"revision":record["revision"],"sourceSha256":record["source"]["sha256"],"auditSha256":source_audit_hash(&record),"bankSnapshotSha256":store.bank.publication_snapshot_sha256()?,"questions":rows(&record["questions"]).iter().zip(current.iter()).map(|(q,checked)|json!({"questionId":q["questionId"],"questionSha256":hash_json(q),"sourceLabel":q["sourceLabel"],"pages":q["pages"],"sourceIssues":question_issues(q,&record["sourceIssues"]),"duplicateCandidates":checked["duplicateCandidates"]})).collect::<Vec<_>>()}),
     )
 }
 
@@ -53,9 +75,8 @@ fn validate_report(store: &Store, record: &Value, report: &Value) -> AppResult<V
             "核验报告与当前导入记录修订不一致。",
         ));
     }
-    if !record["structuredSource"].is_object()
-        || report["sourceSha256"] != record["source"]["sha256"]
-        || report["auditSha256"] != record["structuredSource"]["auditSha256"]
+    if report["sourceSha256"] != record["source"]["sha256"]
+        || report["auditSha256"] != source_audit_hash(record)
         || !report["sourceSha256"].is_string()
         || !report["auditSha256"].is_string()
     {
@@ -110,9 +131,9 @@ fn validate_report(store: &Store, record: &Value, report: &Value) -> AppResult<V
                 "须逐项记录原文、答案、解析和公式的实际核验结果；缺项不能用统一通过替代。",
             ));
         }
-        if !structured::is_structured(original)
+        if !(structured::is_structured(original) || paddle::uses(original))
             || !new_knowledge_annotation(original)
-            || original["annotationStatus"] != "succeeded"
+            || (structured::is_structured(original) && original["annotationStatus"] != "succeeded")
         {
             return Err(err(
                 "review_required",
@@ -123,8 +144,12 @@ fn validate_report(store: &Store, record: &Value, report: &Value) -> AppResult<V
             original,
             id,
             record["source"]["physicalPages"].as_u64().unwrap_or(0) as usize,
-            true,
+            structured::is_structured(original),
         )?;
+        // Ordinary Paddle imports now carry independently versioned teaching
+        // drafts. Source normalization must not discard an adopted draft or
+        // its exact audit/disposition bindings during agent publication.
+        teaching::preserve(original, &mut q);
         // Normalization must not invent a review state or modify source content.
         q["reviewDecision"] = json!("approve");
         q["reviewChecks"] = json!({"sourceMatched":true,"answerChecked":true,"solutionChecked":true,"formulaChecked":true});
@@ -132,9 +157,17 @@ fn validate_report(store: &Store, record: &Value, report: &Value) -> AppResult<V
         q["agentReview"] = json!({"method":"user_authorized_agent_review","checkedBy":"codex","reportSha256":hash_json(report),"sourceSha256":report["sourceSha256"],"auditSha256":report["auditSha256"],"review":review});
         check_approved(&q, record)?;
         structured::verify_assets(&q)?;
-        let source_identity = hash_json(
-            &json!({"system":q["sourceIdentity"]["system"],"questionId":q["sourceIdentity"]["questionId"],"contentVersionId":q["sourceIdentity"]["contentVersionId"]}),
-        );
+        let source_identity = if paddle::uses(&q) {
+            // Paddle identities describe the whole document, not a legacy
+            // question/version. Printed label and audited source blocks bind
+            // each actual question without collapsing the entire paper.
+            hash_json(&json!({"system":q["sourceIdentity"]["system"],
+                "sourceSha256":q["sourceIdentity"]["sourceSha256"],
+                "manifestSha256":q["sourceIdentity"]["manifestSha256"],
+                "sourceLabel":q["sourceLabel"],"sourceBlockIds":q["sourceBlockIds"]}))
+        } else {
+            hash_json(&json!({"system":q["sourceIdentity"]["system"],"questionId":q["sourceIdentity"]["questionId"],"contentVersionId":q["sourceIdentity"]["contentVersionId"]}))
+        };
         if !selected_source.insert(source_identity) {
             return Err(err(
                 "duplicate_question",

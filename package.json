@@ -12,7 +12,7 @@
     "typecheck": "npm --prefix desktop run typecheck",
     "start": "npm --prefix desktop run desktop:dev",
     "pretest": "npm run test:ui",
-    "test": "cargo test --manifest-path desktop/src-tauri/Cargo.toml --no-default-features --lib",
+    "test": "cargo test --manifest-path desktop/src-tauri/Cargo.toml --no-default-features --lib -- --test-threads=4",
     "test:ui": "npm --prefix desktop run test:blueprint",
     "test:tools": "node --test scripts/tests/*.test.mjs",
     "desktop:build": "npm --prefix desktop run desktop:build",

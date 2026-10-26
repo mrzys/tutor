@@ -264,12 +264,16 @@ fn create(store: &Store, payload: &Value) -> AppResult<Value> {
     let operation = op(payload)?;
     let hash = hash_json(payload);
     let id = format!("work-{}", &hash_json(&json!(operation))[..24]);
-    if let Ok(record) = store.document(KIND, &id) {
-        if record["creationHash"] != hash {
-            return Err(err("operation_conflict", "此保存操作已用于其他答卷。"));
+    match store.document(KIND, &id) {
+        Ok(record) => {
+            if record["creationHash"] != hash {
+                return Err(err("operation_conflict", "此保存操作已用于其他答卷。"));
+            }
+            verify(&record)?;
+            return Ok(json!({"work":record}));
         }
-        verify(&record)?;
-        return Ok(json!({"work":record}));
+        Err(error) if error.code == "not_found" => {}
+        Err(error) => return Err(error),
     }
     let student = store.student(s(payload, "studentId"))?;
     let mut title = text(payload, "title", 120)?;
@@ -286,7 +290,7 @@ fn create(store: &Store, payload: &Value) -> AppResult<Value> {
     let answer_files = rows(&payload["answers"]);
     if answer_files.is_empty() || source_files.len() + answer_files.len() > 8 {
         return Err(err(
-            "invalid_file",
+            "invalid_upload",
             "请上传答卷，原题与答卷合计最多8份文件。",
         ));
     }
@@ -337,15 +341,22 @@ fn create(store: &Store, payload: &Value) -> AppResult<Value> {
         for (i, file) in files.iter().enumerate() {
             let encoded = s(file, "contentBase64");
             if encoded.len() > MAX_FILE.div_ceil(3) * 4 + 4 {
-                return Err(err("file_too_large", "每份附件最大15 MB。"));
+                return Err(err("invalid_upload", "每份附件最大15 MB。"));
             }
             let bytes = base64::engine::general_purpose::STANDARD
                 .decode(encoded)
-                .map_err(|_| err("invalid_file", "附件编码无效。"))?;
-            let (extension, mime) = validate_file(s(file, "filename"), &bytes)?;
+                .map_err(|_| err("invalid_upload", "附件编码无效。"))?;
+            // This error alone permits editing a failed upload: every attachment
+            // is checked before the first original or document write below.
+            let (extension, mime) = validate_file(s(file, "filename"), &bytes).map_err(|mut error| {
+                if matches!(error.code.as_str(), "invalid_file" | "file_too_large" | "unsupported_file") {
+                    error.code = "invalid_upload".into();
+                }
+                error
+            })?;
             total += bytes.len();
             if total > MAX_TOTAL {
-                return Err(err("file_too_large", "原题与答卷总大小不能超过45 MB。"));
+                return Err(err("invalid_upload", "原题与答卷总大小不能超过45 MB。"));
             }
             decoded.push((
                 role,

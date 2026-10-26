@@ -102,6 +102,9 @@ pub fn normalize(store: &Store, input: &Value) -> AppResult<Value> {
     }
     let config = store.bank.config()?;
     let mut r = merge(&config["defaultRequirements"], input);
+    if input.get("sourceIds").is_none() {
+        r["sourceIds"] = json!(list(&config["sourceManifest"]["sources"]).iter().map(|source| source["sourceId"].clone()).collect::<Vec<_>>());
+    }
     crate::requirements_summary::clear_preset_goal(&config, &mut r);
     if !r.is_object() {
         return Err(invalid("缺少本地组卷配置。"));
@@ -308,6 +311,7 @@ pub fn normalize(store: &Store, input: &Value) -> AppResult<Value> {
     Ok(r)
 }
 
+#[cfg(test)]
 fn chinese_number(text: &str) -> Option<u64> {
     if let Ok(n) = text.parse() {
         return Some(n);
@@ -349,9 +353,10 @@ fn chinese_number(text: &str) -> Option<u64> {
     }
 }
 
-// Process explicit statements in their textual order. A later correction wins;
-// model suggestions never override teacher duration/scoring choices.
-fn explicit_size_fields(requirements: &mut Value, message: &str) -> AppResult<()> {
+// Legacy deterministic parser retained only for archived rule-flow regression
+// fixtures. Runtime intake always uses the configured model instead.
+#[cfg(test)]
+fn legacy_explicit_size_fields(requirements: &mut Value, message: &str) -> AppResult<()> {
     let number = r"([0-9]+|[一二两三四五六七八九十零〇]+)";
     let duration_re = Regex::new(&format!(r"{number}\s*(分钟|小时)")).unwrap();
     let mut duration = None;
@@ -408,8 +413,9 @@ fn explicit_size_fields(requirements: &mut Value, message: &str) -> AppResult<()
     }
     Ok(())
 }
-// Explicit teacher quantities remain authoritative even if a model proposes different counts.
-pub fn quantities(r: &mut Value, message: &str) -> AppResult<()> {
+// Archived rule-flow fixture helper; never called by runtime intake.
+#[cfg(test)]
+pub fn legacy_quantities(r: &mut Value, message: &str) -> AppResult<()> {
     let previous_total = TYPES
         .iter()
         .map(|kind| r["counts"][*kind].as_u64().unwrap_or(0))
@@ -757,10 +763,6 @@ fn apply_quantity_intent(
     plan: &Value,
     authority: &Value,
 ) -> AppResult<Vec<String>> {
-    let previous_total = TYPES
-        .iter()
-        .map(|kind| r["counts"][*kind].as_u64().unwrap_or(0))
-        .sum();
     let fields = intent
         .as_object()
         .ok_or_else(|| invalid("AI 需求结果缺少有效的题量意图，请重试。"))?;
@@ -986,7 +988,9 @@ fn apply_quantity_intent(
     // Model suggestions are separate from the quantities explicitly said by the teacher.
     // Never turn a proposed split into exactCounts or redistribute it using defaults.
     let model_plan = validate_quantity_plan(plan)?;
-    let requested = total.unwrap_or_else(|| {
+    let requested = if let Some(total) = total {
+        total
+    } else {
         if exact.len() == TYPES.len() {
             exact.values().filter_map(Value::as_u64).sum()
         } else if let Some(choice) = choice_total.filter(|_| {
@@ -1000,9 +1004,10 @@ fn apply_quantity_intent(
                     .filter_map(|kind| exact.get(*kind).and_then(Value::as_u64))
                     .sum::<u64>()
         } else {
-            r["questionCount"].as_u64().unwrap_or(previous_total)
+            model_plan.as_ref().map(|(counts, _)| counts.iter().sum())
+                .ok_or_else(|| invalid("AI 未给出待确认的题量与完整配比，请重试；不会采用隐藏默认题量。"))?
         }
-    });
+    };
     if requested == 0 || requested > 60 {
         return Err(invalid("总题量需为 1～60。"));
     }
@@ -1117,12 +1122,132 @@ fn validate_quantity_plan(plan: &Value) -> AppResult<Option<([u64; 4], String)>>
         .ok_or_else(|| invalid("AI 题型配比需提供不超过 500 字的教学意图理由。"))?;
     Ok(Some((result, rationale.to_owned())))
 }
+fn same_scope(left: &Value, right: &Value) -> bool {
+    let normalized = |scope: &Value| {
+        strings(scope)
+            .iter()
+            .map(|id| canonical(id))
+            .collect::<std::collections::BTreeSet<_>>()
+    };
+    normalized(left) == normalized(right)
+}
+
+fn resolve_scope(
+    config: &Value,
+    supplied: &Value,
+    input: &mut Value,
+    message: &str,
+    model: &ModelClient,
+    cancel: &AtomicBool,
+) -> AppResult<Value> {
+    // A seed or previous request is not a teacher choice for this message.
+    let selected = supplied.get("mainScope").cloned().unwrap_or(json!([]));
+    let mut seen = std::collections::HashSet::new();
+    let chapters: Vec<_> = list(&config["chapters"])
+        .into_iter()
+        .filter(|chapter| seen.insert(canonical(s(chapter, "id"))))
+        .map(|chapter| json!({"id":chapter["id"],"label":chapter["label"]}))
+        .collect();
+    let proposal = if message.trim().is_empty() {
+        json!({"mainScope":selected,"rationale":"沿用本次选择的考查范围。"})
+    } else {
+        model.propose(
+            "intake_scope",
+            &json!({"message":message,"selectedScope":selected,"chapters":chapters}),
+            cancel,
+        )?
+    };
+    let scope = proposal["mainScope"]
+        .as_array()
+        .ok_or_else(|| invalid("AI 未返回可核对的考查范围，请补充知识点或选择范围后重试。"))?;
+    if scope.is_empty() {
+        let reason: String = s(&proposal, "rationale").trim().chars().take(160).collect();
+        return Err(invalid(&format!(
+            "未能从原话确定真实教材范围。{reason} 请说明要考查的知识点或选择范围后重试。"
+        )));
+    }
+    let mut ids = std::collections::HashSet::new();
+    for id in scope {
+        let id = id
+            .as_str()
+            .ok_or_else(|| invalid("AI 考查范围身份无效，请重试。"))?;
+        if !chapters
+            .iter()
+            .any(|chapter| canonical(s(chapter, "id")) == canonical(id))
+            || !ids.insert(canonical(id))
+        {
+            return Err(invalid(
+                "AI 考查范围包含目录外或重复的小节，请重试；不会使用默认范围代替。",
+            ));
+        }
+    }
+    let rationale = proposal["rationale"]
+        .as_str()
+        .map(str::trim)
+        .filter(|text| !text.is_empty() && text.chars().count() <= 500)
+        .ok_or_else(|| invalid("AI 考查范围缺少简短依据，请重试。"))?;
+    let changed = !same_scope(&input["mainScope"], &proposal["mainScope"]);
+    let learned_follows_scope = supplied.get("learnedScope").is_none()
+        || strings(&supplied["learnedScope"]).is_empty()
+        || same_scope(&supplied["learnedScope"], &selected);
+    if changed {
+        input["goal"] = json!("");
+        input["teachingGoals"] = json!([]);
+        input.as_object_mut().unwrap().remove("mainKnowledgeUids");
+    }
+    input["mainScope"] = proposal["mainScope"].clone();
+    if learned_follows_scope {
+        input["learnedScope"] = input["mainScope"].clone();
+        if changed {
+            input
+                .as_object_mut()
+                .unwrap()
+                .remove("learnedKnowledgeUids");
+        }
+    }
+    let resolution = json!({"source":"model_suggestion","selectedScope":selected,"mainScope":input["mainScope"],"rationale":rationale,"changed":!same_scope(&selected, &input["mainScope"])});
+    input["scopeResolution"] = resolution.clone();
+    Ok(resolution)
+}
+/// Explicit archived rule-flow fixture constructor. No IPC action calls this;
+/// it keeps historical frozen-flow regressions separate from model-only intake.
+#[cfg(test)]
+pub(crate) fn legacy_prepare(
+    store: &Store,
+    payload: &Value,
+    _model: &ModelClient,
+    _cancel: &AtomicBool,
+) -> AppResult<Value> {
+    let message = payload["message"].as_str().unwrap_or("");
+    if message.chars().count() > 4000 { return Err(invalid("补充要求最多 4000 字符。")); }
+    let config = store.bank.config()?;
+    let mut input = merge(&config["defaultRequirements"], &payload["requirements"]);
+    crate::requirements_summary::clear_preset_goal(&config, &mut input);
+    if payload["requirements"].get("title").is_none() { input.as_object_mut().unwrap().remove("title"); }
+    if payload["requirements"].get("scoringMode").is_none() { input["scoringMode"] = json!("none"); }
+    if payload["requirements"].get("targetDifficulty").is_none() { input["targetDifficulty"] = Value::Null; }
+    if input["counts"].get("multiple_choice").is_none() { input["counts"]["multiple_choice"] = json!(0); }
+    legacy_explicit_size_fields(&mut input, message)?;
+    input.as_object_mut().unwrap().remove("quantityPlan");
+    input.as_object_mut().unwrap().remove("scopeResolution");
+    legacy_quantities(&mut input, message)?;
+    input["quantityAuthority"] = quantity_authority(payload)?;
+    input["teacherRequest"] = json!(message);
+    let requirements = normalize(store, &input)?;
+    Ok(json!({"summary":format!("{}，共 {} 题，{} 分钟。",s(&requirements,"title"),requirements["questionCount"],requirements["durationMinutes"]),"requirements":requirements,"warnings":[],"scopeResolution":null,"workflowSteps":["requirements"]}))
+}
 pub fn prepare(
     store: &Store,
     payload: &Value,
     model: &ModelClient,
     cancel: &AtomicBool,
 ) -> AppResult<Value> {
+    if s(payload, "mode") != "llm" {
+        return Err(AppError::new("rule_retired", "规则预设已停用，请配置模型后使用 AI 整理。"));
+    }
+    if !model.configured() {
+        return Err(AppError::new("not_configured", "请先配置模型后整理组卷要求。"));
+    }
     let message = payload["message"].as_str().unwrap_or("");
     if message.chars().count() > 4000 {
         return Err(invalid("补充要求最多 4000 字符。"));
@@ -1136,25 +1261,46 @@ pub fn prepare(
     if payload["requirements"].get("scoringMode").is_none() {
         input["scoringMode"] = json!("none");
     }
+    if payload["requirements"].get("targetDifficulty").is_none() {
+        input["targetDifficulty"] = Value::Null;
+    }
     let authority = quantity_authority(payload)?;
+    if payload["requirements"].get("sourceIds").is_none() {
+        input["sourceIds"] = json!(list(&config["sourceManifest"]["sources"]).iter().map(|source| source["sourceId"].clone()).collect::<Vec<_>>());
+    }
     // Counts supplied by Composer include defaults; only provenance makes them fixed.
     if input["counts"].get("multiple_choice").is_none() {
         input["counts"]["multiple_choice"] = json!(0);
     }
-    explicit_size_fields(&mut input, message)?;
-    let mut warnings = vec![];
-    let mut summary = String::new();
+    let mut warnings;
+    let mut summary;
+    let scope_resolution;
     match s(payload, "mode") {
-        "rule" => {
-            input.as_object_mut().unwrap().remove("quantityPlan");
-            quantities(&mut input, message)?;
-        }
         "llm" => {
+            crate::workflow_progress::emit("scope", "running");
+            let resolved_scope = resolve_scope(
+                &config,
+                &payload["requirements"],
+                &mut input,
+                message,
+                model,
+                cancel,
+            );
+            match &resolved_scope {
+                Ok(resolved) => crate::assembly_log::data_for_task("intake_scope", "validation", "completed", json!({"validation":{"valid":true,"scopeResolution":resolved,"requirements":input}})),
+                Err(error) => crate::assembly_log::data_for_task("intake_scope", "validation", "failed", json!({"validation":{"valid":false,"errorCode":error.code,"message":error.message,"requirements":input}})),
+            }
+            scope_resolution = resolved_scope?;
+            crate::workflow_progress::emit("scope", "completed");
+            crate::workflow_progress::emit("supply", "running");
             let tasks: Vec<_> = list(&config["tasks"]).into_iter()
                 .filter(|task| overlaps(&task["sectionIds"], &input["mainScope"]))
                 .map(|task| json!({"id":task["id"],"label":task["label"],"questionType":task["questionType"],"sectionIds":task["sectionIds"]}))
                 .collect();
             let quantity_supply = crate::assembly::intake_supply(store, &input, &config)?;
+            crate::assembly_log::data_for_task("intake", "validation", "completed", json!({"validation":{"step":"supply","requirements":input,"quantitySupply":quantity_supply,"tasks":tasks}}));
+            crate::workflow_progress::emit("supply", "completed");
+            crate::workflow_progress::emit("requirements", "running");
             let mut model_requirements = input.clone();
             model_requirements
                 .as_object_mut()
@@ -1169,34 +1315,45 @@ pub fn prepare(
                 return Err(invalid("AI 需求结构无效。"));
             }
             // Teaching suggestions and quantity intent are validated separately.
-            for key in ["goal", "teachingGoals"] {
+            for key in ["goal", "teachingGoals", "durationMinutes", "scoringMode", "targetScore"] {
                 if let Some(v) = changes.get(key) {
                     input[key] = v.clone();
                 }
             }
-            warnings = apply_quantity_intent(
+            let quantity_result = apply_quantity_intent(
                 &mut input,
                 &proposed["quantityIntent"],
                 &proposed["quantityPlan"],
                 &authority,
-            )?;
+            );
+            match &quantity_result {
+                Ok(value) => crate::assembly_log::data_for_task("intake", "validation", "completed", json!({"validation":{"valid":true,"step":"quantity","requirements":input,"warnings":value}})),
+                Err(error) => crate::assembly_log::data_for_task("intake", "validation", "failed", json!({"validation":{"valid":false,"step":"quantity","errorCode":error.code,"message":error.message,"requirements":input,"proposed":proposed}})),
+            }
+            warnings = quantity_result?;
             for (kind, label) in TYPES.iter().zip(["单选题", "多选题", "填空题", "解答题"])
             {
                 let requested = input["counts"][*kind].as_u64().unwrap_or(0);
-                let available = quantity_supply["byType"][*kind]["eligibleCount"]
+                let available = quantity_supply["byType"][*kind]["readyCount"]
                     .as_u64()
                     .unwrap_or(0);
                 if requested > available {
-                    warnings.push(format!("{label}计划 {requested} 题，当前范围及已学边界内已核实可用 {available} 题；保留题量与题型要求，后续选题将显示缺口，未核实题不计入可用量。"));
+                    warnings.push(format!("{label}计划 {requested} 题，当前来源中同题型库存 {available} 题，尚未完成教学适配判断；保留题量，后续由 AI 逐题判断并显示实际缺口。"));
                 }
             }
             summary = s(&proposed, "summary").to_owned();
         }
-        _ => return Err(invalid("请明确选择 AI 整理或规则预设。")),
+        _ => unreachable!("only model intake is accepted above"),
     }
     input["quantityAuthority"] = authority;
     input["teacherRequest"] = json!(message);
-    let requirements = normalize(store, &input)?;
+    let normalized = normalize(store, &input);
+    match &normalized {
+        Ok(value) => crate::assembly_log::data_for_task("intake", "validation", "completed", json!({"validation":{"valid":true,"step":"normalize","requirements":value}})),
+        Err(error) => crate::assembly_log::data_for_task("intake", "validation", "failed", json!({"validation":{"valid":false,"step":"normalize","errorCode":error.code,"message":error.message,"requirements":input}})),
+    }
+    let requirements = normalized?;
+    crate::workflow_progress::emit("requirements", "completed");
     if summary.is_empty() {
         summary = format!(
             "{}，共 {} 题，{} 分钟。",
@@ -1205,51 +1362,211 @@ pub fn prepare(
             requirements["durationMinutes"]
         );
     }
-    Ok(json!({"requirements":requirements,"summary":summary,"warnings":warnings}))
+    Ok(
+        json!({"requirements":requirements,"summary":summary,"warnings":warnings,"scopeResolution":scope_resolution,"workflowSteps":["scope","supply","requirements"]}),
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    fn simulated_model_reply(
+    fn simulated_intake_reply(
         directory: &std::path::Path,
-        output: Value,
-    ) -> (ModelClient, std::thread::JoinHandle<Value>) {
+        scope_output: Option<Value>,
+        output: Option<Value>,
+    ) -> (ModelClient, std::thread::JoinHandle<Vec<Value>>) {
         use std::io::{Read, Write};
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let endpoint = format!("http://{}/v1", listener.local_addr().unwrap());
         let server = std::thread::spawn(move || {
-            let (mut connection, _) = listener.accept().unwrap();
-            connection
-                .set_read_timeout(Some(std::time::Duration::from_secs(10)))
-                .unwrap();
-            let mut received = Vec::new();
-            let mut buffer = [0u8; 4096];
-            let (start, length) = loop {
-                let n = connection.read(&mut buffer).unwrap();
-                assert!(n > 0);
-                received.extend_from_slice(&buffer[..n]);
-                if let Some(start) = received.windows(4).position(|v| v == b"\r\n\r\n") {
-                    let headers = String::from_utf8_lossy(&received[..start]);
-                    let length = headers
-                        .lines()
-                        .find_map(|line| {
-                            line.split_once(':')
-                                .filter(|(key, _)| key.eq_ignore_ascii_case("content-length"))
-                                .map(|(_, value)| value.trim().parse::<usize>().unwrap())
-                        })
-                        .unwrap();
-                    if received.len() >= start + 4 + length {
-                        break (start + 4, length);
+            let mut requests = vec![];
+            for stage in 0..if output.is_some() { 2 } else { 1 } {
+                let (mut connection, _) = listener.accept().unwrap();
+                connection
+                    .set_read_timeout(Some(std::time::Duration::from_secs(10)))
+                    .unwrap();
+                let mut received = Vec::new();
+                let mut buffer = [0u8; 4096];
+                let (start, length) = loop {
+                    let n = connection.read(&mut buffer).unwrap();
+                    assert!(n > 0);
+                    received.extend_from_slice(&buffer[..n]);
+                    if let Some(start) = received.windows(4).position(|v| v == b"\r\n\r\n") {
+                        let headers = String::from_utf8_lossy(&received[..start]);
+                        let length = headers
+                            .lines()
+                            .find_map(|line| {
+                                line.split_once(':')
+                                    .filter(|(key, _)| key.eq_ignore_ascii_case("content-length"))
+                                    .map(|(_, value)| value.trim().parse::<usize>().unwrap())
+                            })
+                            .unwrap();
+                        if received.len() >= start + 4 + length {
+                            break (start + 4, length);
+                        }
                     }
-                }
-            };
-            let request: Value = serde_json::from_slice(&received[start..start + length]).unwrap();
-            let response = json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();
-            write!(connection, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",response.len(),response).unwrap();
-            request
+                };
+                let request: Value =
+                    serde_json::from_slice(&received[start..start + length]).unwrap();
+                let context: Value =
+                    serde_json::from_str(s(&request["messages"][1], "content")).unwrap();
+                let response_output = if stage == 0 {
+                    scope_output.clone().unwrap_or_else(|| {
+                    let selected = if strings(&context["selectedScope"]).is_empty() { json!(["1.1","1.2","1.3"]) } else { context["selectedScope"].clone() };
+                    json!({"mainScope":selected,"rationale":"模拟：原话未改变本次所选知识范围。"})
+                })
+                } else {
+                    output.clone().unwrap()
+                };
+                let response = json!({"choices":[{"finish_reason":"stop","message":{"content":response_output.to_string()}}]}).to_string();
+                write!(connection, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",response.len(),response).unwrap();
+                requests.push(request);
+            }
+            requests
         });
         (ModelClient::test_client(directory, &endpoint), server)
+    }
+    fn simulated_model_reply(
+        directory: &std::path::Path,
+        output: Value,
+    ) -> (ModelClient, std::thread::JoinHandle<Value>) {
+        let (model, server) = simulated_intake_reply(directory, None, Some(output));
+        (
+            model,
+            std::thread::spawn(move || server.join().unwrap().pop().unwrap()),
+        )
+    }
+    #[test]
+    fn simulated_llm_resolves_unselected_or_conflicting_scope_before_real_supply() {
+        let directory = tempfile::tempdir().unwrap();
+        let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let store = Store::open(directory.path(), &seed).unwrap();
+        let config = store.bank.config().unwrap();
+        let message = "10道利用不等式求最值的题目，中等难度以上";
+        let resolved = json!(["rja-compulsory-1:2.2"]);
+        for selected in [json!([]), json!(["1.1", "1.2", "1.3"])] {
+            let output = json!({"requirements":{"goal":"利用基本不等式求最值","mainScope":["1.1"]},"quantityIntent":{"questionCount":10},"quantityPlan":{"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2},"rationale":"结合最值练习保留判断、独立求值与完整过程；供给不足保留缺口。"},"summary":"模拟：按基本不等式整理十题要求。"});
+            let (model, server) = simulated_intake_reply(
+                directory.path(),
+                Some(
+                    json!({"mainScope":resolved,"rationale":"原话重点是利用不等式求最值，匹配基本不等式；原集合范围与本次原话不一致。"}),
+                ),
+                Some(output),
+            );
+            let result = prepare(&store, &json!({"mode":"llm","message":message,"requirements":{"mainScope":selected,"learnedScope":selected,"mainKnowledgeUids":["M-K-01-111"],"studentId":"private-identity"}}), &model, &AtomicBool::new(false)).unwrap();
+            let requests = server.join().unwrap();
+            assert_eq!(requests.len(), 2);
+            let scope_context: Value =
+                serde_json::from_str(s(&requests[0]["messages"][1], "content")).unwrap();
+            let quantity_context: Value =
+                serde_json::from_str(s(&requests[1]["messages"][1], "content")).unwrap();
+            assert_eq!(scope_context["selectedScope"], selected);
+            assert_eq!(scope_context["message"], message);
+            assert!(
+                list(&scope_context["chapters"])
+                    .iter()
+                    .any(|chapter| chapter["id"] == resolved[0])
+            );
+            assert!(!scope_context.to_string().contains("private-identity"));
+            assert_eq!(quantity_context["requirements"]["mainScope"], resolved);
+            assert_eq!(quantity_context["requirements"]["learnedScope"], resolved);
+            assert!(
+                quantity_context["requirements"]
+                    .get("mainKnowledgeUids")
+                    .is_none()
+            );
+            assert!(
+                list(&quantity_context["tasks"])
+                    .iter()
+                    .all(|task| overlaps(&task["sectionIds"], &resolved))
+            );
+            assert_eq!(
+                quantity_context["quantitySupply"],
+                crate::assembly::intake_supply(&store, &quantity_context["requirements"], &config)
+                    .unwrap()
+            );
+            assert_eq!(result["requirements"]["mainScope"], resolved);
+            assert_eq!(result["requirements"]["questionCount"], 10);
+            assert_eq!(result["scopeResolution"]["selectedScope"], selected);
+            assert_eq!(result["scopeResolution"]["changed"], true);
+            assert_eq!(
+                result["requirements"]["scopeResolution"],
+                result["scopeResolution"]
+            );
+            assert!(!s(&result["requirements"], "title").contains("集合"));
+        }
+    }
+    #[test]
+    fn simulated_llm_scope_errors_stop_before_quantity_and_never_use_seed_scope() {
+        let directory = tempfile::tempdir().unwrap();
+        let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let store = Store::open(directory.path(), &seed).unwrap();
+        for invalid_scope in [
+            json!([]),
+            json!(["unknown-section"]),
+            json!(["1.1", "rja-compulsory-1:1.1"]),
+            json!([true]),
+            json!("1.1"),
+        ] {
+            let (model, server) = simulated_intake_reply(
+                directory.path(),
+                Some(json!({"mainScope":invalid_scope,"rationale":"模拟无法可靠确定范围。"})),
+                None,
+            );
+            let error = prepare(&store, &json!({"mode":"llm","message":"请按我说的知识内容出题","requirements":{"mainScope":[]}}), &model, &AtomicBool::new(false)).unwrap_err();
+            assert_eq!(error.code, "invalid_plan");
+            assert_eq!(
+                server.join().unwrap().len(),
+                1,
+                "must stop before quantity model call"
+            );
+        }
+        let (model, server) =
+            simulated_intake_reply(directory.path(), Some(json!({"mainScope":["1.1"]})), None);
+        assert!(
+            prepare(
+                &store,
+                &json!({"mode":"llm","message":"模拟范围","requirements":{"mainScope":[]}}),
+                &model,
+                &AtomicBool::new(false)
+            )
+            .is_err()
+        );
+        server.join().unwrap();
+    }
+    #[test]
+    fn simulated_scope_resolution_preserves_independently_set_learned_boundary() {
+        let directory = tempfile::tempdir().unwrap();
+        let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let config = seed["config"].clone();
+        let mut input = merge(
+            &config["defaultRequirements"],
+            &json!({"mainScope":["1.1"],"learnedScope":["1.1","rja-compulsory-1:2.2"],"learnedKnowledgeUids":["M-K-01-111"]}),
+        );
+        let supplied = input.clone();
+        let (model, server) = simulated_intake_reply(
+            directory.path(),
+            Some(
+                json!({"mainScope":["rja-compulsory-1:2.2"],"rationale":"模拟：按原话识别基本不等式。"}),
+            ),
+            None,
+        );
+        resolve_scope(
+            &config,
+            &supplied,
+            &mut input,
+            "利用不等式求最值",
+            &model,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        server.join().unwrap();
+        assert_eq!(input["learnedScope"], supplied["learnedScope"]);
+        assert_eq!(
+            input["learnedKnowledgeUids"],
+            supplied["learnedKnowledgeUids"]
+        );
+        assert_eq!(input["goal"], "");
     }
     #[test]
     fn simulated_llm_quantity_intent_uses_model_semantics_and_manual_authority() {
@@ -1331,8 +1648,8 @@ mod tests {
             let supply = &context["quantitySupply"];
             assert_eq!(supply["byType"].as_object().unwrap().len(), 4);
             for kind in TYPES {
-                assert!(supply["byType"][kind]["eligibleCount"].is_u64());
-                assert!(supply["byType"][kind]["unknownCount"].is_u64());
+                assert!(supply["byType"][kind]["readyCount"].is_u64());
+                assert!(supply["byType"][kind].get("eligibleCount").is_none());
             }
             assert!(supply.get("questions").is_none());
             assert!(!supply.to_string().contains("questionId"));
@@ -1429,7 +1746,7 @@ mod tests {
         );
         let prepared = prepare(
             &store,
-            &json!({"mode":"llm","message":"只要三道多选题","requirements":{}}),
+            &json!({"mode":"llm","message":"只要三道多选题","requirements":{"sourceIds":seed["config"]["defaultRequirements"]["sourceIds"]}}),
             &model,
             &AtomicBool::new(false),
         )
@@ -1437,7 +1754,7 @@ mod tests {
         let request = server.join().unwrap();
         let context: Value = serde_json::from_str(s(&request["messages"][1], "content")).unwrap();
         assert_eq!(
-            context["quantitySupply"]["byType"]["multiple_choice"]["eligibleCount"],
+            context["quantitySupply"]["byType"]["multiple_choice"]["readyCount"],
             0
         );
         assert_eq!(
@@ -1448,7 +1765,7 @@ mod tests {
             strings(&prepared["warnings"])
                 .iter()
                 .any(|warning| warning.contains("多选题计划 3 题")
-                    && warning.contains("已核实可用 0 题"))
+                    && warning.contains("同题型库存 0 题"))
         );
     }
     #[test]
@@ -1545,7 +1862,7 @@ mod tests {
         ] {
             let mut requirements =
                 json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-            quantities(&mut requirements, message).unwrap();
+            legacy_quantities(&mut requirements, message).unwrap();
             for (kind, count) in TYPES.iter().zip(expected) {
                 assert_eq!(requirements["counts"][*kind], count, "{message}: {kind}");
             }
@@ -1553,10 +1870,10 @@ mod tests {
         }
         let mut requirements =
             json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        assert!(quantities(&mut requirements, "10道题，多选12题").is_err());
-        assert!(quantities(&mut requirements, "10道题，只要多选题，不要多选题").is_err());
+        assert!(legacy_quantities(&mut requirements, "10道题，多选12题").is_err());
+        assert!(legacy_quantities(&mut requirements, "10道题，只要多选题，不要多选题").is_err());
         let mut previous = json!({"questionCount":10,"counts":{"single_choice":10,"multiple_choice":0,"fill_blank":0,"free_response":0},"typeConstraints":{"exactCounts":{"single_choice":10,"multiple_choice":0,"fill_blank":0,"free_response":0},"excludedTypes":["multiple_choice","fill_blank","free_response"]}});
-        quantities(&mut previous, "改成只要多选题").unwrap();
+        legacy_quantities(&mut previous, "改成只要多选题").unwrap();
         assert_eq!(previous["counts"]["multiple_choice"], 10);
         assert_eq!(previous["questionCount"], 10);
         assert!(
@@ -1576,7 +1893,7 @@ mod tests {
             "10道题，不要解答题和多选题",
         ] {
             let mut requirements = json!({"questionCount":10,"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2}});
-            quantities(&mut requirements, message).unwrap();
+            legacy_quantities(&mut requirements, message).unwrap();
             assert_eq!(requirements["counts"]["free_response"], 0, "{message}");
             assert_eq!(requirements["questionCount"], 10, "{message}");
             assert!(
@@ -1587,7 +1904,7 @@ mod tests {
             assert!(requirements["counts"]["single_choice"].as_u64().unwrap() > 0);
             assert!(requirements["counts"]["fill_blank"].as_u64().unwrap() > 0);
             let confirmed = requirements.clone();
-            quantities(&mut requirements, "确认，重新规划").unwrap();
+            legacy_quantities(&mut requirements, "确认，重新规划").unwrap();
             assert_eq!(requirements, confirmed, "{message}");
         }
         for (message, expected) in [
@@ -1601,41 +1918,88 @@ mod tests {
             ("10道题，只要多选和填空题", [0, 3, 7, 0]),
         ] {
             let mut requirements = json!({"questionCount":10,"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2}});
-            quantities(&mut requirements, message).unwrap();
+            legacy_quantities(&mut requirements, message).unwrap();
             for (kind, count) in TYPES.iter().zip(expected) {
                 assert_eq!(requirements["counts"][*kind], count, "{message}: {kind}");
             }
             assert_eq!(requirements["questionCount"], 10);
         }
         let mut requirements = json!({"questionCount":10,"counts":{"single_choice":4,"multiple_choice":2,"fill_blank":2,"free_response":2}});
-        quantities(&mut requirements, "只要选择和填空题").unwrap();
+        legacy_quantities(&mut requirements, "只要选择和填空题").unwrap();
         assert!(requirements["counts"]["multiple_choice"].as_u64().unwrap() > 0);
         assert!(
             !strings(&requirements["typeConstraints"]["excludedTypes"])
                 .contains(&"multiple_choice".into())
         );
         let mut conflict = requirements.clone();
-        assert!(quantities(&mut conflict, "10道题，只要选择和填空题，解答2题").is_err());
-        assert!(quantities(&mut requirements, "10道题，选择8题，填空4题").is_err());
+        assert!(legacy_quantities(&mut conflict, "10道题，只要选择和填空题，解答2题").is_err());
+        assert!(legacy_quantities(&mut requirements, "10道题，选择8题，填空4题").is_err());
     }
     #[test]
-    fn simulated_rule_prepare_uses_current_scope_and_keeps_type_constraints() {
+    fn simulated_runtime_rule_intake_is_retired_without_model_fallback() {
         let directory = tempfile::tempdir().unwrap();
         let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
         let store = Store::open(directory.path(), &seed).unwrap();
+        std::fs::write(directory.path().join("model-settings.json"),json!({"schemaVersion":2,"revision":0,"activeProfileId":null,"profiles":[]}).to_string()).unwrap();
         let model = ModelClient::open(directory.path()).unwrap();
-        let cancel = AtomicBool::new(false);
-        let prepared = prepare(&store, &json!({"mode":"rule","message":"12道题，只要选择和填空题","requirements":{"mainScope":["rja-compulsory-1:2.1"],"learnedScope":["rja-compulsory-1:2.1"],"quantityPlan":{"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2},"rationale":"旧建议","source":"model_suggestion"}}}), &model, &cancel).unwrap();
-        let requirements = &prepared["requirements"];
-        assert!(requirements.get("quantityPlan").is_none());
-        assert_eq!(requirements["counts"]["free_response"], 0);
-        assert_eq!(requirements["questionCount"], 12);
-        assert!(!s(requirements, "goal").contains("集合"));
-        assert!(!s(requirements, "goal").is_empty());
-        assert_eq!(normalize(&store, requirements).unwrap(), *requirements);
-        let mut tampered = requirements.clone();
-        tampered["counts"]["free_response"] = json!(1);
-        assert!(normalize(&store, &tampered).is_err());
+        assert!(!model.configured());
+        let error = prepare(&store, &json!({"mode":"rule","message":"12道题，30分钟，不计分","requirements":{"mainScope":["1.1"]}}), &model, &AtomicBool::new(false)).unwrap_err();
+        assert_eq!(error.code, "rule_retired");
+        assert_eq!(prepare(&store, &json!({"mode":"llm","message":"10道题"}), &model, &AtomicBool::new(false)).unwrap_err().code, "not_configured");
+    }
+    #[test]
+    fn simulated_llm_size_and_scoring_are_used_without_local_text_heuristics() {
+        let directory = tempfile::tempdir().unwrap();
+        let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let store = Store::open(directory.path(), &seed).unwrap();
+        let output = json!({"requirements":{"goal":"","durationMinutes":25,"scoringMode":"points","targetScore":80},"quantityIntent":{},"quantityPlan":{"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2},"rationale":"模拟按模型理解保留十题"},"summary":"模拟整理"});
+        let (model, server) = simulated_model_reply(directory.path(), output);
+        let input = json!({"mode":"llm","message":"并非要做100分或30分钟，按前面商量的一刻钟再加十分钟、满分八十分","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"]}});
+        let result = prepare(&store, &input, &model, &AtomicBool::new(false)).unwrap();
+        let request = server.join().unwrap();
+        assert!(s(&request["messages"][1],"content").contains("并非"));
+        assert_eq!(result["requirements"]["durationMinutes"],25);
+        assert_eq!(result["requirements"]["targetScore"],80);
+        assert_eq!(result["requirements"]["scoringMode"],"points");
+        assert!(result["requirements"]["targetDifficulty"].is_null());
+        assert_eq!(result["workflowSteps"], json!(["scope","supply","requirements"]));
+    }
+    #[test]
+    fn simulated_unspecified_quantity_uses_model_proposal_not_hidden_ten() {
+        let directory = tempfile::tempdir().unwrap();
+        let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let store = Store::open(directory.path(), &seed).unwrap();
+        let output = json!({"requirements":{"goal":"模拟短练习建议"},"quantityIntent":{},"quantityPlan":{"counts":{"single_choice":4,"multiple_choice":0,"fill_blank":4,"free_response":0},"rationale":"模拟模型根据短练习提出八题，待教师确认。"},"summary":"模拟八题建议"});
+        let (model, server) = simulated_model_reply(directory.path(), output);
+        let prepared = prepare(&store, &json!({"mode":"llm","message":"安排一份短练习","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"]}}), &model, &AtomicBool::new(false)).unwrap();
+        server.join().unwrap();
+        assert_eq!(prepared["requirements"]["questionCount"], 8);
+        assert_eq!(prepared["requirements"]["quantityPlan"]["source"], "model_suggestion");
+        assert_eq!(prepared["requirements"]["typeConstraints"]["exactCounts"], json!({}));
+        let mut teacher = json!({"questionCount":10,"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2}});
+        assert!(apply_quantity_intent(&mut teacher, &json!({"questionCount":10}), &json!({"counts":{"single_choice":4,"multiple_choice":0,"fill_blank":4,"free_response":0},"rationale":"模拟八题"}), &json!({})).is_err());
+    }
+    #[test]
+    fn simulated_new_sources_are_in_default_inventory_but_explicit_source_choices_are_preserved() {
+        let directory = tempfile::tempdir().unwrap();
+        let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let store = Store::open(directory.path(), &seed).unwrap();
+        let mut config = store.bank.config().unwrap();
+        let chosen = config["defaultRequirements"]["sourceIds"].clone();
+        config["sourceManifest"]["sources"].as_array_mut().unwrap().push(json!({"sourceId":"simulated-new-ready-source","title":"模拟后来新增来源"}));
+        rusqlite::Connection::open(directory.path().join("question-bank.sqlite")).unwrap().execute("UPDATE bank_metadata SET value=?1 WHERE key='config'",[config.to_string()]).unwrap();
+        let input = json!({"mainScope":["1.1"],"learnedScope":["1.1"]});
+        let defaults = normalize(&store,&input).unwrap();
+        assert!(strings(&defaults["sourceIds"]).contains(&"simulated-new-ready-source".to_owned()));
+        let mut explicit = input.clone();
+        explicit["sourceIds"] = chosen.clone();
+        assert_eq!(normalize(&store,&explicit).unwrap()["sourceIds"],chosen);
+        let (model,server) = simulated_model_reply(directory.path(),json!({"requirements":{},"quantityIntent":{},"quantityPlan":{"counts":{"single_choice":6,"multiple_choice":0,"fill_blank":2,"free_response":2},"rationale":"模拟保留教师十题要求"},"summary":"模拟整理"}));
+        let prepared = prepare(&store,&json!({"mode":"llm","message":"巩固当前范围","requirements":input}),&model,&AtomicBool::new(false)).unwrap();
+        assert!(strings(&prepared["requirements"]["sourceIds"]).contains(&"simulated-new-ready-source".to_owned()));
+        let request = server.join().unwrap();
+        let sent:Value = serde_json::from_str(s(&request["messages"][1],"content")).unwrap();
+        assert!(strings(&sent["requirements"]["sourceIds"]).contains(&"simulated-new-ready-source".to_owned()));
     }
     #[test]
     fn simulated_explicit_knowledge_scopes_preserve_teacher_choices_and_reject_unknown_ids() {
@@ -1671,7 +2035,7 @@ mod tests {
     #[test]
     fn explicit_quantity_and_exclusion_win() {
         let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        quantities(&mut r, "出12道题，不需要解答题").unwrap();
+        legacy_quantities(&mut r, "出12道题，不需要解答题").unwrap();
         assert_eq!(r["questionCount"], 12);
         assert_eq!(r["counts"]["free_response"], 0);
         assert_eq!(
@@ -1685,10 +2049,10 @@ mod tests {
     #[test]
     fn chinese_counts_and_conflict() {
         let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        quantities(&mut r, "十二道题，单选十题，填空两题，不要解答题").unwrap();
+        legacy_quantities(&mut r, "十二道题，单选十题，填空两题，不要解答题").unwrap();
         assert_eq!(r["counts"]["single_choice"], 10);
         assert_eq!(r["counts"]["fill_blank"], 2);
-        assert!(quantities(&mut r, "10道题，单选12题").is_err());
+        assert!(legacy_quantities(&mut r, "10道题，单选12题").is_err());
     }
     #[test]
     fn natural_topic_modifiers_preserve_teacher_quantity() {
@@ -1699,7 +2063,7 @@ mod tests {
             ("先10道题，改成12道集合基础题", 12),
         ] {
             let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-            quantities(&mut r, text).unwrap();
+            legacy_quantities(&mut r, text).unwrap();
             assert_eq!(r["questionCount"], total, "{text}");
             assert_eq!(
                 TYPES
@@ -1713,13 +2077,13 @@ mod tests {
             }
         }
         let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        quantities(&mut r, "出2道单选题").unwrap();
+        legacy_quantities(&mut r, "出2道单选题").unwrap();
         assert_eq!(r["questionCount"], 2);
         assert_eq!(r["counts"]["single_choice"], 2);
         assert_eq!(r["counts"]["fill_blank"], 0);
         assert_eq!(r["counts"]["free_response"], 0);
         let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        quantities(&mut r, "10道题，其中2道单选题").unwrap();
+        legacy_quantities(&mut r, "10道题，其中2道单选题").unwrap();
         assert_eq!(r["questionCount"], 10);
         assert_eq!(r["counts"]["single_choice"], 2);
     }
@@ -1732,7 +2096,7 @@ mod tests {
             "出一一道题",
         ] {
             assert!(
-                quantities(
+                legacy_quantities(
                     &mut json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}}),
                     text
                 )
@@ -1741,62 +2105,20 @@ mod tests {
             );
         }
         let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        quantities(&mut r, "复习第12页和1.1小节，巩固基础").unwrap();
+        legacy_quantities(&mut r, "复习第12页和1.1小节，巩固基础").unwrap();
         assert_eq!(r["questionCount"], 10);
     }
     #[test]
     #[cfg(windows)]
     fn simulated_model_cannot_override_explicit_teacher_quantity_or_receive_student() {
-        use std::io::{Read, Write};
         let directory = tempfile::tempdir().unwrap();
         let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
         let store = Store::open(directory.path(), &seed).unwrap();
         let student = store
             .create_student(&json!({"name":"模拟私有昵称","operationId":"simulated-model-student"}))
             .unwrap();
-        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-        let address = listener.local_addr().unwrap();
-        let server = std::thread::spawn(move || {
-            let (mut stream, _) = listener.accept().unwrap();
-            stream
-                .set_read_timeout(Some(std::time::Duration::from_secs(5)))
-                .unwrap();
-            let mut request = Vec::new();
-            let mut buffer = [0u8; 4096];
-            loop {
-                let n = stream.read(&mut buffer).unwrap();
-                if n == 0 {
-                    break;
-                }
-                request.extend_from_slice(&buffer[..n]);
-                if let Some(end) = request.windows(4).position(|w| w == b"\r\n\r\n") {
-                    let headers = String::from_utf8_lossy(&request[..end]);
-                    let length = headers
-                        .lines()
-                        .find_map(|line| {
-                            let (key, value) = line.split_once(':')?;
-                            if key.eq_ignore_ascii_case("content-length") {
-                                value.trim().parse::<usize>().ok()
-                            } else {
-                                None
-                            }
-                        })
-                        .unwrap_or(0);
-                    if request.len() >= end + 4 + length {
-                        break;
-                    }
-                }
-            }
-            let end = request.windows(4).position(|w| w == b"\r\n\r\n").unwrap();
-            let body: Value = serde_json::from_slice(&request[end + 4..]).unwrap();
-            let output = json!({"requirements":{"counts":{"single_choice":30,"fill_blank":30,"free_response":30},"questionCount":90,"scoringMode":"points","targetScore":999,"durationMinutes":299,"mainScope":[],"goal":"模拟模型的教学建议"},"quantityIntent":{"questionCount":12,"excludedTypes":["free_response"]},"quantityPlan":{"counts":{"single_choice":9,"multiple_choice":0,"fill_blank":3,"free_response":0},"rationale":"基础题以选择辨析为主，辅以填空，不安排解答题。"},"summary":"模拟模型建议"});
-            let response =
-                json!({"choices":[{"message":{"content":output.to_string()}}]}).to_string();
-            write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",response.len(),response).unwrap();
-            body
-        });
-        let mut model = ModelClient::open(directory.path()).unwrap();
-        model.save(&json!({"baseUrl":format!("http://{address}/v1"),"model":"simulated-model","apiKey":"simulated-not-real-key"})).unwrap();
+        let output = json!({"requirements":{"counts":{"single_choice":30,"fill_blank":30,"free_response":30},"questionCount":90,"scoringMode":"none","targetScore":0,"durationMinutes":30,"mainScope":[],"goal":"模拟模型的教学建议"},"quantityIntent":{"questionCount":12,"excludedTypes":["free_response"]},"quantityPlan":{"counts":{"single_choice":9,"multiple_choice":0,"fill_blank":3,"free_response":0},"rationale":"基础题以选择辨析为主，辅以填空，不安排解答题。"},"summary":"模拟模型建议"});
+        let (model, server) = simulated_model_reply(directory.path(), output);
         let result=prepare(&store,&json!({"requirements":{"student":student},"message":"出12道集合基础题，不要解答题，30分钟，不计分","mode":"llm"}),&model,&AtomicBool::new(false)).unwrap();
         assert_eq!(result["requirements"]["questionCount"], 12);
         assert_eq!(result["requirements"]["counts"]["free_response"], 0);
@@ -1824,15 +2146,15 @@ mod tests {
     #[test]
     fn explicit_duration_and_score_are_teacher_choices() {
         let mut r = json!({"durationMinutes":45,"scoringMode":"none","targetScore":0});
-        explicit_size_fields(&mut r, "12道题，30分钟，100分").unwrap();
+        legacy_explicit_size_fields(&mut r, "12道题，30分钟，100分").unwrap();
         assert_eq!(r["durationMinutes"], 30);
         assert_eq!(r["scoringMode"], "points");
         assert_eq!(r["targetScore"], 100);
-        explicit_size_fields(&mut r, "100分，还是不计分，45分钟改为30分钟").unwrap();
+        legacy_explicit_size_fields(&mut r, "100分，还是不计分，45分钟改为30分钟").unwrap();
         assert_eq!(r["durationMinutes"], 30);
         assert_eq!(r["scoringMode"], "none");
         assert_eq!(r["targetScore"], 0);
-        explicit_size_fields(&mut r, "不计分，改成总分120，1小时").unwrap();
+        legacy_explicit_size_fields(&mut r, "不计分，改成总分120，1小时").unwrap();
         assert_eq!(r["durationMinutes"], 60);
         assert_eq!(r["targetScore"], 120);
         assert_eq!(r["scoringMode"], "points");
@@ -1841,20 +2163,20 @@ mod tests {
     fn invalid_size_bounds_are_actionable_and_minutes_are_not_scores() {
         for text in ["0分钟", "301分钟", "6小时", "总分0", "1001分"] {
             assert!(
-                explicit_size_fields(&mut json!({}), text).is_err(),
+                legacy_explicit_size_fields(&mut json!({}), text).is_err(),
                 "{text}"
             );
         }
         let mut r = json!({"scoringMode":"none","targetScore":0});
-        explicit_size_fields(&mut r, "30分钟").unwrap();
+        legacy_explicit_size_fields(&mut r, "30分钟").unwrap();
         assert_eq!(r["scoringMode"], "none");
         assert_eq!(r["targetScore"], 0);
-        assert!(explicit_size_fields(&mut r, "每题10分").is_err());
+        assert!(legacy_explicit_size_fields(&mut r, "每题10分").is_err());
     }
     #[test]
     fn large_total_respects_per_type_capacity() {
         let mut r = json!({"counts":{"single_choice":6,"fill_blank":2,"free_response":2}});
-        quantities(&mut r, "60道题").unwrap();
+        legacy_quantities(&mut r, "60道题").unwrap();
         assert_eq!(
             TYPES
                 .iter()

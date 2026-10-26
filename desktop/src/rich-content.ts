@@ -1,4 +1,5 @@
 import { paperTextBlocks } from "./shared/rich-text.mjs";
+import { mathSegments } from "./shared/math-segments.mjs";
 
 export type ImageReference = { source: string; alt: string };
 export type InlineContent =
@@ -6,7 +7,6 @@ export type InlineContent =
   | { type: "image"; reference: ImageReference }
   | { type: "missing-image"; reference: ImageReference };
 const marker = /\uE000TUTOR_IMAGE_(\d+)\uE001/g;
-const math = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
 
 function entities(value: string) {
   return value.replace(
@@ -39,13 +39,12 @@ function attribute(tag: string, name: string) {
   return entities(found?.[1] ?? found?.[2] ?? found?.[3] ?? "");
 }
 function plainHtml(text: string) {
-  return text
-    .split(math)
-    .map((part, index) =>
-      index % 2
-        ? part
+  return mathSegments(text)
+    .map((part) =>
+      part.type === "math"
+        ? part.raw
         : entities(
-            part
+            part.raw
               .replace(/<br\s*\/?>/gi, "\n")
               .replace(/<\/(?:p|div|li|h[1-6])\s*>/gi, "\n")
               .replace(
@@ -65,11 +64,10 @@ export function richContent(text: unknown) {
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
   const consumed = new Set<number>();
-  const protectedText = input
-    .split(math)
-    .map((part, index) => {
-      if (index % 2) return part;
-      return part.replace(
+  const protectedText = mathSegments(input)
+    .map((part) => {
+      if (part.type === "math") return part.raw;
+      return part.raw.replace(
         /!\[([^\]\n]*)\]\(\s*(?:<([^>\n]*)>|([^\s)]+))(?:\s+["'][^\n]*?["'])?\s*\)|<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi,
         (whole, alt, angleSource, source) => {
           const reference = whole.startsWith("<")

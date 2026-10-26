@@ -1,0 +1,4 @@
+【同次生成的质量自检附录】
+先独立核算答案与关键等式，检查证明是否闭环、高中方法是否适用、关键变形动机是否讲清且无无关绕算、难度依据与考查任务是否分别回答其问题。小数近似不能替代一般证明；专门结论不能仅去名称照用；检查系数、符号、特殊值、等号可达和每问条件。发现问题先在本次稿内修正，仍不可靠的具体问题如实输出，不编造“已通过独立审核”。不输出内部思维链。
+单题模式在原7字段对象之外返回 {"candidate":原7字段对象,"qualitySignals":{"questionId":"原ID","checks":{"mathematics":"pass|concern|unknown","proof":"pass|concern|unknown","method":"pass|concern|unknown","explanation":"pass|concern|unknown","assessment":"pass|concern|unknown"},"findings":[{"id":"本题唯一ASCII标识","dimension":"mathematics|proof|method|explanation|assessment|material","fieldPath":"具体教学字段路径","reason":"仍未解决的具体问题及原句/步骤"}]}}。
+批模式保持 {"questions":[原7字段对象,...]}，增加同层 "qualitySignals":[上述自检对象,...]，与每个questionId一一对应。checks仅是本模型自检：pass表示本次未发现问题、unknown表示未能确认、concern必须有同维度具体finding。无具体疑点findings=[]；不能把所有检查机械填pass或把生成稿长短当难度。该附录只在工作流审计保存，不进入学生题面或课堂解析。

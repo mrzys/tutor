@@ -24,23 +24,26 @@ import { AdaptiveOptions } from "./AdaptiveOptions";
 import { choicePresentation } from "./choice-presentation";
 import { partDisplayLabel } from "./part-presentation";
 import { slotDifficulty } from "./assembly-details";
+import { TeachingAnalysis, TeachingFocus } from "./TeachingAnalysis";
+import { teachingDisplayText } from "./teaching-text";
+import { frozenTeachingKnowledge, teachingAnalysisPresentation } from "./shared/teaching-analysis.mjs";
+import { mathSegments } from "./shared/math-segments.mjs";
 
 export function MathText(props: { text: any }) {
   // The existing native PDF layout is versioned separately. These readability
   // improvements target the interactive workspaces, not archived print layout.
   const exportLayout = new URLSearchParams(window.location.search).has("exportTask");
   const pieces = createMemo(() =>
-    String(props.text || "").split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g),
+    mathSegments(props.text),
   );
   return (
     <For each={pieces()}>
       {(part) => {
-        if (!part.startsWith("$") || !part.endsWith("$") || part.length < 3)
-          return <For each={exportLayout ? [part] : part.split(/([△▵](?=\s*[A-Z]{3}(?![A-Z])))/u)}>{text =>
+        if (part.type === "text")
+          return <For each={exportLayout ? [part.raw] : part.raw.split(/([△▵](?=\s*[A-Z]{3}(?![A-Z])))/u)}>{text =>
             !exportLayout && /^[△▵]$/u.test(text) ? <span class="math-inline geometry-triangle" innerHTML={katex.renderToString("\\bigtriangleup", { trust: false, throwOnError: false })} /> : <>{text}</>
           }</For>;
-        const displayMode = part.startsWith("$$");
-        const source = part.slice(displayMode ? 2 : 1, displayMode ? -2 : -1);
+        const { displayMode, source } = part;
         // Inline text-style fractions shrink numerators twice. Use readable
         // math layout without rewriting the stored source or explicit \tfrac.
         const readable = !exportLayout && !displayMode && /\\(?:frac|binom)\b/.test(source);
@@ -241,6 +244,8 @@ export function QuestionBody(props: {
   hideMissingTeacherMaterials?: boolean;
   hideSource?: boolean;
   difficultyLabel?: string;
+  difficultyBasis?: string;
+  formalKnowledge?: string[];
 }) {
   const presentation = () =>
     questionSourcePresentation(props.question, props.manifest);
@@ -265,6 +270,9 @@ export function QuestionBody(props: {
   const teacherInline = createMemo(() =>
     inlineAssetIds(props.question, true, presentation().stem),
   );
+  const teachingAnalysis = createMemo(() =>
+    teachingAnalysisPresentation(props.question, props.teacher === true),
+  );
   return (
     <>
       <div class="question-top">
@@ -283,7 +291,7 @@ export function QuestionBody(props: {
                 （{presentation().label}）
               </span>
             </Show>
-            <Show when={props.difficultyLabel}>
+            <Show when={props.teacher && props.difficultyLabel}>
               <span class="question-difficulty" title="题目内容估计，未经学生作答标定">
                 （难度：{props.difficultyLabel}）
               </span>
@@ -331,6 +339,18 @@ export function QuestionBody(props: {
           </For>
           <Show when={props.teacher}>
             <div class="teacher-material">
+              <Show when={props.difficultyBasis !== undefined}>
+                <section class="question-difficulty-basis">
+                  <h4>难度依据</h4>
+                  <RichText text={teachingDisplayText(props.difficultyBasis?.trim() ? props.difficultyBasis : "难度依据未记录")} question={props.question} teacher />
+                </section>
+              </Show>
+              <TeachingFocus
+                question={props.question}
+                teacher={props.teacher}
+                formalKnowledge={props.formalKnowledge}
+                renderText={text => <RichText text={text} question={props.question} teacher />}
+              />
               <For
                 each={[
                   ["answers", "参考答案"],
@@ -338,9 +358,11 @@ export function QuestionBody(props: {
                   ...(props.showPoints
                     ? [["scoringSuggestions", "评分参考"]]
                     : []),
-                ].filter(([field]) => !props.hideMissingTeacherMaterials || props.question?.teacher?.[field]?.length)}
+                ].filter(([field]) => !(field === "answers" && teachingAnalysis()?.answer && !props.question?.teacher?.answers?.length)
+                  && ((field === "solutions" && teachingAnalysis()) || !props.hideMissingTeacherMaterials || props.question?.teacher?.[field]?.length))}
               >
                 {([field, label]) => (
+                  <Show when={field === "solutions" && teachingAnalysis()} fallback={
                   <section>
                     <h4>{label}</h4>
                     <Show
@@ -362,6 +384,21 @@ export function QuestionBody(props: {
                       </For>
                     </Show>
                   </section>
+                  }>
+                    <TeachingAnalysis
+                      question={props.question}
+                      teacher={props.teacher}
+                      renderText={text => <RichText text={text} question={props.question} teacher />}
+                    />
+                    <Show when={props.question?.teacher?.solutions?.length}>
+                      <details class="original-teacher-solution" open={exportLayout}>
+                        <summary>原有解析</summary>
+                        <For each={props.question.teacher.solutions}>
+                          {(entry: any) => <p><RichText text={entry.text} question={props.question} teacher /></p>}
+                        </For>
+                      </details>
+                    </Show>
+                  </Show>
                 )}
               </For>
               <For
@@ -389,10 +426,13 @@ export function PaperSheet(props: {
 }) {
   const req = () =>
     props.draft?.baseline?.requirements || props.draft?.requirements || {};
-  const slots = () => props.draft?.slots || [];
+  // Keep missing positions in the draft and frozen snapshot; output only real
+  // questions, with continuous numbering and statistics for what is printed.
+  const slots = createMemo(() => (props.draft?.slots || []).filter((slot: any) => slot.question));
   return (
     <section
       class="paper-sheet"
+      classList={{ "teacher-paper": props.kind === "teacher" }}
       aria-label={`${props.kind === "teacher" ? "教师卷" : "学生卷"}整卷预览`}
     >
       <h2>{props.title || props.draft?.title || "练习"}</h2>
@@ -434,14 +474,21 @@ export function PaperSheet(props: {
             <QuestionBody
               question={slot.question}
               manifest={props.draft?.baseline?.sourceManifest}
-              number={slot.number || index() + 1}
+              number={index() + 1}
               points={slot.points}
               showPoints={req().scoringMode !== "none"}
               teacher={props.kind === "teacher"}
+              formalKnowledge={props.kind === "teacher" ? frozenTeachingKnowledge(
+                slot.question, props.draft?.baseline?.questionIndexSnapshot,
+                props.draft?.baseline?.taskCatalogSnapshot,
+              ) : undefined}
               hideSource={props.kind !== "teacher"}
               difficultyLabel={props.kind === "teacher" ? slotDifficulty(
                 slot, req(), props.draft?.baseline?.questionIndexSnapshot,
               ).estimate : undefined}
+              difficultyBasis={props.kind === "teacher" ? slotDifficulty(
+                slot, req(), props.draft?.baseline?.questionIndexSnapshot,
+              ).basis : undefined}
             />
           </article>
         )}

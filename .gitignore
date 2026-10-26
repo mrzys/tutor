@@ -35,3 +35,4 @@ __pycache__/
 /docs/validation/raw/*.pdf
 /docs/validation/raw/*.docx
 /docs/validation/raw/*_parsed.txt
+.openbitfun/

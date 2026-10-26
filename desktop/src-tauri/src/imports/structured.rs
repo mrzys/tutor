@@ -11,6 +11,7 @@ pub(super) const IMMUTABLE_FIELDS: &[&str] = &[
     "teacher",
     "sourceIssues",
     "sourceMaterialRequirements",
+    "sourceMaterialRoles",
     "annotationStatus",
     "annotationError",
     "annotationAttempts",
@@ -944,7 +945,7 @@ mod tests {
         verify_audit(&store, &updated).unwrap();
     }
     #[test]
-    fn structured_visual_guard_uses_concrete_missing_diagrams_without_weakening_legacy() {
+    fn simulated_semantic_diagram_words_do_not_replace_model_review_but_real_assets_still_require_binding() {
         let mut q = bundle(1)["questions"][0].clone();
         q["stem"] = json!("模拟描述统计：直方图中小矩形面积表示频率的概念是____。");
         assert!(
@@ -955,7 +956,7 @@ mod tests {
         let mut legacy = q.clone();
         legacy.as_object_mut().unwrap().remove("sourceIdentity");
         assert!(
-            question_issues(&legacy, &json!([]))
+            !question_issues(&legacy, &json!([]))
                 .iter()
                 .any(|i| i["code"] == "source_content_unresolved")
         );
@@ -966,10 +967,14 @@ mod tests {
         ] {
             q["stem"] = json!(stem);
             assert!(
-                question_issues(&q, &json!([]))
+                !question_issues(&q, &json!([]))
                     .iter()
                     .any(|i| i["code"] == "source_content_unresolved")
             );
+        }
+        for stem in ["![原图](asset:missing)","<img src='asset:missing'>","SOURCE_VISUAL_UNRESOLVED","SOURCE_FORMULA_UNRESOLVED","<svg>unavailable visual</svg>"] {
+            q["stem"] = json!(stem);
+            assert!(question_issues(&q,&json!([])).iter().any(|i|i["code"]=="source_content_unresolved"));
         }
     }
     #[test]

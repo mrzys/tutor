@@ -1,0 +1,47 @@
+.preparation-conversation { width: 100%; max-width: 900px; margin: 0 auto; min-width: 0; }
+.preparation-conversation:not(.is-compact) { animation: preparation-enter 180ms ease-out both; }
+.preparation-page-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.preparation-page-heading h1 { font-size: var(--font-title); margin: 0; }
+.preparation-duration { font-size: var(--font-small); font-variant-numeric: tabular-nums; }
+.preparation-timeline { list-style: none; margin: 20px 0; padding: 0; }
+.preparation-timeline li { display: flex; align-items: flex-start; gap: 12px; padding: 16px 12px; border-bottom: 1px solid var(--line); border-left: 2px solid transparent; color: var(--muted); transition: background-color 160ms, border-color 160ms; }
+.preparation-timeline li.is-active { background: var(--surface-subtle); border-left-color: var(--accent); color: var(--accent); }
+.preparation-timeline li > div { flex: 1; min-width: 0; }
+.preparation-timeline p { margin: 4px 0 0; font-size: var(--font-small); color: var(--muted); line-height: 1.75; }
+.preparation-step-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 24px; flex: none; }
+.preparation-step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--control-border); }
+.preparation-step-state { font-size: var(--font-small); white-space: nowrap; line-height: 24px; }
+@keyframes preparation-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .preparation-conversation:not(.is-compact) { animation: none; } .preparation-timeline li { transition: none; } }
+.preparation-messages { display: flex; flex-direction: column; gap: 28px; padding: 24px 0; }
+.preparation-conversation:not(.is-compact) .preparation-messages { gap: 0; padding: 0; }
+.preparation-conversation:not(.is-compact) .preparation-timeline { margin-top: 0; }
+.preparation-user { align-self: flex-end; max-width: 85%; background: var(--surface-hover); border-radius: var(--surface-radius); padding: 16px 20px; }
+.preparation-user p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 6px 0; color: var(--accent); }
+.preparation-role { font-weight: 600; color: var(--accent); }
+.preparation-context { font-size: var(--font-small); color: var(--muted); }
+.preparation-assistant { padding: 0 4px; min-width: 0; }
+.preparation-assistant-heading, .preparation-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.preparation-assistant-heading { margin-bottom: 20px; color: var(--accent); }
+.preparation-assistant-heading > .muted { font-size: var(--font-small); }
+.preparation-status { color: var(--accent); }
+.preparation-status time { margin-left: auto; font-size: var(--font-small); font-variant-numeric: tabular-nums; }
+.preparation-assistant > p { margin: 12px 0 0; line-height: 1.75; }
+.preparation-controls { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 16px 0; background: var(--surface); border-top: 1px solid var(--line); }
+.preparation-results { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 16px; }
+.preparation-results li { display: flex; align-items: baseline; gap: 10px; }
+.preparation-results li > svg { flex: none; align-self: flex-start; margin-top: 5px; }
+.preparation-results p { margin: 4px 0 0; overflow-wrap: anywhere; }
+.preparation-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+.preparation-failure { color: var(--error); overflow-wrap: anywhere; }
+.preparation-warnings { padding-left: 24px; color: var(--warning); }
+.preparation-conversation.is-compact { max-width: none; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.preparation-conversation summary { padding: 0 0 16px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.preparation-conversation summary > span:first-child { display: inline-flex; align-items: center; gap: 10px; color: var(--accent); }
+.preparation-conversation summary > .muted { font-size: var(--font-small); }
+.new-content.preparation-workspace { justify-content: flex-start; }
+@media (max-width: 760px) {
+  .new-content.preparation-workspace { padding-top: 76px; }
+  .preparation-user { max-width: 95%; padding: 14px 16px; }
+  .preparation-status { gap: 8px; }
+}

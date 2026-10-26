@@ -13,17 +13,20 @@ import {
   UnlockKeyhole,
   X,
 } from "lucide-solid";
-import { operationId, request, typeIds, typeLabels } from "./bridge";
+import { cancel, operationId, request, typeIds, typeLabels } from "./bridge";
 import { ErrorBanner, Modal, Popover, TypeTabs } from "./ui";
 import { QuestionBody, RichText } from "./Paper";
 import { difficultyLevels, slotDifficulty } from "./assembly-details";
+import { confirmedSlotTaskLabel } from "./shared/assembly-evidence.mjs";
 import { QuestionDetails } from "./QuestionDetails";
+import { teachingDisplayText } from "./teaching-text";
 
 export function DraftView(props: {
   draft: any;
   config: any;
   busy: boolean;
   operation: (operation: any) => Promise<void>;
+  onRefreshDraft: (draft: any) => void;
   preview: () => void;
   confirm: () => void;
   details: () => void;
@@ -35,6 +38,8 @@ export function DraftView(props: {
   const [candidates, setCandidates] = createSignal<any[]>([]);
   const [candidateBusy, setCandidateBusy] = createSignal(false);
   const [candidateError, setCandidateError] = createSignal("");
+  const [candidateMessage, setCandidateMessage] = createSignal("");
+  const [candidateSearch, setCandidateSearch] = createSignal<any>(null);
   const [manualAddOpen, setManualAddOpen] = createSignal(false);
   const [addType, setAddType] = createSignal("single_choice");
   const [addQuery, setAddQuery] = createSignal("");
@@ -92,20 +97,31 @@ export function DraftView(props: {
       ids.filter((id) => slots().some((slot: any) => slot.slotId === id)),
     );
   });
-  async function loadCandidates(slot: any) {
+  async function loadCandidates(slot: any, continuation?: any) {
     const own = ++candidateVersion;
     setCandidateSlot(slot);
     setReplaceQuery("");
     setReplacePage(1);
     setCandidateBusy(true);
     setCandidateError("");
-    setCandidates([]);
+    if (!continuation) {
+      setCandidateMessage("");
+      setCandidates([]);
+      setCandidateSearch(null);
+    }
     try {
       const result = await request("draft_candidates", {
         draftId: props.draft.draftId,
         slotId: slot.slotId,
+        expectedRevision: props.draft.revision,
+        ...(continuation ? { continuation } : {}),
       });
-      if (own === candidateVersion) setCandidates(result.candidates || []);
+      if (own === candidateVersion) {
+        if (result.draft) props.onRefreshDraft(result.draft);
+        setCandidates(result.candidates || []);
+        setCandidateMessage(result.missingReason || "");
+        setCandidateSearch(result.search || null);
+      }
     } catch (error: any) {
       if (own === candidateVersion) setCandidateError(error.message);
     } finally {
@@ -122,8 +138,7 @@ export function DraftView(props: {
         ...(candidate
           ? {
               candidateId: candidate.questionId || candidate.id,
-              ...(manual() ? { contentVersion: candidate.contentVersion, teacherVersion: candidate.teacherVersion } : {}),
-              allowDifference: !["eligible", "teacher_selected"].includes(candidate.status),
+              contentVersion: candidate.contentVersion, teacherVersion: candidate.teacherVersion,
             }
           : {}),
       });
@@ -213,9 +228,9 @@ export function DraftView(props: {
               }}
             />
             <span class="muted draft-count">
-            {slots().length} 题
-            <Show when={slots().some((slot: any) => !slot.question)}>
-              {" · 缺 "}{slots().filter((slot: any) => !slot.question).length} 题
+            已选 {slots().filter((slot: any) => slot.question).length} 题
+            <Show when={(props.draft?.stats?.missingCount ?? slots().filter((slot: any) => !slot.question).length) > 0}>
+              {" · 缺 "}{props.draft?.stats?.missingCount ?? slots().filter((slot: any) => !slot.question).length} 题
             </Show>
             </span>
             <Show when={!manual()}>
@@ -234,6 +249,9 @@ export function DraftView(props: {
             </Show>
           </div>
       <div class="draft-questions" role="tabpanel">
+        <Show when={props.draft?.planningShortage?.missingTotal > 0}>
+          <p class="warning-text" role="status">原定 {props.draft.baseline.requirements.questionCount} 题，尚有 {props.draft.planningShortage.missingTotal} 题未安排考查任务，已保留缺口；可继续编辑、预览和确认成卷。</p>
+        </Show>
         <For each={visible()}>
           {(slot: any) => (
             <article
@@ -261,10 +279,14 @@ export function DraftView(props: {
                 showPoints={scored()}
               />
               <Show when={!slot.question}>
+                <p class="missing-slot-task">
+                  <strong>考查点：</strong>
+                  <RichText text={teachingDisplayText(confirmedSlotTaskLabel(slot, props.draft?.baseline?.taskCatalogSnapshot))} />
+                </p>
                 <p class="warning-text">
-                  {(slot.selection?.reasons || slot.missingReasons || []).join(
+                  <RichText text={teachingDisplayText((slot.selection?.reasons || slot.missingReasons || []).join(
                     "；",
-                  ) || "当前条件下没有可用题目，保留此题位。"}
+                  ) || "当前条件下没有可用题目，保留此题位。")} />
                 </p>
                 <button
                   class="secondary"
@@ -393,7 +415,7 @@ export function DraftView(props: {
       <Show when={candidateSlot()}>
         <Modal
           title={`替换第 ${candidateSlot().number} 题`}
-          onClose={() => setCandidateSlot(null)}
+          onClose={() => { ++candidateVersion; setCandidateSlot(null); }}
           wide
           busy={props.busy}
         >
@@ -402,11 +424,12 @@ export function DraftView(props: {
             retry={() => loadCandidates(candidateSlot())}
           />
           <Show when={candidateBusy()}>
-            <p role="status">正在查找可用题目…</p>
+            <p role="status">{manual() ? "正在查找可用题目…" : "正在由模型评估真实备选题…"}</p>
+            <Show when={!manual()}><button class="secondary" onClick={() => cancel().catch((error: any) => setCandidateError(error.message))}>停止评估</button></Show>
           </Show>
-          <Show when={!candidateBusy() && !candidates().length}>
+          <Show when={!candidateBusy() && !candidateError() && !candidates().length}>
             <p class="muted">
-              {manual() ? "没有其它可用的同题型题目，现题保留。" : "没有符合当前要求的备选。现题保留，可以调整考查任务。"}
+              {manual() ? "没有其它可用的同题型题目，现题保留。" : candidateMessage() || "模型未找到符合当前要求的备选题，现题保留。可调整考查要求或补充题库。"}
             </p>
           </Show>
           <Show when={manual()}>
@@ -430,7 +453,7 @@ export function DraftView(props: {
                   <QuestionBody question={item.question} />
                 </Show>
                 <Show when={item.reasons?.length}>
-                  <p class="muted">{item.reasons.join("；")}</p>
+                  <p class="muted"><RichText text={teachingDisplayText(item.reasons.join("；"))} /></p>
                 </Show>
                 <button
                   class="secondary"
@@ -442,7 +465,7 @@ export function DraftView(props: {
                   }
                   onClick={() => replace(item)}
                 >
-                  {["eligible", "teacher_selected"].includes(item.status) ? "选用" : "确认差异并选用"}
+                  选用
                 </button>
               </div>
             )}
@@ -452,6 +475,15 @@ export function DraftView(props: {
             <span>{replacePage()} / {Math.ceil(replaceMatches().length / 20)}</span>
             <button disabled={replacePage() * 20 >= replaceMatches().length} onClick={() => setReplacePage((page) => page + 1)}>下一页</button>
           </div></Show>
+          <Show when={!manual() && candidateSearch()}>
+            <div class="pagination">
+              <span class="muted">已发送 {candidateSearch().presentedCount || 0} 题 · 模型已判断 {candidateSearch().assessedCount || 0} 题</span>
+              <Show when={candidateSearch().continuation}>
+                <button class="secondary" disabled={candidateBusy() || props.busy}
+                  onClick={() => loadCandidates(candidateSlot(), candidateSearch().continuation)}>继续比较其他候选</button>
+              </Show>
+            </div>
+          </Show>
         </Modal>
       </Show>
       <Show when={manualAddOpen()}>

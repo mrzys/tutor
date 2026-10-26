@@ -114,7 +114,7 @@ fn point_validation(
 }
 
 // Only version-bound, verified task/scope/complete-path evidence authorizes automatic selection.
-fn assess(
+fn legacy_assess(
     question: &Value,
     slot: &Value,
     r: &Value,
@@ -253,7 +253,7 @@ fn assess(
         &json!({"status":status,"reasons":reasons,"duplicate":duplicate,"canSelect":status=="eligible","duplicateGroup":a["duplicateGroup"],"allowedSolutionPath":path,"primaryKnowledgeUids":a["primaryKnowledgeUids"],"knowledgeSchemaVersion":a["knowledgeSchemaVersion"],"notes":a["notes"],"difficultyEstimate":a["difficultyEstimate"]}),
     )
 }
-fn candidates(
+fn legacy_candidates(
     pool: &[Value],
     slot: &Value,
     r: &Value,
@@ -280,7 +280,7 @@ fn candidates(
         .iter()
         .filter(|q| s(q, "questionType") == s(slot, "questionType"))
         .map(|q| {
-            let mut result = assess(q, slot, r, config, &used, &groups);
+            let mut result = legacy_assess(q, slot, r, config, &used, &groups);
             let current = s(&slot["question"], "questionId") == s(q, "questionId");
             result["current"] = json!(current);
             if current {
@@ -320,6 +320,13 @@ fn edit_task(config: &Value, slot: &Value, manual: bool) -> AppResult<Value> {
     Ok(task(config, s(slot, "taskId"))?.clone())
 }
 
+fn current_question_pool(store: &Store) -> AppResult<Vec<Value>> {
+    let config = store.bank.config()?;
+    store.bank.questions()?.iter()
+        .map(|question| crate::bank_teaching::project(question, &config))
+        .collect()
+}
+
 fn manual_question(store: &Store, selection: &Value) -> AppResult<Value> {
     let qid = selection["questionId"]
         .as_str()
@@ -346,7 +353,7 @@ fn manual_question(store: &Store, selection: &Value) -> AppResult<Value> {
     if !TYPES.contains(&s(&question, "questionType")) {
         return Err(invalid("此题型暂不支持手动组卷，请从题篮移除后重试。"));
     }
-    Ok(question)
+    crate::bank_teaching::project(&question, &store.bank.config()?)
 }
 
 fn manual_requirements(input: &Value, counts: &Value, student: Option<Value>) -> AppResult<Value> {
@@ -461,72 +468,24 @@ fn manual_draft_create(
     })
 }
 
-fn supply(pool: &[Value], slots: &[Value], r: &Value, config: &Value) -> Value {
-    json!({"ready":pool.len(),"slotSupply":slots.iter().map(|slot|{let c=candidates(pool,slot,r,config,&[]);json!({"slotId":slot["slotId"],"eligibleCount":c.iter().filter(|x|s(x,"status")=="eligible").count(),"unknownCount":c.iter().filter(|x|s(x,"status")=="unknown").count(),"relatedCount":c.iter().filter(|x|s(x,"status")=="related").count(),"readFailures":[]})}).collect::<Vec<_>>()})
+fn legacy_supply(pool: &[Value], slots: &[Value], r: &Value, config: &Value) -> Value {
+    json!({"ready":pool.len(),"slotSupply":slots.iter().map(|slot|{let c=legacy_candidates(pool,slot,r,config,&[]);json!({"slotId":slot["slotId"],"eligibleCount":c.iter().filter(|x|s(x,"status")=="eligible").count(),"unknownCount":c.iter().filter(|x|s(x,"status")=="unknown").count(),"relatedCount":c.iter().filter(|x|s(x,"status")=="related").count(),"readFailures":[]})}).collect::<Vec<_>>()})
 }
 // Type-level reference supply before the teacher confirms a split. Count real,
 // version-checked questions under the current scope and learned boundary, with
 // duplicate groups counted once. A later task/goal assignment may reduce supply.
 pub(crate) fn intake_supply(store: &Store, r: &Value, config: &Value) -> AppResult<Value> {
-    let mut reference = r.clone();
-    reference.as_object_mut().unwrap().remove("typeConstraints");
-    let requirements = intake::normalize(store, &reference)?;
-    let pool = store.bank.questions()?;
-    let mut by_type = serde_json::Map::new();
-    for kind in TYPES {
-        let mut eligible = HashSet::new();
-        let mut unknown = HashSet::new();
-        for question in pool.iter().filter(|q| s(q, "questionType") == kind) {
-            let Some(annotation) =
-                config["assemblyIndex"]["entries"]
-                    .as_array()
-                    .and_then(|entries| {
-                        entries
-                            .iter()
-                            .find(|entry| entry["questionId"] == question["questionId"])
-                    })
-            else {
-                continue;
-            };
-            let mut unresolved = false;
-            for task_id in strings(&annotation["tasks"]) {
-                let Ok(task) = task(config, &task_id) else {
-                    continue;
-                };
-                if s(&task, "questionType") != kind
-                    || !intake::overlaps(&task["sectionIds"], &requirements["mainScope"])
-                {
-                    continue;
-                }
-                let candidate = assess(
-                    question,
-                    &json!({"taskId":task_id,"goalIds":[]}),
-                    &requirements,
-                    config,
-                    &HashSet::new(),
-                    &HashSet::new(),
-                );
-                if s(&candidate, "status") == "eligible" {
-                    eligible.insert(s(&candidate, "duplicateGroup").to_owned());
-                    unresolved = false;
-                    break;
-                }
-                unresolved |= s(&candidate, "status") == "unknown";
-            }
-            if unresolved {
-                unknown.insert(s(question, "questionId").to_owned());
-            }
-        }
-        by_type.insert(
-            kind.into(),
-            json!({"eligibleCount":eligible.len(),"unknownCount":unknown.len()}),
-        );
-    }
-    Ok(
-        json!({"byType":by_type,"basis":"verified_bank_scope_and_learned_boundary","limitation":"题型供给为去重后的参考上限；未核实题不计入可用量，后续具体考查任务、教学目标和整卷去重仍可能产生缺口。"}),
-    )
+    let requirements = intake::normalize(store, r)?;
+    let pool = current_question_pool(store)?;
+    let sources = strings(&requirements["sourceIds"]);
+    let counts: serde_json::Map<String,Value> = TYPES.iter().map(|kind| {
+        let count = pool.iter().filter(|q| s(q,"questionType")==*kind && list(&q["sourceRefs"]).iter().any(|source| sources.iter().any(|id| id==s(source,"sourceId")))).count();
+        (kind.to_string(),json!({"readyCount":count}))
+    }).collect();
+    let _ = config;
+    Ok(json!({"byType":counts,"basis":"verified_ready_inventory_not_teaching_fit","limitation":"仅为真实就绪题目库存，教学相关性、难度及已学适配由模型根据实际题面判断。"}))
 }
-fn blueprint_model_context(pool: &[Value], slots: &[Value], r: &Value, config: &Value) -> Value {
+fn legacy_blueprint_model_context(pool: &[Value], slots: &[Value], r: &Value, config: &Value) -> Value {
     // Keep every legal task, including tasks without supply. Import review,
     // provenance and scoring metadata do not help choose teaching targets.
     let tasks: Vec<_> = list(&config["tasks"])
@@ -541,13 +500,41 @@ fn blueprint_model_context(pool: &[Value], slots: &[Value], r: &Value, config: &
         .iter()
         .map(|slot| json!({"taskId":slot["taskId"],"goalIds":slot["goalIds"]}))
         .collect();
-    let slot_supply: Vec<_> = list(&supply(pool, slots, r, config)["slotSupply"])
+    let slot_supply: Vec<_> = list(&legacy_supply(pool, slots, r, config)["slotSupply"])
         .iter()
         .map(|row| json!({"eligibleCount":row["eligibleCount"],"unknownCount":row["unknownCount"],"relatedCount":row["relatedCount"]}))
         .collect();
     intake::model_context(
         &json!({"requirements":r,"tasks":tasks,"slots":reference_slots,"supply":{"referenceSlotSupply":slot_supply}}),
     )
+}
+fn plan_context(requirements: &Value, config: &Value, inventory: &Value) -> AppResult<Value> {
+    let tasks:Vec<_> = list(&config["tasks"]).iter()
+        .filter(|task| requirements["counts"][s(task,"questionType")].as_u64().unwrap_or(0)>0
+            && intake::overlaps(&task["sectionIds"],&requirements["mainScope"]))
+        .map(|task|json!({"id":task["id"],"label":task["label"],"questionType":task["questionType"],"sectionIds":task["sectionIds"],"partIds":task["partIds"]})).collect();
+    let mut task_catalog_gaps=Vec::new();
+    for (kind,label) in [("single_choice","单选"),("multiple_choice","多选"),("fill_blank","填空"),("free_response","解答")] {
+        if requirements["counts"][kind].as_u64().unwrap_or(0)>0 && !tasks.iter().any(|task|s(task,"questionType")==kind) {
+            task_catalog_gaps.push(json!({"questionType":kind,"requestedCount":requirements["counts"][kind],"reason":"confirmed_scope_task_not_registered","message":format!("已确认范围尚未登记{label}考查任务，不代表题库无题；原题量与范围保持不变，请补充目录或修改规划后确认。")}));
+        }
+    }
+    let mut needed=HashSet::new();
+    for field in ["mainScope","learnedScope"] {
+        needed.extend(strings(&requirements[field]).iter().map(|id|intake::canonical(id)));
+    }
+    for goal in list(&requirements["teachingGoals"]) {
+        needed.extend(strings(&goal["knowledgeScope"]).iter().map(|id|intake::canonical(id)));
+    }
+    for task in &tasks {
+        needed.extend(strings(&task["sectionIds"]).iter().map(|id|intake::canonical(id)));
+    }
+    let mut seen=HashSet::new();
+    let chapters:Vec<_>=list(&config["chapters"]).into_iter().filter(|chapter|{
+        let id=intake::canonical(s(chapter,"id"));
+        needed.contains(&id) && seen.insert(id)
+    }).collect();
+    Ok(json!({"requirements":intake::model_context(requirements),"tasks":tasks,"taskCatalogGaps":task_catalog_gaps,"inventory":inventory,"chapters":chapters}))
 }
 fn model_blueprint_slots(output: &Value, config: &Value) -> AppResult<Vec<Value>> {
     let generated = output["slots"]
@@ -570,7 +557,7 @@ fn model_blueprint_slots(output: &Value, config: &Value) -> AppResult<Vec<Value>
         })
         .collect()
 }
-fn allocate_plan_points(slots: &mut [Value], r: &Value, config: &Value) -> AppResult<()> {
+fn legacy_allocate_plan_points(slots: &mut [Value], r: &Value, config: &Value) -> AppResult<()> {
     let weights: Vec<u64> = slots
         .iter()
         .map(|slot| match s(slot, "questionType") {
@@ -589,11 +576,27 @@ fn allocate_plan_points(slots: &mut [Value], r: &Value, config: &Value) -> AppRe
     Ok(())
 }
 fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
+    check_blueprint_with_review(store, input, false)
+}
+fn check_blueprint_with_review(store: &Store, input: &Value, allow_quantity_review: bool) -> AppResult<Value> {
+    crate::assembly_log::data("validation", "recorded", json!({"validation":{"before":input}}));
+    let result = check_blueprint_inner(store, input, false, allow_quantity_review);
+    match &result {
+        Ok(checked) => crate::assembly_log::data("validation", "completed", json!({"validation":{"valid":true,"after":checked}})),
+        Err(error) => crate::assembly_log::data("validation", "failed", json!({"validation":{"valid":false,"errorCode":error.code,"message":error.message}})),
+    }
+    result
+}
+fn legacy_check_blueprint(store: &Store, input: &Value) -> AppResult<Value> { check_blueprint_inner(store,input,true,false) }
+fn check_blueprint_inner(store: &Store, input: &Value, legacy: bool, allow_quantity_review: bool) -> AppResult<Value> {
     let config = store.bank.config()?;
     let r = intake::normalize(store, &input["requirements"])?;
     let source = input["slots"]
         .as_array()
         .ok_or_else(|| invalid("题位规划需包含题位数组。"))?;
+    if allow_quantity_review && source.len()>60 {
+        return Err(invalid("模型题位规划最多 60 道题，未自动截断。"));
+    }
     let mut ids = HashSet::new();
     let mut counts =
         json!({"single_choice":0,"multiple_choice":0,"fill_blank":0,"free_response":0});
@@ -609,7 +612,8 @@ fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
         {
             return Err(invalid("题型或连续题号与考查任务不匹配。"));
         }
-        if !intake::overlaps(&t["sectionIds"], &r["mainScope"]) {
+        if (legacy || input["generation"]["taskCatalogScope"]=="confirmed_main_scope_v1")
+            && !intake::overlaps(&t["sectionIds"], &r["mainScope"]) {
             return Err(invalid("考查任务超出教师指定范围，请调整题位。"));
         }
         let mut out = json!({"slotId":sid,"number":index+1,"questionType":t["questionType"],"taskId":t["id"],"taskLabel":t["label"],"goalIds":slot.get("goalIds").cloned().unwrap_or(json!([])),"points":slot["points"],"partPoints":slot.get("partPoints").cloned().unwrap_or(json!([]))});
@@ -623,9 +627,9 @@ fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
             let Some(goal) = goals.iter().find(|g| s(g, "id") == gid) else {
                 return Err(invalid("题位关联了未知教学目标。"));
             };
-            if !intake::overlaps(&goal["knowledgeScope"], &t["sectionIds"])
+            if legacy && (!intake::overlaps(&goal["knowledgeScope"], &t["sectionIds"])
                 || (s(&goal["conditions"], "response") == "written_reasoning"
-                    && s(t, "questionType") != "free_response")
+                    && s(t, "questionType") != "free_response"))
             {
                 return Err(invalid("题位任务或作答形式与关联教学目标不兼容。"));
             }
@@ -658,7 +662,7 @@ fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
         counts[kind] = json!(counts[kind].as_u64().unwrap_or(0) + 1);
         slots.push(out);
     }
-    if counts != r["counts"] {
+    if counts != r["counts"] && !allow_quantity_review {
         return Err(invalid("题位数量与教师确认的题量不一致，未自动增减题量。"));
     }
     for goal in list(&r["teachingGoals"])
@@ -669,7 +673,7 @@ fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
             strings(&slot["goalIds"])
                 .iter()
                 .any(|gid| gid == s(goal, "id"))
-        }) {
+        }) && !allow_quantity_review {
             return Err(invalid(
                 "必须教学目标尚未关联任何兼容题位，请调整规划或需求后再确认。",
             ));
@@ -679,27 +683,69 @@ fn check_blueprint(store: &Store, input: &Value) -> AppResult<Value> {
         .iter()
         .map(|slot| slot["points"].as_u64().unwrap_or(0))
         .sum();
-    if points != r["targetScore"].as_u64().unwrap_or(0) {
+    if points != r["targetScore"].as_u64().unwrap_or(0) && !allow_quantity_review {
         return Err(invalid("题位分值合计与确认总分不一致。"));
     }
-    let pool = store.bank.questions()?;
-    Ok(
-        json!({"schemaVersion":1,"requirements":r,"slots":slots,"plannedStats":{"questionCount":source.len(),"points":points},"generation":input["generation"],"supply":supply(&pool,&slots,&r,&config)}),
-    )
+    let pool = current_question_pool(store)?;
+    let inventory = if legacy { legacy_supply(&pool,&slots,&r,&config) } else { json!({"ready":pool.len(),"slotSupply":slots.iter().map(|slot|json!({"slotId":slot["slotId"],"readyCount":pool.iter().filter(|q|q["questionType"]==slot["questionType"]).count()})).collect::<Vec<_>>(),"basis":"inventory_not_teaching_fit"}) };
+    let mut checked = json!({"schemaVersion":1,"requirements":r,"slots":slots,"plannedStats":{"questionCount":source.len(),"points":points},"generation":input["generation"],"supply":inventory});
+    if allow_quantity_review {
+        checked["quantityReview"] = json!({"matches":counts==r["counts"],"expectedCounts":r["counts"],"actualCounts":counts,"expectedTotal":r["questionCount"],"actualTotal":source.len()});
+    }
+    Ok(checked)
 }
-fn plan(
+fn plan(store: &Store, input: &Value, model: &ModelClient, cancel: &AtomicBool) -> AppResult<Value> {
+    check_cancel(cancel)?;
+    if s(input,"mode") != "llm" { return Err(error("rule_retired","组卷教学规划已统一由模型处理，请配置模型后重试；已有需求保留。")); }
+    crate::workflow_progress::emit("plan_supply","running");
+    let requirements = intake::normalize(store,&input["requirements"])?;
+    let config = store.bank.config()?;
+    let inventory = intake_supply(store,&requirements,&config)?;
+    let context = plan_context(&requirements,&config,&inventory)?;
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_supply","completed");
+    let (slots,generation) = if list(&context["tasks"]).is_empty() {
+        (Vec::new(),json!({"mode":"not_run","provenance":"task_catalog_incomplete","taskCatalogScope":"confirmed_main_scope_v1","reason":"已确认范围与题型暂无登记考查任务，未调用模型；原要求保留，空规划等待修改。"}))
+    } else {
+        crate::workflow_progress::emit("plan_slots","running");
+        let output = model.propose("blueprint",&context,cancel)?;
+        let mut slots = model_blueprint_slots(&output,&config)?;
+        if slots.iter().any(|slot|!list(&context["tasks"]).iter().any(|task|task["id"]==slot["taskId"])) {
+            return Err(invalid("模型返回的考查任务不在本次已确认范围与题型的任务目录中，请重新规划或修改范围后确认；原要求已保留。"));
+        }
+        for (index,slot) in slots.iter_mut().enumerate() {
+            slot["points"] = output["slots"][index].get("points").cloned().unwrap_or(json!(0));
+            slot["partPoints"] = output["slots"][index].get("partPoints").cloned().unwrap_or(json!([]));
+        }
+        check_cancel(cancel)?;
+        crate::workflow_progress::emit("plan_slots","completed");
+        (slots,json!({"mode":"llm","provenance":"llm_planning_v1","taskCatalogScope":"confirmed_main_scope_v1"}))
+    };
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_check","running");
+    let mut result = check_blueprint_with_review(store,&json!({"requirements":requirements,"slots":slots,"generation":generation}),true)?;
+    result["taskCatalogGaps"]=context["taskCatalogGaps"].clone();
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_check","completed");
+    Ok(result)
+}
+fn legacy_plan(
     store: &Store,
     input: &Value,
     model: &ModelClient,
     cancel: &AtomicBool,
 ) -> AppResult<Value> {
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_supply", "running");
+    check_cancel(cancel)?;
     let r = intake::normalize(store, &input["requirements"])?;
     let config = store.bank.config()?;
-    let pool = store.bank.questions()?;
+    let pool = current_question_pool(store)?;
     // Choose rule tasks from verified supply under exactly the confirmed scope
     // and prerequisites. Catalog order is not evidence that a task can be used.
     let mut task_groups: HashMap<String, HashSet<String>> = HashMap::new();
     for question in &pool {
+        check_cancel(cancel)?;
         let annotation = config["assemblyIndex"]["entries"]
             .as_array()
             .and_then(|entries| {
@@ -711,6 +757,7 @@ fn plan(
             continue;
         };
         for task_id in strings(&annotation["tasks"]) {
+            check_cancel(cancel)?;
             let Ok(task) = task(&config, &task_id) else {
                 continue;
             };
@@ -726,7 +773,7 @@ fn plan(
                 })
                 .map(|goal| goal["id"].clone())
                 .collect();
-            let candidate = assess(
+            let candidate = legacy_assess(
                 question,
                 &json!({"taskId":task_id,"goalIds":goal_ids}),
                 &r,
@@ -742,9 +789,15 @@ fn plan(
             }
         }
     }
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_supply", "completed");
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_slots", "running");
+    check_cancel(cancel)?;
     let mut used_groups = HashSet::new();
     let mut slots = Vec::new();
     for kind in TYPES {
+        check_cancel(cancel)?;
         let available: Vec<_> = list(&config["tasks"])
             .into_iter()
             .filter(|t| {
@@ -773,6 +826,7 @@ fn plan(
             eligible
         };
         for i in 0..n {
+            check_cancel(cancel)?;
             let preferred = (0..choices.len())
                 .map(|step| choices[(i as usize + step) % choices.len()])
                 .find_map(|task| {
@@ -799,19 +853,28 @@ fn plan(
         "llm" => {
             let output = model.propose(
                 "blueprint",
-                &blueprint_model_context(&pool, &slots, &r, &config),
+                &legacy_blueprint_model_context(&pool, &slots, &r, &config),
                 cancel,
             )?;
+            check_cancel(cancel)?;
             slots = model_blueprint_slots(&output, &config)?;
         }
         _ => return Err(invalid("请明确选择 AI 规划或规则预设。")),
     }
-    allocate_plan_points(&mut slots, &r, &config)?;
     check_cancel(cancel)?;
-    check_blueprint(
+    crate::workflow_progress::emit("plan_slots", "completed");
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_check", "running");
+    check_cancel(cancel)?;
+    legacy_allocate_plan_points(&mut slots, &r, &config)?;
+    check_cancel(cancel)?;
+    let blueprint = legacy_check_blueprint(
         store,
         &json!({"requirements":r,"slots":slots,"generation":{"mode":s(input,"mode")}}),
-    )
+    )?;
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("plan_check", "completed");
+    Ok(blueprint)
 }
 
 fn refresh(draft: &mut Value) {
@@ -825,8 +888,32 @@ fn refresh(draft: &mut Value) {
         .iter()
         .map(|s| s["points"].as_u64().unwrap_or(0))
         .sum::<u64>();
-    draft["stats"] = json!({"questionCount":slots.len(),"plannedCount":slots.len(),"selectedCount":selected.len(),"actualCount":selected.len(),"missingCount":slots.len()-selected.len(),"plannedQuestions":slots.len(),"selectedQuestions":selected.len(),"missingQuestions":slots.len()-selected.len(),"plannedPoints":points,"actualPoints":available_points,"availablePoints":available_points,"unknownDifficultyCount":selected.len(),"difficultyEstimate":null});
+    let manual=is_manual(draft);
+    let requirements=&draft["baseline"]["requirements"];
+    let mut planned_counts=json!({"single_choice":0,"multiple_choice":0,"fill_blank":0,"free_response":0});
+    let mut requested_counts=planned_counts.clone();
+    let mut missing_counts=planned_counts.clone();
+    for kind in TYPES {
+        let planned=slots.iter().filter(|slot|s(slot,"questionType")==kind).count() as u64;
+        let requested=if manual {planned}else{requirements["counts"][kind].as_u64().unwrap_or(planned)};
+        planned_counts[kind]=json!(planned);requested_counts[kind]=json!(requested);
+        missing_counts[kind]=json!(requested.saturating_sub(planned));
+    }
+    let requested_total=TYPES.iter().map(|kind|requested_counts[*kind].as_u64().unwrap_or(0)).sum::<u64>();
+    let unplanned=TYPES.iter().map(|kind|missing_counts[*kind].as_u64().unwrap_or(0)).sum::<u64>();
+    let missing=unplanned+(slots.len()-selected.len()) as u64;
+    if manual {draft.as_object_mut().unwrap().remove("planningShortage");}
+    else {draft["planningShortage"]=json!({"requestedCounts":requested_counts,"plannedCounts":planned_counts,"missingCounts":missing_counts,"requestedTotal":requested_total,"plannedTotal":slots.len(),"missingTotal":unplanned,"reason":if unplanned>0{"requested_questions_not_planned"}else{""}});}
+    draft["stats"] = json!({"questionCount":slots.len(),"requestedCount":requested_total,"unplannedCount":unplanned,"plannedCount":slots.len(),"selectedCount":selected.len(),"actualCount":selected.len(),"missingCount":missing,"plannedQuestions":slots.len(),"selectedQuestions":selected.len(),"missingQuestions":missing,"plannedPoints":points,"actualPoints":available_points,"availablePoints":available_points,"unknownDifficultyCount":selected.len(),"difficultyEstimate":null});
     let mut differences = Vec::new();
+    if unplanned>0 {
+        differences.push(json!({"code":"planning_shortage","message":format!("已确认题量中有 {unplanned} 道尚无题位，原需求保留；本次仅输出实际选中的题目。"),"missingCounts":missing_counts,"missingTotal":unplanned}));
+    }
+    for goal in list(&draft["baseline"]["requirements"]["teachingGoals"]).iter().filter(|goal|!manual && s(goal,"priority")=="required") {
+        if !slots.iter().any(|slot|strings(&slot["goalIds"]).iter().any(|id|id==s(goal,"id"))) {
+            differences.push(json!({"code":"missing_required_goal","goalId":goal["id"],"message":format!("必须教学目标「{}」尚未关联题位，请核对差异后确认。",s(goal,"observable"))}));
+        }
+    }
     for slot in &slots {
         if !slot["question"].is_object() {
             differences.push(json!({"code":"missing_question","slotId":slot["slotId"],"message":format!("第 {} 题缺少符合条件的题目，保留题位。可调整该题考查任务或补充题库。",slot["number"])}));
@@ -880,7 +967,7 @@ fn refresh(draft: &mut Value) {
     draft["differences"] = json!(differences);
 }
 // Augmenting-path maximum matching prevents greedy selection from inventing a shortage.
-fn assignment(rows: &[Vec<(String, String)>]) -> HashMap<usize, String> {
+pub(crate) fn assignment(rows: &[Vec<(String, String)>]) -> HashMap<usize, String> {
     fn augment(
         i: usize,
         rows: &[Vec<(String, String)>],
@@ -905,20 +992,101 @@ fn assignment(rows: &[Vec<(String, String)>]) -> HashMap<usize, String> {
     }
     owners.into_values().collect()
 }
-fn create_draft(
+fn create_draft(store: &mut Store, input: &Value, model: &ModelClient, cancel: &AtomicBool) -> AppResult<Value> {
+    check_cancel(cancel)?;
+    if s(input,"mode") != "llm" { return Err(error("rule_retired","自动选题已统一由模型判断，请配置模型后重试；已确认规划保留。")); }
+    crate::workflow_progress::emit("select_pool","running");
+    check_cancel(cancel)?;
+    let blueprint = check_blueprint_with_review(store,&input["blueprint"],true)?;
+    for kind in TYPES {
+        let actual=list(&blueprint["slots"]).iter().filter(|slot|s(slot,"questionType")==kind).count() as u64;
+        if actual>blueprint["requirements"]["counts"][kind].as_u64().unwrap_or(0) {
+            return Err(invalid("规划题型数量超过已确认需求，未自动增题或更换题型配比；请移除多余题位后继续。"));
+        }
+    }
+    let config = store.bank.config()?;
+    let pool = current_question_pool(store)?;
+    let requirements = &blueprint["requirements"];
+    let planned = list(&blueprint["slots"]);
+    crate::assembly_log::data_for_task("selection","validation","recorded",json!({"input":{"stage":"select_pool","requirements":intake::model_context(requirements),"slots":planned,"pool":pool.iter().map(|q|json!({"questionId":q["questionId"],"contentVersion":q["contentVersion"],"teacherVersion":q["teacherVersion"],"questionType":q["questionType"],"sourceRefs":q["sourceRefs"]})).collect::<Vec<_>>()}}));
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("select_pool","completed");
+    check_cancel(cancel)?;
+    let evaluations = if planned.is_empty() {Vec::new()} else {
+        crate::workflow_progress::emit("select_evaluate","running");
+        check_cancel(cancel)?;
+        let evaluated=crate::assembly_llm::evaluate(&pool,&planned,requirements,&config,&[],model,cancel)?;
+        check_cancel(cancel)?;
+        crate::workflow_progress::emit("select_evaluate","completed");
+        evaluated
+    };
+    check_cancel(cancel)?;
+    crate::workflow_progress::emit("select_save","running");
+    check_cancel(cancel)?;
+    let rows:Vec<Vec<(String,String)>> = planned.iter().map(|slot| {
+        evaluations.iter().find(|row|row["slotId"]==slot["slotId"]).map(|row|list(&row["candidates"]).iter().map(|c|(s(c,"questionId").to_owned(),s(c,"duplicateGroup").to_owned())).collect()).unwrap_or_default()
+    }).collect();
+    let matches = assignment(&rows);
+    let mut slots = Vec::new();
+    for (index,slot) in planned.iter().enumerate() {
+        check_cancel(cancel)?;
+        let evaluation = evaluations.iter().find(|row|row["slotId"]==slot["slotId"]).unwrap();
+        let mut out = slot.clone();
+        out["locked"] = json!(false); out["question"] = Value::Null; out["status"] = json!("empty");
+        if let Some(qid) = matches.get(&index) {
+            let decision = list(&evaluation["candidates"]).into_iter().find(|candidate|s(candidate,"questionId")==qid).unwrap();
+            let question = pool.iter().find(|q|s(q,"questionId")==qid).ok_or_else(||error("integrity_error","真实候选快照缺失。"))?;
+            out["question"] = question.clone(); out["status"] = json!("selected");
+            out["partPoints"] = selection_part_points(question,&decision,slot,requirements);
+            let mut decision = decision;
+            decision["criteriaSha256"] = json!(crate::assembly_llm::signature(&out,requirements));
+            out["applicability"] = decision;
+        }
+        let missing = if out["question"].is_null() { if s(evaluation,"missingReason").is_empty(){"模型认可的候选在整卷去重后不足，保留缺题位。"}else{s(evaluation,"missingReason")} }else{""};
+        out["selection"] = json!({"candidates":evaluation["candidates"],"assessments":evaluation["assessments"],"search":evaluation["search"],"reasons":if missing.is_empty(){vec![]}else{vec![missing]},"failures":[]});
+        slots.push(out);
+    }
+    let timestamp = now(); let draft_id = id();
+    let mut draft = json!({"schemaVersion":1,"draftId":draft_id,"title":requirements["title"],"revision":0,"createdAt":timestamp,"updatedAt":timestamp,"baseline":{"requirements":requirements,"slots":planned,"confirmedAt":timestamp,"version":1,"courseContext":config["courseContext"],"sourceManifest":config["sourceManifest"],"questionIndexSnapshot":config["assemblyIndex"],"taskCatalogSnapshot":config},"slots":slots,"operations":[],"selectionGeneration":{"mode":"llm","provenance":"llm_selection_v1"}});
+    if planned.is_empty() {draft["selectionGeneration"]=json!({"mode":"not_run","provenance":"empty_blueprint_no_selection","reason":"没有实际题位，未调用选题模型；原需求和未规划缺口保留。"});}
+    if let Some(student)=requirements.get("student") { draft["student"]=student.clone(); }
+    refresh(&mut draft); freeze_assets(&draft)?; check_cancel(cancel)?;
+    for slot in list(&draft["slots"]).iter().filter(|slot|slot["question"].is_object()) {
+        check_cancel(cancel)?;
+        let current=match store.bank.question(s(&slot["question"],"questionId")){Ok(question)=>question,Err(error)=>{crate::assembly_log::data_for_task("selection","validation","failed",json!({"validation":{"stage":"select_save","valid":false,"questionId":slot["question"]["questionId"],"errorCode":error.code,"message":error.message}}));return Err(error);}};
+        if current["contentVersion"]!=slot["question"]["contentVersion"] || current["teacherVersion"]!=slot["question"]["teacherVersion"] {
+            let error=error("version_conflict","候选题版本在模型判断后已改变，未保存草稿；已确认规划保留。");
+            crate::assembly_log::data_for_task("selection","validation","failed",json!({"validation":{"stage":"select_save","valid":false,"questionId":slot["question"]["questionId"],"expectedContentVersion":slot["question"]["contentVersion"],"actualContentVersion":current["contentVersion"],"expectedTeacherVersion":slot["question"]["teacherVersion"],"actualTeacherVersion":current["teacherVersion"],"errorCode":error.code,"message":error.message}}));
+            return Err(error);
+        }
+    }
+    check_cancel(cancel)?;
+    crate::assembly_log::data_for_task("selection","validation","completed",json!({"validation":{"stage":"select_save","valid":true,"assignment":draft["slots"].as_array().unwrap().iter().map(|slot|json!({"slotId":slot["slotId"],"questionId":slot["question"]["questionId"],"contentVersion":slot["question"]["contentVersion"],"teacherVersion":slot["question"]["teacherVersion"]})).collect::<Vec<_>>(),"stats":draft["stats"],"planningShortage":draft["planningShortage"],"differences":draft["differences"]}}));
+    store.put_document("drafts",&draft_id,&draft)?;
+    crate::workflow_progress::emit("select_save","completed");
+    let steps=if planned.is_empty(){vec!["select_pool","select_save"]}else{vec!["select_pool","select_evaluate","select_save"]};
+    Ok(json!({"draft":draft,"workflowSteps":steps}))
+}
+fn selection_part_points(question: &Value, decision: &Value, slot: &Value, requirements: &Value) -> Value {
+    if s(question,"questionType")!="free_response" { return json!([]); }
+    if s(requirements,"scoringMode")=="none" { return json!(list(&question["student"]["parts"]).iter().map(|part|json!({"partId":part["partId"],"points":0})).collect::<Vec<_>>()); }
+    let _ = slot;
+    decision["partPoints"].clone()
+}
+fn legacy_create_draft(
     store: &mut Store,
     input: &Value,
     model: &ModelClient,
     cancel: &AtomicBool,
 ) -> AppResult<Value> {
-    let blueprint = check_blueprint(store, &input["blueprint"])?;
+    let blueprint = legacy_check_blueprint(store, &input["blueprint"])?;
     let config = store.bank.config()?;
-    let pool = store.bank.questions()?;
+    let pool = current_question_pool(store)?;
     let r = &blueprint["requirements"];
     let planned = list(&blueprint["slots"]);
     let options: Vec<Vec<Value>> = planned
         .iter()
-        .map(|slot| candidates(&pool, slot, r, &config, &[]))
+        .map(|slot| legacy_candidates(&pool, slot, r, &config, &[]))
         .collect();
     let mut rows: Vec<Vec<(String, String)>> = options
         .iter()
@@ -1051,7 +1219,39 @@ fn transact<T>(store: &mut Store, action: impl FnOnce(&mut Store) -> AppResult<T
         }
     }
 }
-fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
+fn legacy_edit(store: &mut Store,payload:&Value)->AppResult<Value>{edit_internal(store,payload,None)}
+fn edit(store: &mut Store, payload: &Value, model: &ModelClient, cancel: &AtomicBool) -> AppResult<Value> {
+    check_cancel(cancel)?;
+    let draft = store.document("drafts",s(payload,"draftId"))?;
+    let operation=&payload["operation"];
+    let replayed=list(&draft["operations"]).iter().any(|prior|prior["operationId"]==operation["operationId"]);
+    if replayed || is_manual(&draft) { return edit_internal(store,payload,Some(&json!({}))); }
+    revision(&draft,operation)?;
+    let mut decisions=json!({});
+    if s(operation,"type")=="replace" {
+        let ids=if operation["slotIds"].is_array(){strings(&operation["slotIds"])}else{vec![s(operation,"slotId").to_owned()]};
+        let targets:Vec<_>=list(&draft["slots"]).into_iter().filter(|slot|ids.iter().any(|id|id==s(slot,"slotId")) && !(s(operation,"mode")=="automatic" && slot["locked"]==true)).collect();
+        if operation["candidateId"].as_str().is_none_or(str::is_empty) {
+            if !targets.is_empty() {
+                let config=store.bank.config()?;let pool=current_question_pool(store)?;
+                let evaluated=crate::assembly_llm::evaluate(&pool,&targets,&draft["baseline"]["requirements"],&config,&list(&draft["slots"]),model,cancel)?;
+                for row in evaluated {decisions[s(&row,"slotId")]=row.clone();}
+            }
+        } else {
+            for slot in targets {
+                let cached=&draft["candidateEvaluations"][s(&slot,"slotId")];
+                if cached["criteriaSha256"]!=crate::assembly_llm::signature(&slot,&draft["baseline"]["requirements"]) {return Err(invalid("候选判断已失效，请重新点击换题由模型评估；原题保留。"));}
+                let candidate=list(&cached["candidates"]).into_iter().find(|candidate|candidate["questionId"]==operation["candidateId"]).ok_or_else(||invalid("此题未通过本次真实模型判断，请重新评估候选；原题保留。"))?;
+                let current=store.bank.question(s(&candidate,"questionId"))?;
+                if candidate["contentVersion"]!=current["contentVersion"] || candidate["teacherVersion"]!=current["teacherVersion"] || operation["contentVersion"]!=current["contentVersion"] || operation["teacherVersion"]!=current["teacherVersion"] {return Err(error("version_conflict","候选版本已改变，原题保留，请重新由模型评估。"));}
+                decisions[s(&slot,"slotId")]=cached.clone();
+            }
+        }
+    }
+    check_cancel(cancel)?;
+    edit_internal(store,payload,Some(&decisions))
+}
+fn edit_internal(store: &mut Store, payload: &Value, decisions: Option<&Value>) -> AppResult<Value> {
     let draft_id = s(payload, "draftId");
     let op = &payload["operation"];
     let oid = operation_id(op)?.to_owned();
@@ -1075,7 +1275,7 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
         }
         revision(&draft, op)?;
         let config = store.bank.config()?;
-        let pool = store.bank.questions()?;
+        let pool = current_question_pool(store)?;
         let manual = is_manual(&draft);
         let mut slots = list(&draft["slots"]);
         let mut results = Vec::new();
@@ -1209,8 +1409,12 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                     }
                     let options = if manual {
                         manual_candidates(&pool, &slots[i], &slots)
+                    } else if let Some(decisions) = decisions {
+                        list(&decisions[&sid]["candidates"]).into_iter().filter(|candidate| {
+                            pool.iter().find(|q|q["questionId"]==candidate["questionId"]).is_some_and(|q|crate::assembly_llm::available(q,&slots[i],&draft["baseline"]["requirements"],&config,&slots) && crate::assembly_llm::saved_matches(candidate,q,&slots[i],&draft["baseline"]["requirements"]))
+                        }).collect()
                     } else {
-                        candidates(
+                        legacy_candidates(
                             &pool,
                             &slots[i],
                             &draft["baseline"]["requirements"],
@@ -1230,7 +1434,7 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                             .iter()
                             .find(|q| q["questionId"] == c["questionId"])
                             .ok_or_else(|| error("integrity_error", "备选题的真实内容缺失。"))?;
-                        if manual
+                        if op["candidateId"].is_string()
                             && (new_question["contentVersion"] != op["contentVersion"]
                                 || new_question["teacherVersion"] != op["teacherVersion"])
                         {
@@ -1241,6 +1445,7 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                         }
                         let mut proposed = slots[i].clone();
                         proposed["question"] = new_question.clone();
+                        if !manual && decisions.is_some() {proposed["partPoints"]=selection_part_points(new_question,c,&slots[i],&draft["baseline"]["requirements"]);}
                         if manual && s(&proposed, "questionType") == "free_response" {
                             let ids = list(&new_question["student"]["parts"]);
                             let values = intake::distribute(
@@ -1259,7 +1464,9 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                         slots[i]["question"] = new_question.clone();
                         slots[i]["partPoints"] = proposed["partPoints"].clone();
                         slots[i]["status"] = json!("selected");
-                        slots[i]["applicability"] = c.clone();
+                        let mut decision=c.clone();
+                        if !manual && decisions.is_some() {decision["criteriaSha256"]=json!(crate::assembly_llm::signature(&slots[i],&draft["baseline"]["requirements"]));}
+                        slots[i]["applicability"] = decision;
                         results.push(json!({"slotId":sid,"status":"replaced"}));
                     } else {
                         if manual {
@@ -1267,6 +1474,7 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                                 "此题已在本卷使用或题型不一致，请重新选择真实题目。",
                             ));
                         }
+                        if decisions.is_some() && op["candidateId"].is_string(){return Err(invalid("所选候选已被其它题位使用或判断失效，原题保留，请重新评估。"));}
                         results.push(json!({"slotId":sid,"status":"unchanged","message":"没有合格且未重复的备选题，现题保留。请调整考查任务或补充题库。"}));
                     }
                 }
@@ -1324,7 +1532,7 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                 if t["questionType"] != slots[i]["questionType"] {
                     return Err(invalid("调整考查任务需保持题型。"));
                 }
-                if !intake::overlaps(
+                if decisions.is_none() && !intake::overlaps(
                     &t["sectionIds"],
                     &draft["baseline"]["requirements"]["mainScope"],
                 ) {
@@ -1356,8 +1564,8 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                         .unwrap()
                         .remove("targetDifficultyLevel");
                 }
-                if slots[i]["question"].is_object() {
-                    let c = assess(
+                if slots[i]["question"].is_object() && decisions.is_none() {
+                    let c = legacy_assess(
                         &slots[i]["question"],
                         &slots[i],
                         &draft["baseline"]["requirements"],
@@ -1393,8 +1601,8 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
                     draft.as_object_mut().unwrap().remove("student");
                 }
                 for slot in &mut slots {
-                    if slot["question"].is_object() {
-                        slot["applicability"] = assess(
+                    if slot["question"].is_object() && decisions.is_none() {
+                        slot["applicability"] = legacy_assess(
                             &slot["question"],
                             slot,
                             &requirements,
@@ -1418,6 +1626,9 @@ fn edit(store: &mut Store, payload: &Value) -> AppResult<Value> {
         }
         for (i, slot) in slots.iter_mut().enumerate() {
             slot["number"] = json!(i + 1);
+            if decisions.is_some() && !manual && slot["question"].is_object() && !crate::assembly_llm::saved_matches(&slot["applicability"],&slot["question"],slot,&draft["baseline"]["requirements"]) {
+                slot["applicability"] = json!({"status":"unknown","canSelect":false,"reasons":["本题位要求已改变或缺少当前版本的模型判断；现题保留，请显式换题重新评估。"]});
+            }
         }
         draft["slots"] = json!(slots);
         refresh(&mut draft);
@@ -1440,6 +1651,9 @@ fn confirmation(draft: &Value) -> Value {
         .filter(|s| s["question"].is_object())
     {
         let q = &slot["question"];
+        if !is_manual(draft) && !crate::assembly_llm::saved_matches(&slot["applicability"],q,slot,&draft["baseline"]["requirements"]) && !issues.iter().any(|issue|issue["code"]=="applicability_unconfirmed" && issue["slotId"]==slot["slotId"]) {
+            issues.push(json!({"code":"applicability_unconfirmed","slotId":slot["slotId"],"message":"本题缺少与当前要求及版本一致的模型适配判断；现题保留，教师确认前可显式重新评估。"}));
+        }
         for (field, label) in [("answers", "答案"), ("solutions", "解析")] {
             if list(&q["teacher"][field]).is_empty() {
                 issues.push(json!({"code":format!("missing_{field}"),"slotId":slot["slotId"],"message":format!("第 {} 题缺少{label}，教师卷将如实标记。",slot["number"])}));
@@ -1608,6 +1822,7 @@ pub fn verify_frozen_paper(paper: &Value) -> AppResult<()> {
         if !q.is_object() {
             continue;
         }
+        crate::bank_teaching::verify_projection(q)?;
         for (body, prefix, hash_field, version_field) in [
             ("student", "content", "contentSha256", "contentVersion"),
             ("teacher", "teacher", "teacherSha256", "teacherVersion"),
@@ -1666,10 +1881,14 @@ fn confirm(store: &mut Store, payload: &Value) -> AppResult<Value> {
             ));
         }
         let assets = freeze_assets(&draft)?;
+        let config=store.bank.config()?;
+        let mut identities=HashSet::new();let mut groups=HashSet::new();
         // Re-read exact local versions; a modified bank cannot silently alter frozen snapshots.
         for slot in list(&draft["slots"]) {
             if slot["question"].is_object() {
                 let q = &slot["question"];
+                if !identities.insert(s(q,"questionId").to_owned()) || !groups.insert(crate::assembly_llm::duplicate_group(q,&config)) {return Err(invalid("本卷含有重复题目，未确认成卷；请先更换或移除重复题。"));}
+                crate::bank_teaching::verify_projection(q)?;
                 let original = store.bank.question(s(q, "questionId"))?;
                 if q["contentSha256"] != original["contentSha256"]
                     || q["teacherSha256"] != original["teacherSha256"]
@@ -1735,28 +1954,45 @@ pub fn dispatch(
 ) -> AppResult<Option<Value>> {
     let value = match action {
         "intake_prepare" => intake::prepare(store, payload, model, cancel)?,
-        "blueprint_plan" => json!({"blueprint":plan(store,payload,model,cancel)?}),
+        "blueprint_plan" => {
+            let blueprint=plan(store,payload,model,cancel)?;
+            let steps=if blueprint["generation"]["provenance"]=="task_catalog_incomplete" {vec!["plan_supply","plan_check"]} else {vec!["plan_supply","plan_slots","plan_check"]};
+            json!({"blueprint":blueprint,"workflowSteps":steps})
+        },
         "blueprint_check" => json!({"blueprint":check_blueprint(store,&payload["blueprint"])?}),
         "draft_create" => create_draft(store, payload, model, cancel)?,
         "manual_draft_create" => manual_draft_create(store, payload, cancel)?,
         "history_delete" => store.delete_history(payload)?,
         "draft_get" => json!({"draft":store.document("drafts",s(payload,"draftId"))?}),
-        "draft_operation" => edit(store, payload)?,
+        "draft_operation" => edit(store, payload, model, cancel)?,
         "draft_candidates" => {
-            let draft = store.document("drafts", s(payload, "draftId"))?;
+            let mut draft = store.document("drafts", s(payload, "draftId"))?;
             let slots = list(&draft["slots"]);
             let i = find_slot(&slots, s(payload, "slotId"))?;
-            let pool = store.bank.questions()?;
-            let mut preview = if is_manual(&draft) {
-                manual_candidates(&pool, &slots[i], &slots)
+            let pool = current_question_pool(store)?;
+            let mut missing=String::new();
+            let mut preview = if is_manual(&draft) { manual_candidates(&pool, &slots[i], &slots)
             } else {
-                candidates(
-                    &pool,
-                    &slots[i],
-                    &draft["baseline"]["requirements"],
-                    &store.bank.config()?,
-                    &slots,
-                )
+                if draft["confirmedPaperId"].is_string(){return Err(error("finalized_draft","此草稿已成卷，不能修改候选判断；请继续编辑为新草稿。"));}
+                revision(&draft,payload)?;check_cancel(cancel)?;
+                let config=store.bank.config()?;
+                let evaluated=if payload["continuation"].is_null(){crate::assembly_llm::evaluate(&pool,&[slots[i].clone()],&draft["baseline"]["requirements"],&config,&slots,model,cancel)?}
+                    else{crate::assembly_llm::continue_evaluate(&pool,&slots[i],&draft["baseline"]["requirements"],&config,&slots,model,cancel,&draft["candidateEvaluations"][s(payload,"slotId")],&payload["continuation"])?};
+                let row=&evaluated[0];missing=s(row,"missingReason").to_owned();
+                if !draft["candidateEvaluations"].is_object(){draft["candidateEvaluations"]=json!({});}
+                draft["candidateEvaluations"][s(payload,"slotId")]=row.clone();
+                let result=list(&row["candidates"]);
+                check_cancel(cancel)?;
+                draft["revision"]=json!(draft["revision"].as_u64().unwrap_or(0)+1);draft["updatedAt"]=json!(now());
+                transact(store,|store|{
+                    let current=store.document("drafts",s(payload,"draftId"))?;
+                    revision(&current,payload)?;
+                    if current["confirmedPaperId"].is_string(){return Err(error("finalized_draft","草稿已成卷，候选判断未写入。"));}
+                    check_cancel(cancel)?;
+                    store.put_document("drafts",s(payload,"draftId"),&draft)?;
+                    Ok(())
+                })?;
+                result
             };
             for candidate in &mut preview {
                 candidate["question"] = pool
@@ -1765,7 +2001,7 @@ pub fn dispatch(
                     .ok_or_else(|| error("integrity_error", "备选题内容缺失，未省略内容。"))?
                     .clone();
             }
-            json!({"candidates":preview})
+            json!({"candidates":preview,"search":draft["candidateEvaluations"][s(payload,"slotId")]["search"],"continuation":draft["candidateEvaluations"][s(payload,"slotId")]["search"]["continuation"],"draft":draft,"missingReason":missing})
         }
         "paper_confirmation" => {
             json!({"summary":confirmation(&store.document("drafts",s(payload,"draftId"))?)})
@@ -1785,6 +2021,778 @@ pub fn dispatch(
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn write_simulated_config(store:&Store,config:&Value) {
+        let connection=rusqlite::Connection::open(store.data_dir.join("question-bank.sqlite")).unwrap();
+        connection.execute("UPDATE bank_metadata SET value=?1 WHERE key='config'",[config.to_string()]).unwrap();
+    }
+    fn llm_fixture(directory:&std::path::Path, count:usize, respond:impl Fn(usize,&Value)->Value+Send+'static)->(ModelClient,std::thread::JoinHandle<()>) {
+        use std::{io::{Read,Write},net::TcpListener,time::{Duration,Instant}};
+        let listener=TcpListener::bind("127.0.0.1:0").unwrap();listener.set_nonblocking(true).unwrap();
+        let model=ModelClient::test_client(directory,&format!("http://{}/v1",listener.local_addr().unwrap()));
+        let worker=std::thread::spawn(move||{
+            for attempt in 0..count {
+                let deadline=Instant::now()+Duration::from_secs(30);
+                let mut stream=loop {match listener.accept(){Ok((stream,_))=>break stream,Err(e) if e.kind()==std::io::ErrorKind::WouldBlock && Instant::now()<deadline=>std::thread::sleep(Duration::from_millis(5)),Err(e)=>panic!("simulated model fixture did not receive expected request: {e}")}};
+                stream.set_nonblocking(false).unwrap();stream.set_read_timeout(Some(Duration::from_secs(15))).unwrap();let mut bytes=Vec::new();
+                let start=loop{let mut buffer=[0;8192];let n=stream.read(&mut buffer).unwrap();assert!(n>0);bytes.extend_from_slice(&buffer[..n]);assert!(bytes.len()<16*1024*1024);if let Some(end)=bytes.windows(4).position(|b|b==b"\r\n\r\n"){let headers=String::from_utf8_lossy(&bytes[..end]).to_lowercase();let size=headers.lines().find_map(|line|line.strip_prefix("content-length:").map(|n|n.trim().parse::<usize>().unwrap())).unwrap();if bytes.len()>=end+4+size{break end+4;}}};
+                let body:Value=serde_json::from_slice(&bytes[start..]).unwrap();
+                let context:Value=serde_json::from_str(body["messages"][1]["content"].as_str().unwrap()).unwrap();
+                assert!(!context.to_string().contains("simulated-private-student"));
+                let output=respond(attempt,&context);
+                let response=json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}],"usage":{"prompt_tokens":123,"completion_tokens":456}}).to_string();
+                write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",response.len(),response).unwrap();
+            }
+        });(model,worker)
+    }
+    fn llm_candidate(context:&Value,index:usize,status:&str)->Value {
+        let q=&context["questions"][index];
+        json!({"questionId":q["questionId"],"contentVersion":q["contentVersion"],"teacherVersion":q["teacherVersion"],"status":status,"reason":"模拟模型根据真实题面给出的教学关系判断；不是数学独立核验。","difficulty":{"level":"medium","basis":"模拟内容关口判断。"},"solutionBasis":"模拟模型对已提供题面与参考的可用解法判断，不依赖旧solutionPaths。","partPoints":[]})
+    }
+    fn llm_slot_candidate(context:&Value,slot_index:usize,index:usize,status:&str)->Value{
+        let id=&context["slots"][slot_index]["candidateQuestionIds"][index];
+        let q=context["questions"].as_array().unwrap().iter().position(|q|q["questionId"]==*id).unwrap();
+        llm_candidate(context,q,status)
+    }
+    fn simulated_window_pool(store:&Store,count:usize,slot_count:usize)->(Vec<Value>,Value,Value,Vec<Value>){
+        let original=store.bank.questions().unwrap().into_iter().find(|q|q["questionType"]=="single_choice" && list(&q["student"]["assets"]).is_empty() && list(&q["assetPayloads"]).is_empty()).unwrap();
+        let mut pool=Vec::new();let mut entries=Vec::new();let mut config=store.bank.config().unwrap();
+        let slots:Vec<_>=(0..slot_count).map(|i|json!({"slotId":format!("window-slot-{i}"),"taskId":format!("window-task-{i}"),"taskLabel":"模拟窗口任务","questionType":"single_choice","goalIds":[],"points":0,"partPoints":[]})).collect();
+        config["tasks"]=json!(slots.iter().map(|slot|json!({"id":slot["taskId"],"sectionIds":["1.1"]})).collect::<Vec<_>>());
+        for i in 0..count{
+            let mut q=original.clone();q["questionId"]=json!(format!("window-q-{i:03}"));q["student"]["stem"]=json!(format!("{} [模拟窗口唯一题 {i}]",s(&original["student"],"stem")));
+            let sha=hash(&q["student"]);let version=format!("content-{}",&sha[..16]);q["contentSha256"]=json!(sha);q["contentVersion"]=json!(version);q["verification"]["contentVersion"]=json!(version);
+            crate::bank::verify_question(&q).unwrap();
+            if i+1<count{
+                let tasks=if i==0{slots.iter().map(|slot|slot["taskId"].clone()).collect::<Vec<_>>()}else{vec![json!(format!("window-task-{}",(i-1)/40))]};
+                entries.push(json!({"questionId":q["questionId"],"contentVersion":q["contentVersion"],"teacherVersion":q["teacherVersion"],"tasks":tasks,"primarySections":["1.3"],"primaryKnowledgeUids":["window-leaf"],"annotationSource":"simulated","solutionPaths":[{"id":"window-path","requiredKnowledgeUids":["window-leaf"],"requiredPremises":["vieta"],"basis":"SIMULATED_FULL_PATH_BASIS_MUST_NOT_SEND"}]}));
+            }
+            pool.push(q);
+        }
+        config["assemblyIndex"]["entries"]=json!(entries);
+        config["knowledgeCatalogue"]["points"]=json!([{ "uid":"window-parent","name":"模拟引用父知识点","sectionIds":["1.1"]},{"uid":"window-leaf","name":"模拟引用知识点","parentUid":"window-parent","sectionIds":["1.3"]},{"uid":"window-unrelated","name":"模拟不应发送的知识点","sectionIds":["rja-compulsory-1:2.3"]}]);
+        let requirements=json!({"mainScope":["1.1"],"learnedScope":["1.1"],"counts":{"single_choice":slot_count},"scoringMode":"none","targetScore":0,"teachingGoals":[],"premises":["vieta"]});
+        (pool,config,requirements,slots)
+    }
+    fn simulated_selection_events() -> Vec<(String,String)> {
+        ["select_pool","select_evaluate","select_save"].into_iter()
+            .flat_map(|step|["running","completed"].map(|status|(step.to_owned(),status.to_owned())))
+            .collect()
+    }
+    fn observe_selection<T>(action:impl FnOnce()->T) -> (T,Vec<(String,String)>) {
+        let events=std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let captured=events.clone();
+        let result=crate::workflow_progress::observe(move|step,status|captured.borrow_mut().push((step.to_owned(),status.to_owned())),action);
+        let recorded=events.borrow().clone();
+        (result,recorded)
+    }
+    #[test]
+    fn current_llm_http_planning_selection_query_direct_replace_confirm_preserve_boundaries() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let (model,server)=llm_fixture(dir.path(),3,|attempt,context|{
+            if attempt==0 {
+                assert!(context.get("slots").is_none());
+                return json!({"slots":[{"taskId":"set_determinacy","points":0,"partPoints":[],"planningReason":"模拟模型独立规划考查任务。"}]});
+            }
+            assert!(context["questions"].as_array().unwrap().len()>2);
+            assert!(context["questions"][0]["student"]["stem"].is_string());
+            assert!(context["questions"][0].get("audit").is_none());
+            json!({"rankings":[{"slotId":context["slots"][0]["slotId"],"candidates":[llm_candidate(context,0,"suitable"),llm_candidate(context,1,"unsuitable")],"missingReason":""}]})
+        });
+        let cancel=AtomicBool::new(false);
+        let blueprint=plan(&store,&json!({"mode":"llm","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}}}),&model,&cancel).unwrap();
+        let (created,events)=observe_selection(||create_draft(&mut store,&json!({"mode":"llm","blueprint":blueprint}),&model,&cancel));
+        let created=created.unwrap();
+        assert_eq!(events,simulated_selection_events());
+        assert_eq!(created["workflowSteps"],json!(["select_pool","select_evaluate","select_save"]));
+        let created=created["draft"].clone();
+        let draft_id=s(&created,"draftId").to_owned();
+        assert_eq!(created["slots"][0]["status"],"selected");
+        assert_eq!(created["slots"][0]["applicability"]["provenance"],"llm_selection_v1");
+        let query=json!({"draftId":draft_id,"slotId":"slot-1","expectedRevision":0});
+        assert_eq!(dispatch(&mut store,"draft_candidates",&query,&model,&AtomicBool::new(true)).unwrap_err().code,"cancelled");
+        assert_eq!(store.document("drafts",&draft_id).unwrap()["revision"],0);
+        let offered=dispatch(&mut store,"draft_candidates",&query,&model,&cancel).unwrap().unwrap();
+        assert_eq!(offered["draft"]["revision"],1);
+        assert_eq!(offered["candidates"].as_array().unwrap().len(),1);
+        let candidate=&offered["candidates"][0];
+        let replacement=json!({"draftId":draft_id,"operation":{"type":"replace","mode":"direct","slotIds":["slot-1"],"candidateId":candidate["questionId"],"contentVersion":candidate["contentVersion"],"teacherVersion":candidate["teacherVersion"],"expectedRevision":1,"operationId":"simulated-llm-direct"}});
+        let replaced=edit(&mut store,&replacement,&model,&cancel).unwrap()["draft"].clone();
+        assert_eq!(replaced["revision"],2);
+        assert_eq!(replaced["slots"][0]["question"]["questionId"],candidate["questionId"]);
+        assert!(crate::assembly_llm::saved_matches(&replaced["slots"][0]["applicability"],&replaced["slots"][0]["question"],&replaced["slots"][0],&replaced["baseline"]["requirements"]));
+        let paper=confirm(&mut store,&json!({"draftId":draft_id,"expectedRevision":2,"operationId":"simulated-llm-confirm","acknowledgeDifferences":true})).unwrap()["paper"].clone();
+        verify_frozen_paper(&paper).unwrap();
+        assert_eq!(dispatch(&mut store,"draft_candidates",&json!({"draftId":draft_id,"slotId":"slot-1","expectedRevision":3}),&model,&cancel).unwrap_err().code,"finalized_draft");
+        dispatch(&mut store,"paper_get",&json!({"paperId":paper["paperId"]}),&model,&cancel).unwrap();
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_rejects_fabricated_versions_duplicate_and_preserves_real_shortage() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let requirements=intake::normalize(&store,&json!({"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}})).unwrap();
+        let blueprint=check_blueprint(&store,&json!({"requirements":requirements,"slots":[{"slotId":"slot-1","number":1,"taskId":"set_determinacy","questionType":"single_choice","points":0,"partPoints":[]}],"generation":{"mode":"llm"}})).unwrap();
+        let (model,server)=llm_fixture(dir.path(),5,|attempt,context|{
+            let mut candidate=llm_candidate(context,0,"suitable");
+            let candidates=match attempt {
+                0=>{candidate["questionId"]=json!("simulated-invented-question");vec![candidate]},
+                1=>{candidate["teacherVersion"]=json!("simulated-old-version");vec![candidate]},
+                2=>vec![candidate.clone(),candidate],
+                _=>vec![llm_candidate(context,0,"uncertain")],
+            };
+            json!({"rankings":[{"slotId":"slot-1","candidates":candidates,"missingReason":"模拟模型无法确认本题位适配，保留一题缺口。"}]})
+        });
+        for attempt in 0..4 {
+            let (result,events)=observe_selection(||create_draft(&mut store,&json!({"mode":"llm","blueprint":blueprint}),&model,&AtomicBool::new(false)));
+            if attempt<3 {assert!(result.is_err());assert_eq!(events,simulated_selection_events()[..3]);assert!(store.list_documents("drafts").unwrap().is_empty());}
+            else {assert_eq!(events,simulated_selection_events());let draft=result.unwrap()["draft"].clone();assert!(draft["slots"][0]["question"].is_null());assert_eq!(draft["stats"]["missingCount"],1);assert_eq!(draft["baseline"]["requirements"]["questionCount"],1);assert!(draft["slots"][0]["selection"]["reasons"][0].as_str().unwrap().contains("模拟模型无法确认本题位适配，保留一题缺口。"));}
+        }
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_candidate_query_revision_race_and_cancel_do_not_overwrite_draft() {
+        let (dir,mut store,old_model)=simulated_flow_store();
+        // Explicit historical fixture construction; the exercised query uses the real current LLM path.
+        let blueprint=legacy_plan(&store,&json!({"mode":"rule","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}}}),&old_model,&AtomicBool::new(false)).unwrap();
+        let draft=legacy_create_draft(&mut store,&json!({"mode":"rule","blueprint":blueprint}),&old_model,&AtomicBool::new(false)).unwrap()["draft"].clone();
+        let draft_id=s(&draft,"draftId").to_owned();let target=draft_id.clone();
+        let db_path=dir.path().join("personal.sqlite");
+        let cancel=std::sync::Arc::new(AtomicBool::new(false));let stop=cancel.clone();
+        let (model,server)=llm_fixture(dir.path(),2,move|attempt,context|{
+            if attempt==0 {
+                let db=rusqlite::Connection::open(&db_path).unwrap();
+                let text:String=db.query_row("SELECT payload FROM documents WHERE kind='drafts' AND id=?1",[&target],|row|row.get(0)).unwrap();
+                let mut changed:Value=serde_json::from_str(&text).unwrap();changed["revision"]=json!(1);changed["title"]=json!("模拟另一窗口已保存标题");
+                db.execute("UPDATE documents SET payload=?2 WHERE kind='drafts' AND id=?1",rusqlite::params![target,changed.to_string()]).unwrap();
+            } else {stop.store(true,Ordering::Relaxed);}
+            json!({"rankings":[{"slotId":"slot-1","candidates":[llm_candidate(context,0,"suitable")],"missingReason":""}]})
+        });
+        let query=json!({"draftId":draft_id,"slotId":"slot-1","expectedRevision":0});
+        assert_eq!(dispatch(&mut store,"draft_candidates",&query,&model,&cancel).unwrap_err().code,"revision_conflict");
+        let saved=store.document("drafts",&draft_id).unwrap();assert_eq!(saved["title"],"模拟另一窗口已保存标题");assert_eq!(saved["revision"],1);assert!(saved.get("candidateEvaluations").is_none());
+        assert_eq!(dispatch(&mut store,"draft_candidates",&json!({"draftId":draft_id,"slotId":"slot-1","expectedRevision":1}),&model,&cancel).unwrap_err().code,"cancelled");
+        assert_eq!(hash(&store.document("drafts",&draft_id).unwrap()),hash(&saved));
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_seven_slots_use_two_validated_batches_and_cancel_without_partial_draft() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let requirements=intake::normalize(&store,&json!({"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":7,"multiple_choice":0,"fill_blank":0,"free_response":0}})).unwrap();
+        let slots:Vec<_>=(0..7).map(|i|json!({"slotId":format!("slot-{}",i+1),"number":i+1,"taskId":"set_determinacy","questionType":"single_choice","points":0,"partPoints":[]})).collect();
+        let blueprint=check_blueprint(&store,&json!({"requirements":requirements,"slots":slots,"generation":{"mode":"llm"}})).unwrap();
+        let cancel=std::sync::Arc::new(AtomicBool::new(false));let stop=cancel.clone();
+        let config=store.bank.config().unwrap();
+        let groups:HashMap<_,_>=current_question_pool(&store).unwrap().iter().map(|q|(s(q,"questionId").to_owned(),crate::assembly_llm::duplicate_group(q,&config))).collect();
+        let (model,server)=llm_fixture(dir.path(),4,move|attempt,context|{
+            let second=attempt%2==1;
+            assert_eq!(context["candidateLimit"],3);
+            assert_eq!(context["batch"]["total"],2);
+            assert_eq!(context["slots"].as_array().unwrap().len(),if second{1}else{6});
+            let rankings:Vec<_>=context["slots"].as_array().unwrap().iter().map(|slot|{
+                let mut seen=HashSet::new();let ids:Vec<_>=strings(&slot["candidateQuestionIds"]).into_iter().filter(|id|seen.insert(groups[id].clone())).collect();
+                let number=s(slot,"slotId").strip_prefix("slot-").unwrap().parse::<usize>().unwrap();
+                let id=&ids[number-1];let index=context["questions"].as_array().unwrap().iter().position(|q|q["questionId"]==*id).unwrap();
+                json!({"slotId":slot["slotId"],"candidates":[llm_candidate(context,index,"suitable")],"missingReason":""})
+            }).collect();
+            if attempt==3{stop.store(true,Ordering::Relaxed);}
+            json!({"rankings":rankings})
+        });
+        let input=json!({"mode":"llm","blueprint":blueprint});
+        let result=create_draft(&mut store,&input,&model,&cancel).unwrap();
+        assert_eq!(result["draft"]["slots"].as_array().unwrap().len(),7);
+        assert_eq!(result["draft"]["stats"]["selectedCount"],7);
+        let before=store.list_documents("drafts").unwrap();
+        let (cancelled,events)=observe_selection(||create_draft(&mut store,&input,&model,&cancel));
+        assert_eq!(cancelled.unwrap_err().code,"cancelled");
+        assert_eq!(events,simulated_selection_events()[..3]);
+        assert_eq!(hash(&json!(store.list_documents("drafts").unwrap())),hash(&json!(before)));
+        let mut empty_sources=requirements.clone();empty_sources["sourceIds"]=json!([]);
+        let pool=current_question_pool(&store).unwrap();
+        assert!(!crate::assembly_llm::available(&pool[0],&slots[0],&empty_sources,&store.bank.config().unwrap(),&[]));
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_selection_progress_cancel_before_save_never_reports_or_persists_completion() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let requirements=intake::normalize(&store,&json!({"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}})).unwrap();
+        let blueprint=check_blueprint(&store,&json!({"requirements":requirements,"slots":[{"slotId":"slot-1","number":1,"taskId":"set_determinacy","questionType":"single_choice","points":0,"partPoints":[]}],"generation":{"mode":"llm"}})).unwrap();
+        let (model,server)=llm_fixture(dir.path(),1,|_,context|json!({"rankings":[{"slotId":"slot-1","candidates":[llm_candidate(context,0,"suitable")],"missingReason":""}]}));
+        let input=json!({"mode":"llm","blueprint":blueprint});
+        let (cancelled,events)=observe_selection(||create_draft(&mut store,&input,&model,&AtomicBool::new(true)));
+        assert_eq!(cancelled.unwrap_err().code,"cancelled");
+        assert!(events.is_empty());
+        let (invalid,events)=observe_selection(||create_draft(&mut store,&json!({"mode":"llm","blueprint":{}}),&model,&AtomicBool::new(false)));
+        assert!(invalid.is_err());
+        assert_eq!(events,simulated_selection_events()[..1]);
+        let events=std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
+        let captured=events.clone();
+        let cancel=std::sync::Arc::new(AtomicBool::new(false));
+        let stop=cancel.clone();
+        let cancelled=crate::workflow_progress::observe(move|step,status|{
+            captured.borrow_mut().push((step.to_owned(),status.to_owned()));
+            if step=="select_save" && status=="running" {stop.store(true,Ordering::Relaxed);}
+        },||create_draft(&mut store,&input,&model,&cancel));
+        assert_eq!(cancelled.unwrap_err().code,"cancelled");
+        assert_eq!(*events.borrow(),simulated_selection_events()[..5]);
+        assert!(store.list_documents("drafts").unwrap().is_empty());
+        server.join().unwrap();
+        // Observer teardown must keep a later, unrelated request isolated.
+        crate::workflow_progress::emit("scope","running");
+        assert_eq!(*events.borrow(),simulated_selection_events()[..5]);
+    }
+    fn simulated_plan_input(mode: &str) -> Value {
+        json!({"requirements":{"title":"模拟分步规划","mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":mode})
+    }
+    fn simulated_plan_events() -> Vec<(String, String)> {
+        ["plan_supply", "plan_slots", "plan_check"].into_iter()
+            .flat_map(|step| ["running", "completed"].map(|status| (step.to_owned(), status.to_owned())))
+            .collect()
+    }
+    #[test]
+    fn simulated_blueprint_progress_rule_is_retired_without_selection_or_storage() {
+        let (_dir,mut store,model)=simulated_flow_store();
+        assert_eq!(dispatch(&mut store,"blueprint_plan",&simulated_plan_input("rule"),&model,&AtomicBool::new(false)).unwrap_err().code,"rule_retired");
+        assert!(store.list_documents("drafts").unwrap().is_empty());
+        assert_eq!(plan(&store,&simulated_plan_input("llm"),&model,&AtomicBool::new(true)).unwrap_err().code,"cancelled");
+    }
+    #[test]
+    fn legacy_simulated_blueprint_progress_failure_cancel_and_retry_do_not_forge_completed_steps() {
+        use std::{cell::RefCell, rc::Rc, sync::Arc};
+        let (_dir, store, model) = simulated_flow_store();
+        let expected = simulated_plan_events();
+        let events = Rc::new(RefCell::new(Vec::new()));
+        let mut invalid = simulated_plan_input("rule");
+        invalid["requirements"]["mainScope"] = json!(["simulated-invented-section"]);
+        let captured = events.clone();
+        let error = crate::workflow_progress::observe(move |step, status| captured.borrow_mut().push((step.to_owned(), status.to_owned())),
+            || legacy_plan(&store, &invalid, &model, &AtomicBool::new(false))).unwrap_err();
+        assert_eq!(error.code, "invalid_plan");
+        assert_eq!(*events.borrow(), expected[..1]);
+        events.borrow_mut().clear();
+        let captured = events.clone();
+        let error = crate::workflow_progress::observe(move |step, status| captured.borrow_mut().push((step.to_owned(), status.to_owned())),
+            || legacy_plan(&store, &simulated_plan_input("llm"), &model, &AtomicBool::new(false))).unwrap_err();
+        assert_eq!(error.code, "not_configured");
+        assert_eq!(*events.borrow(), expected[..3]);
+        for stop_at in 0..5 {
+            events.borrow_mut().clear();
+            let cancel = Arc::new(AtomicBool::new(false));
+            let stop = cancel.clone();
+            let captured = events.clone();
+            let target = expected[stop_at].clone();
+            let error = crate::workflow_progress::observe(move |step, status| {
+                captured.borrow_mut().push((step.to_owned(), status.to_owned()));
+                if (step, status) == (target.0.as_str(), target.1.as_str()) { stop.store(true, Ordering::Relaxed); }
+            }, || legacy_plan(&store, &simulated_plan_input("rule"), &model, &cancel)).unwrap_err();
+            assert_eq!(error.code, "cancelled");
+            assert_eq!(*events.borrow(), expected[..=stop_at]);
+        }
+        events.borrow_mut().clear();
+        let captured = events.clone();
+        assert_eq!(crate::workflow_progress::observe(move |step, status| captured.borrow_mut().push((step.to_owned(), status.to_owned())),
+            || legacy_plan(&store, &simulated_plan_input("rule"), &model, &AtomicBool::new(true))).unwrap_err().code, "cancelled");
+        assert!(events.borrow().is_empty());
+        let captured = events.clone();
+        crate::workflow_progress::observe(move |step, status| captured.borrow_mut().push((step.to_owned(), status.to_owned())),
+            || legacy_plan(&store, &simulated_plan_input("rule"), &model, &AtomicBool::new(false))).unwrap();
+        assert_eq!(*events.borrow(), expected);
+        assert!(store.list_documents("drafts").unwrap().is_empty());
+    }
+    #[test]
+    fn simulated_blueprint_progress_llm_transport_and_validation_have_distinct_stages() {
+        use std::{cell::RefCell, rc::Rc, io::{Read, Write}, net::TcpListener, time::{Duration, Instant}};
+        let (_dir, mut store, mut model) = simulated_flow_store();
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let endpoint = format!("http://{}/v1", listener.local_addr().unwrap());
+        model.save(&json!({"expectedRevision":0,"activeProfileId":"simulated-planning-progress","profiles":[{"id":"simulated-planning-progress","name":"模拟本地规划","baseUrl":endpoint,"model":"simulated-blueprint","apiKey":"simulated-local-key"}]})).unwrap();
+        let server = std::thread::spawn(move || {
+            for attempt in 0..3 {
+                let deadline = Instant::now() + Duration::from_secs(15);
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock && Instant::now() < deadline => std::thread::sleep(Duration::from_millis(5)),
+                        Err(error) => panic!("simulated planning request not received: {error}"),
+                    }
+                };
+                stream.set_nonblocking(false).unwrap();
+                stream.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
+                let mut bytes = Vec::new();
+                let start = loop {
+                    let mut buffer = [0; 4096];
+                    let count = stream.read(&mut buffer).unwrap();
+                    assert!(count > 0);
+                    bytes.extend_from_slice(&buffer[..count]);
+                    assert!(bytes.len() < 2 * 1024 * 1024);
+                    if let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") {
+                        let headers = String::from_utf8_lossy(&bytes[..end]).to_lowercase();
+                        let size = headers.lines().find_map(|line| line.strip_prefix("content-length:").map(|value| value.trim().parse::<usize>().unwrap())).unwrap();
+                        if bytes.len() >= end + 4 + size { break end + 4; }
+                    }
+                };
+                let request: Value = serde_json::from_slice(&bytes[start..]).unwrap();
+                let context: Value = serde_json::from_str(request["messages"][1]["content"].as_str().unwrap()).unwrap();
+                assert_eq!(context["requirements"]["questionCount"], 2);
+                let slot=json!({"taskId":context["tasks"][0]["id"],"points":0,"partPoints":[]});
+                let slots=vec![slot;if attempt==1{1}else{2}];
+                let response = json!({"choices":[{"finish_reason":if attempt == 0 {"length"} else {"stop"},"message":{"content":json!({"slots":slots}).to_string()}}]}).to_string();
+                write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",response.len(),response).unwrap();
+            }
+        });
+        let expected = simulated_plan_events();
+        for attempt in 0..3 {
+            let events = Rc::new(RefCell::new(Vec::new()));
+            let captured = events.clone();
+            let result = crate::workflow_progress::observe(move |step, status| captured.borrow_mut().push((step.to_owned(), status.to_owned())),
+                || dispatch(&mut store, "blueprint_plan", &simulated_plan_input("llm"), &model, &AtomicBool::new(false)));
+            match attempt {
+                0 => { assert_eq!(result.unwrap_err().code, "model_output_truncated"); assert_eq!(*events.borrow(), expected[..3]); }
+                1 => {
+                    let result=result.unwrap().unwrap();
+                    assert_eq!(result["blueprint"]["quantityReview"],json!({"matches":false,"expectedCounts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0},"actualCounts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0},"expectedTotal":2,"actualTotal":1}));
+                    assert_eq!(*events.borrow(),expected);
+                }
+                _ => {
+                    let result = result.unwrap().unwrap();
+                    assert_eq!(result["workflowSteps"], json!(["plan_supply", "plan_slots", "plan_check"]));
+                    assert_eq!(result["blueprint"]["generation"]["mode"], "llm");
+                    assert_eq!(result["blueprint"]["quantityReview"]["matches"],true);
+                    assert_eq!(*events.borrow(), expected);
+                }
+            }
+            assert!(store.list_documents("drafts").unwrap().is_empty());
+            assert!(store.list_documents("papers").unwrap().is_empty());
+        }
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_quantity_review_keeps_overages_blocked_and_corrected_shortage_can_continue() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let input=json!({"mode":"llm","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":1,"free_response":0}}});
+        let requirements=intake::normalize(&store,&input["requirements"]).unwrap();
+        let (model,server)=llm_fixture(dir.path(),5,|attempt,context|{
+            if attempt<3 {
+                let tasks=list(&context["tasks"]);
+                let slot=|kind:&str|json!({"taskId":tasks.iter().find(|task|s(task,"questionType")==kind).unwrap()["id"],"points":0,"partPoints":[],"planningReason":"模拟模型原始题位，保留数量差异供修改。"});
+                let slots=match attempt {0=>vec![slot("single_choice"),slot("single_choice")],1=>vec![slot("single_choice")],_=>vec![slot("single_choice"),slot("fill_blank"),slot("single_choice")]};
+                return json!({"slots":slots});
+            }
+            assert_eq!(context["slots"].as_array().unwrap().len(),2);
+            json!({"rankings":list(&context["slots"]).iter().map(|slot|json!({"slotId":slot["slotId"],"candidates":[],"missingReason":"模拟模型未确认适配候选，保留真实缺题位。"})).collect::<Vec<_>>()})
+        });
+        let cancel=AtomicBool::new(false);
+        let mut first_review=Value::Null;
+        for attempt in 0..3 {
+            let result=dispatch(&mut store,"blueprint_plan",&input,&model,&cancel).unwrap().unwrap();
+            let blueprint=&result["blueprint"];
+            let actual=match attempt {0=>json!({"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0}),1=>json!({"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}),_=>json!({"single_choice":2,"multiple_choice":0,"fill_blank":1,"free_response":0})};
+            assert_eq!(blueprint["requirements"],requirements);
+            assert_eq!(blueprint["quantityReview"],json!({"matches":false,"expectedCounts":requirements["counts"],"actualCounts":actual,"expectedTotal":2,"actualTotal":([2,1,3][attempt])}));
+            assert_eq!(blueprint["slots"].as_array().unwrap().len(),[2,1,3][attempt]);
+            assert_eq!(blueprint["slots"][0]["planningReason"],"模拟模型原始题位，保留数量差异供修改。");
+            assert_eq!(dispatch(&mut store,"blueprint_check",&json!({"blueprint":blueprint}),&model,&cancel).unwrap_err().code,"invalid_plan");
+            if attempt!=1 {assert_eq!(create_draft(&mut store,&json!({"mode":"llm","blueprint":blueprint}),&model,&cancel).unwrap_err().code,"invalid_plan");}
+            assert!(store.list_documents("drafts").unwrap().is_empty());
+            assert!(store.list_documents("papers").unwrap().is_empty());
+            if attempt==0 {first_review=blueprint.clone();}
+        }
+        // Simulate the teacher changing only the second task, keeping confirmed requirements.
+        let config=store.bank.config().unwrap();
+        let fill=list(&config["tasks"]).into_iter().find(|task|s(task,"questionType")=="fill_blank").unwrap();
+        first_review["slots"][1]["taskId"]=fill["id"].clone();
+        first_review["slots"][1]["questionType"]=fill["questionType"].clone();
+        let corrected=check_blueprint(&store,&first_review).unwrap();
+        assert_eq!(corrected["requirements"],requirements);
+        assert!(corrected.get("quantityReview").is_none());
+        let draft=create_draft(&mut store,&json!({"mode":"llm","blueprint":corrected}),&model,&cancel).unwrap()["draft"].clone();
+        assert_eq!(draft["slots"].as_array().unwrap().len(),2);
+        assert_eq!(draft["baseline"]["requirements"],requirements);
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_quantity_review_retains_structure_boundaries_and_reviews_incomplete_points() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let cancel=std::sync::Arc::new(AtomicBool::new(false));let stop=cancel.clone();
+        let (model,server)=llm_fixture(dir.path(),6,move|attempt,context|{
+            if attempt==0 {return json!({"slots":[{"taskId":"simulated-invented-task","points":0,"partPoints":[]}]});}
+            if attempt==1 {return json!({"slots":"simulated-invalid-structure"});}
+            if attempt==2 {return json!({"slots":[]});}
+            let slot=json!({"taskId":context["tasks"][0]["id"],"points":if attempt==4{1}else{0},"partPoints":[]});
+            if attempt==3 {return json!({"slots":vec![slot;61]});}
+            if attempt==5 {stop.store(true,Ordering::Relaxed);}
+            json!({"slots":[slot]})
+        });
+        for attempt in 0..6 {
+            let mut input=simulated_plan_input("llm");
+            if attempt==4 {input["requirements"]["scoringMode"]=json!("points");input["requirements"]["targetScore"]=json!(100);}
+            let result=plan(&store,&input,&model,&cancel);
+            if attempt==5 {assert_eq!(result.unwrap_err().code,"cancelled");}
+            else if attempt==2 || attempt==4 {
+                let blueprint=result.unwrap();
+                assert_eq!(blueprint["slots"].as_array().unwrap().len(),if attempt==2{0}else{1});
+                assert_eq!(blueprint["quantityReview"]["matches"],false);
+                assert!(check_blueprint(&store,&blueprint).is_err());
+                if attempt==4 {
+                    assert_eq!(blueprint["requirements"]["targetScore"],100);
+                    let mut corrected_quantity=blueprint.clone();
+                    corrected_quantity["slots"].as_array_mut().unwrap().push(intake::merge(&blueprint["slots"][0],&json!({"slotId":"slot-2","number":2})));
+                    assert!(check_blueprint(&store,&corrected_quantity).unwrap_err().message.contains("分值合计"));
+                }
+            } else {let error=result.unwrap_err();assert_eq!(error.code,"invalid_plan");if attempt==3 {assert!(error.message.contains("最多 60"));}}
+            assert!(store.list_documents("drafts").unwrap().is_empty());
+            assert!(store.list_documents("papers").unwrap().is_empty());
+        }
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_scoped_plan_sends_compact_canonical_catalogue_without_losing_constraints() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let mut config=store.bank.config().unwrap();
+        config["chapters"].as_array_mut().unwrap().extend([
+            json!({"id":"rja-compulsory-1:1.1","label":"模拟同一小节的canonical别名"}),
+            json!({"id":"simulated-task-section","label":"模拟入选任务的另一真实目录项"}),
+            json!({"id":"simulated-preferred-section","label":"模拟偏好目标真实目录项"}),
+        ]);
+        config["tasks"]=json!([
+            {"id":"simulated-no-supply","label":"模拟暂无供给任务","questionType":"single_choice","sectionIds":["rja-compulsory-1:1.1"],"partIds":[],"audit":"simulated-task-audit-must-not-send"},
+            {"id":"simulated-second-main","label":"模拟第二主考范围任务","questionType":"single_choice","sectionIds":["1.2"],"partIds":[]},
+            {"id":"simulated-shared-task","label":"模拟跨目录任务","questionType":"single_choice","sectionIds":["1.1","simulated-task-section"],"partIds":[]},
+            {"id":"simulated-learned-only","label":"模拟仅已学任务","questionType":"single_choice","sectionIds":["1.3"],"partIds":[]},
+            {"id":"simulated-goal-only","label":"模拟仅目标范围任务","questionType":"single_choice","sectionIds":["rja-compulsory-1:2.3"],"partIds":[]},
+            {"id":"simulated-zero-type","label":"模拟未请求题型任务","questionType":"fill_blank","sectionIds":["1.1"],"partIds":[]}
+        ]);
+        assert!(!list(&config["assemblyIndex"]["entries"]).iter().any(|entry|strings(&entry["tasks"]).contains(&"simulated-no-supply".to_owned())));
+        write_simulated_config(&store,&config);
+        let required=simulated_goal("required","answer","rja-compulsory-1:2.3");
+        let mut preferred=simulated_goal("preferred","written_reasoning","simulated-preferred-section");preferred["id"]=json!("simulated-preferred-goal");
+        let input=json!({"mode":"llm","requirements":{"mainScope":["rja-compulsory-1:1.1","1.2"],"learnedScope":["1.3"],"premises":["vieta"],"automaticFoundation":false,"teachingGoals":[required,preferred],"goal":"模拟保留完整教师教学目标及条件。","scoringMode":"none","counts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0},"students":[{"name":"simulated-private-student"}]}});
+        let expected=intake::model_context(&intake::normalize(&store,&input["requirements"]).unwrap());
+        let sent_requirements=expected.clone();
+        let (model,server)=llm_fixture(dir.path(),1,move|_,context|{
+            assert_eq!(context["requirements"],sent_requirements);
+            assert_eq!(context["requirements"]["premises"],json!(["vieta"]));
+            assert_eq!(context["requirements"]["learnedScope"],json!(["1.3"]));
+            assert_eq!(context["requirements"]["teachingGoals"].as_array().unwrap().len(),2);
+            assert_eq!(list(&context["tasks"]).iter().map(|task|s(task,"id").to_owned()).collect::<Vec<_>>(),vec!["simulated-no-supply","simulated-second-main","simulated-shared-task"]);
+            assert!(!context.to_string().contains("simulated-task-audit-must-not-send"));
+            let actual:HashSet<_>=list(&context["chapters"]).iter().map(|chapter|intake::canonical(s(chapter,"id"))).collect();
+            let expected:HashSet<_>=["rja-compulsory-1:1.1","rja-compulsory-1:1.2","rja-compulsory-1:1.3","rja-compulsory-1:2.3","simulated-task-section","simulated-preferred-section"].into_iter().map(str::to_owned).collect();
+            assert_eq!(actual,expected);
+            assert_eq!(context["chapters"].as_array().unwrap().len(),6);
+            json!({"slots":[{"taskId":"simulated-no-supply","goalIds":["simulated-goal"],"points":0,"partPoints":[]}]})
+        });
+        let (result,events)=observe_selection(||dispatch(&mut store,"blueprint_plan",&input,&model,&AtomicBool::new(false)));
+        let result=result.unwrap().unwrap();
+        assert_eq!(events,simulated_plan_events());
+        assert_eq!(result["workflowSteps"],json!(["plan_supply","plan_slots","plan_check"]));
+        let blueprint=&result["blueprint"];
+        assert_eq!(blueprint["generation"]["taskCatalogScope"],"confirmed_main_scope_v1");
+        assert_eq!(blueprint["quantityReview"]["matches"],false);
+        assert_eq!(blueprint["quantityReview"]["expectedTotal"],2);
+        assert_eq!(blueprint["quantityReview"]["actualTotal"],1);
+        assert_eq!(intake::model_context(&blueprint["requirements"]),expected);
+        assert!(check_blueprint(&store,blueprint).unwrap_err().message.contains("题量不一致"));
+        let mut corrected=blueprint.clone();
+        corrected["slots"].as_array_mut().unwrap().push(intake::merge(&blueprint["slots"][0],&json!({"slotId":"slot-2","number":2})));
+        let checked=check_blueprint(&store,&corrected).unwrap();
+        assert_eq!(checked["generation"]["taskCatalogScope"],"confirmed_main_scope_v1");
+        assert!(store.list_documents("drafts").unwrap().is_empty());
+        assert!(store.list_documents("papers").unwrap().is_empty());
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_scoped_plan_rejects_unsent_tasks_and_guards_new_plans_without_rewriting_history() {
+        let (dir,mut store,unconfigured)=simulated_flow_store();
+        let input=json!({"mode":"llm","requirements":{"mainScope":["rja-compulsory-1:1.1"],"learnedScope":["1.2"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}}});
+        let (model,server)=llm_fixture(dir.path(),4,|attempt,context|{
+            assert!(list(&context["tasks"]).iter().all(|task|intake::overlaps(&task["sectionIds"],&json!(["1.1"])) && task["questionType"]=="single_choice"));
+            let task_id=match attempt {0=>"proper_subset",1=>"simulated-unknown-task",_=>"element_parameter_distinct"};
+            if attempt==2 {return json!({"slots":[]});}
+            json!({"slots":[{"taskId":task_id,"points":0,"partPoints":[]}]})
+        });
+        for attempt in 0..4 {
+            let result=plan(&store,&input,&model,&AtomicBool::new(false));
+            if attempt==2 {let blueprint=result.unwrap();assert_eq!(blueprint["slots"],json!([]));assert_eq!(blueprint["quantityReview"]["matches"],false);assert!(check_blueprint(&store,&blueprint).is_err());}
+            else {let error=result.unwrap_err();assert_eq!(error.code,"invalid_plan");if attempt==0 || attempt==3 {assert!(error.message.contains("本次已确认范围与题型"));}}
+            assert!(store.list_documents("drafts").unwrap().is_empty());
+            assert!(store.list_documents("papers").unwrap().is_empty());
+        }
+        server.join().unwrap();
+        let requirements=intake::normalize(&store,&input["requirements"]).unwrap();
+        let config=store.bank.config().unwrap();
+        let slots=model_blueprint_slots(&json!({"slots":[{"taskId":"proper_subset"}]}),&config).unwrap();
+        let mut blueprint=json!({"requirements":requirements,"slots":slots,"generation":{"mode":"llm","provenance":"llm_planning_v1","taskCatalogScope":"confirmed_main_scope_v1"}});
+        assert!(check_blueprint(&store,&blueprint).unwrap_err().message.contains("超出教师指定范围"));
+        assert!(create_draft(&mut store,&json!({"mode":"llm","blueprint":blueprint}),&unconfigured,&AtomicBool::new(false)).unwrap_err().message.contains("超出教师指定范围"));
+        // The pre-existing provenance alone must keep historical compatibility.
+        blueprint["generation"].as_object_mut().unwrap().remove("taskCatalogScope");
+        let historical=check_blueprint(&store,&blueprint).unwrap();
+        assert_eq!(historical["slots"][0]["taskId"],"proper_subset");
+        let mut no_task=config.clone();no_task["tasks"]=json!([]);write_simulated_config(&store,&no_task);
+        let mut empty_input=input.clone();empty_input["requirements"]["scoringMode"]=json!("points");empty_input["requirements"]["targetScore"]=json!(100);empty_input["requirements"]["teachingGoals"]=json!([simulated_goal("required","answer","1.1")]);
+        assert!(!unconfigured.configured());
+        let (result,events)=observe_selection(||dispatch(&mut store,"blueprint_plan",&empty_input,&unconfigured,&AtomicBool::new(false)));
+        let result=result.unwrap().unwrap();let blueprint=&result["blueprint"];
+        assert_eq!(result["workflowSteps"],json!(["plan_supply","plan_check"]));
+        assert_eq!(events,vec![("plan_supply".to_owned(),"running".to_owned()),("plan_supply".to_owned(),"completed".to_owned()),("plan_check".to_owned(),"running".to_owned()),("plan_check".to_owned(),"completed".to_owned())]);
+        assert_eq!(blueprint["slots"],json!([]));
+        assert_eq!(blueprint["generation"]["mode"],"not_run");
+        assert_eq!(blueprint["generation"]["provenance"],"task_catalog_incomplete");
+        assert_eq!(blueprint["taskCatalogGaps"][0]["questionType"],"single_choice");
+        assert_eq!(blueprint["requirements"]["counts"],input["requirements"]["counts"]);
+        assert_eq!(blueprint["requirements"]["targetScore"],100);
+        assert_eq!(blueprint["requirements"]["teachingGoals"].as_array().unwrap().len(),1);
+        assert!(check_blueprint(&store,blueprint).is_err());
+        let empty=create_draft(&mut store,&json!({"mode":"llm","blueprint":blueprint}),&unconfigured,&AtomicBool::new(false)).unwrap();
+        assert_eq!(empty["draft"]["slots"],json!([]));
+        assert_eq!(empty["draft"]["stats"]["unplannedCount"],1);
+        assert_eq!(store.list_documents("drafts").unwrap().len(),1);
+    }
+    #[test]
+    fn current_llm_http_partial_catalogue_and_zero_slots_are_reviewable_without_changing_requested_types() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let mut config=store.bank.config().unwrap();
+        config["tasks"]=json!(list(&config["tasks"]).into_iter().filter(|task|s(task,"questionType")!="multiple_choice").collect::<Vec<_>>());
+        config["tasks"].as_array_mut().unwrap().push(json!({"id":"simulated-multiple-outside-scope","label":"模拟范围外多选任务","questionType":"multiple_choice","sectionIds":["1.2"],"partIds":[]}));
+        write_simulated_config(&store,&config);
+        let input=json!({"mode":"llm","requirements":{"mainScope":["1.1"],"learnedScope":["1.1","1.2"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":1,"fill_blank":0,"free_response":0}}});
+        let requirements=intake::normalize(&store,&input["requirements"]).unwrap();
+        let (model,server)=llm_fixture(dir.path(),2,|attempt,context|{
+            assert_eq!(context["requirements"]["counts"],json!({"single_choice":1,"multiple_choice":1,"fill_blank":0,"free_response":0}));
+            assert!(!list(&context["tasks"]).is_empty());
+            assert!(list(&context["tasks"]).iter().all(|task|task["questionType"]=="single_choice"));
+            let gaps=&context["taskCatalogGaps"];
+            assert_eq!(gaps.as_array().unwrap().len(),1);
+            assert_eq!(gaps[0]["questionType"],"multiple_choice");assert_eq!(gaps[0]["requestedCount"],1);
+            assert_eq!(gaps[0]["reason"],"confirmed_scope_task_not_registered");
+            assert!(s(&gaps[0],"message").contains("不代表题库无题"));
+            assert!(gaps[0].get("readyCount").is_none());
+            if attempt==1 {json!({"slots":[]})} else {json!({"slots":[{"taskId":context["tasks"][0]["id"],"points":0,"partPoints":[]}]})}
+        });
+        for attempt in 0..2 {
+            let (result,events)=observe_selection(||dispatch(&mut store,"blueprint_plan",&input,&model,&AtomicBool::new(false)));
+            let result=result.unwrap().unwrap();let blueprint=&result["blueprint"];
+            assert_eq!(events,simulated_plan_events());
+            assert_eq!(result["workflowSteps"],json!(["plan_supply","plan_slots","plan_check"]));
+            assert_eq!(blueprint["requirements"],requirements);
+            assert_eq!(blueprint["taskCatalogGaps"][0]["questionType"],"multiple_choice");
+            assert_eq!(blueprint["quantityReview"]["expectedCounts"],requirements["counts"]);
+            assert_eq!(blueprint["quantityReview"]["actualCounts"]["multiple_choice"],0);
+            assert_eq!(blueprint["quantityReview"]["actualTotal"],if attempt==0{1}else{0});
+            assert_eq!(blueprint["generation"]["provenance"],"llm_planning_v1");
+            assert!(check_blueprint(&store,blueprint).unwrap_err().message.contains("题量不一致"));
+            assert!(store.list_documents("drafts").unwrap().is_empty());
+            assert!(store.list_documents("papers").unwrap().is_empty());
+        }
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_required_goal_and_total_score_can_be_reviewed_but_per_slot_structure_stays_strict() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let input=json!({"mode":"llm","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"points","targetScore":100,"counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0},"teachingGoals":[simulated_goal("required","answer","1.1")]}});
+        let (model,server)=llm_fixture(dir.path(),4,|attempt,context|{
+            let mut slot=json!({"taskId":context["tasks"][0]["id"],"points":20,"partPoints":[],"goalIds":[]});
+            match attempt {1=>slot["points"]=json!("invalid-points"),2=>slot["goalIds"]=json!(["simulated-unknown-goal"]),3=>slot["partPoints"]=json!([{"partId":"simulated-part","points":20}]),_=>{}}
+            json!({"slots":[slot]})
+        });
+        for attempt in 0..4 {
+            let result=plan(&store,&input,&model,&AtomicBool::new(false));
+            if attempt==0 {
+                let mut blueprint=result.unwrap();
+                assert_eq!(blueprint["quantityReview"]["matches"],true);
+                assert_eq!(blueprint["plannedStats"]["points"],20);
+                assert_eq!(blueprint["requirements"]["targetScore"],100);
+                assert_eq!(blueprint["taskCatalogGaps"],json!([]));
+                assert!(check_blueprint(&store,&blueprint).unwrap_err().message.contains("必须教学目标"));
+                blueprint["slots"][0]["goalIds"]=json!(["simulated-goal"]);
+                assert!(check_blueprint(&store,&blueprint).unwrap_err().message.contains("分值合计"));
+                blueprint["slots"][0]["points"]=json!(100);
+                assert_eq!(check_blueprint(&store,&blueprint).unwrap()["plannedStats"]["points"],100);
+            } else {assert_eq!(result.unwrap_err().code,"invalid_plan");}
+            assert!(store.list_documents("drafts").unwrap().is_empty());
+            assert!(store.list_documents("papers").unwrap().is_empty());
+        }
+        server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_partial_draft_preserves_shortage_confirms_actual_questions_and_rejects_version_race() {
+        let (dir,mut store,_)=simulated_flow_store();
+        let requirements=intake::normalize(&store,&json!({"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"points","targetScore":100,"counts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0},"teachingGoals":[simulated_goal("required","answer","1.1")]})).unwrap();
+        let blueprint=json!({"requirements":requirements,"slots":[{"slotId":"slot-1","number":1,"taskId":"set_determinacy","questionType":"single_choice","points":20,"partPoints":[],"goalIds":[]}],"generation":{"mode":"llm","provenance":"llm_planning_v1","taskCatalogScope":"confirmed_main_scope_v1"}});
+        assert!(check_blueprint(&store,&blueprint).is_err());
+        let bank_path=dir.path().join("question-bank.sqlite");
+        let (model,server)=llm_fixture(dir.path(),4,move|attempt,context|{
+            assert_eq!(context["slots"].as_array().unwrap().len(),1);
+            assert_eq!(context["requirements"]["counts"]["single_choice"],2);
+            assert_eq!(context["requirements"]["targetScore"],100);
+            assert_eq!(context["requirements"]["teachingGoals"].as_array().unwrap().len(),1);
+            let candidate=llm_candidate(context,0,if attempt==1 || attempt==2{"uncertain"}else{"suitable"});
+            if attempt==3 {
+                let db=rusqlite::Connection::open(&bank_path).unwrap();
+                let qid=s(&candidate,"questionId");
+                let raw:String=db.query_row("SELECT payload FROM bank_questions WHERE id=?1",[qid],|row|row.get(0)).unwrap();
+                let mut changed:Value=serde_json::from_str(&raw).unwrap();
+                changed["teacher"]["simulatedVersionNote"]=json!("模拟模型响应前另一窗口更新参考内容。");
+                let teacher_hash=hash(&changed["teacher"]);let version=format!("teacher-{}",&teacher_hash[..16]);
+                changed["teacherSha256"]=json!(teacher_hash);changed["teacherVersion"]=json!(version);changed["verification"]["teacherVersion"]=json!(version);
+                crate::bank::verify_question(&changed).unwrap();
+                db.execute("UPDATE bank_questions SET payload=?2 WHERE id=?1",rusqlite::params![qid,changed.to_string()]).unwrap();
+            }
+            json!({"rankings":[{"slotId":"slot-1","candidates":[candidate],"missingReason":"模拟模型未确认适配，保留已有题位。"}]})
+        });
+        let input=json!({"mode":"llm","blueprint":blueprint});let cancel=AtomicBool::new(false);
+        let created=create_draft(&mut store,&input,&model,&cancel).unwrap();let draft=&created["draft"];
+        assert_eq!(draft["baseline"]["requirements"],requirements);
+        assert_eq!(draft["slots"].as_array().unwrap().len(),1);
+        assert_eq!(draft["stats"]["requestedCount"],2);assert_eq!(draft["stats"]["plannedCount"],1);assert_eq!(draft["stats"]["selectedCount"],1);
+        assert_eq!(draft["stats"]["unplannedCount"],1);assert_eq!(draft["stats"]["missingCount"],1);assert_eq!(draft["stats"]["missingQuestions"],1);
+        assert_eq!(draft["planningShortage"],json!({"requestedCounts":requirements["counts"],"plannedCounts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0},"missingCounts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0},"requestedTotal":2,"plannedTotal":1,"missingTotal":1,"reason":"requested_questions_not_planned"}));
+        for code in ["planning_shortage","missing_required_goal","planned_score_differs"] {assert!(list(&draft["differences"]).iter().any(|issue|issue["code"]==code));}
+        let confirmation=json!({"draftId":draft["draftId"],"expectedRevision":0,"operationId":"simulated-partial-confirm","acknowledgeDifferences":true});
+        let mut unacknowledged=confirmation.clone();unacknowledged["acknowledgeDifferences"]=json!(false);
+        assert_eq!(confirm(&mut store,&unacknowledged).unwrap_err().code,"confirmation_required");
+        let paper=confirm(&mut store,&confirmation).unwrap()["paper"].clone();
+        verify_frozen_paper(&paper).unwrap();
+        assert_eq!(paper["draft"]["slots"].as_array().unwrap().len(),1);
+        assert_eq!(list(&paper["draft"]["slots"]).iter().filter(|slot|slot["question"].is_object()).count(),1);
+        assert_eq!(paper["draft"]["baseline"]["requirements"],requirements);
+        let replay=confirm(&mut store,&confirmation).unwrap();assert_eq!(replay["replayed"],true);assert_eq!(replay["paper"],paper);
+        assert_eq!(confirm(&mut store,&unacknowledged).unwrap_err().code,"operation_conflict");
+        let empty=create_draft(&mut store,&input,&model,&cancel).unwrap()["draft"].clone();
+        assert_eq!(empty["stats"]["selectedCount"],0);assert_eq!(empty["stats"]["plannedCount"],1);assert_eq!(empty["stats"]["unplannedCount"],1);assert_eq!(empty["stats"]["missingCount"],2);
+        assert!(empty["slots"][0]["question"].is_null());
+        let before=store.list_documents("drafts").unwrap();
+        assert_eq!(create_draft(&mut store,&input,&model,&cancel).unwrap_err().code,"version_conflict");
+        assert_eq!(store.list_documents("drafts").unwrap(),before);
+        assert_eq!(create_draft(&mut store,&input,&model,&AtomicBool::new(true)).unwrap_err().code,"cancelled");
+        let mut extra=input.clone();
+        extra["blueprint"]["slots"]=json!((0..3).map(|index|intake::merge(&blueprint["slots"][0],&json!({"slotId":format!("slot-{}",index+1),"number":index+1}))).collect::<Vec<_>>());
+        assert!(create_draft(&mut store,&extra,&model,&cancel).unwrap_err().message.contains("超过已确认需求"));
+        let mut wrong_type=input.clone();wrong_type["blueprint"]["slots"][0]["taskId"]=json!("element_parameter_distinct");wrong_type["blueprint"]["slots"][0]["questionType"]=json!("fill_blank");
+        assert!(create_draft(&mut store,&wrong_type,&model,&cancel).unwrap_err().message.contains("超过已确认需求"));
+        let mut malformed=input.clone();malformed["blueprint"]["slots"][0]["points"]=json!(-1);
+        assert_eq!(create_draft(&mut store,&malformed,&model,&cancel).unwrap_err().code,"invalid_plan");
+        assert_eq!(store.list_documents("drafts").unwrap(),before);
+        server.join().unwrap();
+        assert_eq!(dispatch(&mut store,"paper_get",&json!({"paperId":paper["paperId"]}),&model,&cancel).unwrap().unwrap()["paper"],paper);
+    }
+    #[test]
+    fn simulated_zero_slot_draft_skips_model_and_recomputes_shortage_after_explicit_edits() {
+        let (_dir,mut store,model)=simulated_flow_store();assert!(!model.configured());
+        let requirements=intake::normalize(&store,&json!({"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"points","targetScore":100,"counts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0},"teachingGoals":[simulated_goal("required","answer","1.1")]})).unwrap();
+        let input=json!({"mode":"llm","blueprint":{"requirements":requirements,"slots":[],"generation":{"mode":"not_run","provenance":"task_catalog_incomplete","taskCatalogScope":"confirmed_main_scope_v1"}}});
+        let (created,events)=observe_selection(||create_draft(&mut store,&input,&model,&AtomicBool::new(false)));
+        let created=created.unwrap();let draft=&created["draft"];
+        assert_eq!(created["workflowSteps"],json!(["select_pool","select_save"]));
+        let expected=vec![("select_pool".to_owned(),"running".to_owned()),("select_pool".to_owned(),"completed".to_owned()),("select_save".to_owned(),"running".to_owned()),("select_save".to_owned(),"completed".to_owned())];
+        assert_eq!(events,expected);
+        assert_eq!(draft["slots"],json!([]));assert_eq!(draft["stats"]["requestedCount"],2);assert_eq!(draft["stats"]["unplannedCount"],2);assert_eq!(draft["stats"]["missingCount"],2);
+        assert_eq!(draft["selectionGeneration"]["mode"],"not_run");assert_eq!(draft["selectionGeneration"]["provenance"],"empty_blueprint_no_selection");
+        assert!(!is_manual(draft));
+        assert_eq!(draft["baseline"]["requirements"],requirements);
+        let add=json!({"draftId":draft["draftId"],"operation":{"type":"add","taskId":"set_determinacy","points":0,"partPoints":[],"expectedRevision":0,"operationId":"simulated-partial-add"}});
+        let added=edit(&mut store,&add,&model,&AtomicBool::new(false)).unwrap()["draft"].clone();
+        assert_eq!(added["planningShortage"]["plannedTotal"],1);assert_eq!(added["planningShortage"]["missingTotal"],1);assert_eq!(added["stats"]["missingCount"],2);
+        let remove=json!({"draftId":draft["draftId"],"operation":{"type":"delete","slotId":added["slots"][0]["slotId"],"expectedRevision":1,"operationId":"simulated-partial-remove"}});
+        let removed=edit(&mut store,&remove,&model,&AtomicBool::new(false)).unwrap()["draft"].clone();
+        assert_eq!(removed["planningShortage"]["missingTotal"],2);assert_eq!(removed["stats"]["plannedCount"],0);assert_eq!(removed["stats"]["missingCount"],2);
+        let replay=edit(&mut store,&remove,&model,&AtomicBool::new(false)).unwrap();assert_eq!(replay["replayed"],true);assert_eq!(replay["draft"],removed);
+        let paper=confirm(&mut store,&json!({"draftId":draft["draftId"],"expectedRevision":2,"operationId":"simulated-empty-confirm","acknowledgeDifferences":true})).unwrap()["paper"].clone();
+        verify_frozen_paper(&paper).unwrap();assert_eq!(paper["draft"]["slots"],json!([]));assert_eq!(paper["draft"]["stats"]["actualCount"],0);
+        let before=store.list_documents("drafts").unwrap();
+        let cancel=std::sync::Arc::new(AtomicBool::new(false));let stop=cancel.clone();
+        let cancelled=crate::workflow_progress::observe(move|step,status|{if step=="select_save" && status=="running"{stop.store(true,Ordering::Relaxed);}},||create_draft(&mut store,&input,&model,&cancel));
+        assert_eq!(cancelled.unwrap_err().code,"cancelled");assert_eq!(store.list_documents("drafts").unwrap(),before);
+    }
+    #[test]
+    fn current_llm_http_candidate_windows_bound_payload_and_expand_global_matching_conflicts() {
+        let (dir,store,_)=simulated_flow_store();let (pool,config,requirements,slots)=simulated_window_pool(&store,292,6);
+        let seen=std::sync::Arc::new(std::sync::Mutex::new(Vec::<HashSet<String>>::new()));let requests=seen.clone();
+        let (model,server)=llm_fixture(dir.path(),2,move|attempt,context|{
+            assert_eq!(context["batch"]["round"],attempt+1);
+            let questions=list(&context["questions"]);assert!(questions.len()<=if attempt==0{72}else{120});
+            assert!(list(&context["slots"]).iter().all(|slot|list(&slot["candidateQuestionIds"]).len()<=if attempt==0{12}else{20}));
+            assert!(!context.to_string().contains("SIMULATED_FULL_PATH_BASIS_MUST_NOT_SEND"));
+            assert!(!context.to_string().contains("window-unrelated"));
+            assert!(list(&context["catalogue"]["knowledge"]).iter().any(|p|p["uid"]=="window-parent"));
+            assert!(list(&context["catalogue"]["premises"]).iter().any(|p|p["id"]=="vieta"));
+            assert!(questions.iter().all(|q|q["student"]["stem"].is_string() && q["teacher"]["answers"].is_array() && q["teacher"]["solutions"].is_array()));
+            let ids=questions.iter().map(|q|s(q,"questionId").to_owned()).collect::<HashSet<_>>();let mut old=requests.lock().unwrap();if attempt==1{assert!(old[0].is_disjoint(&ids));assert_eq!(context["slots"].as_array().unwrap().len(),5);}old.push(ids);
+            json!({"rankings":list(&context["slots"]).iter().enumerate().map(|(i,slot)|json!({"slotId":slot["slotId"],"candidates":[llm_slot_candidate(context,i,0,"suitable")],"missingReason":""})).collect::<Vec<_>>()})
+        });
+        let rows=crate::assembly_llm::evaluate(&pool,&slots,&requirements,&config,&[],&model,&AtomicBool::new(false)).unwrap();
+        let matches=assignment(&rows.iter().map(|row|list(&row["candidates"]).iter().map(|c|(s(c,"questionId").to_owned(),s(c,"duplicateGroup").to_owned())).collect()).collect::<Vec<_>>());
+        assert_eq!(matches.len(),6);assert_eq!(rows.len(),6);
+        assert_eq!(rows.iter().filter(|row|row["search"]["presentedCount"]==32).count(),5);
+        assert!(rows.iter().all(|row|row["search"]["poolCount"]==292 && row["search"]["assessedCount"].as_u64().unwrap()<=2 && row["search"]["searchIncomplete"]==true && row["search"]["continuation"].is_string()));
+        server.join().unwrap();assert_eq!(seen.lock().unwrap().len(),2);
+    }
+    #[test]
+    fn current_llm_http_continuation_reaches_unlabelled_questions_and_rejects_stale_or_forged_cursor() {
+        let (dir,store,_)=simulated_flow_store();let (pool,config,requirements,slots)=simulated_window_pool(&store,40,1);
+        let (model,server)=llm_fixture(dir.path(),3,|attempt,context|{
+            if attempt<2 {json!({"rankings":[{"slotId":"window-slot-0","candidates":[llm_slot_candidate(context,0,0,"uncertain")],"missingReason":"模拟比较保留未知。"}]})}
+            else {
+                assert_eq!(context["questions"].as_array().unwrap().len(),8);
+                assert!(list(&context["questions"]).iter().any(|q|q["questionId"]=="window-q-039" && q["metadataHints"].is_null()));
+                let index=context["questions"].as_array().unwrap().iter().position(|q|q["questionId"]=="window-q-039").unwrap();
+                json!({"rankings":[{"slotId":"window-slot-0","candidates":[llm_candidate(context,index,"suitable")],"missingReason":""}]})
+            }
+        });
+        let cancel=AtomicBool::new(false);
+        let first=crate::assembly_llm::evaluate(&pool,&slots,&requirements,&config,&[],&model,&cancel).unwrap().remove(0);
+        assert_eq!(first["search"]["presentedCount"],32);assert_eq!(first["search"]["assessedCount"],2);assert_eq!(first["assessments"].as_array().unwrap().len(),2);
+        assert!(s(&first,"missingReason").contains("尚有 8 道未比较"));
+        let cursor=&first["search"]["continuation"];
+        let mut changed_slot=slots[0].clone();changed_slot["taskLabel"]=json!("模拟条件已改变");
+        assert!(crate::assembly_llm::continue_evaluate(&pool,&changed_slot,&requirements,&config,&[],&model,&cancel,&first,cursor).is_err());
+        let mut changed_pool=pool.clone();changed_pool[39]["teacherVersion"]=json!("simulated-new-version");
+        assert!(crate::assembly_llm::continue_evaluate(&changed_pool,&slots[0],&requirements,&config,&[],&model,&cancel,&first,cursor).is_err());
+        assert!(crate::assembly_llm::continue_evaluate(&pool,&slots[0],&requirements,&config,&[],&model,&cancel,&first,&json!("forged-cursor")).is_err());
+        let next=crate::assembly_llm::continue_evaluate(&pool,&slots[0],&requirements,&config,&[],&model,&cancel,&first,cursor).unwrap().remove(0);
+        assert_eq!(next["candidates"][0]["questionId"],"window-q-039");assert_eq!(next["search"]["presentedCount"],40);assert_eq!(next["search"]["assessedCount"],3);
+        assert!(next["search"]["continuation"].is_null());assert_eq!(next["search"]["searchIncomplete"],true);
+        assert_eq!(next["assessments"].as_array().unwrap().len(),3);server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_window_fallback_failure_and_cancel_do_not_commit_candidate_cache() {
+        let (dir,mut store,old_model)=simulated_flow_store();
+        let blueprint=legacy_plan(&store,&json!({"mode":"rule","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}}}),&old_model,&AtomicBool::new(false)).unwrap();
+        let draft=legacy_create_draft(&mut store,&json!({"mode":"rule","blueprint":blueprint}),&old_model,&AtomicBool::new(false)).unwrap()["draft"].clone();
+        let prior=std::sync::Arc::new(std::sync::Mutex::new(Value::Null));let first_candidate=prior.clone();
+        let cancel=std::sync::Arc::new(AtomicBool::new(false));let stop=cancel.clone();
+        let (model,server)=llm_fixture(dir.path(),4,move|attempt,context|{
+            let candidate=if attempt%2==0{let c=llm_slot_candidate(context,0,0,"uncertain");*first_candidate.lock().unwrap()=c.clone();c}else if attempt==1{let mut c=first_candidate.lock().unwrap().clone();c["status"]=json!("suitable");c}else{stop.store(true,Ordering::Relaxed);llm_slot_candidate(context,0,0,"uncertain")};
+            json!({"rankings":[{"slotId":"slot-1","candidates":[candidate],"missingReason":"模拟需要继续比较。"}]})
+        });
+        let query=json!({"draftId":draft["draftId"],"slotId":"slot-1","expectedRevision":0});
+        let error=dispatch(&mut store,"draft_candidates",&query,&model,&cancel).unwrap_err();assert!(error.message.contains("未发送给本题位"));
+        assert_eq!(store.document("drafts",s(&draft,"draftId")).unwrap(),draft);
+        assert_eq!(dispatch(&mut store,"draft_candidates",&query,&model,&cancel).unwrap_err().code,"cancelled");
+        assert_eq!(store.document("drafts",s(&draft,"draftId")).unwrap(),draft);server.join().unwrap();
+    }
+    #[test]
+    fn current_llm_http_candidate_continuation_commits_cumulative_cache_and_direct_selection_has_no_call() {
+        let (dir,mut store,old_model)=simulated_flow_store();
+        let blueprint=legacy_plan(&store,&json!({"mode":"rule","requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}}}),&old_model,&AtomicBool::new(false)).unwrap();
+        let draft=legacy_create_draft(&mut store,&json!({"mode":"rule","blueprint":blueprint}),&old_model,&AtomicBool::new(false)).unwrap()["draft"].clone();
+        let seen=std::sync::Arc::new(std::sync::Mutex::new(HashSet::<String>::new()));let presented=seen.clone();
+        let (model,server)=llm_fixture(dir.path(),2,move|_,context|{
+            let ids=strings(&context["slots"][0]["candidateQuestionIds"]);let mut prior=presented.lock().unwrap();assert!(ids.iter().all(|id|!prior.contains(id)));prior.extend(ids);
+            json!({"rankings":[{"slotId":"slot-1","candidates":[llm_slot_candidate(context,0,0,"suitable")],"missingReason":""}]})
+        });
+        let cancel=AtomicBool::new(false);let query=json!({"draftId":draft["draftId"],"slotId":"slot-1","expectedRevision":0});
+        let first=dispatch(&mut store,"draft_candidates",&query,&model,&cancel).unwrap().unwrap();assert_eq!(first["search"]["presentedCount"],12);
+        let old_cursor=first["continuation"].clone();
+        let second=dispatch(&mut store,"draft_candidates",&json!({"draftId":draft["draftId"],"slotId":"slot-1","expectedRevision":1,"continuation":old_cursor}),&model,&cancel).unwrap().unwrap();
+        assert_eq!(second["search"]["presentedCount"],24);assert_eq!(second["search"]["assessedCount"],2);assert_eq!(second["candidates"].as_array().unwrap().len(),2);
+        let chosen=&second["candidates"][1];
+        let replaced=edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"replace","mode":"direct","slotIds":["slot-1"],"candidateId":chosen["questionId"],"contentVersion":chosen["contentVersion"],"teacherVersion":chosen["teacherVersion"],"expectedRevision":2,"operationId":"simulated-window-direct"}}),&model,&cancel).unwrap()["draft"].clone();
+        assert_eq!(replaced["slots"][0]["question"]["questionId"],chosen["questionId"]);assert_eq!(replaced["revision"],3);
+        assert!(dispatch(&mut store,"draft_candidates",&json!({"draftId":draft["draftId"],"slotId":"slot-1","expectedRevision":3,"continuation":old_cursor}),&model,&cancel).is_err());
+        assert_eq!(store.document("drafts",s(&draft,"draftId")).unwrap(),replaced);
+        server.join().unwrap();assert_eq!(seen.lock().unwrap().len(),24);
+    }
     fn simulated_store() -> (tempfile::TempDir, Store, ModelClient) {
         let dir = tempfile::tempdir().unwrap();
         let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
@@ -1806,7 +2814,7 @@ mod tests {
             .unwrap();
     }
     #[test]
-    fn simulated_blueprint_context_keeps_all_legal_tasks_without_import_metadata() {
+    fn legacy_simulated_blueprint_context_keeps_all_legal_tasks_without_import_metadata() {
         let requirements = json!({"mainScope":["1.1"],"counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0},"teachingGoals":[{"id":"required-goal","priority":"required","observable":"模拟必须目标","knowledgeScope":["1.1"]}],"student":{"name":"不得发送"}});
         let config = json!({"tasks":[
             {"id":"reference-task","label":"模拟参考任务","questionType":"single_choice","sectionIds":["1.1"],"partIds":[],"review":{"summary":"私有审核说明"},"sourceRefs":["私有来源"]},
@@ -1817,7 +2825,7 @@ mod tests {
         let slots = vec![
             json!({"slotId":"slot-1","number":1,"taskId":"reference-task","taskLabel":"模拟参考任务","questionType":"single_choice","goalIds":["required-goal"],"points":0,"partPoints":[]}),
         ];
-        let context = blueprint_model_context(&[], &slots, &requirements, &config);
+        let context = legacy_blueprint_model_context(&[], &slots, &requirements, &config);
         assert_eq!(
             context["tasks"],
             json!([
@@ -1841,12 +2849,12 @@ mod tests {
             context["requirements"]["teachingGoals"],
             requirements["teachingGoals"]
         );
-        assert!(context.to_string().chars().count() < json!({"requirements":requirements,"tasks":config["tasks"],"slots":slots,"supply":supply(&[], &slots, &requirements, &config)}).to_string().chars().count());
+        assert!(context.to_string().chars().count() < json!({"requirements":requirements,"tasks":config["tasks"],"slots":slots,"supply":legacy_supply(&[], &slots, &requirements, &config)}).to_string().chars().count());
     }
     #[test]
-    fn simulated_compact_model_slots_backfill_types_and_preserve_blueprint_checks() {
+    fn legacy_simulated_compact_model_slots_backfill_types_and_preserve_blueprint_checks() {
         let (_dir, store, model) = simulated_store();
-        let mut blueprint = plan(
+        let mut blueprint = legacy_plan(
             &store,
             &json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"scoringMode":"none","counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":"rule"}),
             &model,
@@ -1857,7 +2865,7 @@ mod tests {
         let config = store.bank.config().unwrap();
         let generated = json!({"slots":[{"taskId":blueprint["slots"][0]["taskId"],"goalIds":["simulated-goal"],"planningReason":"模拟安排依据"}]});
         blueprint["slots"] = json!(model_blueprint_slots(&generated, &config).unwrap());
-        let checked = check_blueprint(&store, &blueprint).unwrap();
+        let checked = legacy_check_blueprint(&store, &blueprint).unwrap();
         assert_eq!(checked["slots"][0]["questionType"], "single_choice");
         assert_eq!(checked["slots"][0]["goalIds"], json!(["simulated-goal"]));
         assert_eq!(checked["slots"][0]["planningReason"], "模拟安排依据");
@@ -1879,7 +2887,7 @@ mod tests {
 
         blueprint["slots"][0]["goalIds"] = json!([]);
         assert!(
-            check_blueprint(&store, &blueprint)
+            legacy_check_blueprint(&store, &blueprint)
                 .unwrap_err()
                 .message
                 .contains("必须教学目标")
@@ -1894,14 +2902,14 @@ mod tests {
                 &json!({"slotId":"slot-2","number":2}),
             ));
         assert!(
-            check_blueprint(&store, &blueprint)
+            legacy_check_blueprint(&store, &blueprint)
                 .unwrap_err()
                 .message
                 .contains("题量不一致")
         );
     }
     #[test]
-    fn simulated_seed_compact_blueprints_validate_twenty_and_sixty_slots() {
+    fn legacy_simulated_seed_compact_blueprints_validate_twenty_and_sixty_slots() {
         let (_dir, store, model) = simulated_store();
         let config = store.bank.config().unwrap();
         let pool = store.bank.questions().unwrap();
@@ -1911,7 +2919,7 @@ mod tests {
             } else {
                 (30, 15, 15)
             };
-            let blueprint = plan(
+            let blueprint = legacy_plan(
                 &store,
                 &json!({"requirements":{"counts":{"single_choice":single_choice,"multiple_choice":0,"fill_blank":fill_blank,"free_response":free_response},"targetDifficultyLevel":"medium_hard"},"mode":"rule"}),
                 &model,
@@ -1920,9 +2928,9 @@ mod tests {
             let requirements = blueprint["requirements"].clone();
             let references = list(&blueprint["slots"]);
             let compact_context =
-                blueprint_model_context(&pool, &references, &requirements, &config);
+                legacy_blueprint_model_context(&pool, &references, &requirements, &config);
             let old_context = intake::model_context(
-                &json!({"requirements":requirements,"tasks":config["tasks"],"supply":supply(&pool,&references,&requirements,&config),"slots":references}),
+                &json!({"requirements":requirements,"tasks":config["tasks"],"supply":legacy_supply(&pool,&references,&requirements,&config),"slots":references}),
             );
             let old_bytes = old_context.to_string().len();
             let compact_bytes = compact_context.to_string().len();
@@ -1938,9 +2946,9 @@ mod tests {
             // deterministic scoring and validation used by the planning path.
             let generated = json!({"slots":references.iter().map(|slot|json!({"taskId":slot["taskId"],"goalIds":slot["goalIds"]})).collect::<Vec<_>>()});
             let mut slots = model_blueprint_slots(&generated, &config).unwrap();
-            allocate_plan_points(&mut slots, &requirements, &config).unwrap();
+            legacy_allocate_plan_points(&mut slots, &requirements, &config).unwrap();
             let checked =
-                check_blueprint(&store, &json!({"requirements":requirements,"slots":slots}))
+                legacy_check_blueprint(&store, &json!({"requirements":requirements,"slots":slots}))
                     .unwrap();
             assert_eq!(checked["requirements"], requirements);
             assert_eq!(checked["plannedStats"]["questionCount"], count);
@@ -1948,13 +2956,13 @@ mod tests {
         }
     }
     #[test]
-    fn simulated_five_level_targets_validate_and_inherit_without_guessing_legacy_numbers() {
+    fn legacy_simulated_five_level_targets_validate_and_inherit_without_guessing_legacy_numbers() {
         let (_dir, store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
         for level in intake::DIFFICULTY_LEVELS {
             let requirements =
                 intake::normalize(&store, &json!({"targetDifficultyLevel":level})).unwrap();
-            let blueprint = plan(
+            let blueprint = legacy_plan(
                 &store,
                 &json!({"requirements":requirements,"mode":"rule"}),
                 &model,
@@ -1970,14 +2978,14 @@ mod tests {
             let mut custom = blueprint.clone();
             custom["slots"][0]["targetDifficultyLevel"] = Value::Null;
             custom["slots"][1]["targetDifficultyLevel"] = json!("easy_medium");
-            let checked = check_blueprint(&store, &custom).unwrap();
+            let checked = legacy_check_blueprint(&store, &custom).unwrap();
             assert_eq!(
                 checked["slots"][0].get("targetDifficultyLevel"),
                 Some(&Value::Null)
             );
             assert_eq!(checked["slots"][1]["targetDifficultyLevel"], "easy_medium");
             custom["slots"][0]["targetDifficultyLevel"] = json!("foundation");
-            assert!(check_blueprint(&store, &custom).is_err());
+            assert!(legacy_check_blueprint(&store, &custom).is_err());
         }
         for invalid in [
             json!("unknown"),
@@ -1989,7 +2997,7 @@ mod tests {
             assert!(intake::normalize(&store, &json!({"targetDifficultyLevel":invalid})).is_err());
         }
         assert!(intake::normalize(&store, &json!({"targetDifficultyLevel":null})).is_ok());
-        let old = plan(
+        let old = legacy_plan(
             &store,
             &json!({"requirements":{"targetDifficulty":0.8},"mode":"rule"}),
             &model,
@@ -2005,22 +3013,22 @@ mod tests {
         let mut old_slot = old;
         old_slot["requirements"]["targetDifficultyLevel"] = json!("hard");
         old_slot["slots"][0]["targetDifficulty"] = json!(0.8);
-        let checked = check_blueprint(&store, &old_slot).unwrap();
+        let checked = legacy_check_blueprint(&store, &old_slot).unwrap();
         assert_eq!(checked["slots"][0]["targetDifficulty"], 0.8);
         assert!(checked["slots"][0].get("targetDifficultyLevel").is_none());
     }
     #[test]
-    fn simulated_semantic_difficulty_edits_persist_retry_and_freeze_without_replacing_questions() {
+    fn legacy_simulated_semantic_difficulty_edits_persist_retry_and_freeze_without_replacing_questions() {
         let (dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
-        let blueprint = plan(
+        let blueprint = legacy_plan(
             &store,
             &json!({"requirements":{"targetDifficultyLevel":"medium_hard"},"mode":"rule"}),
             &model,
             &cancel,
         )
         .unwrap();
-        let mut draft = create_draft(
+        let mut draft = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"rule"}),
             &model,
@@ -2037,7 +3045,7 @@ mod tests {
         let mut first_operation = Value::Null;
         for (index, level) in intake::DIFFICULTY_LEVELS.iter().enumerate() {
             let op = json!({"draftId":draft["draftId"],"operation":{"type":"difficulty","slotId":"slot-1","targetDifficultyLevel":level,"operationId":format!("simulated-semantic-{index}"),"expectedRevision":draft["revision"]}});
-            draft = edit(&mut store, &op).unwrap()["draft"].clone();
+            draft = legacy_edit(&mut store, &op).unwrap()["draft"].clone();
             if index == 0 {
                 first_operation = op.clone();
             }
@@ -2047,7 +3055,7 @@ mod tests {
                 draft["slots"][0].get("targetDifficulty"),
                 Some(&Value::Null)
             );
-            assert_eq!(edit(&mut store, &op).unwrap()["draft"], draft);
+            assert_eq!(legacy_edit(&mut store, &op).unwrap()["draft"], draft);
             assert_eq!(
                 list(&draft["slots"])
                     .iter()
@@ -2060,12 +3068,12 @@ mod tests {
         let mut reused = first_operation;
         reused["operation"]["targetDifficultyLevel"] = json!("hard");
         assert_eq!(
-            edit(&mut store, &reused).unwrap_err().code,
+            legacy_edit(&mut store, &reused).unwrap_err().code,
             "operation_conflict"
         );
         let op = |revision: &Value, operation_id: &str, patch: Value| json!({"draftId":draft["draftId"],"operation":intake::merge(&json!({"type":"difficulty","slotId":"slot-1","expectedRevision":revision,"operationId":operation_id}),&patch)});
         assert_eq!(
-            edit(
+            legacy_edit(
                 &mut store,
                 &op(
                     &json!(0),
@@ -2083,7 +3091,7 @@ mod tests {
             json!({}),
         ] {
             assert!(
-                edit(
+                legacy_edit(
                     &mut store,
                     &op(&draft["revision"], "simulated-invalid-difficulty", patch)
                 )
@@ -2095,11 +3103,11 @@ mod tests {
             "simulated-legacy-difficulty",
             json!({"targetDifficulty":0.8}),
         );
-        draft = edit(&mut store, &legacy).unwrap()["draft"].clone();
+        draft = legacy_edit(&mut store, &legacy).unwrap()["draft"].clone();
         assert_eq!(draft["slots"][0]["targetDifficulty"], 0.8);
         assert!(draft["slots"][0].get("targetDifficultyLevel").is_none());
         let clear = json!({"draftId":draft["draftId"],"operation":{"type":"difficulty","slotId":"slot-1","targetDifficultyLevel":null,"operationId":"simulated-clear-difficulty","expectedRevision":draft["revision"]}});
-        draft = edit(&mut store, &clear).unwrap()["draft"].clone();
+        draft = legacy_edit(&mut store, &clear).unwrap()["draft"].clone();
         assert_eq!(
             draft["slots"][0].get("targetDifficultyLevel"),
             Some(&Value::Null)
@@ -2119,7 +3127,7 @@ mod tests {
             store.document("drafts", s(&draft, "draftId")).unwrap(),
             draft
         );
-        assert_eq!(edit(&mut store, &clear).unwrap()["draft"], draft);
+        assert_eq!(legacy_edit(&mut store, &clear).unwrap()["draft"], draft);
         let paper = confirm(&mut store,&json!({"draftId":draft["draftId"],"expectedRevision":draft["revision"],"operationId":"simulated-difficulty-confirm","acknowledgeDifferences":true})).unwrap()["paper"].clone();
         verify_frozen_paper(&paper).unwrap();
         assert_eq!(paper["draft"], draft);
@@ -2129,24 +3137,24 @@ mod tests {
         )
         .unwrap()["draft"]
             .clone();
-        edit(&mut store,&json!({"draftId":derived["draftId"],"operation":{"type":"difficulty","slotId":"slot-1","targetDifficultyLevel":"easy_medium","operationId":"simulated-derived-difficulty","expectedRevision":0}})).unwrap();
+        legacy_edit(&mut store,&json!({"draftId":derived["draftId"],"operation":{"type":"difficulty","slotId":"slot-1","targetDifficultyLevel":"easy_medium","operationId":"simulated-derived-difficulty","expectedRevision":0}})).unwrap();
         assert_eq!(
             store.document("papers", s(&paper, "paperId")).unwrap(),
             paper
         );
     }
     #[test]
-    fn simulated_criteria_saves_task_and_semantic_difficulty_atomically() {
+    fn legacy_simulated_criteria_saves_task_and_semantic_difficulty_atomically() {
         let (_dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
-        let blueprint = plan(
+        let blueprint = legacy_plan(
             &store,
             &json!({"requirements":{"targetDifficulty":0.8},"mode":"rule"}),
             &model,
             &cancel,
         )
         .unwrap();
-        let original = create_draft(
+        let original = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"rule"}),
             &model,
@@ -2160,7 +3168,7 @@ mod tests {
             .enumerate()
         {
             let operation = json!({"draftId":draft["draftId"],"operation":{"type":"criteria","slotId":"slot-1","taskId":draft["slots"][0]["taskId"],"targetDifficultyLevel":level,"operationId":format!("simulated-criteria-difficulty-{number}"),"expectedRevision":draft["revision"]}});
-            draft = edit(&mut store, &operation).unwrap()["draft"].clone();
+            draft = legacy_edit(&mut store, &operation).unwrap()["draft"].clone();
             assert_eq!(draft["slots"][0].get("targetDifficultyLevel"), Some(&level));
             assert_eq!(
                 draft["slots"][0].get("targetDifficulty"),
@@ -2170,7 +3178,7 @@ mod tests {
                 draft["slots"][0]["question"],
                 original["slots"][0]["question"]
             );
-            assert_eq!(edit(&mut store, &operation).unwrap()["draft"], draft);
+            assert_eq!(legacy_edit(&mut store, &operation).unwrap()["draft"], draft);
         }
         for patch in [
             json!({"targetDifficultyLevel":"foundation"}),
@@ -2181,7 +3189,7 @@ mod tests {
                 &patch,
             );
             assert!(
-                edit(
+                legacy_edit(
                     &mut store,
                     &json!({"draftId":draft["draftId"],"operation":operation})
                 )
@@ -2193,17 +3201,17 @@ mod tests {
             );
         }
         let without_target = json!({"draftId":draft["draftId"],"operation":{"type":"criteria","slotId":"slot-1","taskId":draft["slots"][0]["taskId"],"operationId":"simulated-criteria-retain-difficulty","expectedRevision":draft["revision"]}});
-        let retained = edit(&mut store, &without_target).unwrap()["draft"].clone();
+        let retained = legacy_edit(&mut store, &without_target).unwrap()["draft"].clone();
         assert_eq!(retained["slots"][0]["targetDifficultyLevel"], "medium_hard");
     }
     #[test]
-    fn simulated_multiple_choice_flows_through_planning_manual_editing_and_frozen_paper() {
+    fn legacy_simulated_multiple_choice_flows_through_planning_manual_editing_and_frozen_paper() {
         let (_dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
         let requirements = intake::normalize(&store, &json!({"scoringMode":"none"})).unwrap();
         assert_eq!(requirements["counts"]["multiple_choice"], 0);
         let no_supply = intake::normalize(&store,&json!({"counts":{"single_choice":0,"multiple_choice":2,"fill_blank":0,"free_response":0},"scoringMode":"none"})).unwrap();
-        let no_task = plan(
+        let no_task = legacy_plan(
             &store,
             &json!({"requirements":no_supply,"mode":"rule"}),
             &model,
@@ -2213,7 +3221,7 @@ mod tests {
         assert!(no_task.message.contains("2 道多选题"));
         assert!(no_task.message.contains("题量未改变"));
         assert!(store.list_documents("drafts").unwrap().is_empty());
-        let original = plan(
+        let original = legacy_plan(
             &store,
             &json!({"requirements":requirements,"mode":"rule"}),
             &model,
@@ -2223,7 +3231,7 @@ mod tests {
         let slot = &original["slots"][0];
         let pool = store.bank.questions().unwrap();
         let mut config = store.bank.config().unwrap();
-        let candidate = candidates(&pool, slot, &requirements, &config, &[])
+        let candidate = legacy_candidates(&pool, slot, &requirements, &config, &[])
             .into_iter()
             .find(|candidate| s(candidate, "status") == "eligible")
             .unwrap();
@@ -2252,7 +3260,7 @@ mod tests {
             .unwrap();
 
         let requirements = intake::normalize(&store, &json!({"scoringMode":"none","counts":{"single_choice":0,"multiple_choice":2,"fill_blank":0,"free_response":0}})).unwrap();
-        let blueprint = plan(
+        let blueprint = legacy_plan(
             &store,
             &json!({"requirements":requirements,"mode":"rule"}),
             &model,
@@ -2265,7 +3273,7 @@ mod tests {
                 .iter()
                 .all(|slot| slot["questionType"] == "multiple_choice")
         );
-        let draft = create_draft(
+        let draft = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"rule"}),
             &model,
@@ -2296,12 +3304,16 @@ mod tests {
             1
         );
         assert_eq!(manual["slots"][0]["question"], question);
-        let edited = edit(&mut store,&json!({"draftId":manual["draftId"],"operation":{"type":"add","questionType":"multiple_choice","operationId":"simulated-multiple-add","expectedRevision":manual["revision"]}})).unwrap()["draft"].clone();
+        let edited = legacy_edit(&mut store,&json!({"draftId":manual["draftId"],"operation":{"type":"add","questionType":"multiple_choice","operationId":"simulated-multiple-add","expectedRevision":manual["revision"]}})).unwrap()["draft"].clone();
         assert_eq!(edited["slots"][1]["questionType"], "multiple_choice");
         assert_eq!(edited["stats"]["missingCount"], 1);
+        let removed=legacy_edit(&mut store,&json!({"draftId":manual["draftId"],"operation":{"type":"delete","slotId":edited["slots"][0]["slotId"],"operationId":"simulated-multiple-remove","expectedRevision":edited["revision"]}})).unwrap()["draft"].clone();
+        assert!(removed.get("planningShortage").is_none());
+        assert_eq!(removed["stats"]["requestedCount"],1);assert_eq!(removed["stats"]["unplannedCount"],0);assert_eq!(removed["stats"]["missingCount"],1);
+        assert!(!list(&removed["differences"]).iter().any(|issue|issue["code"]=="planning_shortage" || issue["code"]=="missing_required_goal"));
     }
     #[test]
-    fn simulated_deleted_history_is_inaccessible_without_cascading_to_independent_work() {
+    fn legacy_simulated_deleted_history_is_inaccessible_without_cascading_to_independent_work() {
         let (_dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
         let question = store
@@ -2374,7 +3386,7 @@ mod tests {
             store.document("drafts", s(&derived, "draftId")).unwrap(),
             derived
         );
-        let edited = edit(&mut store, &json!({"draftId":derived["draftId"],"operation":{"type":"rename","title":"模拟独立草稿仍可编辑","operationId":"history-independent-edit","expectedRevision":derived["revision"]}})).unwrap();
+        let edited = legacy_edit(&mut store, &json!({"draftId":derived["draftId"],"operation":{"type":"rename","title":"模拟独立草稿仍可编辑","operationId":"history-independent-edit","expectedRevision":derived["revision"]}})).unwrap();
         assert_eq!(edited["draft"]["title"], "模拟独立草稿仍可编辑");
         assert_eq!(store.list_documents("drafts").unwrap().len(), 1);
         assert!(store.list_documents("papers").unwrap().is_empty());
@@ -2476,7 +3488,7 @@ mod tests {
         assert!(!dir.path().join("llm-runs").exists());
     }
     #[test]
-    fn simulated_manual_quantity_accepts_one_and_sixty_including_over_thirty_one_type() {
+    fn legacy_simulated_manual_quantity_accepts_one_and_sixty_including_over_thirty_one_type() {
         let (_dir, mut store, _model) = simulated_store();
         let pool: Vec<_> = store
             .bank
@@ -2503,7 +3515,7 @@ mod tests {
             assert_eq!(draft["differences"], json!([]));
             if count == 60 {
                 let q = &pool[60];
-                assert_eq!(edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"add","operationId":"manual-over-sixty","expectedRevision":0,"questionType":"single_choice","candidateId":q["questionId"],"contentVersion":q["contentVersion"],"teacherVersion":q["teacherVersion"]}})).unwrap_err().code,"invalid_plan");
+                assert_eq!(legacy_edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"add","operationId":"manual-over-sixty","expectedRevision":0,"questionType":"single_choice","candidateId":q["questionId"],"contentVersion":q["contentVersion"],"teacherVersion":q["teacherVersion"]}})).unwrap_err().code,"invalid_plan");
                 assert_eq!(
                     store.document("drafts", s(draft, "draftId")).unwrap(),
                     *draft
@@ -2664,7 +3676,7 @@ mod tests {
         assert_eq!(store.list_documents("drafts").unwrap().len(), 1);
     }
     #[test]
-    fn simulated_manual_edit_replace_add_finalize_and_derive_preserve_boundaries() {
+    fn legacy_simulated_manual_edit_replace_add_finalize_and_derive_preserve_boundaries() {
         let (_dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
         let singles: Vec<_> = store
@@ -2687,7 +3699,7 @@ mod tests {
                 &operation,
                 &json!({"operationId":format!("manual-edit-{}",draft["revision"]),"expectedRevision":draft["revision"]}),
             );
-            let result = edit(
+            let result = legacy_edit(
                 &mut store,
                 &json!({"draftId":draft["draftId"],"operation":operation}),
             );
@@ -2743,7 +3755,7 @@ mod tests {
         let paper=confirm(&mut store,&json!({"draftId":draft["draftId"],"expectedRevision":draft["revision"],"operationId":"manual-finalize","acknowledgeDifferences":true})).unwrap()["paper"].clone();
         verify_frozen_paper(&paper).unwrap();
         assert_eq!(paper["draft"]["slots"], draft["slots"]);
-        assert_eq!(edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"manual-finalized-edit","expectedRevision":draft["revision"],"title":"禁止"}})).unwrap_err().code,"finalized_draft");
+        assert_eq!(legacy_edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"manual-finalized-edit","expectedRevision":draft["revision"],"title":"禁止"}})).unwrap_err().code,"finalized_draft");
         let derived = derive(
             &mut store,
             &json!({"paperId":paper["paperId"],"operationId":"manual-derive"}),
@@ -2758,7 +3770,7 @@ mod tests {
         );
     }
     #[test]
-    fn simulated_manual_free_response_replacement_and_add_use_actual_part_identities() {
+    fn legacy_simulated_manual_free_response_replacement_and_add_use_actual_part_identities() {
         let (_dir, mut store, _model) = simulated_store();
         let free: Vec<_> = store
             .bank
@@ -2773,7 +3785,7 @@ mod tests {
             ["draft"]
             .clone();
         let op = json!({"type":"replace","operationId":"manual-free-replace","expectedRevision":0,"mode":"direct","slotIds":["slot-1"],"candidateId":free[1]["questionId"],"contentVersion":free[1]["contentVersion"],"teacherVersion":free[1]["teacherVersion"]});
-        draft = edit(
+        draft = legacy_edit(
             &mut store,
             &json!({"draftId":draft["draftId"],"operation":op}),
         )
@@ -2785,7 +3797,7 @@ mod tests {
             .collect();
         assert_eq!(draft["slots"][0]["partPoints"], json!(expected));
         let op = json!({"type":"add","operationId":"manual-free-add","expectedRevision":1,"questionType":"free_response","candidateId":free[2]["questionId"],"contentVersion":free[2]["contentVersion"],"teacherVersion":free[2]["teacherVersion"]});
-        draft = edit(
+        draft = legacy_edit(
             &mut store,
             &json!({"draftId":draft["draftId"],"operation":op}),
         )
@@ -2797,7 +3809,7 @@ mod tests {
             .collect();
         assert_eq!(draft["slots"][1]["partPoints"], json!(expected));
         assert_eq!(draft["slots"][1]["question"], free[2]);
-        let replay = edit(
+        let replay = legacy_edit(
             &mut store,
             &json!({"draftId":draft["draftId"],"operation":op}),
         )
@@ -2807,7 +3819,7 @@ mod tests {
         let mut changed = op.clone();
         changed["candidateId"] = free[0]["questionId"].clone();
         assert_eq!(
-            edit(
+            legacy_edit(
                 &mut store,
                 &json!({"draftId":draft["draftId"],"operation":changed})
             )
@@ -2847,10 +3859,10 @@ mod tests {
         );
     }
     #[test]
-    fn unknown_versions_never_eligible() {
+    fn legacy_unknown_versions_never_eligible() {
         let q = json!({"questionId":"q","questionType":"single_choice","contentVersion":"new","teacherVersion":"t","sourceRefs":[{"sourceId":"source"}]});
         let config = json!({"assemblyIndex":{"entries":[{"questionId":"q","contentVersion":"old","teacherVersion":"t","primarySections":["1.1"],"duplicateGroup":"g"}]}});
-        let result = assess(
+        let result = legacy_assess(
             &q,
             &json!({"taskId":"task"}),
             &json!({"sourceIds":["source"]}),
@@ -2862,24 +3874,24 @@ mod tests {
         assert_eq!(result["canSelect"], false);
     }
     #[test]
-    fn complete_path_and_required_goal_evidence_are_not_model_guesses() {
+    fn legacy_complete_path_and_required_goal_evidence_are_not_model_guesses() {
         let q = json!({"questionId":"q","questionType":"single_choice","contentVersion":"c","teacherVersion":"t","sourceRefs":[{"sourceId":"source"}]});
         let config = json!({"assemblyIndex":{"entries":[{"questionId":"q","contentVersion":"c","teacherVersion":"t","tasks":["task"],"primarySections":["1.1"],"duplicateGroup":"g","solutionPaths":[{"id":"path","requiredSections":["1.1"],"requiredPremises":["vieta"],"basis":"模拟完整解法依据"}]}]}});
         let slot = json!({"taskId":"task","goalIds":[]});
         let mut r = json!({"mainScope":["1.1"],"learnedScope":["1.1"],"sourceIds":["source"],"premises":[],"foundationPremises":[],"teachingGoals":[]});
         assert_eq!(
-            assess(&q, &slot, &r, &config, &HashSet::new(), &HashSet::new())["status"],
+            legacy_assess(&q, &slot, &r, &config, &HashSet::new(), &HashSet::new())["status"],
             "unknown"
         );
         r["premises"] = json!(["vieta"]);
         assert_eq!(
-            assess(&q, &slot, &r, &config, &HashSet::new(), &HashSet::new())["status"],
+            legacy_assess(&q, &slot, &r, &config, &HashSet::new(), &HashSet::new())["status"],
             "eligible"
         );
         r["teachingGoals"] = json!([{"id":"g1","priority":"required"}]);
         let slot = intake::merge(&slot, &json!({"goalIds":["g1"]}));
         assert_eq!(
-            assess(&q, &slot, &r, &config, &HashSet::new(), &HashSet::new())["status"],
+            legacy_assess(&q, &slot, &r, &config, &HashSet::new(), &HashSet::new())["status"],
             "unknown"
         );
     }
@@ -2895,9 +3907,9 @@ mod tests {
         (question, slot, requirements, config)
     }
     #[test]
-    fn simulated_knowledge_scope_distinguishes_points_in_the_same_section() {
+    fn legacy_simulated_knowledge_scope_distinguishes_points_in_the_same_section() {
         let (question, slot, mut requirements, config) = simulated_knowledge_assessment();
-        let eligible = assess(
+        let eligible = legacy_assess(
             &question,
             &slot,
             &requirements,
@@ -2907,7 +3919,7 @@ mod tests {
         );
         assert_eq!(eligible["canSelect"], true);
         requirements["mainKnowledgeUids"] = json!(["simulated-b"]);
-        let excluded = assess(
+        let excluded = legacy_assess(
             &question,
             &slot,
             &requirements,
@@ -2925,7 +3937,7 @@ mod tests {
         // Choosing a parent includes its catalogue descendants, without graph inference.
         requirements["mainKnowledgeUids"] = json!(["simulated-root"]);
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -2945,7 +3957,7 @@ mod tests {
             .unwrap()
             .remove("learnedKnowledgeUids");
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -2957,7 +3969,7 @@ mod tests {
         );
     }
     #[test]
-    fn simulated_legacy_sections_do_not_override_explicit_knowledge_boundaries() {
+    fn legacy_simulated_legacy_sections_do_not_override_explicit_knowledge_boundaries() {
         let (question, slot, mut requirements, mut config) = simulated_knowledge_assessment();
         config["assemblyIndex"]["entries"][0]
             .as_object_mut()
@@ -2968,7 +3980,7 @@ mod tests {
             .unwrap()
             .remove("requiredKnowledgeUids");
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -2987,7 +3999,7 @@ mod tests {
             .unwrap()
             .remove("learnedKnowledgeUids");
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -2999,7 +4011,7 @@ mod tests {
         );
     }
     #[test]
-    fn simulated_knowledge_boundary_accepts_one_complete_allowed_solution_path() {
+    fn legacy_simulated_knowledge_boundary_accepts_one_complete_allowed_solution_path() {
         let (question, slot, requirements, mut config) = simulated_knowledge_assessment();
         let entry = &mut config["assemblyIndex"]["entries"][0];
         let mut unavailable = entry["solutionPaths"][0].clone();
@@ -3007,7 +4019,7 @@ mod tests {
         unavailable["requiredKnowledgeUids"] = json!(["simulated-a", "simulated-b"]);
         entry["solutionPaths"] = json!([unavailable]);
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -3024,7 +4036,7 @@ mod tests {
             .as_array_mut()
             .unwrap()
             .push(available);
-        let result = assess(
+        let result = legacy_assess(
             &question,
             &slot,
             &requirements,
@@ -3037,7 +4049,7 @@ mod tests {
         config["assemblyIndex"]["entries"][0]["solutionPaths"][1]["requiredPremises"] =
             json!(["simulated-tool"]);
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -3050,7 +4062,7 @@ mod tests {
         let mut permitted = requirements.clone();
         permitted["premises"] = json!(["simulated-tool"]);
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &permitted,
@@ -3062,7 +4074,7 @@ mod tests {
         );
         permitted["learnedKnowledgeUids"] = json!([]);
         assert_eq!(
-            assess(
+            legacy_assess(
                 &question,
                 &slot,
                 &permitted,
@@ -3074,7 +4086,7 @@ mod tests {
         );
     }
     #[test]
-    fn simulated_invalid_knowledge_evidence_never_falls_back_to_sections() {
+    fn legacy_simulated_invalid_knowledge_evidence_never_falls_back_to_sections() {
         let (question, slot, requirements, config) = simulated_knowledge_assessment();
         let mut variants = Vec::new();
         for primary in [
@@ -3117,7 +4129,7 @@ mod tests {
         no_path["assemblyIndex"]["entries"][0]["solutionPaths"] = json!([]);
         variants.push(no_path);
         for invalid in variants {
-            let result = assess(
+            let result = legacy_assess(
                 &question,
                 &slot,
                 &requirements,
@@ -3302,7 +4314,7 @@ mod tests {
         );
     }
     #[test]
-    fn migrated_real_chapter_two_rules_respect_scope_and_use_verified_supply() {
+    fn legacy_migrated_real_chapter_two_rules_respect_scope_and_use_verified_supply() {
         let (_directory, mut store, model) = simulated_store();
         let config = store.bank.config().unwrap();
         let pool = store.bank.questions().unwrap();
@@ -3326,14 +4338,14 @@ mod tests {
                 })
                 .collect();
             let requirements=intake::normalize(&store,&json!({"mainScope":[section],"learnedScope":learned,"counts":{"single_choice":1,"fill_blank":1,"free_response":1},"scoringMode":"none"})).unwrap();
-            let blueprint = plan(
+            let blueprint = legacy_plan(
                 &store,
                 &json!({"requirements":requirements,"mode":"rule"}),
                 &model,
                 &cancel,
             )
             .unwrap();
-            let draft = create_draft(
+            let draft = legacy_create_draft(
                 &mut store,
                 &json!({"blueprint":blueprint,"mode":"rule"}),
                 &model,
@@ -3364,7 +4376,7 @@ mod tests {
                         for task_id in strings(&annotation["tasks"]) {
                             let probe = intake::merge(&slot, &json!({"taskId":task_id}));
                             if s(
-                                &assess(
+                                &legacy_assess(
                                     question,
                                     &probe,
                                     &requirements,
@@ -3412,16 +4424,16 @@ mod tests {
         assert!(chosen >= 3);
     }
     #[test]
-    fn simulated_real_seed_shortage_revisions_idempotency_and_immutable_paper() {
+    fn legacy_simulated_real_seed_shortage_revisions_idempotency_and_immutable_paper() {
         let (_dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
         let student = store
             .create_student(&json!({"name":"模拟学生","operationId":"student-case"}))
             .unwrap();
-        let prepared=intake::prepare(&store,&json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"student":student},"message":"12道题，不要解答题","mode":"rule"}),&model,&cancel).unwrap();
+        let prepared=intake::legacy_prepare(&store,&json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"student":student},"message":"12道题，不要解答题","mode":"rule"}),&model,&cancel).unwrap();
         assert_eq!(prepared["requirements"]["questionCount"], 12);
         assert_eq!(prepared["requirements"]["counts"]["free_response"], 0);
-        let mut blueprint = plan(
+        let mut blueprint = legacy_plan(
             &store,
             &json!({"requirements":prepared["requirements"],"mode":"rule"}),
             &model,
@@ -3434,7 +4446,7 @@ mod tests {
                 slot["taskId"] = json!("set_determinacy");
             }
         }
-        let mut draft = create_draft(
+        let mut draft = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"rule"}),
             &model,
@@ -3455,19 +4467,19 @@ mod tests {
             .collect();
         assert_eq!(unique.len(), selected.len());
         let operation = json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"rename-case","expectedRevision":0,"title":"教师自定义练习"}});
-        draft = edit(&mut store, &operation).unwrap()["draft"].clone();
+        draft = legacy_edit(&mut store, &operation).unwrap()["draft"].clone();
         assert_eq!(draft["revision"], 1);
         assert_eq!(
-            edit(&mut store, &operation).unwrap()["draft"]["revision"],
+            legacy_edit(&mut store, &operation).unwrap()["draft"]["revision"],
             1
         );
         let mut conflict = operation.clone();
         conflict["operation"]["title"] = json!("不同内容");
         assert_eq!(
-            edit(&mut store, &conflict).unwrap_err().code,
+            legacy_edit(&mut store, &conflict).unwrap_err().code,
             "operation_conflict"
         );
-        assert_eq!(edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"stale-case","expectedRevision":0,"title":"过期修改"}})).unwrap_err().code,"revision_conflict");
+        assert_eq!(legacy_edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"stale-case","expectedRevision":0,"title":"过期修改"}})).unwrap_err().code,"revision_conflict");
         let payload = json!({"draftId":draft["draftId"],"operationId":"confirmation-case","expectedRevision":1,"acknowledgeDifferences":false});
         assert_eq!(
             confirm(&mut store, &payload).unwrap_err().code,
@@ -3478,7 +4490,7 @@ mod tests {
         let paper = confirm(&mut store, &payload).unwrap()["paper"].clone();
         assert_eq!(paper["title"], "教师自定义练习");
         assert_eq!(confirm(&mut store, &payload).unwrap()["paper"], paper);
-        assert_eq!(edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"after-paper","expectedRevision":2,"title":"禁止修改"}})).unwrap_err().code,"finalized_draft");
+        assert_eq!(legacy_edit(&mut store,&json!({"draftId":draft["draftId"],"operation":{"type":"rename","operationId":"after-paper","expectedRevision":2,"title":"禁止修改"}})).unwrap_err().code,"finalized_draft");
         let derived = derive(
             &mut store,
             &json!({"paperId":paper["paperId"],"operationId":"derive-case"}),
@@ -3494,10 +4506,10 @@ mod tests {
         );
     }
     #[test]
-    fn invalid_blueprint_and_cancellation_do_not_persist_a_draft() {
+    fn legacy_invalid_blueprint_and_cancellation_do_not_persist_a_draft() {
         let (_dir, mut store, model) = simulated_store();
         let cancel = AtomicBool::new(false);
-        let prepared = intake::prepare(
+        let prepared = intake::legacy_prepare(
             &store,
             &json!({"requirements":{},"message":"10道题","mode":"rule"}),
             &model,
@@ -3506,7 +4518,7 @@ mod tests {
         .unwrap();
         let mut requirements = prepared["requirements"].clone();
         requirements["counts"]["single_choice"] = json!(9);
-        let blueprint = plan(
+        let blueprint = legacy_plan(
             &store,
             &json!({"requirements":requirements,"mode":"rule"}),
             &model,
@@ -3515,10 +4527,10 @@ mod tests {
         .unwrap();
         let mut bad = blueprint.clone();
         bad["slots"].as_array_mut().unwrap().pop();
-        assert!(check_blueprint(&store, &bad).is_err());
+        assert!(legacy_check_blueprint(&store, &bad).is_err());
         cancel.store(true, Ordering::Relaxed);
         assert_eq!(
-            create_draft(
+            legacy_create_draft(
                 &mut store,
                 &json!({"blueprint":blueprint,"mode":"rule"}),
                 &model,
@@ -3553,12 +4565,12 @@ mod tests {
     }
 
     #[test]
-    fn simulated_required_goal_rebinding_confirms_plan_but_keeps_evidence_unknown_and_freezes_shortage()
+    fn legacy_simulated_required_goal_rebinding_confirms_plan_but_keeps_evidence_unknown_and_freezes_shortage()
      {
         let (dir, mut store, model) = simulated_flow_store();
         let cancel = AtomicBool::new(false);
-        let prepared = intake::prepare(&store, &json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"teachingGoals":[simulated_goal("required","answer","1.1")]},"message":"2道单选题，不要填空题和解答题","mode":"rule"}), &model, &cancel).unwrap();
-        let mut blueprint = plan(
+        let prepared = intake::legacy_prepare(&store, &json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"teachingGoals":[simulated_goal("required","answer","1.1")]},"message":"2道单选题，不要填空题和解答题","mode":"rule"}), &model, &cancel).unwrap();
+        let mut blueprint = legacy_plan(
             &store,
             &json!({"requirements":prepared["requirements"],"mode":"rule"}),
             &model,
@@ -3571,7 +4583,7 @@ mod tests {
             slot["goalIds"] = json!([]);
         }
         let original = blueprint.clone();
-        let rejected = create_draft(
+        let rejected = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"rule"}),
             &model,
@@ -3588,9 +4600,9 @@ mod tests {
         // Explicit rebind permits plan confirmation; it does not certify question support.
         blueprint["slots"][0]["goalIds"] = json!(["simulated-goal"]);
         blueprint["slots"][0]["planningReason"] = json!("模拟重新选择任务后的说明");
-        let checked = check_blueprint(&store, &blueprint).unwrap();
+        let checked = legacy_check_blueprint(&store, &blueprint).unwrap();
         assert_eq!(checked["slots"][0]["goalIds"], json!(["simulated-goal"]));
-        let mut draft = create_draft(
+        let mut draft = legacy_create_draft(
             &mut store,
             &json!({"blueprint":checked,"mode":"rule"}),
             &model,
@@ -3618,7 +4630,7 @@ mod tests {
             draft["slots"][1]["question"].is_object(),
             "the unrelated compatible position should retain real supply"
         );
-        draft = edit(&mut store, &json!({"draftId":draft["draftId"],"operation":{"type":"rename","title":"模拟目标重绑缺题练习","operationId":"simulated-rebind-save","expectedRevision":0}})).unwrap()["draft"].clone();
+        draft = legacy_edit(&mut store, &json!({"draftId":draft["draftId"],"operation":{"type":"rename","title":"模拟目标重绑缺题练习","operationId":"simulated-rebind-save","expectedRevision":0}})).unwrap()["draft"].clone();
         let draft_id = s(&draft, "draftId").to_owned();
         drop(store);
         let seed: Value = serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
@@ -3653,7 +4665,7 @@ mod tests {
             confirm(&mut reopened, &confirmation).unwrap()["paper"],
             paper
         );
-        assert_eq!(edit(&mut reopened, &json!({"draftId":draft_id,"operation":{"type":"rename","title":"模拟禁止修改成卷","operationId":"simulated-rebind-after-confirm","expectedRevision":draft["revision"]}})).unwrap_err().code, "finalized_draft");
+        assert_eq!(legacy_edit(&mut reopened, &json!({"draftId":draft_id,"operation":{"type":"rename","title":"模拟禁止修改成卷","operationId":"simulated-rebind-after-confirm","expectedRevision":draft["revision"]}})).unwrap_err().code, "finalized_draft");
         assert_eq!(
             reopened.document("papers", s(&paper, "paperId")).unwrap(),
             paper
@@ -3661,10 +4673,10 @@ mod tests {
     }
 
     #[test]
-    fn simulated_goal_binding_compatibility_enforces_scope_and_written_response_without_model_claims()
+    fn legacy_simulated_goal_binding_compatibility_enforces_scope_and_written_response_without_model_claims()
      {
         let (_dir, store, model) = simulated_flow_store();
-        let mut blueprint = plan(&store, &json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":"rule"}), &model, &AtomicBool::new(false)).unwrap();
+        let mut blueprint = legacy_plan(&store, &json!({"requirements":{"mainScope":["1.1"],"learnedScope":["1.1"],"counts":{"single_choice":1,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":"rule"}), &model, &AtomicBool::new(false)).unwrap();
         for (goal, allowed) in [
             (simulated_goal("required", "answer", "1.1"), true),
             (simulated_goal("required", "unspecified", "1.1"), true),
@@ -3677,13 +4689,13 @@ mod tests {
             blueprint["requirements"]["teachingGoals"] = json!([goal]);
             blueprint["slots"][0]["goalIds"] = json!(["simulated-goal"]);
             blueprint["slots"][0]["planningReason"] = json!("模拟模型声称已覆盖，不能代替兼容检查");
-            assert_eq!(check_blueprint(&store, &blueprint).is_ok(), allowed);
+            assert_eq!(legacy_check_blueprint(&store, &blueprint).is_ok(), allowed);
         }
         blueprint["requirements"]["teachingGoals"] =
             json!([simulated_goal("required", "answer", "1.1")]);
         blueprint["slots"][0]["goalIds"] = json!(["unknown-goal"]);
         assert!(
-            check_blueprint(&store, &blueprint)
+            legacy_check_blueprint(&store, &blueprint)
                 .unwrap_err()
                 .message
                 .contains("未知教学目标")
@@ -3691,17 +4703,17 @@ mod tests {
     }
 
     #[test]
-    fn simulated_selection_model_failure_invalid_ranking_cancel_and_retry_preserve_plan_and_saved_drafts()
+    fn legacy_simulated_selection_model_failure_invalid_ranking_cancel_and_retry_preserve_plan_and_saved_drafts()
      {
         use std::io::{Read, Write};
         use std::net::TcpListener;
         use std::time::{Duration, Instant};
         let (dir, mut store, mut model) = simulated_flow_store();
         let cancel = AtomicBool::new(false);
-        let blueprint = plan(&store, &json!({"requirements":{"title":"模拟失败恢复练习","mainScope":["1.1"],"learnedScope":["1.1"],"counts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":"rule"}), &model, &cancel).unwrap();
+        let blueprint = legacy_plan(&store, &json!({"requirements":{"title":"模拟失败恢复练习","mainScope":["1.1"],"learnedScope":["1.1"],"counts":{"single_choice":2,"multiple_choice":0,"fill_blank":0,"free_response":0}},"mode":"rule"}), &model, &cancel).unwrap();
         let unchanged_plan = blueprint.clone();
         assert_eq!(
-            create_draft(
+            legacy_create_draft(
                 &mut store,
                 &json!({"blueprint":blueprint,"mode":"llm"}),
                 &model,
@@ -3790,7 +4802,7 @@ mod tests {
             }
         });
         for expected_code in ["model_error", "invalid_plan"] {
-            let failure = create_draft(
+            let failure = legacy_create_draft(
                 &mut store,
                 &json!({"blueprint":blueprint,"mode":"llm"}),
                 &model,
@@ -3803,7 +4815,7 @@ mod tests {
         }
         cancel.store(true, Ordering::Relaxed);
         assert_eq!(
-            create_draft(
+            legacy_create_draft(
                 &mut store,
                 &json!({"blueprint":blueprint,"mode":"llm"}),
                 &model,
@@ -3815,7 +4827,7 @@ mod tests {
         );
         assert!(store.list_documents("drafts").unwrap().is_empty());
         cancel.store(false, Ordering::Relaxed);
-        let ai_draft = create_draft(
+        let ai_draft = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"llm"}),
             &model,
@@ -3832,7 +4844,7 @@ mod tests {
                 .all(|slot| slot["question"].is_object())
         );
         // An explicitly requested rule recovery is a distinct saved draft, never an automatic fallback.
-        let rule_draft = create_draft(
+        let rule_draft = legacy_create_draft(
             &mut store,
             &json!({"blueprint":blueprint,"mode":"rule"}),
             &model,
@@ -3843,7 +4855,7 @@ mod tests {
         assert_eq!(rule_draft["selectionGeneration"]["mode"], "rule");
         assert_ne!(rule_draft["draftId"], ai_draft["draftId"]);
         assert_eq!(
-            create_draft(
+            legacy_create_draft(
                 &mut store,
                 &json!({"blueprint":blueprint,"mode":"llm"}),
                 &model,

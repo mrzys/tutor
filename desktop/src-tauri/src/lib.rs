@@ -1,8 +1,11 @@
 pub mod annotations;
 pub mod assembly;
+pub mod assembly_log;
+mod assembly_llm;
 pub mod bank;
 pub mod bank_annotations;
 pub mod bank_supplement;
+pub mod bank_teaching;
 pub mod error;
 pub mod imports;
 pub mod intake;
@@ -16,6 +19,18 @@ mod request_diagnostics;
 mod requirements_summary;
 pub mod storage;
 pub mod student_work;
+pub mod workflow_progress;
+
+// Keep intake, planning and selection observations on independent channels.
+// Only these user-triggered actions expose workflow progress through IPC.
+pub fn workflow_progress_channel(action: &str) -> Option<&'static str> {
+    match action {
+        "intake_prepare" => Some("intake-progress"),
+        "blueprint_plan" => Some("blueprint-progress"),
+        "draft_create" => Some("selection-progress"),
+        _ => None,
+    }
+}
 
 use bank::BankRepository;
 use error::{AppError, AppResult};
@@ -246,6 +261,24 @@ impl Runtime {
         payload: &Value,
         cancel: &AtomicBool,
     ) -> AppResult<Value> {
+        if let Some(result) = assembly_log::developer_request(&self.store.data_dir, action, payload) { return result; }
+        if !assembly_log::is_assembly_action(action) { return self.request_inner(action, payload, cancel); }
+        let log = assembly_log::RequestLog::start_with_secrets(&self.store.data_dir, action, payload, self.model.diagnostic_secrets());
+        // Diagnostics correlation is never part of a business command's identity,
+        // persisted document or idempotency hash.
+        let mut input = payload.clone();
+        if let Some(object) = input.as_object_mut() { object.remove("assemblyTraceId"); }
+        let result = log.enter(|| self.request_inner(action, &input, cancel));
+        let details = result.as_ref().map(assembly_log::result_details).unwrap_or_else(|_| json!({}));
+        log.finish(&result, details);
+        result
+    }
+    fn request_inner(
+        &mut self,
+        action: &str,
+        payload: &Value,
+        cancel: &AtomicBool,
+    ) -> AppResult<Value> {
         if !payload.is_object() {
             return Err(AppError::new("invalid_request", "请求内容无效。"));
         }
@@ -301,6 +334,7 @@ impl Runtime {
                 self.model = ModelClient::open(&self.store.data_dir)?;
                 Ok(self.model.public_settings())
             }
+            "model_list" => self.model.list_models(payload),
             "model_save" => self.model.save(payload),
             "ocr_get" => {
                 self.ocr = ocr_settings::OcrSettings::open(&self.store.data_dir)?;
@@ -473,12 +507,13 @@ impl Runtime {
             .bank
             .questions()?
             .into_iter()
-            .map(|mut question| {
+            .map(|question| -> AppResult<Value> {
+                let mut question = bank_teaching::project(&question, &config)?;
                 question["catalogMetadata"] =
                     catalog_metadata(&question, &entries, &archived, &config);
-                question
+                Ok(question)
             })
-            .collect::<Vec<_>>();
+            .collect::<AppResult<Vec<_>>>()?;
         let filter_options = catalog_filter_options(&base);
         let all = base
             .into_iter()
@@ -548,8 +583,13 @@ async fn desktop_request(
     action: String,
     payload: Option<Value>,
 ) -> AppResult<Value> {
-    use tauri::Manager;
+    use tauri::{Emitter, Manager};
     let payload = payload.unwrap_or_else(|| json!({}));
+    if assembly_log::is_developer_action(&action) {
+        let directory = state.data_dir.clone();
+        return tauri::async_runtime::spawn_blocking(move || assembly_log::developer_request(&directory, &action, &payload).unwrap())
+            .await.map_err(|_| AppError::new("internal_error", "日志读取中断。"))?;
+    }
     if independent_student_action(&action) {
         let directory = state.data_dir.clone();
         return tauri::async_runtime::spawn_blocking(move || {
@@ -558,8 +598,24 @@ async fn desktop_request(
         .await
         .map_err(|_| AppError::new("internal_error", "学生答卷操作中断，原件及已有结果保留。"))?;
     }
+    if action == "model_list" {
+        // Discovery has its own bounded transport; it must not wait for or occupy
+        // the assembly workspace mutex. Reading saved settings never calls out.
+        let directory = state.data_dir.clone();
+        return tauri::async_runtime::spawn_blocking(move || {
+            ModelClient::open(&directory)?.list_models(&payload)
+        }).await.map_err(|_| AppError::new("model_catalog_error", "模型列表请求中断，请重试。"))?;
+    }
     if action == "pdf_export" {
-        return pdf::export(&app, &state, &payload).await;
+        let secrets = ModelClient::open(&state.data_dir).map(|model| model.diagnostic_secrets()).unwrap_or_default();
+        let log = assembly_log::RequestLog::start_with_secrets(&state.data_dir, &action, &payload, secrets);
+        let result = pdf::export(&app, &state, &payload).await;
+        log.finish(&result, json!({"kind":payload["kind"]}));
+        return result;
+    }
+    if matches!(action.as_str(), "intake_prepare" | "blueprint_plan" | "draft_create" | "draft_candidates" | "draft_operation" | "manual_draft_create" | "import_prepare" | "import_review_save" | "import_publish" | "import_teaching_acknowledge" | "import_teaching_patch") {
+        // Reset before dispatch, so an immediate Stop cannot be lost while waiting for the worker.
+        state.cancel.store(false, Ordering::Relaxed);
     }
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<DesktopState>();
@@ -567,17 +623,12 @@ async fn desktop_request(
             .runtime
             .lock()
             .map_err(|_| AppError::new("internal_error", "本地工作区暂不可用，请重新启动。"))?;
-        if matches!(
-            action.as_str(),
-            "intake_prepare"
-                | "blueprint_plan"
-                | "draft_create"
-                | "manual_draft_create"
-                | "import_prepare"
-                | "import_review_save"
-                | "import_publish"
-        ) {
-            state.cancel.store(false, Ordering::Relaxed);
+        if let Some(channel) = workflow_progress_channel(&action) && let Some(run_id) = payload["runId"].as_str().filter(|id| uuid::Uuid::parse_str(id).is_ok()) {
+            let run_id = run_id.to_owned();
+            let emitter = app.clone();
+            return workflow_progress::observe(move |step, status| {
+                let _ = emitter.emit(channel, json!({"runId":run_id,"step":step,"status":status}));
+            }, || runtime.request(&action, &payload, &state.cancel));
         }
         runtime.request(&action, &payload, &state.cancel)
     })
@@ -647,6 +698,15 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn simulated_workflow_progress_channels_do_not_mix_intake_planning_and_other_actions() {
+        assert_eq!(workflow_progress_channel("intake_prepare"), Some("intake-progress"));
+        assert_eq!(workflow_progress_channel("blueprint_plan"), Some("blueprint-progress"));
+        assert_eq!(workflow_progress_channel("draft_create"), Some("selection-progress"));
+        for action in ["blueprint_check", "manual_draft_create", "draft_candidates", "paper_get", "history_list", "unknown"] {
+            assert_eq!(workflow_progress_channel(action), None);
+        }
+    }
     #[test]
     #[cfg(windows)]
     fn simulated_student_ipc_bypasses_held_assembly_mutex_and_does_not_recover_jobs() {
@@ -1273,24 +1333,11 @@ mod tests {
         runtime
             .request("profile_save", &json!({"nickname":"模拟教师"}), &cancel)
             .unwrap();
-        let r = runtime
-            .request(
-                "intake_prepare",
-                &json!({"requirements":{},"message":"4道题","mode":"rule"}),
-                &cancel,
-            )
-            .unwrap();
-        let b = runtime
-            .request(
-                "blueprint_plan",
-                &json!({"requirements":r["requirements"],"mode":"rule"}),
-                &cancel,
-            )
-            .unwrap();
+        let question = runtime.store.bank.questions().unwrap().into_iter().next().unwrap();
         let d = runtime
             .request(
-                "draft_create",
-                &json!({"blueprint":b["blueprint"],"mode":"rule"}),
+                "manual_draft_create",
+                &json!({"operationId":"simulated-pdf-read-draft","title":"模拟 PDF 读取边界","purpose":"consolidation","durationMinutes":45,"selections":[{"questionId":question["questionId"],"contentVersion":question["contentVersion"],"teacherVersion":question["teacherVersion"]}]}),
                 &cancel,
             )
             .unwrap();

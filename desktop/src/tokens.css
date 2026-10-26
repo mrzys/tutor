@@ -20,6 +20,17 @@
   --warning: #b45309;
   --error: #dc2626;
 
+  --difficulty-easy-ink: #166534;
+  --difficulty-easy-surface: #f0fdf4;
+  --difficulty-easy-medium-ink: #0f766e;
+  --difficulty-easy-medium-surface: #f0fdfa;
+  --difficulty-medium-ink: #1d4ed8;
+  --difficulty-medium-surface: #eff6ff;
+  --difficulty-medium-hard-ink: #92400e;
+  --difficulty-medium-hard-surface: #fffbeb;
+  --difficulty-hard-ink: #9f1239;
+  --difficulty-hard-surface: #fff1f2;
+
   --control-radius: 8px;
   --surface-radius: 12px;
   --pill-radius: 9999px;

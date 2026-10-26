@@ -15,6 +15,7 @@
     "test:blueprint": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@lobehub/icons-static-svg": "1.96.0",
     "@tauri-apps/api": "2.12.4",
     "solid-js": "1.9.17",
     "lucide-solid": "1.59.0",

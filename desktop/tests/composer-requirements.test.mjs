@@ -32,3 +32,22 @@ test('模拟回归：模板配比不是手动确认，修改原话作为新需�
   assert.equal(composerRequirements({}, initial, ['2.2']).quantityPlan, undefined);
   assert.deepEqual(initial.quantityAuthority, { questionCount: true, counts: true, typeConstraints: true });
 });
+
+test('模拟回归：新组卷不继承未经标定的0.70，教师原话与已有显式旧目标保持原样', () => {
+  const defaults = { targetDifficulty: 0.7, targetDifficultyLevel: null };
+  const fresh = composerRequirements(defaults, undefined, ['2.2'], '希望学生得分率约70%');
+  assert.equal(fresh.targetDifficulty, null);
+  assert.equal(fresh.targetDifficultyLevel, null);
+  const existing = { mainScope: ['2.2'], teacherRequest: '教师原话', targetDifficulty: 0.7 };
+  assert.equal(composerRequirements(defaults, existing, ['2.2']).targetDifficulty, 0.7);
+  assert.equal(existing.targetDifficulty, 0.7);
+  assert.equal(defaults.targetDifficulty, 0.7);
+});
+
+test('模拟回归：新组卷不携带隐藏模板来源限制，已确认来源保持原样', () => {
+  const defaults = { sourceIds: ['old-template-source'] };
+  assert.equal(composerRequirements(defaults, undefined, ['2.2']).sourceIds, undefined);
+  const confirmed = { mainScope: ['2.2'], sourceIds: ['teacher-confirmed-source'] };
+  assert.deepEqual(composerRequirements(defaults, confirmed, ['2.2']).sourceIds, confirmed.sourceIds);
+  assert.deepEqual(defaults.sourceIds, ['old-template-source']);
+});

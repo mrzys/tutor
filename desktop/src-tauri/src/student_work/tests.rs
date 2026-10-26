@@ -72,6 +72,93 @@ fn model_result(id: &str, slot: Value, part: Value) -> Value {
 }
 
 #[test]
+fn simulated_question_quote_whitespace_variants_locate_and_preserve_actual_ocr() {
+    let question = "4. 求正方形面积和 $S_{11}$。";
+    let options = r"A. $2-\frac{1}{2^{12}}$ B. $2(1-\frac{1}{2^{11}})$";
+    let mut raw = model_result("external-4", Value::Null, Value::Null);
+    raw["items"][0]["questionText"] = json!(question);
+    raw["items"][0]["studentAnswer"] = json!("D");
+    raw["items"][0]["evidence"][0]["quote"] = json!("学生作答：D");
+    raw["items"][0]["questionEvidence"][0]["quote"] = json!(format!("{question}\n{options}"));
+    let original_raw = raw.clone();
+    for gap in ["\n\n", "\r\n\t", "\u{00a0}\u{3000}\u{0085}"] {
+        let actual = format!("{question}{gap}{options}");
+        let materials = vec![
+            json!({"fileId":"answer-1","role":"answer","pages":[{"page":1,"text":format!("{actual}\n学生作答：D")}],"issues":[],"assets":[]}),
+        ];
+        let normalized =
+            grading::normalize_for_source(&raw, &[], &materials, true, None, "answer_only")
+                .unwrap();
+        assert_eq!(normalized["items"][0]["judgement"], "correct");
+        assert_eq!(
+            normalized["items"][0]["questionEvidence"][0]["quote"],
+            actual
+        );
+        assert_eq!(raw, original_raw, "raw AI evidence remains immutable");
+    }
+}
+
+#[test]
+fn simulated_question_quote_changes_wrong_location_empty_and_limit_remain_blocked() {
+    let question = "4. 求正方形面积和 $S_{11}$。";
+    let quote =
+        format!("{question}\nA. $2-\\frac{{1}}{{2^{{12}}}}$ B. $2(1-\\frac{{1}}{{2^{{11}}}})$");
+    let actual = quote.replace('\n', "\n\n");
+    let materials = vec![
+        json!({"fileId":"answer-1","role":"answer","pages":[{"page":1,"text":format!("{actual}\n学生作答：D")}],"issues":[],"assets":[]}),
+    ];
+    let mut raw = model_result("external-4", Value::Null, Value::Null);
+    raw["items"][0]["questionText"] = json!(question);
+    raw["items"][0]["studentAnswer"] = json!("D");
+    raw["items"][0]["evidence"][0]["quote"] = json!("学生作答：D");
+    for changed in [
+        quote.replace('-', "+"),
+        quote.replace("{12}", "{10}"),
+        quote.replace('$', ""),
+        quote.replace('。', "，"),
+        " \n\u{3000}".into(),
+    ] {
+        raw["items"][0]["questionEvidence"] =
+            json!([{"fileId":"answer-1","page":1,"quote":changed}]);
+        let result =
+            grading::normalize_for_source(&raw, &[], &materials, true, None, "answer_only")
+                .unwrap();
+        assert_eq!(result["items"][0]["judgement"], "unable");
+        assert!(rows(&result["items"][0]["questionEvidence"]).is_empty());
+    }
+    for (file, page) in [("source-1", 1), ("answer-1", 2)] {
+        raw["items"][0]["questionEvidence"] = json!([{"fileId":file,"page":page,"quote":quote}]);
+        assert_eq!(
+            grading::normalize_for_source(&raw, &[], &materials, true, None, "answer_only")
+                .unwrap()["items"][0]["judgement"],
+            "unable"
+        );
+    }
+    let over_limit = format!("{quote}{}", "x".repeat(3001));
+    let long_material = vec![
+        json!({"fileId":"answer-1","role":"answer","pages":[{"page":1,"text":format!("{over_limit}\n学生作答：D")}],"issues":[],"assets":[]}),
+    ];
+    raw["items"][0]["questionEvidence"] =
+        json!([{"fileId":"answer-1","page":1,"quote":over_limit}]);
+    assert_eq!(
+        grading::normalize_for_source(&raw, &[], &long_material, true, None, "answer_only")
+            .unwrap()["items"][0]["judgement"],
+        "unable"
+    );
+}
+
+#[test]
+fn simulated_question_quote_repair_never_relaxes_answer_evidence() {
+    let mut raw = model_result("external-1", Value::Null, Value::Null);
+    raw["items"][0]["questionEvidence"][0]["quote"] = json!("计算1+1");
+    raw["items"][0]["evidence"][0]["quote"] = json!("学生作答：\n2");
+    let normalized =
+        grading::normalize_for_source(&raw, &[], &material(), true, None, "answer_only").unwrap();
+    assert_eq!(normalized["items"][0]["judgement"], "unable");
+    assert!(s(&normalized["items"][0], "reason").contains("答卷原文证据"));
+}
+
+#[test]
 fn answer_only_save_defaults_without_original_and_preserves_explicit_source_modes() {
     let (_dir, store, model, settings) = store();
     let work = answer_only(&store);
@@ -137,6 +224,9 @@ fn answer_only_requires_actual_complete_question_and_answer_evidence() {
     }
     for question in ["解：x=2", "答：A", "42", "1.A", "学生作答：2", "计算"] {
         let mut raw = base.clone();
+        // The model determines whether the located fragment is a complete
+        // question. The runtime verifies its real source, not a word list.
+        raw["items"][0]["questionStatus"] = json!("incomplete");
         raw["items"][0]["questionText"] = json!(question);
         raw["items"][0]["questionEvidence"][0]["quote"] = json!(question);
         let materials = vec![
@@ -198,6 +288,23 @@ fn answer_only_requires_actual_complete_question_and_answer_evidence() {
 }
 
 #[test]
+fn simulated_model_question_semantics_and_confidence_are_not_replaced_by_keyword_rules() {
+    let mut raw = model_result("external-1", Value::Null, Value::Null);
+    raw["items"][0]["questionText"] = json!("Count the circles");
+    raw["items"][0]["questionEvidence"] = json!([{"fileId":"answer-1","page":1,"quote":"Count the circles"}]);
+    raw["items"][0]["confidence"] = json!("low");
+    let materials = vec![json!({"fileId":"answer-1","role":"answer","pages":[{"page":1,"text":"Count the circles。学生作答：2"}],"issues":[],"assets":[]})];
+    let result = grading::normalize_for_source(&raw, &[], &materials, true, None, "answer_only").unwrap();
+    assert_eq!(result["items"][0]["judgement"], "correct");
+    assert_eq!(result["items"][0]["confidence"], "low");
+    raw["items"][0]["questionStatus"] = json!("incomplete");
+    assert_eq!(grading::normalize_for_source(&raw, &[], &materials, true, None, "answer_only").unwrap()["items"][0]["judgement"], "unable");
+    raw["items"][0]["questionStatus"] = json!("complete");
+    raw["items"][0]["questionEvidence"][0]["quote"] = json!("model invented a question");
+    assert_eq!(grading::normalize_for_source(&raw, &[], &materials, true, None, "answer_only").unwrap()["items"][0]["judgement"], "unable");
+}
+
+#[test]
 fn answer_only_no_detectable_questions_is_unable_not_failed_or_counted_as_wrong() {
     let result = grading::normalize_for_source(
         &json!({"items":[],"summary":"虚构全卷已完成"}),
@@ -215,6 +322,92 @@ fn answer_only_no_detectable_questions_is_unable_not_failed_or_counted_as_wrong(
     assert_eq!(result["completePaperVerified"], false);
     assert_eq!(result["totalScore"], Value::Null);
     assert_ne!(result["summary"], "虚构全卷已完成");
+}
+
+#[test]
+fn simulated_unsaved_upload_rejects_mixed_files_before_writes_and_allows_correction() {
+    let (directory, store, _, _) = store();
+    let student = student(&store);
+    let mut payload = json!({
+        "operationId":"simulated-mixed-upload",
+        "studentId":student["studentId"],
+        "title":"模拟附件校验恢复",
+        "notes":"保留本机输入",
+        "source":{"kind":"external","externalSourceMode":"separate_materials","files":[upload("原题.png")]},
+        "answers":[upload("答卷第二页.png"),{"filename":"损坏.png","contentBase64":base64::engine::general_purpose::STANDARD.encode(b"not a PNG")},upload("答卷第一页.png")]
+    });
+    let error = create(&store, &payload).unwrap_err();
+    assert_eq!(error.code, "invalid_upload");
+    assert_eq!(error.message, "图片签名与类型不一致。");
+    assert!(store.list_documents(KIND).unwrap().is_empty());
+    assert!(!directory.path().join("student-work").exists(), "even the valid earlier attachments must not be written");
+
+    // The UI retains the inputs, removes the bad file, reorders the good files,
+    // and submits a fresh operation only after this explicit unsaved result.
+    payload["operationId"] = json!("simulated-corrected-upload");
+    payload["answers"] = json!([upload("答卷第一页.png"), upload("答卷第二页.png")]);
+    let saved = create(&store, &payload).unwrap()["work"].clone();
+    assert_eq!(saved["notes"], "保留本机输入");
+    assert_eq!(saved["answerFiles"][0]["filename"], "答卷第一页.png");
+    assert_eq!(saved["answerFiles"][1]["filename"], "答卷第二页.png");
+    assert_eq!(read_file(&store, &saved, "source-1").unwrap().1, png());
+    assert_eq!(read_file(&store, &saved, "answer-1").unwrap().1, png());
+    assert_eq!(read_file(&store, &saved, "answer-2").unwrap().1, png());
+    assert_eq!(create(&store, &payload).unwrap()["work"], saved);
+    assert_eq!(store.list_documents(KIND).unwrap().len(), 1);
+}
+
+#[test]
+fn simulated_unsaved_upload_file_errors_all_precede_original_or_document_writes() {
+    let (directory, store, _, _) = store();
+    let student = student(&store);
+    let cases = [
+        (json!([]), "请上传答卷"),
+        (json!([upload("不支持.txt")]), "支持 PDF、PNG、JPEG"),
+        (json!([{"filename":"空白.png","contentBase64":""}]), "1字节至15 MB"),
+        (json!([{"filename":"编码.png","contentBase64":"not base64!"}]), "附件编码无效"),
+        (json!(vec![upload("过量.png"); 9]), "最多8份文件"),
+    ];
+    for (index, (answers, message)) in cases.into_iter().enumerate() {
+        let payload = json!({"operationId":format!("simulated-invalid-upload-{index}"),"studentId":student["studentId"],"title":"模拟附件错误","source":{"kind":"external","files":[]},"answers":answers});
+        let error = create(&store, &payload).unwrap_err();
+        assert_eq!(error.code, "invalid_upload");
+        assert!(error.message.contains(message));
+        assert!(store.list_documents(KIND).unwrap().is_empty());
+        assert!(!directory.path().join("student-work").exists());
+    }
+}
+
+#[test]
+fn simulated_unsaved_upload_permission_never_masks_replay_or_lookup_failures() {
+    let (_directory, store, _, _) = store();
+    let student = student(&store);
+    let payload = json!({"operationId":"simulated-upload-replay","studentId":student["studentId"],"title":"模拟重放边界","source":{"kind":"external","files":[]},"answers":[upload("答卷.png")]});
+    let saved = create(&store, &payload).unwrap()["work"].clone();
+    let mut changed_payload = payload.clone();
+    changed_payload["answers"][0]["contentBase64"] = json!("not base64!");
+    assert_eq!(create(&store, &changed_payload).unwrap_err().code, "operation_conflict");
+
+    let mut corrupted = saved.clone();
+    corrupted["answerFiles"][0]["relativePath"] = json!("elsewhere.png");
+    store.put_document(KIND, s(&saved, "workId"), &corrupted).unwrap();
+    assert_eq!(create(&store, &payload).unwrap_err().code, "integrity_error");
+    assert_eq!(store.document(KIND, s(&saved, "workId")).unwrap(), corrupted);
+
+    store.user.execute_batch("ALTER TABLE documents RENAME TO unavailable_documents").unwrap();
+    assert_eq!(create(&store, &changed_payload).unwrap_err().code, "storage_error", "a failed lookup must not be treated as an absent operation");
+}
+
+#[test]
+fn simulated_unsaved_upload_permission_does_not_cover_original_write_failures() {
+    let (directory, store, _, _) = store();
+    let student = student(&store);
+    let occupied = directory.path().join("student-work");
+    std::fs::write(&occupied, b"existing path must remain untouched").unwrap();
+    let payload = json!({"operationId":"simulated-upload-write-error","studentId":student["studentId"],"title":"模拟写入失败","source":{"kind":"external","files":[]},"answers":[upload("答卷.png")]});
+    assert_eq!(create(&store, &payload).unwrap_err().code, "storage_error");
+    assert!(store.list_documents(KIND).unwrap().is_empty());
+    assert_eq!(std::fs::read(occupied).unwrap(), b"existing path must remain untouched");
 }
 
 #[test]
@@ -299,6 +492,69 @@ fn frozen_snapshot_survives_hidden_paper_and_retains_main_answers_without_fake_z
     assert_eq!(result["items"][0]["earnedPoints"], Value::Null);
     assert_eq!(result["totalScore"], Value::Null);
 }
+#[test]
+fn simulated_printed_numbers_skip_missing_slots_and_keep_frozen_identity_aliases() {
+    let (_dir, store, _, _) = store();
+    let mut paper = frozen_paper(&store, true);
+    let part_slot = paper["draft"]["slots"][0].clone();
+    let (_main_dir, main_store, _, _) = self::store();
+    let main_paper = frozen_paper(&main_store, false);
+    let main_slot = main_paper["draft"]["slots"][0].clone();
+    let mut slots = vec![];
+    for number in 1..=6 {
+        let mut slot = if number == 2 { part_slot.clone() } else { main_slot.clone() };
+        slot["slotId"] = json!(format!("slot-{number}"));
+        slot["number"] = json!(number);
+        if number % 2 == 1 { slot["question"] = Value::Null; }
+        slots.push(slot);
+    }
+    paper["draft"]["slots"] = json!(slots);
+    paper["snapshotSha256"] = json!(hash_json(&paper["draft"]));
+    assembly::verify_frozen_paper(&paper).unwrap();
+    let work = json!({"source":{"kind":"paper","paperSnapshot":paper}});
+    let original_work = work.clone();
+    let expected = grading::expected_items(&work).unwrap();
+    assert_eq!(expected.len(), 4);
+    for (index, (identity, label, original, printed)) in [
+        ("slot-2::p1", "1（1）", "2（1）", 1),
+        ("slot-2::p2", "1（2）", "2（2）", 1),
+        ("slot-4", "2", "4", 2),
+        ("slot-6", "3", "6", 3),
+    ].into_iter().enumerate() {
+        assert_eq!(expected[index]["itemId"], identity);
+        assert_eq!(expected[index]["questionLabel"], label);
+        assert_eq!(expected[index]["printedNumber"], printed);
+        assert_eq!(expected[index]["originalQuestionLabel"], original);
+        assert_eq!(expected[index]["questionLabelAliases"], json!([label, original]));
+        assert_eq!(expected[index]["missingQuestion"], false);
+    }
+    assert_eq!(expected[0]["slotId"], "slot-2");
+    assert_eq!(expected[0]["partId"], "p1");
+    assert_eq!(expected[2]["originalSlotNumber"], 4);
+    assert_eq!(expected[2]["numberingAmbiguous"], true);
+    // Old numbering may identify a different current question: aliases must not
+    // replace stable identities or silently remap the model's returned item.
+    let mut raw = model_result("slot-4", json!("slot-4"), Value::Null);
+    raw["items"][0]["questionLabel"] = json!("4");
+    let result = grading::normalize(&raw, &expected, &material(), false, None).unwrap();
+    assert_eq!(result["items"].as_array().unwrap().len(), 4);
+    assert_eq!(result["items"][0]["itemId"], "slot-4");
+    assert_eq!(result["items"][0]["questionLabel"], "2");
+    assert_eq!(result["items"][0]["questionLabelAliases"], json!(["2", "4"]));
+    assert_eq!(result["items"][0]["judgement"], "correct");
+    assert_eq!(result["items"][1]["itemId"], "slot-2::p1");
+    assert_eq!(result["items"][1]["questionLabel"], "1（1）");
+    assert_eq!(result["items"][1]["originalSlotNumber"], 2);
+    assert_eq!(result["items"][1]["judgement"], "unable");
+    assert!(rows(&result["items"]).iter().all(|item| !["slot-1", "slot-3", "slot-5"].contains(&s(item, "slotId"))));
+    raw["items"][0]["questionEvidence"] = json!([]);
+    let ambiguous = grading::normalize(&raw, &expected, &material(), false, None).unwrap();
+    assert_eq!(ambiguous["items"][0]["judgement"], "unable");
+    assert!(s(&ambiguous["items"][0], "reason").contains("题号存在歧义"));
+    assert_eq!(work, original_work, "grading must not rewrite the frozen snapshot");
+    assert_eq!(main_store.document("papers", s(&main_paper, "paperId")).unwrap(), main_paper);
+}
+
 #[test]
 fn parts_are_independent_expected_identities_and_model_cannot_invent_or_duplicate() {
     let (_dir, store, _, _) = store();
@@ -403,6 +659,22 @@ fn external_original_location_and_blank_status_cannot_be_fabricated() {
     );
 }
 #[test]
+fn simulated_missing_frozen_visual_only_blocks_its_own_item_not_complete_text_questions() {
+    let expected = vec![
+        json!({"itemId":"slot-1","slotId":"slot-1","partId":null,"questionLabel":"1","questionText":"计算1+1","missingQuestion":false,"visualRequired":false,"maxPoints":null}),
+        json!({"itemId":"slot-2","slotId":"slot-2","partId":null,"questionLabel":"2","questionText":"冻结图形题","missingQuestion":false,"visualRequired":true,"visualReviewAvailable":false,"maxPoints":null}),
+    ];
+    let mut raw = model_result("slot-1",json!("slot-1"),Value::Null);
+    raw["items"].as_array_mut().unwrap().push(model_result("slot-2",json!("slot-2"),Value::Null)["items"][0].clone());
+    for image_review in [false,true] {
+        let result = grading::normalize(&raw,&expected,&material(),image_review,None).unwrap();
+        assert_eq!(result["items"][0]["judgement"],"correct");
+        assert_eq!(result["items"][1]["judgement"],"unable");
+        assert!(s(&result["items"][1],"reason").contains("此题位"));
+        assert_eq!(result["completePaperVerified"],false);
+    }
+}
+#[test]
 fn teacher_override_preserves_ai_and_conflicts_and_unscored_score_rejected() {
     let (_dir, store, _, _) = store();
     let original = external(&store);
@@ -473,7 +745,8 @@ impl Drop for Mock {
         }
     }
 }
-fn mock() -> Mock {
+fn mock() -> Mock { mock_case(false) }
+fn mock_case(visual_gap: bool) -> Mock {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let base = format!("http://{}", listener.local_addr().unwrap());
@@ -523,7 +796,38 @@ fn mock() -> Mock {
                 .unwrap_or("")
                 .to_owned();
             r.lock().unwrap().push(request);
-            let (mime,body)=match path.as_str(){"/ocr"=>("application/json",json!({"data":{"jobId":"simulated-ocr"}}).to_string().into_bytes()),"/ocr/simulated-ocr"=>("application/json",json!({"data":{"state":"done","resultUrl":{"jsonUrl":format!("{b}/result")},"extractProgress":{"totalPages":1}}}).to_string().into_bytes()),"/result"=>("application/json",json!({"result":{"layoutParsingResults":[{"inputImage":format!("{b}/page.png"),"prunedResult":{"width":12,"height":16,"page_index":0,"parsing_res_list":[{"block_id":1,"block_order":1,"block_label":"text","block_content":"1. 计算1+1。学生作答：2","block_bbox":[1,1,11,15]}]},"markdown":{"text":"1. 计算1+1。学生作答：2","images":{}},"outputImages":{}}]}}).to_string().into_bytes()),"/page.png"=>("image/png",png()),"/v1/chat/completions"=>{std::thread::sleep(Duration::from_millis(d.load(Ordering::Relaxed) as u64));("application/json",json!({"choices":[{"finish_reason":"stop","message":{"content":model_result("external-1",Value::Null,Value::Null).to_string()}}]}).to_string().into_bytes())},_=>panic!("unexpected simulated path {path}")};
+            let (mime, body) = match path.as_str() {
+                "/ocr" => ("application/json",json!({"data":{"jobId":"simulated-ocr"}}).to_string().into_bytes()),
+                "/ocr/simulated-ocr" => ("application/json",json!({"data":{"state":"done","resultUrl":{"jsonUrl":format!("{b}/result")},"extractProgress":{"totalPages":1}}}).to_string().into_bytes()),
+                "/result" => {
+                    let mut blocks = vec![json!({"block_id":1,"block_order":1,"block_label":"text","block_content":"1. 计算1+1。学生作答：2","block_bbox":[1,1,11,5]})];
+                    let mut text = "1. 计算1+1。学生作答：2".to_owned();
+                    if visual_gap {
+                        blocks.push(json!({"block_id":2,"block_order":2,"block_label":"text","block_content":"2. 看图判断。学生作答：A","block_bbox":[1,6,11,9]}));
+                        blocks.push(json!({"block_id":3,"block_order":3,"block_label":"image","block_content":"","block_bbox":[1,10,11,15]}));
+                        text.push_str("\n2. 看图判断。学生作答：A\n![原图](imgs/img_in_image_box_1_10_11_15.jpg)");
+                    }
+                    ("application/json",json!({"result":{"layoutParsingResults":[{"inputImage":format!("{b}/page.png"),"prunedResult":{"width":12,"height":16,"page_index":0,"parsing_res_list":blocks},"markdown":{"text":text,"images":{}},"outputImages":{}}]}}).to_string().into_bytes())
+                }
+                "/page.png" => ("image/png",png()),
+                "/v1/chat/completions" => {
+                    std::thread::sleep(Duration::from_millis(d.load(Ordering::Relaxed) as u64));
+                    let mut result = model_result("external-1",Value::Null,Value::Null);
+                    if visual_gap {
+                        let mut item = model_result("external-2",Value::Null,Value::Null)["items"][0].clone();
+                        item["questionText"] = json!("看图判断");
+                        item["questionStatus"] = json!("incomplete");
+                        item["questionEvidence"] = json!([{"fileId":"answer-1","page":1,"quote":"看图判断"}]);
+                        item["studentAnswer"] = json!("A");
+                        item["judgement"] = json!("unable");
+                        item["reason"] = json!("模拟模型判断本题缺少实际图像依据，不能判断；其它完整文字题独立批改。");
+                        item["evidence"] = json!([{"fileId":"answer-1","page":1,"quote":"学生作答：A"}]);
+                        result["items"].as_array_mut().unwrap().push(item);
+                    }
+                    ("application/json",json!({"choices":[{"finish_reason":"stop","message":{"content":result.to_string()}}]}).to_string().into_bytes())
+                }
+                _ => panic!("unexpected simulated path {path}"),
+            };
             let _ = write!(
                 stream,
                 "HTTP/1.1 200 OK\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -553,6 +857,28 @@ fn wait(store: &Store, id: &str, status: &str) -> Value {
         );
         std::thread::sleep(Duration::from_millis(20));
     }
+}
+#[test]
+#[cfg(windows)]
+fn simulated_background_mixed_text_and_unseen_visual_are_judged_independently_with_localized_limitations() {
+    let (_dir,store,mut model,mut settings)=store();
+    let work=answer_only(&store);
+    let mock=mock_case(true);
+    model.save(&json!({"baseUrl":format!("{}/v1",mock.base),"model":"simulated-work-model","apiKey":"simulated-model-key"})).unwrap();
+    settings.save(&json!({"baseUrl":format!("{}/ocr",mock.base),"model":"simulated-ocr","apiKey":"simulated-ocr-key","expectedRevision":0})).unwrap();
+    start(&store,&model,&settings,&json!({"workId":work["workId"],"expectedRevision":work["revision"],"operationId":"simulated-mixed-material-limits"})).unwrap();
+    let completed=wait(&store,s(&work,"workId"),"completed");
+    assert_eq!(completed["aiResult"]["items"][0]["judgement"],"correct");
+    assert_eq!(completed["aiResult"]["items"][1]["judgement"],"unable");
+    assert_eq!(completed["aiResult"]["completePaperVerified"],false);
+    let requests=mock.requests.lock().unwrap();
+    let http=requests.iter().find(|request|request.starts_with("POST /v1/chat/completions")).unwrap();
+    let body:Value=serde_json::from_str(http.split_once("\r\n\r\n").unwrap().1).unwrap();
+    let context:Value=serde_json::from_str(s(&body["messages"][1],"content")).unwrap();
+    assert_eq!(context["imageReviewAvailable"],false);
+    assert!(rows(&context["contentLimitations"]).iter().any(|limitation|limitation["fileId"]=="answer-1" && limitation["page"]==1 && limitation["code"]=="visual_not_delivered"));
+    assert_eq!(completed["aiResult"]["contentLimitations"],context["contentLimitations"]);
+    assert!(s(&context,"limitationInstructions").contains("逐项"));
 }
 #[test]
 #[cfg(windows)]

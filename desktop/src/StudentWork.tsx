@@ -9,6 +9,8 @@ import {
 } from "solid-js";
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   Check,
   ChevronRight,
   FileText,
@@ -68,9 +70,21 @@ const stamp = (value: string) =>
 function FileList(props: {
   files: File[];
   onRemove: (index: number) => void;
+  onMove: (index: number, direction: -1 | 1) => void;
   disabled: boolean;
   onPreview: (file: File) => void;
 }) {
+  function move(event: MouseEvent, index: number, direction: -1 | 1) {
+    if (props.disabled) return;
+    const button = event.currentTarget as HTMLButtonElement;
+    props.onMove(index, direction);
+    queueMicrotask(() => {
+      if (!button.isConnected) return;
+      if (!button.disabled) button.focus();
+      else
+        button.parentElement?.querySelector<HTMLButtonElement>("button[data-file-move]:not(:disabled)")?.focus();
+    });
+  }
   return (
     <ul class="student-file-list">
       <For each={props.files}>
@@ -85,16 +99,36 @@ function FileList(props: {
               {file.name}
             </button>
             <small>{Math.max(1, Math.round(file.size / 1024))} KB</small>
-            <button
-              type="button"
-              class="icon-button"
-              disabled={props.disabled}
-              aria-label={`移除 ${file.name}`}
-              title="移除文件"
-              onClick={() => props.onRemove(index())}
-            >
-              <X size={16} />
-            </button>
+            <div class="student-file-actions">
+              <button
+                type="button"
+                class="icon-button"
+                data-file-move="previous"
+                disabled={props.disabled || index() === 0}
+                aria-label={`前移 ${file.name}`}
+                title="前移文件"
+                onClick={(event) => move(event, index(), -1)}
+              ><ArrowUp size={16} /></button>
+              <button
+                type="button"
+                class="icon-button"
+                data-file-move="next"
+                disabled={props.disabled || index() === props.files.length - 1}
+                aria-label={`后移 ${file.name}`}
+                title="后移文件"
+                onClick={(event) => move(event, index(), 1)}
+              ><ArrowDown size={16} /></button>
+              <button
+                type="button"
+                class="icon-button"
+                disabled={props.disabled}
+                aria-label={`移除 ${file.name}`}
+                title="移除文件"
+                onClick={() => props.onRemove(index())}
+              >
+                <X size={16} />
+              </button>
+            </div>
           </li>
         )}
       </For>
@@ -463,6 +497,17 @@ export function StudentWork(props: {
     target === "source" ? setSources(next) : setAnswers(next);
     setUploadError("");
   }
+  function moveFile(target: "source" | "answer", index: number, direction: -1 | 1) {
+    if (saving() || frozenUpload()) return;
+    const update = target === "source" ? setSources : setAnswers;
+    update((files) => {
+      const destination = index + direction;
+      if (index < 0 || index >= files.length || destination < 0 || destination >= files.length) return files;
+      const next = [...files];
+      [next[index], next[destination]] = [next[destination], next[index]];
+      return next;
+    });
+  }
   const canSave = () =>
     Boolean(
       uploadStudent() &&
@@ -520,6 +565,10 @@ export function StudentWork(props: {
       await refresh(true);
       if (start) await startWork(result.work);
     } catch (failure: any) {
+      if (failure.code === "invalid_upload") {
+        uploadAttempt = null;
+        setFrozenUpload(false);
+      }
       setUploadError(failure.message);
     } finally {
       setSaving(false);
@@ -1385,7 +1434,8 @@ export function StudentWork(props: {
             <FileList
               files={answers()}
               onPreview={(file) => setViewer({ workId: "", file, local: true })}
-              disabled={saving()}
+              disabled={saving() || frozenUpload()}
+              onMove={(index, direction) => moveFile("answer", index, direction)}
               onRemove={(index) =>
                 setAnswers((files) => files.filter((_, item) => item !== index))
               }
@@ -1413,7 +1463,8 @@ export function StudentWork(props: {
                 <FileList
                   files={sources()}
                   onPreview={(file) => setViewer({ workId: "", file, local: true })}
-                  disabled={saving()}
+                  disabled={saving() || frozenUpload()}
+                  onMove={(index, direction) => moveFile("source", index, direction)}
                   onRemove={(index) => setSources((files) => files.filter((_, item) => item !== index))}
                 />
               </details>

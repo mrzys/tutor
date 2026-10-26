@@ -1,0 +1,319 @@
+{
+  "version": "teaching-term-review-v3",
+  "purpose": "仅提示复核生成稿中的术语，不判定超纲、数学正确性或课堂合格，不执行自动替换。",
+  "rules": [
+    {
+      "id": "modular-language",
+      "category": "classroom",
+      "terms": [
+        "同余"
+      ],
+      "matchers": [
+        "modulo-number",
+        "modulo-notation",
+        "contextual-congruence"
+      ],
+      "guidance": "检查能否用除以具体整数的余数、带余除法或因式分解完整说明。≡也可表示恒等，须结合原句；不只删除同余记号而省略整除理由。"
+    },
+    {
+      "id": "closure-language",
+      "category": "classroom",
+      "terms": [
+        "封闭性"
+      ],
+      "matchers": [
+        "operation-closure"
+      ],
+      "guidance": "结合本题说明运算后所得数为什么仍属于该集合，保留具体展开与元素形式，不机械替换后省略证明。"
+    },
+    {
+      "id": "mapping-classification",
+      "category": "classroom",
+      "terms": [
+        "单射",
+        "满射",
+        "双射"
+      ],
+      "guidance": "说明本题真正使用的对应关系。单射不等于零点唯一，不能统一替换成函数单调或零点唯一；若用严格单调性，须说明其成立依据。"
+    },
+    {
+      "id": "bezout-theorem",
+      "category": "special_tool",
+      "terms": [
+        "裴蜀",
+        "贝祖",
+        "Bézout",
+        "Bezout"
+      ],
+      "guidance": "检查是否依赖未学整数定理；必要时用本题具体的辗转相除、整除关系或代数推导代替，不能只删定理名而继续无依据引用结论。"
+    },
+    {
+      "id": "linear-representation",
+      "category": "context",
+      "terms": [
+        "整数线性表示",
+        "线性表示"
+      ],
+      "guidance": "结合已学范围检查此处含义；可写出本题具体的等式、待定系数和消元过程。该术语命中不直接说明超纲。"
+    },
+    {
+      "id": "trivial-solution",
+      "category": "classroom",
+      "terms": [
+        "非平凡解",
+        "平凡解"
+      ],
+      "guidance": "指明本题具体的特殊解及其余解，不预设特殊解必为x=0，也不把非平凡解统一改成非零实数解。"
+    },
+    {
+      "id": "lhopital-rule",
+      "category": "special_tool",
+      "terms": [
+        "洛必达",
+        "洛必塔",
+        "L'Hôpital",
+        "L’Hôpital",
+        "L'Hopital",
+        "L’Hopital"
+      ],
+      "guidance": "检查已学范围；若未学，应重新构造高中范围内的导数、单调性或代数证明，不能只删法则名称后保留同一无依据步骤。"
+    },
+    {
+      "id": "series-expansion",
+      "category": "special_tool",
+      "terms": [
+        "泰勒",
+        "麦克劳林",
+        "麦克劳伦",
+        "Taylor",
+        "Maclaurin"
+      ],
+      "guidance": "若依赖未学展开式，改写为完整的高中范围论证，例如构造差函数并证明单调性；不只删除展开式名称。"
+    },
+    {
+      "id": "differential-mean-value",
+      "category": "special_tool",
+      "terms": [
+        "微分中值定理",
+        "罗尔定理",
+        "罗尔中值定理",
+        "拉格朗日中值定理",
+        "柯西中值定理",
+        "Rolle",
+        "Lagrange mean value",
+        "Cauchy mean value"
+      ],
+      "guidance": "区别微分中值定理和普通柯西不等式。若相关定理未学，提供具体辅助函数及完整高中推导，不能只删定理名称后照用结论。"
+    },
+    {
+      "id": "cauchy-schwarz-inequality",
+      "category": "special_tool",
+      "terms": [
+        "柯西不等式",
+        "柯西—施瓦茨不等式",
+        "柯西-施瓦茨不等式",
+        "柯西施瓦茨不等式",
+        "柯西–施瓦茨不等式",
+        "Cauchy-Schwarz",
+        "Cauchy–Schwarz",
+        "Cauchy Schwarz",
+        "Cauchy inequality"
+      ],
+      "guidance": "这是柯西不等式而非柯西中值定理。面向普通高中课堂，不直接援引未说明的命名不等式；优先选用已学的基本不等式、平方非负或具体代数变形，完整推导本题所需关系并说明取等条件。不能只删定理名后保留无依据的同一步结论，也不强制保留原来较繁琐的分类方法。"
+    },
+    {
+      "id": "stationary-inflection",
+      "category": "classroom",
+      "terms": [
+        "驻点",
+        "拐点"
+      ],
+      "guidance": "说明本题所需的导数性质：驻点可具体写成导数为0的点；拐点不等于切线斜率变化的点，也不能一律替换为极值点。必要时重写论证。"
+    },
+    {
+      "id": "convexity-jensen",
+      "category": "special_tool",
+      "terms": [
+        "凹凸",
+        "凸性",
+        "凹性",
+        "下凸",
+        "上凹",
+        "琴生",
+        "詹森",
+        "Jensen"
+      ],
+      "guidance": "检查是否直接调用未学凹凸性结论或琴生不等式；可用具体差函数、导数单调性或已学不等式完整证明，不把名称简单替换成切线放缩。"
+    },
+    {
+      "id": "norm-language",
+      "category": "classroom",
+      "terms": [
+        "范数"
+      ],
+      "guidance": "先识别本题具体对象。只有相应向量语境才可称向量的模或距离；例如m²−3n²应直接写具体等式与整数性质，不能统一改成向量的模。"
+    },
+    {
+      "id": "optimization-language",
+      "category": "classroom",
+      "terms": [
+        "目标泛函",
+        "目标函数",
+        "目标式",
+        "约束条件",
+        "约束",
+        "单位量",
+        "上界",
+        "下界"
+      ],
+      "guidance": "结合原句写成已知条件、具体所求式子或实际数量。证明不小于某数后，须另验证能取到该数才可称最小值；上界/下界不能直接替换成最大值/最小值。"
+    },
+    {
+      "id": "isomorphism-language",
+      "category": "classroom",
+      "terms": [
+        "同构"
+      ],
+      "guidance": "写出本题相同的函数结构与实际变形，检查所用函数性质并给出理由，不仅将名称换成构造函数。"
+    },
+    {
+      "id": "polar-geometry",
+      "category": "special_tool",
+      "terms": [
+        "极点极线",
+        "极点与极线",
+        "配极"
+      ],
+      "guidance": "若结论超出已学范围，补出具体坐标或几何推导；按题面选择联立、韦达或其它合适方法，不强制套固定步骤。"
+    },
+    {
+      "id": "apollonius-circle",
+      "category": "special_tool",
+      "terms": [
+        "阿波罗尼斯",
+        "阿波罗尼奥斯",
+        "Apollonius"
+      ],
+      "guidance": "检查是否只凭命名直接套结论；必要时由距离关系、坐标展开或已学几何性质给出推导，不只删名称。"
+    },
+    {
+      "id": "measure-support",
+      "category": "classroom",
+      "terms": [
+        "测度",
+        "支集"
+      ],
+      "guidance": "结合具体对象说明面积、长度、体积或随机变量的可能取值；不把所有测度概念机械替换为面积。"
+    },
+    {
+      "id": "fixed-point-method",
+      "category": "special_tool",
+      "terms": [
+        "不动点"
+      ],
+      "guidance": "检查是否直接使用未学不动点结论；可写出实际待定系数、代数变形及所构造数列的公比，保留完整理由。"
+    },
+    {
+      "id": "standardization-context",
+      "category": "context",
+      "terms": [
+        "标准化"
+      ],
+      "guidance": "依教材范围与题目判断是否有必要。对称性不能替代所有标准化计算；仅在本题可由正态曲线对称性等已学性质直接完成时简化。"
+    },
+    {
+      "id": "normal-cdf-notation",
+      "category": "context",
+      "terms": [],
+      "matchers": [
+        "phi-notation"
+      ],
+      "guidance": "检查Φ/Phi在本题的定义、用途及已学依据。可能只是已定义符号；若引入标准正态分布函数无助于解题可简化，不直接判禁用。"
+    },
+    {
+      "id": "limit-notation",
+      "category": "context",
+      "terms": [
+        "左极限",
+        "右极限",
+        "极限为",
+        "趋于无穷",
+        "趋于正无穷",
+        "趋于负无穷"
+      ],
+      "matchers": [
+        "limit-notation",
+        "endpoint-limit-shorthand"
+      ],
+      "guidance": "检查极限符号或增长断言的已学依据；必要时补出导数单调性及具体不等式证明，不仅删除lim后仍写显然成立。"
+    },
+    {
+      "id": "integral-tool",
+      "category": "special_tool",
+      "terms": [
+        "积分常数",
+        "不定积分",
+        "定积分",
+        "积分得",
+        "积分可得",
+        "求积分",
+        "积分法"
+      ],
+      "matchers": [
+        "integral-notation"
+      ],
+      "guidance": "检查教材版本与已学范围，不把积分统称为大学专属。面向通常高中课堂且未学积分时，尝试写出具体函数并求导验证，或构造导数为0的函数后说明其为常数；不能只删积分名称后省略原有推导。"
+    },
+    {
+      "id": "higher-derivative",
+      "category": "context",
+      "terms": [
+        "二阶导",
+        "三阶导",
+        "高阶导"
+      ],
+      "matchers": [
+        "higher-derivative-primes",
+        "higher-derivative-order",
+        "higher-derivative-fraction"
+      ],
+      "guidance": "检查高阶导数记号的实际含义与已学范围；二阶导不自动等于数学错误，也不因字数短就保留。普通高中课堂可优先说明一阶导函数的增减性，或改用具体函数的一阶导论证；若需要换方法，须完整重写相关推导，不仅把二阶导改名。"
+    },
+    {
+      "id": "infinite-series",
+      "category": "context",
+      "terms": [
+        "无穷级数",
+        "无穷等比级数",
+        "无限级数",
+        "几何级数",
+        "级数收敛",
+        "无穷求和",
+        "无限求和",
+        "无穷项和",
+        "无穷和"
+      ],
+      "matchers": [
+        "infinite-sum-notation"
+      ],
+      "guidance": "区别有限项数列求和与无穷求和。结合本题检查是否可直接用前n项和、有限项裂项相消及具体不等式完成；不能把求和上限从无穷机械改成n而不重建证明，不凭出现∞认定数学错误。"
+    },
+    {
+      "id": "english-method-language",
+      "category": "classroom",
+      "terms": [],
+      "matchers": [
+        "english-classroom-method"
+      ],
+      "guidance": "检查该英文方法名在本题中的具体含义，使用学生已学的中文表达并写清实际变形。例如telescoping可结合具体相消项说明裂项相消；不把所有英文词或数学变量视为问题，也不只译名而省略关键步骤。"
+    },
+    {
+      "id": "linear-combination-language",
+      "category": "classroom",
+      "terms": [
+        "线性组合"
+      ],
+      "guidance": "结合本题检查这一表达是否便于普通高中学生理解；可直接写出各项乘以具体系数后相加的等式，或写出本题实际的向量等式。是否保留及如何解释由模型结合已学范围判断，不把线性组合本身判为数学错误，也不删除必要的系数关系。"
+    }
+  ]
+}

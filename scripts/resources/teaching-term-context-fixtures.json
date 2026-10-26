@@ -1,0 +1,23 @@
+{
+  "description": "Synthetic/regression notation fixtures; trigger means context review, never a curriculum or mathematical verdict.",
+  "cases": [
+    { "name": "modulo-numeric-command-boundaries", "text": "$16^{2026}\\equiv1\\pmod3$、$7\\bmod2=1$。", "ruleIds": ["modular-language"], "terms": ["\\equiv", "\\pmod", "\\bmod"] },
+    { "name": "negative-modulo-longer-commands", "text": "$a\\equiv b\\pmodulus$，$c\\equiv d\\bmodulus$。", "ruleIds": [] },
+    { "name": "negative-equivalence-command-substring", "text": "$\\equivalence\\pmod3$。", "ruleIds": ["modular-language"], "terms": ["\\pmod"] },
+    { "name": "integral-prose", "text": "积分得 f(x+1)=xg(x)+C，再求积分常数。", "ruleIds": ["integral-tool"] },
+    { "name": "integral-command-boundary", "text": "$\\int_0^1 x\\,dx$、∫、∮，但\\interval不是积分命令。", "ruleIds": ["integral-tool"] },
+    { "name": "english-method-case-boundaries", "text": "用 Telescoping、geometric series 和 INFINITE SERIES。", "ruleIds": ["english-method-language"] },
+    { "name": "derivative-prime-aliases", "text": "🧑‍🏫$f''(x)$、$h″(x)$、$g′′(x)$、$F^{\\prime\\prime}(x)$、$f_1'''(x)$", "ruleIds": ["higher-derivative"] },
+    { "name": "derivative-order-and-fraction", "text": "$f^{(2)}(x)$、$g^{(12)}(x)$、$\\frac{d^2y}{dx^2}$、$\\dfrac{\\mathrm{d}^{3}y}{dx^3}$、$\\frac{d^{12}y}{dx^{12}}$", "ruleIds": ["higher-derivative"] },
+    { "name": "infinite-sum-latex", "text": "$\\sum_{i=3}^{\\infty}a_i$、$\\sum^\\infty_{n=1}q^n$、$\\sum\\limits_{i=1}^{+\\infty}u_i$", "ruleIds": ["infinite-series"] },
+    { "name": "infinite-sum-unicode", "text": "∑_{i=3}∞ a_i，Σ_{n=1}^{∞} b_n。", "ruleIds": ["infinite-series"] },
+    { "name": "unicode-operators-adjacent-function", "text": "∫f(x)dx，∑∞f(n)。", "ruleIds": ["integral-tool", "infinite-series"] },
+    { "name": "linear-combination-wording", "text": "将这两个向量写成线性组合，并写清各系数。", "ruleIds": ["linear-combination-language"] },
+    { "name": "one-sided-endpoint-shorthand", "text": "$h(0+)=+∞$、$h(+∞)=-∞$、$f(a^+)$、$g\\left(0^{+}\\right)$", "ruleIds": ["limit-notation"] },
+    { "name": "negative-normal-first-derivatives", "text": "$f'(x)$、$f′(x)$、$f^{\\prime}(x)$、$f^{(1)}(x)$、$\\frac{dy}{dx}$、$\\frac{d^1y}{dx^1}$、$\\frac{d^{1}y}{dx^{1}}$、$f'^2(x)$", "ruleIds": [] },
+    { "name": "negative-finite-sums-and-interval", "text": "$\\sum_{i=1}^{n}a_i$、$S_n$、$x\\in(0,+\\infty)$、$\\sum_{i=1}^{20}a_i$", "ruleIds": [] },
+    { "name": "negative-function-arithmetic", "text": "$h(0+1)$、$f(a+b)$、$g(x+1)$、$a^2$、$f^{12}$", "ruleIds": [] },
+    { "name": "negative-other-linear-wording", "text": "一次函数是线性的，逐项相加得 $2a+3b$。", "ruleIds": [] },
+    { "name": "negative-english-and-command-substrings", "text": "telescopingMethod、geometric seriesABC、climate、$\\integer$、$\\interval$。", "ruleIds": [] }
+  ]
+}

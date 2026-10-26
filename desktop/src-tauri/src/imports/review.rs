@@ -23,6 +23,11 @@ pub(super) fn content_hash(q: &Value) -> String {
     ] {
         content.insert(key.to_owned(), q[key].clone());
     }
+    // New role evidence participates in new opinions without invalidating the
+    // content hashes of historical imports that predate this optional field.
+    if let Some(roles) = q.get("sourceMaterialRoles") {
+        content.insert("sourceMaterialRoles".to_owned(), roles.clone());
+    }
     hash_json(&Value::Object(content))
 }
 fn hard_problem(q: &Value, record: &Value) -> Option<String> {
@@ -55,13 +60,14 @@ pub(super) fn model_ready(q: &Value, record: &Value) -> bool {
     let review = &q["modelReview"];
     s(q, "reviewDecision") != "reject"
         && review["status"] == "ready"
-        && review["confidence"] == "high"
+        && matches!(s(review,"confidence"), "high"|"medium"|"low")
         && rows(&review["issues"]).is_empty()
         && review["contentSha256"] == content_hash(q)
         && review["evidence"]["sourceSha256"] == record["source"]["sha256"]
         && review["evidence"]["ocrManifestSha256"] == record["ocrSource"]["manifestSha256"]
         && review["evidence"]["extractedPagesSha256"] == hash_json(&record["extractedPages"])
         && hard_problem(q, record).is_none()
+        && (q.get("teachingWorkflow").is_none() || teaching::ready(q))
 }
 pub(super) fn eligibility(record: &Value) -> Value {
     let published = ids(&record["publishedQuestionIds"]);
@@ -79,6 +85,8 @@ pub(super) fn eligibility(record: &Value) -> Value {
                 "已由教师核对".into()
             } else if model {
                 "模型检查未发现疑点，可确认入库".into()
+            } else if !teaching::reason(&q).is_empty() {
+                teaching::reason(&q)
             } else if q["modelReview"]["status"] == "needs_review" {
                 s(&q["modelReview"], "summary").to_owned()
             } else {
@@ -302,13 +310,13 @@ fn normalize_opinion(value: &Value, q: &Value, record: &Value, images: bool) -> 
         ));
     }
     let body = json!([q["stem"], q["options"], q["parts"]]).to_string();
-    if !images && (body.contains("asset:") || body.contains("如图") || body.contains("下图")) {
+    if !images && (body.contains("asset:") || rows(&q["sourceMaterialRoles"]).iter().any(|role| role["requiresVisualReview"] == true)) {
         issues.push(json!({"field":"image","message":"当前模型未实际接收原图，配图需人工对照。"}));
     }
     if let Some(problem) = hard_problem(q, record) {
         issues.push(json!({"field":"source","message":problem}));
     }
-    let ready = result["status"] == "ready" && result["confidence"] == "high" && issues.is_empty();
+    let ready = result["status"] == "ready" && issues.is_empty();
     Ok(
         json!({"schemaVersion":1,"status":if ready {"ready"}else{"needs_review"},"confidence":result["confidence"],"summary":summary,"issues":issues,"contentSha256":content_hash(q),"reviewedAt":now(),"evidence":{"pages":evidence,"sourceSha256":record["source"]["sha256"],"ocrManifestSha256":record["ocrSource"]["manifestSha256"],"extractedPagesSha256":hash_json(&record["extractedPages"]),"imageReviewAvailable":images},"method":"model_review","disclaimer":"模型检查意见，非独立数学证明或教师审核"}),
     )
@@ -549,7 +557,7 @@ mod tests {
         json!({"questions":[{"questionId":record["questions"][0]["questionId"],"status":"ready","confidence":"high","summary":"Compared source page 1: exact calculation and all original conditions retained; source has no answer or solution.","issues":[],"evidencePages":[1]}]})
     }
     #[test]
-    fn confidence_never_overrides_missing_material_or_specific_doubt() {
+    fn simulated_model_status_drives_review_but_never_overrides_missing_material_or_specific_doubt() {
         let (_dir, _store, record) = fixture();
         let q = &record["questions"][0];
         let value = raw(&record);
@@ -559,7 +567,7 @@ mod tests {
         weak["questions"][0]["confidence"] = json!("medium");
         assert_eq!(
             normalize_opinion(&weak, q, &record, false).unwrap()["status"],
-            "needs_review"
+            "ready"
         );
         let mut issue = value.clone();
         issue["questions"][0]["issues"] =
@@ -572,8 +580,21 @@ mod tests {
         visual["stem"] = json!("如图，模拟图形");
         assert_eq!(
             normalize_opinion(&value, &visual, &record, false).unwrap()["status"],
-            "needs_review"
+            "ready"
         );
+        let mut model_semantic_review = value.clone();
+        model_semantic_review["questions"][0]["status"] = json!("needs_review");
+        model_semantic_review["questions"][0]["issues"] = json!([{"field":"image","message":"模拟模型对照原文发现此题需要配图但材料未提供，待补充核对。"}]);
+        let semantic_opinion = normalize_opinion(&model_semantic_review,&visual,&record,false).unwrap();
+        assert_eq!(semantic_opinion["status"],"needs_review");
+        assert_eq!(semantic_opinion["issues"][0]["message"],model_semantic_review["questions"][0]["issues"][0]["message"]);
+        visual["stem"] = json!("![原卷配图](asset:actual-diagram)");
+        assert_eq!(normalize_opinion(&value, &visual, &record, false).unwrap()["status"], "needs_review");
+        visual["stem"] = q["stem"].clone();
+        visual["sourceMaterialRoles"] = json!([{"assetId":"actual-document-figure","role":"document","requiresVisualReview":true}]);
+        assert_eq!(normalize_opinion(&value,&visual,&record,false).unwrap()["status"],"needs_review");
+        weak["questions"][0]["status"] = json!("needs_review");
+        assert_eq!(normalize_opinion(&weak, q, &record, false).unwrap()["status"], "needs_review");
         let mut missing = record.clone();
         missing["extractedPages"] = json!([]);
         assert_eq!(
@@ -762,6 +783,7 @@ mod tests {
 
     #[cfg(windows)]
     fn single_response(model: &mut ModelClient, response: Value) -> std::thread::JoinHandle<Value> {
+        let response=teaching::simulated_complete_response(response);
         use std::net::TcpListener;
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         model.save(&json!({"baseUrl":format!("http://{}/v1",listener.local_addr().unwrap()),"model":"simulated-integrated-import","apiKey":"simulated-only"})).unwrap();

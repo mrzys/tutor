@@ -13,6 +13,17 @@ export function goalFitsTask(goal: any, task: any) {
 export function availableTasks(blueprint: any, slot: any, tasks: any[]) {
   return tasks.filter(task => task.questionType === slot.questionType && scopeOverlaps(task.sectionIds, blueprint.requirements?.mainScope));
 }
+export function blueprintPartPoints(task: any, points: number) {
+  const parts: string[] = task.questionType === "free_response" ? task.partIds || [] : [];
+  return parts.map((partId, index) => ({ partId,
+    points: Math.floor(points / parts.length) + (index < points % parts.length ? 1 : 0) }));
+}
+export function clearBlueprintReview(blueprint: any) {
+  delete blueprint.supply;
+  delete blueprint.quantityReview;
+  delete blueprint.plannedStats;
+  return blueprint;
+}
 export function changeBlueprintTask(blueprint: any, slotId: string, task: any) {
   const slot = blueprint.slots.find((item: any) => item.slotId === slotId);
   if (!slot || !task || !availableTasks(blueprint, slot, [task]).length) throw new Error("请选择同题型且在本次范围内的考查任务。");
@@ -24,11 +35,8 @@ export function changeBlueprintTask(blueprint: any, slotId: string, task: any) {
   target.goalIds = [...new Set<string>(target.goalIds || [])].filter(id =>
     goalFitsTask(next.requirements?.teachingGoals?.find((goal: any) => goal.id === id), task));
   delete target.planningReason;
-  delete next.supply;
-  const parts = task.partIds || [];
-  target.partPoints = parts.map((partId: string, index: number) => ({partId,
-    points: Math.floor(target.points / parts.length) + (index < target.points % parts.length ? 1 : 0)}));
-  return next;
+  target.partPoints = blueprintPartPoints(task, target.points);
+  return clearBlueprintReview(next);
 }
 export function goalSlots(blueprint: any, goal: any, tasks: any[]) {
   return (blueprint.slots || []).filter((slot: any) => {
@@ -58,6 +66,5 @@ export function bindBlueprintGoal(blueprint: any, goalId: string, slotIds: strin
     if (wanted) slot.goalIds.push(goalId);
     delete slot.planningReason;
   }
-  delete next.supply;
-  return next;
+  return clearBlueprintReview(next);
 }

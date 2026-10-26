@@ -506,6 +506,11 @@
 .student-file-list small {
   color: var(--muted);
 }
+.student-file-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
 .student-file-list .icon-button {
   min-width: 44px;
   min-height: 44px;
@@ -571,6 +576,11 @@
   }
 }
 @media (max-width: 650px) {
+  .student-file-list li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 0 8px; padding-block: 4px; }
+  .student-file-list li > svg { grid-column: 1; grid-row: 1; }
+  .student-file-list .student-file-name { grid-column: 2; grid-row: 1; }
+  .student-file-list small { grid-column: 2; grid-row: 2; }
+  .student-file-actions { grid-column: 3; grid-row: 1 / span 2; }
   .student-upload-context { grid-template-columns: 1fr; gap: 16px; }
   .student-upload-source-tabs > button { font-size: 13px; }
   .student-answer-picker .student-upload-picker-action { display: none; }

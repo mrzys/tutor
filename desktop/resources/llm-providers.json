@@ -4,9 +4,204 @@
       "id": "deepseek",
       "label": "DeepSeek",
       "baseUrl": "https://api.deepseek.com",
+      "modelsPath": "/models",
       "models": [
-        { "id": "deepseek-flash", "label": "DeepSeek Flash" },
-        { "id": "deepseek-v4-pro", "label": "DeepSeek V4 Pro" }
+        {
+          "id": "deepseek-flash",
+          "label": "DeepSeek Flash",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "low",
+              "label": "低",
+              "description": "较少的推理计算，兼顾速度。"
+            },
+            {
+              "id": "high",
+              "label": "高",
+              "description": "更充分地推理，可能增加等待时间。"
+            },
+            {
+              "id": "max",
+              "label": "最高",
+              "description": "使用最高思考强度，耗时和 token 用量可能增加；本应用仍限制单次输出预算。"
+            }
+          ]
+        },
+        {
+          "id": "deepseek-v4-pro",
+          "label": "DeepSeek V4 Pro",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "low",
+              "label": "低",
+              "description": "较少的推理计算，兼顾速度。"
+            },
+            {
+              "id": "high",
+              "label": "高",
+              "description": "更充分地推理，可能增加等待时间。"
+            },
+            {
+              "id": "max",
+              "label": "最高",
+              "description": "使用最高思考强度，耗时和 token 用量可能增加；本应用仍限制单次输出预算。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bailian",
+      "label": "阿里云百炼",
+      "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "modelsPath": "/models",
+      "models": [
+        {
+          "id": "qwen-flash",
+          "label": "千问 Flash",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "on",
+              "label": "开启思考",
+              "description": "思考预算最多 8192 token；此模型思考模式不保证 JSON 格式，格式异常将提示重试，建议改用千问 3.8 Max。"
+            }
+          ]
+        },
+        {
+          "id": "qwen-plus",
+          "label": "千问 Plus",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "on",
+              "label": "开启思考",
+              "description": "思考预算最多 8192 token；此模型思考模式不保证 JSON 格式，格式异常将提示重试，建议改用千问 3.8 Max。"
+            }
+          ]
+        },
+        {
+          "id": "qwen3.8-max",
+          "label": "千问 3.8 Max",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "low",
+              "label": "低"
+            },
+            {
+              "id": "medium",
+              "label": "中"
+            },
+            {
+              "id": "xhigh",
+              "label": "最高",
+              "description": "更充分地推理，耗时和 token 用量可能增加。"
+            }
+          ]
+        },
+        {
+          "id": "qwen3.7-flash",
+          "label": "千问 3.7 Flash",
+          "reasoningOptions": [
+            { "id": "off", "label": "关闭思考", "description": "直接生成结果，响应更快。" },
+            { "id": "on", "label": "开启思考", "description": "提供思考开关，不区分强度；本应用设置最多 8192 token 的思考预算，耗时和用量可能增加。" }
+          ]
+        },
+        {
+          "id": "qwen3.7-flash-2026-07-15",
+          "label": "千问 3.7 Flash · 2026-07-15",
+          "reasoningOptions": [
+            { "id": "off", "label": "关闭思考", "description": "直接生成结果，响应更快。" },
+            { "id": "on", "label": "开启思考", "description": "提供思考开关，不区分强度；本应用设置最多 8192 token 的思考预算，耗时和用量可能增加。" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xiaomi",
+      "label": "小米 MiMo",
+      "baseUrl": "https://api.xiaomimimo.com/v1",
+      "modelsPath": "/models",
+      "models": [
+        {
+          "id": "mimo-v2.6-flash",
+          "label": "MiMo V2.6 Flash",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "on",
+              "label": "开启思考",
+              "description": "MiMo 提供思考开关，不区分思考强度；耗时和 token 用量可能增加。"
+            }
+          ]
+        },
+        {
+          "id": "mimo-v2.6-pro",
+          "label": "MiMo V2.6 Pro",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "on",
+              "label": "开启思考",
+              "description": "MiMo 提供思考开关，不区分思考强度；耗时和 token 用量可能增加。"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qianwenai",
+      "label": "千问AI平台",
+      "baseUrl": "https://maas.qianwenaiapi.com/compatible-mode/v1",
+      "modelsPath": "/models",
+      "models": [
+        {
+          "id": "qwen3.8-flash",
+          "label": "qwen3.8-flash",
+          "reasoningOptions": [
+            {
+              "id": "off",
+              "label": "关闭思考",
+              "description": "直接生成结果，响应更快。"
+            },
+            {
+              "id": "on",
+              "label": "开启思考",
+              "description": "此模型提供思考开关，不区分强度；耗时和 token 用量可能增加。"
+            }
+          ]
+        }
       ]
     }
   ]

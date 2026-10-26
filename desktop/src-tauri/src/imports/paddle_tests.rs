@@ -24,6 +24,11 @@ const INVALID_JSON_ALWAYS: usize = 11;
 const TRUNCATED_OUTPUT: usize = 12;
 const INVALID_JSON_CANCEL: usize = 13;
 const MISSING_FIGURE_ONCE: usize = 14;
+const MISLEADING_ANSWER_HEADING: usize = 15;
+const MISSING_MATERIAL_ROLES: usize = 16;
+const FORGED_MATERIAL_BLOCK: usize = 17;
+const SOURCE_PAGE_AS_QUESTION: usize = 18;
+const UNRELATED_MATERIAL_BLOCK: usize = 19;
 // Simulates an invalid LaTeX escape in the JSON content, not provider HTTP JSON.
 const INVALID_MODEL_JSON: &str = r#"{"questions":[{"stem":"simulated \sqrt{2}"}]}"#;
 const TABLE: &str =
@@ -92,7 +97,7 @@ fn pdf() -> Vec<u8> {
     bytes
 }
 fn layout(base: &str, mode: usize) -> Value {
-    let heading = if mode == TEACHER_LEAK {
+    let heading = if matches!(mode, TEACHER_LEAK|MISLEADING_ANSWER_HEADING) {
         "# 参考答案\n"
     } else {
         ""
@@ -104,8 +109,11 @@ fn proposal(context: &Value, mode: usize) -> Value {
         .into_iter()
         .find(|a| a["role"] == "figure")
         .unwrap();
+    let source_page = rows(&context["document"]["assets"]).into_iter().find(|asset| asset["role"]=="source_page").unwrap();
     let id = if mode == UNKNOWN_ASSET {
         "nonexistent-simulated-asset"
+    } else if mode == SOURCE_PAGE_AS_QUESTION {
+        s(&source_page,"id")
     } else {
         s(&figure, "id")
     };
@@ -123,7 +131,12 @@ fn proposal(context: &Value, mode: usize) -> Value {
     } else {
         String::new()
     };
-    json!({"questions":[{"questionType":"fill_blank","sourceLabel":"1","pages":[1],"sourceBlockIds":["p1-b1","p1-b2","p1-b3"],"stem":stem,"options":[],"parts":[],"answer":answer,"solution":"","sectionIds":[],"task":{"label":"模拟图表读取"},"primaryKnowledgeUids":[],"solutionPaths":[],"knowledgeUids":[],"knowledgeTopics":[]}]})
+    let material_roles:Vec<_> = if mode == MISSING_MATERIAL_ROLES {vec![]}else{rows(&context["document"]["requiredMaterialAssets"]).iter().map(|asset| json!({"assetId":asset["assetId"],"role":if mode==TEACHER_LEAK {"teacher"}else{"student"},"sourceBlockIds":if mode==FORGED_MATERIAL_BLOCK{json!(["p1-b999"])}else if mode==UNRELATED_MATERIAL_BLOCK{json!(["p1-b1"])}else{asset["sourceBlockIds"].clone()},"basis":"模拟模型按真实原文块判断素材为题面；答案素材另行归入教师内容。"})).collect()};
+    let mut result=json!({"questions":[{"questionType":"fill_blank","sourceLabel":"1","pages":[1],"sourceBlockIds":["p1-b1","p1-b2","p1-b3"],"materialRoles":material_roles,"stem":stem,"options":[],"parts":[],"answer":answer,"solution":"","sectionIds":[],"task":{"label":"模拟图表读取"},"primaryKnowledgeUids":[],"solutionPaths":[],"knowledgeUids":[],"knowledgeTopics":[],"review":{"status":"ready","confidence":"high","summary":"模拟回归：对照原图和表格核对题面，原卷无参考答案解析。","issues":[],"evidencePages":[1]}}]});
+    if context["sourceBatch"].is_object() {
+        result["questions"][0]["questionId"]=context["sourceBatch"]["expectedQuestions"][0]["questionId"].clone();
+    }
+    result
 }
 fn server(mode: usize) -> Server {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -194,19 +207,35 @@ fn server(mode: usize) -> Server {
             "/ocr/jobs/simulated-job"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"state":"done","resultUrl":{"jsonUrl":format!("{b}/result.jsonl")},"extractProgress":{"totalPages":if mode==PAGE_MISMATCH{2}else{1}}}})).unwrap()),
             "/result.jsonl"=>(200,serde_json::to_vec(&layout(&b,mode)).unwrap()),
             "/page.png"=>(200,page_png()),
+            "/v1/models"=>(200,serde_json::to_vec(&json!({"data":[{"id":"simulated-import-model"}]})).unwrap()),
             "/v1/chat/completions"=>{
                 let request:Value=serde_json::from_slice(&bytes[split..]).unwrap();
-                let context:Value=serde_json::from_str(request["messages"][1]["content"].as_str().unwrap()).unwrap();
-                let request_number={let mut contexts=x.lock().unwrap();contexts.push(context.clone());contexts.len()};
+                let input=&request["messages"][1]["content"];
+                let input_text=input.as_str().or_else(||input.as_array().and_then(|a|a.iter().find(|v|v["type"]=="text")).and_then(|v|v["text"].as_str())).unwrap();
+                let context:Value=serde_json::from_str(input_text).unwrap();
+                let index=context["blockColumns"].is_array();
+                let source_batch=context["sourceBatch"].is_object();
+                let request_number={let mut contexts=x.lock().unwrap();contexts.push(context.clone());contexts.iter().filter(|c|c["sourceBatch"].is_object()).count()};
                 if mode==LLM_FAIL {(503,br#"{"error":{"message":"simulated LLM failure"}}"#.to_vec())}
                 else {
-                    let invalid=mode==INVALID_JSON_ALWAYS||mode==INVALID_JSON_CANCEL||(mode==INVALID_JSON_ONCE&&request_number==1);
+                    let invalid=source_batch&&(mode==INVALID_JSON_ALWAYS||mode==INVALID_JSON_CANCEL||(mode==INVALID_JSON_ONCE&&request_number==1));
                     let proposal_mode=if mode==MISSING_FIGURE_ONCE&&request_number==1 {MISSING_FIGURE}else{mode};
-                    let mut candidate=if context["questions"].is_array() { json!({"questions":rows(&context["questions"]).iter().map(|q|json!({"questionId":q["questionId"],"task":{"label":"模拟图表主考信息"},"difficultyAssessment":{"level":"easy_medium","basis":"模拟图表题需要一次常规数据转换，保留未知解法。","rubricVersion":"content-demand-v1"},"knowledgeSchemaVersion":2,"primaryKnowledgeUids":[],"solutionPaths":[]})).collect::<Vec<_>>()}) } else {proposal(&context,proposal_mode)};
-                    if mode==MISSING_FIGURE_ONCE&&request_number==1 {candidate["questions"][0]["sourceBlockIds"]=json!(["p1-b1","p1-b3"]);}
-                    let content=if invalid {INVALID_MODEL_JSON.to_owned()}else if mode==TRUNCATED_OUTPUT {"{\"questions\":[".to_owned()}else{candidate.to_string()};
-                    if mode==INVALID_JSON_CANCEL {model_cancel.store(true,Ordering::SeqCst);}
-                    (200,serde_json::to_vec(&json!({"choices":[{"finish_reason":if mode==TRUNCATED_OUTPUT {"length"}else{"stop"},"message":{"content":content}}]})).unwrap())
+                    let mut candidate=if index {
+                        json!({"questions":[{"sourceLabel":"1","questionType":"fill_blank","sourceBlockIds":["p1-b1","p1-b2","p1-b3"]}],"sharedBlockIds":[],"documentBlockIds":[]})
+                    }else if source_batch {proposal(&context,proposal_mode)}else if request["messages"][0]["content"].as_str().is_some_and(|t|t.contains("独立课堂教学生成")) {
+                        json!({"questions":rows(&context["questions"]).iter().map(|q|json!({"questionId":q["questionId"],"answer":"模拟教学答案2","difficultyAssessment":{"level":"easy_medium","basis":"模拟回归：读取图表后进行常规数据转换。"},"teachingSolution":"模拟课堂讲解：由题意，$1+1=2$。","teachingFocusSchemaVersion":2,"teachingFocus":{"examFocus":"模拟图表读取与运算。","studentRequirements":["能读取原图和表格的数据。"]},"issues":[]})).collect::<Vec<_>>()})
+                    }else if context["questions"].is_array() {
+                        json!({"questions":rows(&context["questions"]).iter().map(|q|json!({"questionId":q["questionId"],"task":{"label":"模拟图表主考信息"},"difficultyAssessment":{"level":"easy_medium","basis":"模拟图表题需要一次常规数据转换，保留未知解法。","rubricVersion":"content-demand-v1"},"knowledgeSchemaVersion":2,"primaryKnowledgeUids":[],"solutionPaths":[]})).collect::<Vec<_>>()})
+                    }else{proposal(&context,proposal_mode)};
+                    if source_batch&&mode==MISSING_FIGURE_ONCE&&request_number==1 {candidate["questions"][0]["sourceBlockIds"]=json!(["p1-b1","p1-b3"]);}
+                    let truncated=source_batch&&mode==TRUNCATED_OUTPUT;
+                    let content=if invalid {INVALID_MODEL_JSON.to_owned()}else if truncated {"{\"questions\":[".to_owned()}else{candidate.to_string()};
+                    if source_batch&&mode==INVALID_JSON_CANCEL {model_cancel.store(true,Ordering::SeqCst);}
+                    if request["stream"]==true {
+                        (200,format!("data: {}\n\ndata: [DONE]\n\n",json!({"choices":[{"delta":{"content":content},"finish_reason":if truncated{"length"}else{"stop"}}]})).into_bytes())
+                    }else{
+                        (200,serde_json::to_vec(&json!({"choices":[{"finish_reason":if truncated {"length"}else{"stop"},"message":{"content":content}}]})).unwrap())
+                    }
                 }
             },
             _=>(404,b"unexpected simulated route".to_vec())
@@ -294,6 +323,7 @@ fn simulated_paddle_metadata_supplement_keeps_original_graph_table_review_and_ne
         "sourceIdentity",
         "sourceBlockIds",
         "sourceMaterialRequirements",
+        "sourceMaterialRoles",
         "student",
         "teacher",
         "assetPayloads",
@@ -309,13 +339,41 @@ fn simulated_paddle_metadata_supplement_keeps_original_graph_table_review_and_ne
     assert_eq!(after["ocrSource"], reviewed["ocrSource"]);
     paddle::verify_audit(&f.store, &after).unwrap();
     assert_eq!(f.server.count("/ocr/jobs"), 1);
-    assert_eq!(f.server.count("/v1/chat/completions"), 2);
+    assert_eq!(f.server.count("/v1/chat/completions"), 4); // index, source, teaching, metadata
     assert_eq!(after["questions"][0]["answer"], "");
     assert_eq!(after["questions"][0]["solution"], "");
     assert_eq!(after["questions"][0]["solutionPaths"], json!([]));
 }
 fn retry(f: &mut Fixture, record: &Value) -> Value {
     call(f,"import_prepare",&json!({"operationId":uuid::Uuid::new_v4().to_string(),"importId":record["importId"],"expectedRevision":record["revision"]}))["import"].clone()
+}
+#[test]
+fn normal_publication_rechecks_recovered_source_before_any_bank_write() {
+    let mut f=fixture(SUCCESS,true);let original=upload(&mut f);
+    let before=hash_json(&f.store.bank.config().unwrap());
+    let original_calls=f.server.count("/v1/chat/completions");
+    let mut forged=original.clone();
+    forged["sourceMaterialSupplement"]=json!({"version":"source-material-supplement-v1","status":"completed"});
+    f.store.put_document("imports",s(&forged,"importId"),&forged).unwrap();
+    let payload=json!({"importId":forged["importId"],"expectedRevision":forged["revision"],"operationId":"simulated-forged-material-checkpoint","acknowledgeReview":true});
+    assert_eq!(publish(&f.store,&payload,&AtomicBool::new(false)).unwrap_err().code,"source_checkpoint_changed");
+    assert_eq!(build_manifest(&f.store,&forged).unwrap_err().code,"source_checkpoint_changed");
+    assert_eq!(hash_json(&f.store.bank.config().unwrap()),before);
+    assert_eq!(f.server.count("/v1/chat/completions"),original_calls);
+    for malformed in [json!({}),json!("invalid"),json!(false)] {
+        let mut broken=original.clone();broken["sourceResponseReplays"]=malformed;
+        assert_eq!(verify_recovered_source_for_publication(&f.store,&broken).unwrap_err().code,"source_checkpoint_changed");
+    }
+
+    let mut replay=original.clone();
+    replay["sourceResponseReplays"]=json!([{"status":"succeeded"}]);
+    let request=f.store.data_dir.join(s(&replay["sourceStructuring"]["planAttempts"][0]["audit"],"requestRelativePath"));
+    std::fs::write(request,b"{}").unwrap();
+    f.store.put_document("imports",s(&replay,"importId"),&replay).unwrap();
+    let payload=json!({"importId":replay["importId"],"expectedRevision":replay["revision"],"operationId":"simulated-damaged-source-request","acknowledgeReview":true});
+    assert_eq!(publish(&f.store,&payload,&AtomicBool::new(false)).unwrap_err().code,"source_checkpoint_changed");
+    assert_eq!(hash_json(&f.store.bank.config().unwrap()),before);
+    assert_eq!(f.server.count("/v1/chat/completions"),original_calls);
 }
 fn approved(record: &Value) -> Value {
     let mut questions = record["questions"].clone();
@@ -337,7 +395,8 @@ fn simulated_upload_preserves_graph_table_and_null_order_through_review_publish_
     let record = upload(&mut f);
     assert_eq!(record["status"], "pending_review", "{record:#}");
     assert_eq!(f.server.count("/ocr/jobs"), 1);
-    assert_eq!(f.server.count("/v1/chat/completions"), 1);
+    assert_eq!(f.server.count("/v1/chat/completions"), 3); // index + source + independent classroom draft
+    assert_eq!(f.server.count("/v1/models"), 1);
     assert_eq!(
         record["ocrSource"]["pages"][0]["blocks"][1]["order"],
         Value::Null
@@ -345,13 +404,14 @@ fn simulated_upload_preserves_graph_table_and_null_order_through_review_publish_
     assert_eq!(read_source(&f.store, &record).unwrap(), pdf());
     let q = &record["questions"][0];
     let contexts = f.server.contexts.lock().unwrap();
-    assert_eq!(contexts.len(), 1);
-    assert_eq!(contexts[0]["document"]["provider"], "paddleocr");
+    assert_eq!(contexts.len(), 3);
+    assert!(contexts[0]["blockColumns"].is_array());
+    assert_eq!(contexts[1]["document"]["provider"], "paddleocr");
     assert_eq!(
-        contexts[0]["document"]["pages"][0]["blocks"][1]["order"],
+        contexts[1]["document"]["pages"][0]["blocks"][1]["order"],
         Value::Null
     );
-    let model_context = contexts[0].to_string();
+    let model_context = contexts[1].to_string();
     assert!(!model_context.contains("contentBase64"));
     assert!(!model_context.contains("simulated-only-ocr-key"));
     drop(contexts);
@@ -439,171 +499,60 @@ fn simulated_llm_failure_preserves_ocr_and_retry_reuses_it_without_uploading_aga
     assert_eq!(recovered["status"], "pending_review", "{recovered:#}");
     assert_eq!(recovered["ocrSource"], first);
     assert_eq!(f.server.count("/ocr/jobs"), 1);
-    assert_eq!(f.server.count("/v1/chat/completions"), 2);
-    assert_eq!(rows(&recovered["modelAttempts"]).len(), 2);
+    assert_eq!(f.server.count("/v1/chat/completions"), 4);
+    assert_eq!(rows(&recovered["sourceStructuring"]["planAttempts"]).len(), 2);
+    assert_eq!(source_batch_attempts(&recovered).len(), 1);
 }
+fn source_batch_attempts(record:&Value)->Vec<Value>{rows(&record["sourceStructuring"]["batches"][0]["attempts"])}
 fn audited_attempt_files(f: &Fixture, attempt: &Value) -> Vec<(PathBuf, Vec<u8>)> {
-    [
-        ("attemptRelativePath", "attemptSha256"),
-        ("providerResponseRelativePath", "providerResponseSha256"),
-    ]
+    [("requestRelativePath", "requestSha256"),("responseRelativePath", "responseSha256")]
     .into_iter()
     .map(|(path_field, hash_field)| {
-        let relative = s(attempt, path_field);
+        let relative = s(&attempt["audit"], path_field);
         assert!(!relative.is_empty(), "missing {path_field}: {attempt:#}");
         let path = f.dir.path().join(relative);
         let bytes = std::fs::read(&path).unwrap();
-        assert_eq!(sha(&bytes), s(attempt, hash_field));
+        assert_eq!(sha(&bytes), s(&attempt["audit"], hash_field));
         (path, bytes)
     })
     .collect()
 }
 #[test]
-fn simulated_invalid_json_regenerates_once_using_same_ocr_and_preserves_each_audit() {
+fn simulated_invalid_source_json_stops_without_ds_regeneration_and_explicit_retry_reuses_ocr() {
     let mut f = fixture(INVALID_JSON_ONCE, true);
-    let record = upload(&mut f);
-    assert_eq!(record["status"], "pending_review", "{record:#}");
-    assert_eq!(f.server.count("/ocr/jobs"), 1);
+    let failed = upload(&mut f);
+    assert_eq!(failed["status"], "failed");
+    assert_eq!(failed["error"]["code"], "model_output_invalid_json");
     assert_eq!(f.server.count("/v1/chat/completions"), 2);
-    assert_eq!(rows(&record["questions"]).len(), 1);
-    assert_eq!(record["questions"][0]["reviewDecision"], "pending");
-    assert_eq!(
-        f.store.bank.questions().unwrap().len(),
-        1,
-        "regeneration never publishes"
-    );
-    assert!(rows(&record["publications"]).is_empty());
-    assert_eq!(read_source(&f.store, &record).unwrap(), pdf());
-    paddle::verify_audit(&f.store, &record).unwrap();
-    let contexts = f.server.contexts.lock().unwrap();
-    assert!(contexts[0].get("formatRetry").is_none());
-    assert_eq!(contexts[1]["formatRetry"]["attempt"], 1);
-    assert_eq!(
-        contexts[1]["formatRetry"]["previousError"]["code"],
-        "model_output_invalid_json"
-    );
-    assert!(!s(&contexts[1]["formatRetry"]["previousError"], "message").is_empty());
-    assert!(!s(&contexts[1]["formatRetry"], "instruction").is_empty());
-    let mut retry_context = contexts[1].clone();
-    retry_context.as_object_mut().unwrap().remove("formatRetry");
-    assert_eq!(
-        retry_context, contexts[0],
-        "source and catalogue must remain unchanged"
-    );
-    drop(contexts);
-    let attempts = rows(&record["modelAttempts"]);
-    assert_eq!(attempts.len(), 2);
-    assert_eq!(attempts[0]["attemptNumber"], 1);
-    assert_eq!(attempts[1]["attemptNumber"], 2);
-    assert_eq!(attempts[0]["status"], "failed");
-    assert_eq!(attempts[0]["error"]["code"], "model_output_invalid_json");
-    assert_eq!(attempts[1]["status"], "succeeded");
-    assert_eq!(attempts[0]["sourceSha256"], attempts[1]["sourceSha256"]);
-    assert_ne!(
-        attempts[0]["attemptRelativePath"],
-        attempts[1]["attemptRelativePath"]
-    );
-    assert_ne!(
-        attempts[0]["providerResponseRelativePath"],
-        attempts[1]["providerResponseRelativePath"]
-    );
-    assert!(s(&attempts[1], "attemptRelativePath").contains("-format-retry-1"));
-    let first_files = audited_attempt_files(&f, &attempts[0]);
-    audited_attempt_files(&f, &attempts[1]);
-    let first_response: Value = serde_json::from_slice(&first_files[1].1).unwrap();
-    assert_eq!(
-        first_response["choices"][0]["message"]["content"],
-        INVALID_MODEL_JSON
-    );
-    let reopened = call(
-        &mut f,
-        "import_get",
-        &json!({"importId":record["importId"]}),
-    );
-    assert_eq!(reopened["import"], record);
-    for (path, bytes) in first_files {
-        assert_eq!(
-            std::fs::read(path).unwrap(),
-            bytes,
-            "original failure audit must not be repaired or overwritten"
-        );
-    }
-    assert_eq!(f.server.count("/v1/chat/completions"), 2);
+    assert!(rows(&failed["questions"]).is_empty());
+    let original_files=audited_attempt_files(&f,&source_batch_attempts(&failed)[0]);
+    paddle::verify_audit(&f.store,&failed).unwrap();
+    let recovered=retry(&mut f,&failed);
+    assert_eq!(recovered["status"],"pending_review","{recovered:#}");
+    assert_eq!(f.server.count("/ocr/jobs"),1);
+    assert_eq!(f.server.count("/v1/chat/completions"),4);
+    assert_eq!(source_batch_attempts(&recovered).len(),2);
+    assert!(f.server.contexts.lock().unwrap().iter().all(|c|c.get("formatRetry").is_none()));
+    for (path,bytes) in original_files {assert_eq!(std::fs::read(path).unwrap(),bytes);}
 }
 #[test]
-fn simulated_missing_figure_regenerates_once_from_same_document_before_review() {
-    let mut f = fixture(MISSING_FIGURE_ONCE, true);
-    let record = upload(&mut f);
-    assert_eq!(record["status"], "pending_review", "{record:#}");
-    assert_eq!(f.server.count("/ocr/jobs"), 1);
-    assert_eq!(f.server.count("/v1/chat/completions"), 2);
-    assert_eq!(rows(&record["questions"]).len(), 1);
-    assert_eq!(record["questions"][0]["reviewDecision"], "pending");
-    assert_eq!(rows(&record["questions"][0]["student"]["assets"]).len(), 1);
-    assert_eq!(f.store.bank.questions().unwrap().len(), 1);
-    paddle::verify_audit(&f.store, &record).unwrap();
-    let contexts = f.server.contexts.lock().unwrap();
-    assert!(contexts[0].get("materialRetry").is_none());
-    assert!(contexts[1].get("formatRetry").is_none());
-    assert_eq!(contexts[1]["materialRetry"]["attempt"], 1);
-    assert_eq!(
-        contexts[1]["materialRetry"]["previousError"]["code"],
-        "ocr_material_unassigned"
-    );
-    assert!(!s(&contexts[1]["materialRetry"], "instruction").is_empty());
-    let mut retry_context = contexts[1].clone();
-    retry_context
-        .as_object_mut()
-        .unwrap()
-        .remove("materialRetry");
-    let checklist = retry_context
-        .as_object_mut()
-        .unwrap()
-        .remove("sourceMaterialChecklist")
-        .unwrap();
-    assert_eq!(
-        checklist, contexts[0]["document"]["requiredMaterialAssets"],
-        "neither the omitted figure nor the table asset ID was explicitly referenced in this first candidate"
-    );
-    let mut initial_context = contexts[0].clone();
-    initial_context
-        .as_object_mut()
-        .unwrap()
-        .remove("sourceMaterialChecklist");
-    assert_eq!(
-        retry_context, initial_context,
-        "material recovery must reuse original document and catalogue"
-    );
-    drop(contexts);
-    let attempts = rows(&record["modelAttempts"]);
-    assert_eq!(attempts.len(), 2);
-    assert_eq!(
-        attempts[0]["status"], "failed",
-        "valid JSON with missing source material is a failed candidate"
-    );
-    assert_eq!(attempts[0]["error"]["code"], "ocr_material_unassigned");
-    assert_eq!(attempts[1]["status"], "succeeded");
-    assert_eq!(attempts[0]["sourceSha256"], attempts[1]["sourceSha256"]);
-    assert_ne!(
-        attempts[0]["providerResponseRelativePath"],
-        attempts[1]["providerResponseRelativePath"]
-    );
-    let first_files = audited_attempt_files(&f, &attempts[0]);
-    audited_attempt_files(&f, &attempts[1]);
-    let first_response: Value = serde_json::from_slice(&first_files[1].1).unwrap();
-    let proposed: Value = serde_json::from_str(
-        first_response["choices"][0]["message"]["content"]
-            .as_str()
-            .unwrap(),
-    )
-    .unwrap();
-    assert!(!s(&proposed["questions"][0], "stem").contains("!["));
-    for (path, bytes) in first_files {
-        assert_eq!(std::fs::read(path).unwrap(), bytes);
-    }
+fn simulated_missing_source_figure_stops_without_automatic_regeneration_and_keeps_original_audit() {
+    let mut f=fixture(MISSING_FIGURE_ONCE,true);
+    let failed=upload(&mut f);
+    assert_eq!(failed["status"],"failed");
+    assert_eq!(failed["error"]["code"],"source_batch_scope"); // Missing original figure block fails before binding.
+    assert_eq!(f.server.count("/v1/chat/completions"),2);
+    assert!(rows(&failed["questions"]).is_empty());
+    let original_files=audited_attempt_files(&f,&source_batch_attempts(&failed)[0]);
+    let recovered=retry(&mut f,&failed);
+    assert_eq!(recovered["status"],"pending_review","{recovered:#}");
+    assert_eq!(f.server.count("/ocr/jobs"),1);
+    assert_eq!(f.server.count("/v1/chat/completions"),4);
+    assert_eq!(rows(&recovered["questions"][0]["student"]["assets"]).len(),1);
+    for (path,bytes) in original_files {assert_eq!(std::fs::read(path).unwrap(),bytes);}
 }
 #[test]
-fn simulated_repeated_invalid_json_stops_after_one_regeneration_and_keeps_zero_questions() {
+fn simulated_invalid_source_json_stops_after_one_call_and_keeps_zero_questions() {
     let mut f = fixture(INVALID_JSON_ALWAYS, true);
     let record = upload(&mut f);
     assert_eq!(record["status"], "failed", "{record:#}");
@@ -614,10 +563,10 @@ fn simulated_repeated_invalid_json_stops_after_one_regeneration_and_keeps_zero_q
     assert_eq!(f.store.bank.questions().unwrap().len(), 1);
     assert_eq!(read_source(&f.store, &record).unwrap(), pdf());
     paddle::verify_audit(&f.store, &record).unwrap();
-    let attempts = rows(&record["modelAttempts"]);
-    assert_eq!(attempts.len(), 2);
+    let attempts = source_batch_attempts(&record);
+    assert_eq!(attempts.len(), 1);
     for (i, attempt) in attempts.iter().enumerate() {
-        assert_eq!(attempt["attemptNumber"], i + 1);
+        assert_eq!(i, 0); // One failed source batch, separate successful index retained.
         assert_eq!(attempt["status"], "failed");
         assert_eq!(attempt["error"]["code"], "model_output_invalid_json");
         let files = audited_attempt_files(&f, attempt);
@@ -636,9 +585,9 @@ fn simulated_truncation_is_not_treated_as_json_format_retry() {
     assert_eq!(record["error"]["code"], "model_output_truncated");
     assert!(rows(&record["questions"]).is_empty());
     assert_eq!(f.server.count("/ocr/jobs"), 1);
-    assert_eq!(f.server.count("/v1/chat/completions"), 1);
-    assert_eq!(rows(&record["modelAttempts"]).len(), 1);
-    audited_attempt_files(&f, &record["modelAttempts"][0]);
+    assert_eq!(f.server.count("/v1/chat/completions"), 2);
+    assert_eq!(source_batch_attempts(&record).len(), 1);
+    audited_attempt_files(&f, &source_batch_attempts(&record)[0]);
 }
 #[test]
 fn simulated_cancellation_while_invalid_response_arrives_does_not_start_regeneration() {
@@ -657,17 +606,21 @@ fn simulated_cancellation_while_invalid_response_arrives_does_not_start_regenera
     ));
     assert!(rows(&record["questions"]).is_empty());
     assert_eq!(f.server.count("/ocr/jobs"), 1);
-    assert_eq!(f.server.count("/v1/chat/completions"), 1);
-    assert_eq!(rows(&record["modelAttempts"]).len(), 1);
+    assert_eq!(f.server.count("/v1/chat/completions"), 2);
+    assert_eq!(source_batch_attempts(&record).len(), 1);
     assert_eq!(f.store.bank.questions().unwrap().len(), 1);
 }
 #[test]
 fn simulated_unknown_missing_graph_table_and_teacher_asset_cannot_reach_review() {
     for (mode, code, model_calls) in [
-        (UNKNOWN_ASSET, "ocr_asset_unresolved", 1),
+        (UNKNOWN_ASSET, "ocr_asset_unresolved", 2),
         (MISSING_FIGURE, "ocr_material_unassigned", 2),
         (TABLE_LOSS, "ocr_material_unassigned", 2),
-        (TEACHER_LEAK, "ocr_answer_asset", 1),
+        (TEACHER_LEAK, "ocr_material_role", 2),
+        (MISSING_MATERIAL_ROLES, "ocr_material_role", 2),
+        (FORGED_MATERIAL_BLOCK, "source_batch_scope", 2),
+        (UNRELATED_MATERIAL_BLOCK, "ocr_material_role", 2),
+        (SOURCE_PAGE_AS_QUESTION, "ocr_asset_unresolved", 2),
     ] {
         let mut f = fixture(mode, true);
         let record = upload(&mut f);
@@ -682,8 +635,21 @@ fn simulated_unknown_missing_graph_table_and_teacher_asset_cannot_reach_review()
             model_calls,
             "mode {mode}"
         );
-        assert_eq!(rows(&record["modelAttempts"]).len(), model_calls);
+        assert_eq!(source_batch_attempts(&record).len(), 1);
     }
+}
+#[test]
+fn simulated_source_title_does_not_replace_model_material_roles_and_roles_cannot_be_rewritten() {
+    let mut f = fixture(MISLEADING_ANSWER_HEADING, true);
+    let record = upload(&mut f);
+    assert_eq!(record["status"],"pending_review","{record:#}");
+    assert!(rows(&record["questions"][0]["sourceMaterialRoles"]).iter().all(|assignment|assignment["role"]=="student"));
+    assert_eq!(rows(&record["questions"][0]["student"]["assets"]).len(),1);
+    assert_eq!(f.server.count("/v1/chat/completions"),3);
+    let mut payload = review_payload(&record);
+    payload["questions"][0]["sourceMaterialRoles"][0]["role"] = json!("teacher");
+    assert_eq!(dispatch(&mut f.store,&f.model,"import_review_save",&payload,&AtomicBool::new(false)).unwrap_err().code,"immutable_source");
+    assert_eq!(f.store.document("imports",s(&record,"importId")).unwrap(),record);
 }
 #[test]
 fn simulated_reported_page_count_mismatch_cannot_be_approved_away() {
@@ -856,7 +822,7 @@ fn simulated_table_deletion_can_be_saved_pending_but_cannot_be_approved_or_publi
         assert_eq!(err.code, "source_content_unresolved");
         assert_eq!(f.store.bank.questions().unwrap().len(), 1);
         assert_eq!(f.server.count("/ocr/jobs"), 1);
-        assert_eq!(f.server.count("/v1/chat/completions"), 1);
+        assert_eq!(f.server.count("/v1/chat/completions"), 3);
     }
 }
 
@@ -897,7 +863,7 @@ fn simulated_original_question_material_cannot_hide_in_model_answer_to_satisfy_c
     for (mode, code) in [
         (
             ORIGINAL_GRAPH_MOVED_TO_ANSWER,
-            "ocr_teacher_asset_unverified",
+            "ocr_material_role",
         ),
         (ORIGINAL_TABLE_MOVED_TO_ANSWER, "ocr_material_unassigned"),
     ] {

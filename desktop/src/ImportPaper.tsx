@@ -36,7 +36,9 @@ import { Busy, ErrorBanner, Modal } from "./ui";
 import { QuestionBody, RichText } from "./Paper";
 import { difficultyLevels } from "./assembly-details";
 import { assetKey, assetReferences } from "./rich-content";
-import { requiredReviewChecks, sourceReviewLabel, sourceReviewDescription, briefReviewReasons } from "./import-review";
+import { requiredReviewChecks, sourceReviewLabel, sourceReviewDescription, briefReviewReasons, importTeachingPresentation, hasUnstartedTeaching,
+  teachingAcknowledgementPayload, teachingPatchPayload, type TeachingIssueRow, type TeachingReviewControls } from "./import-review";
+import { TeachingReviewActions } from "./TeachingAnalysis";
 import "./ImportPaper.css";
 const SourceCompare = lazy(() => import("./SourceCompare").then(module => ({ default: module.SourceCompare })));
 const PdfPreview = lazy(() => import("./PdfPreview").then(module => ({ default: module.PdfPreview })));
@@ -122,6 +124,7 @@ export function ImportPaper(props: {
   const [editBaseRevision, setEditBaseRevision] = createSignal<number>();
   const editBuffers = new Map<string, any>();
   const [reviewEligibility, setReviewEligibility] = createSignal<Record<string, any>>({});
+  const [teachingControls, setTeachingControls] = createSignal<Record<string, TeachingReviewControls>>({});
   const [preview, setPreview] = createSignal(true);
   const [originalPreview, setOriginalPreview] = createSignal(false);
   const [sourceCompare, setSourceCompare] = createSignal(false);
@@ -188,6 +191,7 @@ export function ImportPaper(props: {
     setDirty(false);
     setDiagnostic(null);
     setQuestions([]);
+    setTeachingControls({});
     setFile(null);
     setError("");
     setNotice("");
@@ -263,8 +267,9 @@ export function ImportPaper(props: {
     }).join("、");
   const pendingApprove = () => questions().filter(item => reviewEligibility()[item.questionId]?.eligible === true && !published(item));
   const needsOpinion = (item: any) => !published(item) && reviewEligibility()[item.questionId]?.eligible !== true;
-  const reviewStateLabel = (item: any) => published(item) ? "已入库" : reviewEligibility()[item.questionId]?.eligible ? "可入库" : item.modelReview?.status === "needs_review" || item.modelReview?.status === "blocked" ? "需处理" : item.modelReview?.status === "stale" ? "需重新检查" : item.modelReview?.status === "failed" ? "检查未完成" : item.reviewDecision === "approve" ? "已人工核对" : "待检查";
+  const reviewStateLabel = (item: any) => published(item) ? "已入库" : reviewEligibility()[item.questionId]?.eligible ? "可入库" : (item.teachingWorkflow && item.teachingWorkflow.status !== "ready_candidate") || item.modelReview?.status === "needs_review" || item.modelReview?.status === "blocked" ? "需处理" : item.modelReview?.status === "stale" ? "需重新检查" : item.modelReview?.status === "failed" ? "检查未完成" : item.reviewDecision === "approve" ? "已人工核对" : "待检查";
   const canRecheck = () => !activeJob() && questions().some(item => !published(item) && (dirty() || !item.modelReview || ["stale", "failed"].includes(item.modelReview.status)));
+  const canContinueTeaching = () => record()?.status === "pending_review" && !record()?.publishedQuestionIds?.length && questions().some(hasUnstartedTeaching);
   const confidenceLabel = (value: string) => ({high:"高",medium:"中",low:"低"}[value] || "未给出");
   const published = (question: any) =>
     question?.status === "published" ||
@@ -382,7 +387,7 @@ export function ImportPaper(props: {
         const detail = await request("import_job_get", { importId: id });
         if (alive && own === jobPollVersion && record()?.importId === id && !dirty() && !busy() && !publishFrozen() &&
           (detail.import.revision !== record().revision || detail.import.status !== record().status || JSON.stringify(detail.import.error) !== JSON.stringify(record().error)))
-          apply(detail.import, detail.diagnostic, detail.reviewEligibility);
+          apply(detail.import, detail.diagnostic, detail.reviewEligibility, detail.teachingControls);
       }
     } catch (failure: any) {
       if (alive && own === jobPollVersion) setJobError(failure.message || "导入进度暂未读取，原任务仍在后台处理。");
@@ -393,7 +398,7 @@ export function ImportPaper(props: {
   function working(text: string) {
     setBusy(text);
   }
-  function apply(value: any, detail?: ImportDiagnostic, eligibility?: Record<string, any>) {
+  function apply(value: any, detail?: ImportDiagnostic, eligibility?: Record<string, any>, controls?: Record<string, TeachingReviewControls>) {
     if (record()?.importId !== value.importId) {
       setOriginalPreview(false);
       setSourceCompare(false);
@@ -402,6 +407,7 @@ export function ImportPaper(props: {
     setRecord(value);
     setEditBaseRevision(value.revision);
     setReviewEligibility(eligibility || {});
+    setTeachingControls(controls || {});
     setDiagnostic(value.status === "failed" && detail ? detail : null);
     setError("");
     setQuestions(clone(value.questions || []));
@@ -435,7 +441,7 @@ export function ImportPaper(props: {
     try {
       const result = await request("import_get", { importId });
       if (alive && own === openVersion) {
-        apply(result.import, result.diagnostic, result.reviewEligibility);
+        apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
         setFile(null);
         setNotice("");
         const buffer = editBuffers.get(importId);
@@ -538,7 +544,7 @@ export function ImportPaper(props: {
       }
       const result = await request("import_start", prepareAttempt);
       if (!alive) return;
-      apply(result.import, result.diagnostic, result.reviewEligibility);
+      apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
       setFile(null);
       setNotice(["queued", "running"].includes(result.job?.status) ? "已加入后台解析，可继续组卷或浏览题库。完成后会通知你。" : "此试卷已处理，请查看题目与需要核对的事项。");
       if (result.job) {
@@ -613,7 +619,7 @@ export function ImportPaper(props: {
       if (alive) {
         editBuffers.delete(record().importId);
         const index = selected();
-        apply(result.import, result.diagnostic, result.reviewEligibility);
+        apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
         setSelected(index);
         setNotice("修改已保存，尚未入库。");
         await loadHistory();
@@ -643,7 +649,7 @@ export function ImportPaper(props: {
       const count = pendingApprove().length;
       const result = await request("import_publish", publishAttempt);
       if (!alive) return;
-      apply(result.import, result.diagnostic, result.reviewEligibility);
+      apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
       setConfirmPublish(false);
       setPublishFrozen(false);
       publishAttempt = null;
@@ -677,7 +683,7 @@ export function ImportPaper(props: {
         expectedRevision: record().revision,
       }));
       if (!alive) return;
-      apply(result.import, result.diagnostic, result.reviewEligibility);
+      apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
       if (result.job) {
         jobStates.set(result.job.jobId, result.job.status);
         setJobs(items => [result.job, ...items.filter(job => job.importId !== result.job.importId)]);
@@ -697,7 +703,7 @@ export function ImportPaper(props: {
     try {
       const result = await request("import_review_start", stable("model-review", {importId:record().importId,expectedRevision:record().revision}));
       if (!alive) return;
-      apply(result.import,result.diagnostic,result.reviewEligibility);
+      apply(result.import,result.diagnostic,result.reviewEligibility,result.teachingControls);
       if (result.job && ["queued","running"].includes(result.job.status)) {
         jobStates.set(result.job.jobId,result.job.status);
         setJobs(items => [result.job,...items.filter(job => job.importId !== result.job.importId)]);
@@ -707,6 +713,30 @@ export function ImportPaper(props: {
       setNotice(["queued", "running"].includes(result.job?.status) ? "正在后台重新检查，可返回组卷；完成后直接查看检查意见。" : "当前检查意见仍然有效，无需重复检查。");
     } catch (failure:any) { if (alive) setError(failure.message); }
     finally { if (alive) working(""); }
+  }
+  async function saveTeachingControl(action: "import_teaching_acknowledge" | "import_teaching_patch", payload: any, savedNotice: string) {
+    if (busy() || activeJob() || publishFrozen() || dirty() || !record() || published(current())) throw new Error("请先保存当前编辑并等待本题处理完成，再核对教学稿。");
+    setError("");
+    working(action === "import_teaching_acknowledge" ? "正在保存本条核对…" : "正在保存局部修订…");
+    try {
+      const result = await request(action, stable(action, payload));
+      if (!alive) return;
+      apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
+      setNotice(savedNotice);
+      await loadHistory();
+    } finally { if (alive) working(""); }
+  }
+  async function acknowledgeTeachingIssue(issue: TeachingIssueRow, kind: string, basis: string, checks: Record<string, boolean>) {
+    const question = current(), controls = teachingControls()[question?.questionId];
+    if (!controls) throw new Error("当前教学稿核对信息未取得，请重新打开记录。");
+    const payload = teachingAcknowledgementPayload(record(), question, controls, issue, kind, basis, checks);
+    await saveTeachingControl("import_teaching_acknowledge", payload, "本条意见已保留为已核对提醒；其它待处理问题保持原状。");
+  }
+  async function patchTeachingField(fieldPath: string, oldText: string, newText: string, basis: string) {
+    const question = current(), controls = teachingControls()[question?.questionId];
+    if (!controls) throw new Error("当前教学稿版本信息未取得，请重新打开记录。");
+    const payload = teachingPatchPayload(record(), question, controls, fieldPath, oldText, newText, basis);
+    await saveTeachingControl("import_teaching_patch", payload, "局部修订已保存并重新检查；原题、原卷参考和其它教学字段保持不变。");
   }
   function previewQuestion(question: any) {
     return {
@@ -889,19 +919,19 @@ export function ImportPaper(props: {
               <button class="secondary" disabled={Boolean(busy())} onClick={() => setOriginalPreview(true)}><FileText size={16} />{record().source?.extension === "docx" ? "查看转换 PDF" : "查看原卷 PDF"}</button>
             </Show>
             <Show
-              when={!activeJob() && ["failed", "cancelled", "processing"].includes(
+              when={!activeJob() && (canContinueTeaching() || ["failed", "cancelled", "processing"].includes(
                 record().status,
-              )}
+              ))}
             >
               <button
                 class="secondary"
-                disabled={Boolean(busy()) || !configured()}
+                disabled={Boolean(busy()) || dirty() || publishFrozen() || !configured()}
                 onClick={() => {
                   if (!prepareAttempt) prepareId = operationId();
                   parse(true);
                 }}
               >
-                重新解析
+                {canContinueTeaching() ? "继续处理教学稿" : "重新解析"}
               </button>
             </Show>
             </div>
@@ -1520,6 +1550,26 @@ export function ImportPaper(props: {
                               </Show>
                             </details>
                           </section>
+                        <Show when={importTeachingPresentation(question, teachingControls()[question.questionId])}>{draft =>
+                          <details class="import-reading-meta" open={!draft().ready}>
+                            <summary>AI 教学稿（非原卷解析）</summary>
+                            <p class="muted">新生成的备课参考，原卷答案与解析另行保留。规则通过不代表数学已核验。</p>
+                            <Show when={!draft().ready}>
+                              <p class="warning-text">教学稿待复核，尚未采用。</p>
+                              <ul><For each={draft().issues}>{issue => <li>{issue}</li>}</For></ul>
+                            </Show>
+                            <Show when={draft().answer}><p><strong>生成答案：</strong><RichText text={draft().answer} question={previewQuestion(question)} teacher /></p></Show>
+                            <Show when={draft().solution}><RichText text={draft().solution} question={previewQuestion(question)} teacher /></Show>
+                            <Show when={draft().basis}><p><strong>难度依据：</strong><RichText text={draft().basis} question={previewQuestion(question)} teacher /></p></Show>
+                            <Show when={draft().examFocus}><p><strong>考点：</strong><RichText text={draft().examFocus} question={previewQuestion(question)} teacher /></p></Show>
+                            <Show when={draft().studentRequirements.length}><p><strong>对学生的要求：</strong></p><ul><For each={draft().studentRequirements}>{item => <li><RichText text={item} question={previewQuestion(question)} teacher /></li>}</For></ul></Show>
+                            <TeachingReviewActions question={question} controls={teachingControls()[question.questionId]}
+                              disabled={Boolean(busy()) || Boolean(activeJob()) || published(question) || publishFrozen() || dirty()}
+                              disabledReason={dirty() ? "请先保存或撤销当前未保存编辑，再核对教学稿。" : undefined}
+                              renderText={text => <RichText text={text} question={previewQuestion(question)} teacher />}
+                              onAcknowledge={acknowledgeTeachingIssue} onPatch={patchTeachingField} />
+                          </details>
+                        }</Show>
                         <Show when={(question.legacyReferences?.answers?.length || question.legacyReferences?.solutions?.length)}>
                           <details class="import-legacy-references">
                             <summary>旧库参考（非原卷答案）</summary>
@@ -1752,7 +1802,7 @@ export function ImportPaper(props: {
                   const result = await request("import_get", {
                     importId: record().importId,
                   });
-                  apply(result.import, result.diagnostic, result.reviewEligibility);
+                  apply(result.import, result.diagnostic, result.reviewEligibility, result.teachingControls);
                   if (result.import.pendingPublication?.operationId) return;
                   setPublishFrozen(false);
                   publishAttempt = null;

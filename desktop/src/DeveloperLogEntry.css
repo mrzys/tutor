@@ -1,0 +1,22 @@
+.developer-log-entry {
+  position: fixed;
+  right: 24px;
+  bottom: 20px;
+  z-index: 120;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--font-small);
+}
+.developer-log-entry:hover { color: var(--accent); background: var(--surface-hover); }
+.developer-log-entry:focus-visible { outline: var(--focus-width) solid var(--focus-color); outline-offset: var(--focus-offset); }
+/* Keep the floating developer entry clear of the final primary action. */
+body:has(.developer-log-entry) .main-content { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+body:has(.developer-log-entry) .main-panel { scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 760px) { .developer-log-entry { right: 16px; bottom: 12px; } }

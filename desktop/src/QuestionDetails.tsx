@@ -30,8 +30,8 @@ export function QuestionDetails(props: { slot: any; draft: any; onClose: () => v
           <For each={information().paths}>{path => <section class="question-path">
             <h4>{path.label}</h4>
             <dl class="explanation-list">
-              <div><dt>{path.knowledgeLabel}</dt><dd>{path.knowledge.join("、") || "未单独标注"}</dd></div>
-              <Show when={path.premises.length}><div><dt>工具与前提</dt><dd>{path.premises.join("、")}</dd></div></Show>
+              <div><dt>{path.knowledgeLabel}</dt><dd><RichText text={path.knowledge.join("、") || "未单独标注"} /></dd></div>
+              <Show when={path.premises.length}><div><dt>工具与前提</dt><dd><RichText text={path.premises.join("、")} /></dd></div></Show>
               <Show when={path.basis}><div><dt>解法依据</dt><dd><RichText text={path.basis} /></dd></div></Show>
             </dl>
           </section>}</For>

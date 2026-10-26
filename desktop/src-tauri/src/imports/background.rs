@@ -61,7 +61,7 @@ fn descriptor(record: &Value) -> Value {
     } else {
         s(record, "recognitionStage")
     };
-    let message = match status.as_str() {
+    let mut message = match status.as_str() {
         "queued" => {
             if review {
                 "排队等待模型检查，可继续其它操作。"
@@ -74,8 +74,11 @@ fn descriptor(record: &Value) -> Value {
         "running" => match stage {
             "recognizing" => "正在识别原卷，可继续其它操作。",
             "structuring" => "正在整理题目与考查信息，可继续其它操作。",
+            "source_indexing" => "正在关联跨页题目与原卷答案，识别材料已保存。",
             "annotating" => "正在补充考查信息，可继续其它操作。",
             "reviewing" => "正在对照原卷逐题检查，可继续其它操作。",
+            "teaching_review" => "正在复核命中问题的教学稿，可继续其它操作。",
+            "teaching_generating" => "正在分批生成课堂教学稿，可继续其它操作。",
             _ => "正在准备原卷，可继续其它操作。",
         },
         "completed" => {
@@ -110,6 +113,18 @@ fn descriptor(record: &Value) -> Value {
         }
     }
     .to_owned();
+    if status == "running" && stage == "structuring" && (record["sourceStructuring"].is_object() || record["sourceBatchProgress"].is_object()) {
+        let batches = rows(&record["sourceStructuring"]["batches"]);
+        let total = record["sourceBatchProgress"]["total"].as_u64().map(|n| n as usize).unwrap_or(batches.len());
+        let completed = record["sourceBatchProgress"]["completed"].as_u64().map(|n| n as usize).unwrap_or_else(|| batches.iter().filter(|batch| batch["status"] == "succeeded").count());
+        message = if total == 0 {
+            "正在关联跨页题目与原卷答案，识别材料已保存。".into()
+        } else {
+            format!("正在分批整理原题，已保存 {completed}/{total} 批；已完成批次会在继续时保留。")
+        };
+        job["sourceBatchCount"] = json!(total);
+        job["completedSourceBatches"] = json!(completed);
+    }
     job["stage"] = json!(stage);
     job["message"] = json!(message);
     job["importId"] = record["importId"].clone();
@@ -566,7 +581,7 @@ pub(super) fn dispatch(
             recover(store)?;
             // Small projected records only: never deserialize OCR pages/assets
             // for global background notifications.
-            let mut statement=store.user.prepare("SELECT json_object('importId',id,'filename',json_extract(payload,'$.filename'),'status',json_extract(payload,'$.status'),'recognitionStage',json_extract(payload,'$.recognitionStage'),'updatedAt',json_extract(payload,'$.updatedAt'),'error',json_extract(payload,'$.error'),'backgroundJob',json_extract(payload,'$.backgroundJob')) FROM documents WHERE kind='imports' AND json_type(payload,'$.backgroundJob')='object' ORDER BY COALESCE(CAST(json_extract(payload,'$.backgroundJob.createdAt') AS TEXT),'') DESC,id DESC LIMIT 100")?;
+            let mut statement=store.user.prepare("SELECT json_object('importId',id,'filename',json_extract(payload,'$.filename'),'status',json_extract(payload,'$.status'),'recognitionStage',json_extract(payload,'$.recognitionStage'),'updatedAt',json_extract(payload,'$.updatedAt'),'error',json_extract(payload,'$.error'),'backgroundJob',json_extract(payload,'$.backgroundJob'),'sourceBatchProgress',CASE WHEN json_type(payload,'$.sourceStructuring')='object' THEN json_object('total',json_array_length(payload,'$.sourceStructuring.batches'),'completed',(SELECT count(*) FROM json_each(json_extract(payload,'$.sourceStructuring.batches')) WHERE json_extract(value,'$.status')='succeeded')) ELSE NULL END) FROM documents WHERE kind='imports' AND json_type(payload,'$.backgroundJob')='object' ORDER BY COALESCE(CAST(json_extract(payload,'$.backgroundJob.createdAt') AS TEXT),'') DESC,id DESC LIMIT 100")?;
             let records = statement
                 .query_map([], |row| row.get::<_, String>(0))?
                 .map(|row| serde_json::from_str::<Value>(&row?).map_err(AppError::from))
@@ -587,6 +602,27 @@ mod tests {
         sync::mpsc,
         time::{Duration, Instant},
     };
+
+    #[test]
+    fn global_jobs_project_source_progress_without_checkpoint_question_content() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut store = Store::open(dir.path(), &crate::bank::tests::seed()).unwrap();
+        let model = ModelClient::test_client(dir.path(), "http://127.0.0.1:1/v1");
+        let id = "simulated-source-progress";
+        let record = json!({"importId":id,"filename":"模拟分批.pdf","status":"processing","recognitionStage":"structuring","backgroundJob":{"status":"running","createdAt":"2026-10-24T01:00:00Z"},"sourceStructuring":{"batches":[{"status":"succeeded","questions":[{"private":"checkpoint_question_must_stay_local"}]},{"status":"failed"}]}});
+        store.put_document("imports", id, &record).unwrap();
+        let root = directory(&store).unwrap();
+        let owner = Arc::new(AtomicBool::new(false));
+        registry().0.lock().unwrap().jobs.insert((root.clone(), id.into()), owner.clone());
+        let result = dispatch(&mut store, &model, "import_jobs_list", &json!({}));
+        remove_owned_job(&mut registry().0.lock().unwrap(), &(root, id.into()), &owner);
+        let result = result.unwrap().unwrap();
+        assert_eq!(result["jobs"][0]["sourceBatchCount"], 2);
+        assert_eq!(result["jobs"][0]["completedSourceBatches"], 1);
+        assert!(s(&result["jobs"][0], "message").contains("1/2"));
+        assert!(!result.to_string().contains("checkpoint_question_must_stay_local"));
+        assert_eq!(store.document("imports", id).unwrap(), record);
+    }
 
     fn runtime() -> (tempfile::TempDir, Runtime) {
         let directory = tempfile::tempdir().unwrap();
@@ -612,6 +648,7 @@ mod tests {
         mpsc::Sender<()>,
         std::thread::JoinHandle<()>,
     ) {
+        let content=teaching::simulated_complete_response(content);
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         runtime.model.save(&json!({"baseUrl":format!("http://{}/v1",listener.local_addr().unwrap()),"model":"simulated-background","apiKey":"simulated-only"})).unwrap();
         let (seen_tx, seen_rx) = mpsc::channel();

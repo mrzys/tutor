@@ -9,7 +9,7 @@ use tauri_plugin_dialog::DialogExt;
 use tokio::sync::oneshot;
 
 // Native PDF layout version, independent of the legacy Python renderer.
-pub const PDF_LAYOUT_VERSION: &str = "desktop-a4-webview-v4";
+pub const PDF_LAYOUT_VERSION: &str = "desktop-a4-webview-v10";
 struct PdfJob {
     path: PathBuf,
     temporary: PathBuf,
@@ -149,8 +149,9 @@ pub async fn export(
             },
         );
     }
+    let trace = crate::assembly_log::trace_id(payload).map(|trace| format!("&assemblyTraceId={trace}")).unwrap_or_default();
     let url = WebviewUrl::App(
-        format!("index.html?exportTask={id}&paperId={paper_id}&kind={kind}").into(),
+        format!("index.html?exportTask={id}&paperId={paper_id}&kind={kind}{trace}").into(),
     );
     if WebviewWindowBuilder::new(app, &id, url)
         .title("智教 · PDF 排版")

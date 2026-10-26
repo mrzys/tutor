@@ -27,7 +27,17 @@ pub(super) fn for_record(store: &Store, record: &Value) -> Value {
     let code = s(&record["error"], "code");
     let mut summary = s(&record["error"], "message").to_owned();
     let mut location = String::new();
-    let attempts = rows(&record["modelAttempts"]);
+    let mut attempts = rows(&record["modelAttempts"]);
+    let checkpoint = &record["sourceStructuring"];
+    for mut attempt in rows(&checkpoint["planAttempts"]).into_iter().chain(
+        rows(&checkpoint["batches"]).into_iter().flat_map(|batch| rows(&batch["attempts"]))
+    ) {
+        attempt["at"] = attempt["startedAt"].clone();
+        attempt["providerResponseRelativePath"] = attempt["audit"]["responseRelativePath"].clone();
+        attempt["providerResponseSha256"] = attempt["audit"]["responseSha256"].clone();
+        attempts.push(attempt);
+    }
+    attempts.sort_by(|a, b| s(a, "at").cmp(s(b, "at")));
     let latest = attempts.last().cloned().unwrap_or(Value::Null);
     let calls = attempts
         .iter()
@@ -101,7 +111,9 @@ pub(super) fn for_record(store: &Store, record: &Value) -> Value {
         summary = "导入未完成，当前记录没有保存更详细的失败原因。".into();
     }
     let ocr_completed = record["ocrSource"].is_object();
-    let next_action = if stage == "模型整理" || stage == "题目内容核验" || stage == "题目整理与核验"
+    let next_action = if checkpoint.is_object() && ocr_completed {
+        "点击“重新解析”继续未完成批次；已保存的OCR及成功批次会保留，不重复调用。"
+    } else if stage == "模型整理" || stage == "题目内容核验" || stage == "题目整理与核验"
     {
         if ocr_completed {
             "点击“重新解析”，使用已保存的识别材料重新整理；若仍失败，请查看原卷核对对应页和题目。"
@@ -115,12 +127,26 @@ pub(super) fn for_record(store: &Store, record: &Value) -> Value {
     } else {
         "检查原文件是否完整且可读取；保留当前记录，处理提示问题后再重试。"
     };
-    json!({"stage":stage,"summary":summary,"location":location,"nextAction":next_action,"attempts":calls,"ocrCompleted":ocr_completed})
+    let batches = rows(&checkpoint["batches"]);
+    json!({"stage":stage,"summary":summary,"location":location,"nextAction":next_action,"attempts":calls,"ocrCompleted":ocr_completed,"sourceBatchCount":batches.len(),"completedSourceBatches":batches.iter().filter(|batch|batch["status"]=="succeeded").count()})
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn saved_batches_explain_continuation_without_reissuing_or_mutating() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = Store::open(dir.path(), &crate::bank::tests::seed()).unwrap();
+        let record = json!({"status":"failed","error":{"code":"model_response_timeout","message":"模拟超时"},"ocrSource":{},"modelAttempts":[{"at":"2026-10-24T01:00:00Z","operationId":"old"}],"sourceStructuring":{"batches":[{"status":"succeeded","attempts":[{"startedAt":"2026-10-24T02:00:00Z","operationId":"new"}]},{"status":"failed","attempts":[{"startedAt":"2026-10-24T02:01:00Z","operationId":"new"}]}]}});
+        let before = record.clone();
+        let result = for_record(&store, &record);
+        assert_eq!(result["sourceBatchCount"], 2);
+        assert_eq!(result["completedSourceBatches"], 1);
+        assert_eq!(result["attempts"], 2);
+        assert!(s(&result, "nextAction").contains("成功批次会保留"));
+        assert_eq!(record, before);
+    }
     #[test]
     fn historic_generic_failure_is_explained_from_verified_audit_without_mutation() {
         let dir = tempfile::tempdir().unwrap();

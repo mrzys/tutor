@@ -1,9 +1,116 @@
-import { For, Show, createSignal, onMount } from "solid-js";
-import { ArrowLeft, Check, Database, Plus, ScanText, SlidersHorizontal, Trash2, UserRound } from "lucide-solid";
+import { For, Show, createEffect, createSignal, createUniqueId, onCleanup, onMount } from "solid-js";
+import { ArrowLeft, Check, ChevronDown, Database, ExternalLink, Plus, ScanText, SlidersHorizontal, Trash2, UserRound } from "lucide-solid";
 import { request } from "./bridge";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import { BankAnnotation } from "./BankAnnotation";
-import { deepseekPreset, llmProviders, modelProfilePayload, modelProvider, newModelProfile } from "./model-presets";
+import { blankModelProfile, changeModelProvider, changeProfileModel, createModelCatalogGuard, llmProviders, modelProfileError, modelProfilePayload, modelProvider, modelReasoningOptions, modelTitle, parseModelCatalog, providerPreset, reasoningLabel, type ModelCatalog } from "./model-presets";
+import deepseekIcon from "@lobehub/icons-static-svg/icons/deepseek-color.svg";
+import bailianIcon from "@lobehub/icons-static-svg/icons/alibabacloud-color.svg";
+import xiaomiIcon from "@lobehub/icons-static-svg/icons/xiaomimimo.svg";
+import qwenIcon from "@lobehub/icons-static-svg/icons/qwen-color.svg";
+import "./Settings.css";
+
+const providerIcons: Record<string, string> = { deepseek: deepseekIcon, bailian: bailianIcon, xiaomi: xiaomiIcon, qianwenai: qwenIcon };
+const developerSources: Record<string, string> = { environment_off: "环境变量已强制关闭", environment_on: "环境变量已开启", command_line: "启动参数已开启" };
+function ProviderIcon(props: { provider: string | null }) {
+  return <Show when={props.provider && providerIcons[props.provider]}>{source => <img class="model-provider-icon" src={source()} alt="" aria-hidden="true" width="24" height="24" />}</Show>;
+}
+function ModelIcon(props: { provider: string | null }) {
+  return <Show when={props.provider === "bailian"} fallback={<ProviderIcon provider={props.provider} />}><img class="model-provider-icon" src={qwenIcon} alt="" aria-hidden="true" width="24" height="24" /></Show>;
+}
+
+type SettingChoice = { id: string; label: string; detail?: string; provider?: string; disabled?: boolean };
+function SettingsSelect(props: { label: string; choices: SettingChoice[]; value: string; ownerId: string; placeholder?: string; disabled?: boolean; onChange: (value: string) => void }) {
+  const id = createUniqueId();
+  const [open, setOpen] = createSignal(false);
+  const [focused, setFocused] = createSignal(0);
+  const [position, setPosition] = createSignal({ above: false, offset: 0, available: 256 });
+  let root!: HTMLDivElement;
+  let trigger!: HTMLButtonElement;
+  const choices = () => props.choices;
+  const selected = () => choices().find(model => model.id === props.value);
+  createEffect(() => { props.ownerId; setOpen(false); });
+  function reposition() {
+    if (!root || !trigger) return;
+    const bounds = trigger.getBoundingClientRect();
+    const container = root.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    let top = viewport?.offsetTop || 0;
+    let bottom = top + (viewport?.height || window.innerHeight);
+    for (let ancestor = root.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(ancestor).overflowY)) continue;
+      const clip = ancestor.getBoundingClientRect();
+      top = Math.max(top, clip.top + ancestor.clientTop);
+      bottom = Math.min(bottom, clip.top + ancestor.clientTop + ancestor.clientHeight);
+    }
+    const below = Math.max(0, bottom - bounds.bottom - 14);
+    const aboveSpace = Math.max(0, bounds.top - top - 14);
+    const above = below < Math.min(256, choices().length * 64 + 14) && aboveSpace > below;
+    setPosition({ above, offset: above ? container.bottom - bounds.top + 6 : bounds.bottom - container.top + 6, available: Math.min(256, above ? aboveSpace : below) });
+  }
+  const show = () => { if (props.disabled || !choices().length) return; const index = choices().findIndex(model => model.id === props.value && !model.disabled); setFocused(index >= 0 ? index : Math.max(0, choices().findIndex(model => !model.disabled))); reposition(); setOpen(true); };
+  const choose = (value: string) => { if (choices().find(choice => choice.id === value)?.disabled) return; props.onChange(value); setOpen(false); root.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus(); };
+  onMount(() => {
+    const outside = (event: PointerEvent) => { if (!root.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("pointerdown", outside);
+    onCleanup(() => document.removeEventListener("pointerdown", outside));
+  });
+  createEffect(() => {
+    if (!open()) return;
+    reposition();
+    const update = () => reposition();
+    window.addEventListener("resize", update);
+    document.addEventListener("scroll", update, true);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    onCleanup(() => {
+      window.removeEventListener("resize", update);
+      document.removeEventListener("scroll", update, true);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    });
+  });
+  createEffect(() => {
+    if (!open()) return;
+    const index = focused();
+    queueMicrotask(() => {
+      const option = root.querySelector<HTMLElement>(`[id="${id}-option-${index}"]`);
+      const list = option?.parentElement;
+      if (!option || !list) return;
+      const bounds = option.getBoundingClientRect();
+      const visible = list.getBoundingClientRect();
+      if (bounds.top < visible.top) list.scrollTop -= visible.top - bounds.top;
+      else if (bounds.bottom > visible.bottom) list.scrollTop += bounds.bottom - visible.bottom;
+    });
+  });
+  return <div class="settings-model-select" ref={root} onFocusOut={event => { if (!root.contains(event.relatedTarget as Node)) setOpen(false); }}>
+    <span id={`${id}-label`} class="settings-field-title">{props.label}</span>
+    <button ref={trigger} type="button" role="combobox" disabled={props.disabled} aria-labelledby={`${id}-label`} aria-describedby={`${id}-value`} aria-expanded={open()} aria-controls={`${id}-options`} aria-haspopup="listbox"
+      aria-activedescendant={open() ? `${id}-option-${focused()}` : undefined}
+      class="settings-select-trigger" onClick={() => open() ? setOpen(false) : show()} onKeyDown={event => {
+        if (event.key === "Escape" && open()) { event.preventDefault(); event.stopPropagation(); setOpen(false); }
+        else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+          event.preventDefault();
+          if (!open()) show();
+          else setFocused(index => {
+            const available = choices().map((choice, index) => ({ ...choice, index })).filter(choice => !choice.disabled).map(choice => choice.index);
+            if (!available.length) return index;
+            if (event.key === "Home") return available[0];
+            if (event.key === "End") return available.at(-1)!;
+            const current = Math.max(0, available.indexOf(index));
+            return available[(current + (event.key === "ArrowDown" ? 1 : -1) + available.length) % available.length];
+          });
+        } else if ((event.key === "Enter" || event.key === " ") && open()) { event.preventDefault(); choose(choices()[focused()].id); }
+      }}><span id={`${id}-value`} class="settings-select-value" classList={{ "is-placeholder": !selected() && !props.value }}><ProviderIcon provider={selected()?.provider || null} />{selected()?.label || props.value || props.placeholder || "请选择"}</span><ChevronDown size={16} classList={{ "is-open": open() }} /></button>
+    <Show when={open()}><div id={`${id}-options`} role="listbox" aria-label={props.label} class="settings-select-options"
+      style={{ top: position().above ? "auto" : `${position().offset}px`, bottom: position().above ? `${position().offset}px` : "auto", "max-height": `${position().available}px` }}>
+      <For each={choices()}>{(model, index) => <button type="button" role="option" tabIndex={-1} id={`${id}-option-${index()}`} aria-selected={props.value === model.id} disabled={model.disabled}
+        classList={{ "is-focused": focused() === index() }} onPointerMove={() => { if (!model.disabled) setFocused(index()); }} onMouseDown={event => event.preventDefault()} onClick={() => choose(model.id)}>
+        <span class="settings-select-option-content"><ProviderIcon provider={model.provider || null} /><span><strong>{model.label}</strong><Show when={model.detail}><small>{model.detail}</small></Show></span></span><Show when={props.value === model.id}><Check size={16} /></Show>
+      </button>}</For>
+    </div></Show>
+  </div>;
+}
 
 type ModelDraft = {
   id: string;
@@ -11,10 +118,13 @@ type ModelDraft = {
   provider: string | null;
   baseUrl: string;
   model: string;
+  reasoningEffort?: string;
   apiKey: string;
   hasApiKey: boolean;
   configured: boolean;
+  requiresApiKey?: boolean;
   warning?: string;
+  catalogToken?: string;
 };
 
 export function Settings(props: {
@@ -24,6 +134,7 @@ export function Settings(props: {
   showOcr?: boolean;
   onSaved: (profile: any) => void | Promise<void>;
   onBankChanged?: () => void | Promise<void>;
+  onDeveloperModeChange?: (enabled: boolean) => void;
   onClose: () => void;
 }) {
   type Section = "personal" | "models" | "ocr" | "data";
@@ -36,8 +147,18 @@ export function Settings(props: {
   const [savedMessage, setSavedMessage] = createSignal("");
   const [nickname, setNickname] = createSignal(props.profile?.nickname || "");
   const [profiles, setProfiles] = createSignal<ModelDraft[]>([]);
+  const [savedProfiles, setSavedProfiles] = createSignal<ModelDraft[]>([]);
+  const [savedActiveId, setSavedActiveId] = createSignal<string | null>(null);
   const [activeId, setActiveId] = createSignal<string | null>(null);
-  const [editingId, setEditingId] = createSignal<string | null>(null);
+  const [editorDraft, setEditorDraft] = createSignal<ModelDraft | null>(null);
+  const [editorBaseline, setEditorBaseline] = createSignal("");
+  const [editorError, setEditorError] = createSignal("");
+  const [modelCatalog, setModelCatalog] = createSignal<ModelCatalog | null>(null);
+  const [catalogLoading, setCatalogLoading] = createSignal(false);
+  const [catalogError, setCatalogError] = createSignal("");
+  const [modelSearch, setModelSearch] = createSignal("");
+  const catalogGuard = createModelCatalogGuard();
+  onCleanup(() => catalogGuard.invalidate());
   const [revision, setRevision] = createSignal(0);
   const [loaded, setLoaded] = createSignal(false);
   const [loading, setLoading] = createSignal(true);
@@ -56,23 +177,39 @@ export function Settings(props: {
   const [ocrWarning, setOcrWarning] = createSignal("");
   const [ocrError, setOcrError] = createSignal("");
   const [ocrConflict, setOcrConflict] = createSignal(false);
-  const editing = () => profiles().find((item) => item.id === editingId());
+  const [developerMode, setDeveloperMode] = createSignal<{ enabled: boolean; configurable: boolean; source: string } | null>(null);
+  const [developerLoading, setDeveloperLoading] = createSignal(false);
+  const [developerSaving, setDeveloperSaving] = createSignal(false);
+  const [developerError, setDeveloperError] = createSignal("");
+  const developerSource = () => developerSources[developerMode()?.source || ""] || "";
+  const editing = editorDraft;
   const deleting = () => profiles().find((item) => item.id === deletingId());
   const active = () => profiles().find((item) => item.id === activeId());
+  const savedActive = () => savedProfiles().find((item) => item.id === savedActiveId());
+  const isNew = (id: string) => !savedProfiles().some(item => item.id === id);
+  const profileDirty = (item: ModelDraft) => item.requiresApiKey === true || JSON.stringify(modelProfilePayload(item, false)) !== JSON.stringify(modelProfilePayload(savedProfiles().find(saved => saved.id === item.id) || item, false)) || isNew(item.id);
   const label = (item: ModelDraft) => item.name.trim() || "未命名配置";
+  const configurationDescription = (item: ModelDraft) => label(item) === modelTitle(item.provider, item.model) ? reasoningLabel(item) : `${label(item)} · ${reasoningLabel(item)}`;
+  const providerGroups = () => [
+    ...llmProviders.map(provider => ({ id: provider.id, label: provider.label, profiles: profiles().filter(item => item.provider === provider.id) })),
+    { id: "legacy", label: "原有服务商", profiles: profiles().filter(item => !providerPreset(item.provider)) },
+  ].filter(group => group.profiles.length);
 
   function modelState() {
     return JSON.stringify({ activeProfileId: activeId(), profiles: profiles().map((item) => ({
-      ...modelProfilePayload(item),
+      ...modelProfilePayload(item, false),
+      requiresApiKey: item.requiresApiKey === true,
     })) });
   }
   const personalDirty = () => nickname().trim() !== personalBaseline();
   const modelDirty = () => loaded() && modelState() !== modelBaseline();
+  const editorState = (item: ModelDraft) => JSON.stringify({ ...modelProfilePayload(item, false), requiresApiKey: item.requiresApiKey === true });
+  const editorDirty = () => editing() && editorState(editing()!) !== editorBaseline();
   const ocrState = () => JSON.stringify({ ...ocr(), baseUrl: ocr().baseUrl.trim(), model: ocr().model.trim() });
   const ocrDirty = () => ocrLoaded() && ocrState() !== ocrBaseline();
   function back() {
     if (busy()) return;
-    if (personalDirty() || modelDirty() || ocrDirty()) setDiscarding(true);
+    if (personalDirty() || modelDirty() || editorDirty() || ocrDirty()) setDiscarding(true);
     else props.onClose();
   }
   function navigate(next: Section) {
@@ -92,6 +229,7 @@ export function Settings(props: {
         provider: item.provider || modelProvider(item.baseUrl || ""),
         baseUrl: item.baseUrl || "",
         model: item.model || "",
+        ...(typeof item.reasoningEffort === "string" ? { reasoningEffort: item.reasoningEffort } : {}),
         apiKey: "",
         hasApiKey: Boolean(item.hasApiKey),
         configured: Boolean(item.configured),
@@ -102,12 +240,15 @@ export function Settings(props: {
       throw new Error("当前模型配置读取不完整，请重试后再保存。");
     }
     setProfiles(items);
+    setSavedProfiles(items.map(item => ({ ...item })));
+    setSavedActiveId(result.activeProfileId || null);
     setActiveId(result.activeProfileId || null);
     setRevision(result.revision);
     setModelWarning(typeof result.warning === "string" ? result.warning : "");
-    if (!items.some((item) => item.id === editingId())) {
-      setEditingId(result.activeProfileId || items[0]?.id || null);
-    }
+    clearCatalog();
+    setEditorDraft(null);
+    setEditorBaseline("");
+    setEditorError("");
     setLoaded(true);
     setModelBaseline(modelState());
   }
@@ -166,31 +307,146 @@ export function Settings(props: {
       if (failure.code === "revision_conflict") setOcrConflict(true);
     } finally { setBusy(false); }
   }
-  onMount(() => { void load(); void loadOcr(); });
+  function applyDeveloperMode(result: any) {
+    if (typeof result.enabled !== "boolean" || typeof result.configurable !== "boolean" || typeof result.source !== "string") throw new Error("开发者设置读取不完整，请重试。");
+    setDeveloperMode({ enabled: result.enabled, configurable: result.configurable, source: result.source });
+  }
+  async function loadDeveloperMode() {
+    if (developerLoading() || developerSaving()) return;
+    setDeveloperLoading(true);
+    setDeveloperError("");
+    try { applyDeveloperMode(await request("developer_log_capabilities")); }
+    catch (failure: any) { setDeveloperError(failure.message); }
+    finally { setDeveloperLoading(false); }
+  }
+  async function toggleDeveloperMode() {
+    if (!developerMode()?.configurable || developerSaving() || developerLoading()) return;
+    setDeveloperSaving(true);
+    setDeveloperError("");
+    try {
+      const result = await request("developer_mode_set", { enabled: !developerMode()!.enabled });
+      applyDeveloperMode(result);
+      props.onDeveloperModeChange?.(result.enabled);
+    } catch (failure: any) { setDeveloperError(failure.message); }
+    finally { setDeveloperSaving(false); }
+  }
+  onMount(() => { void load(); void loadOcr(); void loadDeveloperMode(); });
 
   function update(field: "name" | "baseUrl" | "model" | "apiKey", value: string) {
     setSavedMessage("");
-    setProfiles((items) => items.map((item) => {
-      if (item.id !== editingId()) return item;
-      const automaticName = !item.name || deepseekPreset.models.some(model => model.label === item.name);
-      return { ...item, [field]: value,
-        ...(field === "model" && automaticName ? { name: deepseekPreset.models.find(model => model.id === value)?.label || item.name } : {}) };
-    }));
+    setEditorError("");
+    if (field === "apiKey") clearCatalog();
+    setEditorDraft(item => {
+      if (!item) return item;
+      if (field === "model") {
+        if (!modelCatalog()?.models.some(model => model.id === value)) return item;
+        return changeProfileModel(item, value, modelCatalog()?.models);
+      }
+      return { ...item, [field]: value, ...(field === "apiKey" ? { catalogToken: undefined } : {}) };
+    });
+  }
+  function updateReasoning(value: string) {
+    setSavedMessage("");
+    setEditorError("");
+    setEditorDraft(item => item ? { ...item, reasoningEffort: value || undefined } : item);
+  }
+  function reasoningChoices(item: ModelDraft): SettingChoice[] {
+    const options = reasoningOptions(item).map(option => ({ id: option.id, label: option.label, detail: option.description, disabled: option.disabled }));
+    const original = savedProfiles().find(profile => profile.id === item.id);
+    if (original?.reasoningEffort === undefined && original?.provider === item.provider && original?.model === item.model) {
+      return [{ id: "", label: "保持原设置", detail: "沿用此配置现有的请求策略，选择后保存才生效。" }, ...options];
+    }
+    return options;
+  }
+  function changeProvider(providerId: string) {
+    if (editing()?.provider === providerId) return;
+    clearCatalog();
+    setSavedMessage("");
+    setEditorError("");
+    setEditorDraft(item => item ? { ...changeModelProvider(item, providerId), catalogToken: undefined } : item);
+  }
+  function clearCatalog() {
+    catalogGuard.invalidate();
+    setModelCatalog(null);
+    setCatalogLoading(false);
+    setCatalogError("");
+    setModelSearch("");
+  }
+  async function fetchModelCatalog() {
+    const item = editing();
+    if (!item?.provider || catalogLoading()) return;
+    if (!item.apiKey.trim() && (!item.hasApiKey || item.requiresApiKey)) { setCatalogError("请先填写此服务商的 API Key。"); return; }
+    const requestRevision = catalogGuard.begin();
+    setCatalogLoading(true);
+    setCatalogError("");
+    setModelCatalog(null);
+    setModelSearch("");
+    setEditorDraft(draft => draft ? { ...draft, catalogToken: undefined } : draft);
+    try {
+      const result = await request("model_list", { provider: item.provider, profileId: item.id, ...(item.apiKey ? { apiKey: item.apiKey } : {}) });
+      if (!catalogGuard.isCurrent(requestRevision)) return;
+      const catalog = parseModelCatalog(result, item.provider);
+      setModelCatalog(catalog);
+      setEditorDraft(draft => draft ? { ...draft, catalogToken: catalog.catalogToken } : draft);
+    } catch (failure: any) {
+      if (catalogGuard.isCurrent(requestRevision)) setCatalogError(failure.message || "获取模型列表失败，请重试。");
+    } finally { if (catalogGuard.isCurrent(requestRevision)) setCatalogLoading(false); }
+  }
+  function reasoningOptions(item: ModelDraft) {
+    return modelCatalog()?.models.find(model => model.id === item.model)?.reasoningOptions || modelReasoningOptions(item.provider, item.model);
+  }
+  function modelChoices(item: ModelDraft): SettingChoice[] {
+    const search = modelSearch().trim().toLocaleLowerCase();
+    const models = modelCatalog()?.models || [];
+    const choices: SettingChoice[] = models.filter(model => !search || `${model.id} ${model.label}`.toLocaleLowerCase().includes(search)).map(model => ({ id: model.id, label: model.label, detail: model.label === model.id ? undefined : model.id }));
+    return !item.model || choices.some(model => model.id === item.model) ? choices : [{ id: item.model, label: `当前配置：${item.model}`, disabled: true }, ...choices];
+  }
+  let editorReturnTarget: HTMLElement | null = null;
+  let editorReturnId: string | null = null;
+  function openEditor(item: ModelDraft) {
+    clearCatalog();
+    editorReturnTarget = document.activeElement as HTMLElement | null;
+    editorReturnId = item.id;
+    setSavedMessage("");
+    setEditorError("");
+    setEditorBaseline(editorState(item));
+    setEditorDraft({ ...item });
+    queueMicrotask(() => {
+      const panel = document.querySelector<HTMLElement>(".model-config-editor");
+      panel?.scrollIntoView({ block: "start", behavior: "instant" });
+      panel?.focus({ preventScroll: true });
+    });
   }
   function add() {
-    setSavedMessage("");
-    const id = crypto.randomUUID();
-    setProfiles((items) => [...items, newModelProfile(id)]);
-    setEditingId(id);
-    setDeletingId(null);
-    if (!activeId()) setActiveId(id);
+    openEditor(blankModelProfile(crypto.randomUUID()));
+  }
+  function closeEditor() {
+    clearCatalog();
+    setEditorDraft(null);
+    setEditorBaseline("");
+    setEditorError("");
+    queueMicrotask(() => {
+      const target = editorReturnTarget?.isConnected ? editorReturnTarget : document.querySelector<HTMLElement>(`[data-model-profile="${CSS.escape(editorReturnId || "")}"] .model-config-edit`) || document.querySelector<HTMLElement>(".model-config-add");
+      target?.focus();
+    });
+  }
+  function finishEditor() {
+    const item = editing();
+    if (!item) return;
+    const original = profiles().find(profile => profile.id === item.id);
+    const preservedModel = original?.provider === item.provider && original?.model === item.model;
+    const validation = modelProfileError(item, preservedModel, modelCatalog());
+    if (validation) { setEditorError(validation); return; }
+    const completed = { ...item, name: item.name.trim() || modelTitle(item.provider, item.model) };
+    setProfiles(items => original ? items.map(profile => profile.id === item.id ? completed : profile) : [...items, completed]);
+    closeEditor();
+    setSavedMessage("编辑已完成，点击保存后生效");
   }
   function remove() {
     setSavedMessage("");
     const id = deletingId();
     setProfiles((items) => items.filter((item) => item.id !== id));
     if (activeId() === id) setActiveId(null);
-    if (editingId() === id) setEditingId(profiles()[0]?.id || null);
     setDeletingId(null);
   }
   async function savePersonal() {
@@ -210,6 +466,11 @@ export function Settings(props: {
   }
   async function saveModels() {
     if (busy() || loading() || !loaded() || conflict()) return;
+    if (editing()) { finishEditor(); return; }
+    if (profiles().some(item => item.requiresApiKey && !item.apiKey)) {
+      setError("已更换服务商的配置需要重新输入密钥，再保存。");
+      return;
+    }
     setBusy(true);
     setError("");
     setSavedMessage("");
@@ -217,7 +478,7 @@ export function Settings(props: {
       const result = await request("model_save", {
         expectedRevision: revision(),
         activeProfileId: activeId(),
-        profiles: profiles().map(modelProfilePayload),
+        profiles: profiles().map(item => modelProfilePayload(item)),
       });
       applySettings(result);
       await props.onSaved(props.profile);
@@ -265,63 +526,78 @@ export function Settings(props: {
             <form onSubmit={(event) => { event.preventDefault(); void saveModels(); }}>
               <fieldset class="settings-fields" disabled={busy() || loading()}>
         <section class="settings-model">
-          <p class="settings-current muted">当前使用：{loaded() ? active() ? label(active()!) : "未启用" : "读取中…"}</p>
           <Show when={!loading()} fallback={<Busy label="读取设置…" />}>
             <Show when={loaded()} fallback={
               <button type="button" class="secondary" onClick={() => load()} disabled={loading()}>重新读取模型设置</button>
             }>
-              <p class="muted">选择 DeepSeek 模型并填写 API Key，保存后使用所选配置。</p>
-              <Show when={modelWarning()}><p class="warning-text" role="alert">{modelWarning()}</p></Show>
-              <div class="model-config-list" aria-label="模型配置列表">
-                <For each={profiles()}>{(item) => (
-                  <button type="button" class="model-config-row" classList={{ "is-editing": editingId() === item.id }}
-                    aria-pressed={editingId() === item.id} aria-label={`编辑配置 ${label(item)}`}
-                    onClick={() => { setEditingId(item.id); setDeletingId(null); }}>
-                    <span class="model-config-description"><strong>{label(item)}</strong><small>{item.model || "待填写模型"}</small></span>
-                    <Show when={activeId() === item.id}><span class="model-config-current"><Check size={14} />当前使用</span></Show>
-                  </button>
-                )}</For>
-                <button type="button" class="model-config-add" onClick={add} disabled={profiles().length >= 20} title={profiles().length >= 20 ? "最多保存 20 套配置" : undefined}><Plus size={16} />添加配置</button>
-              </div>
-              <label class="field-label">当前使用
-                <select aria-label="当前使用模型配置" value={activeId() || ""} onChange={(event) => { setActiveId(event.currentTarget.value || null); setSavedMessage(""); }}>
-                  <option value="" selected={!activeId()}>暂不使用模型</option>
-                  <For each={profiles()}>{(item) => <option value={item.id} selected={activeId() === item.id}>{label(item)}</option>}</For>
-                </select>
-              </label>
-              <Show when={!activeId()}><p class="muted">当前未启用模型，可使用规则预设；导入试卷前需选择完整配置。</p></Show>
-              <Show when={editing()}>{(item) => (
-                <section class="model-config-editor" aria-label="编辑模型配置">
-                  <label class="field-label">LLM 服务商
-                    <select aria-label="LLM 服务商" value={item().provider || "legacy"} disabled={item().provider !== "deepseek"}>
-                      <Show when={item().provider !== "deepseek"}><option value="legacy">原有服务商配置</option></Show>
-                      <For each={llmProviders}>{provider => <option value={provider.id}>{provider.label}</option>}</For>
-                    </select>
-                  </label>
-                  <Show when={item().provider === "deepseek"} fallback={<p class="muted">原配置已保留。当前新增配置支持 DeepSeek，可添加后切换使用。</p>}>
-                  <label class="field-label">模型
-                    <select aria-label="DeepSeek 模型" value={item().model} onChange={event => update("model", event.currentTarget.value)}>
-                      <Show when={!deepseekPreset.models.some(model => model.id === item().model)}><option value={item().model}>原配置：{item().model}</option></Show>
-                      <For each={deepseekPreset.models}>{model => <option value={model.id}>{model.label}</option>}</For>
-                    </select>
-                  </label>
-                  <label class="field-label">API Key
-                    <input type="password" autocomplete="new-password" value={item().apiKey} onInput={(event) => update("apiKey", event.currentTarget.value)} placeholder={item().hasApiKey ? "留空保留此配置的密钥" : "输入此配置的密钥"} spellcheck={false} />
-                  </label>
+              <Show when={!editing()} fallback={
+                <Show when={editing()}>{item => <section class="model-config-editor" role="region" aria-label={profiles().some(profile => profile.id === item().id) ? "编辑模型配置" : "新增模型配置"} tabIndex={-1}>
+                  <header class="model-editor-heading"><h2>{profiles().some(profile => profile.id === item().id) ? "编辑配置" : "新增配置"}</h2></header>
+                  <Show when={providerPreset(item().provider) || !item().baseUrl} fallback={
+                    <div class="model-provider-field"><span class="settings-field-title">服务商</span><span>原有服务商配置</span><small class="muted">{item().baseUrl}</small><span class="settings-field-title">模型</span><span>{item().model}</span></div>
+                  }>
+                    <SettingsSelect label="服务商" choices={llmProviders.map(provider => ({ id: provider.id, label: provider.label, provider: provider.id }))} value={item().provider || ""} placeholder="请选择服务商" ownerId={item().id} onChange={changeProvider} />
+                    <Show when={item().provider === "bailian"}><p class="muted settings-provider-help">北京地域 · 按量付费 API Key</p></Show>
+                    <Show when={item().provider === "xiaomi"}><p class="muted settings-provider-help">MiMo 按量付费 API Key</p></Show>
+                    <Show when={item().provider === "qianwenai"}><p class="muted settings-provider-help">千问 AI 平台 API Key</p></Show>
                   </Show>
+                  <label class="field-label">API Key
+                    <input type="password" autocomplete="new-password" value={item().apiKey} onInput={event => update("apiKey", event.currentTarget.value)} placeholder={item().hasApiKey ? "留空保留此配置的密钥" : "输入此配置的密钥"} spellcheck={false} />
+                  </label>
+                  <Show when={item().requiresApiKey && savedProfiles().some(profile => profile.id === item().id)}><p class="muted settings-provider-help">服务商已更换，请重新填写对应服务商的密钥。</p></Show>
+                  <Show when={providerPreset(item().provider)}>
+                    <div class="model-dependent-settings" aria-label="所选服务商的模型设置">
+                      <div class="model-catalog-actions"><button type="button" class="secondary" onClick={fetchModelCatalog} disabled={catalogLoading() || (!item().apiKey.trim() && (!item().hasApiKey || item().requiresApiKey))}>{catalogLoading() ? "正在获取模型列表…" : modelCatalog() ? "刷新模型列表" : "获取模型列表"}</button><Show when={modelCatalog()}>{catalog => <span class="muted" role="status">已获取 {catalog().models.length} 个模型</span>}</Show></div>
+                      <ErrorBanner message={catalogError()} />
+                      <Show when={modelCatalog()}><label class="field-label model-catalog-search">搜索模型<input type="search" value={modelSearch()} onInput={event => setModelSearch(event.currentTarget.value)} placeholder="输入模型名称或 ID" /></label></Show>
+                      <SettingsSelect label="模型" choices={modelChoices(item())} value={item().model} disabled={!modelCatalog() || catalogLoading()} placeholder="请先获取模型列表" ownerId={`${item().id}:${item().provider}:${modelCatalog()?.catalogToken || ""}`} onChange={value => update("model", value)} />
+                      <Show when={modelCatalog()} fallback={<p class="muted model-catalog-help">填写密钥后获取此服务商的模型列表；原配置的模型可以保留。</p>}><p class="muted model-catalog-help">列表由服务商返回，请选择支持对话的模型用于组卷。</p><Show when={!modelChoices(item()).some(model => !model.disabled)}><p class="muted" role="status">没有匹配的模型，请调整搜索内容。</p></Show></Show>
+                      <Show when={reasoningOptions(item()).length} fallback={<Show when={item().model}><p class="muted settings-reasoning-help" role="status">尚未确认此型号的思考设置能力，沿用原请求设置。</p></Show>}>
+                        <SettingsSelect label="思考设置" choices={reasoningChoices(item())} value={item().reasoningEffort || ""} ownerId={`${item().id}:${item().provider}:${item().model}`} onChange={updateReasoning} />
+                        <Show when={reasoningOptions(item()).find(option => option.id === item().reasoningEffort)?.description}>{description => <p class="muted settings-reasoning-help">{description()}</p>}</Show>
+                      </Show>
+                    </div>
+                  </Show>
+                  <details class="model-profile-name"><summary>配置名称{item().name ? `：${item().name}` : "（可选）"}</summary><label class="field-label">配置名称
+                    <input aria-label="配置名称" maxLength={80} value={item().name} onInput={event => update("name", event.currentTarget.value)} placeholder="默认使用模型名称" />
+                  </label></details>
                   <Show when={item().warning}><p class="warning-text" role="alert">{item().warning}</p></Show>
-                  <div class="model-config-editor-footer">
-                    <span class="muted">{item().hasApiKey ? "此配置已有密钥，本机加密保存。" : "密钥仅保存在本机，不会回显。"}</span>
-                    <button type="button" class="model-config-delete" onClick={() => setDeletingId(item().id)}><Trash2 size={16} />删除配置</button>
-                  </div>
-                </section>
-              )}</Show>
-              <Show when={deleting()}>{(item) => (
-                <div class="model-config-confirm" role="group" aria-label="确认删除模型配置">
-                  <p>删除“{label(item())}”？{activeId() === item().id ? "删除后暂不使用模型，可重新选择其它配置。" : ""}保存后生效。</p>
-                  <div><button type="button" class="secondary" onClick={() => setDeletingId(null)}>保留配置</button><button type="button" class="secondary" onClick={remove}>确认删除</button></div>
+                  <ErrorBanner message={editorError()} />
+                  <p class="muted model-editor-save-note">完成编辑后，点击保存生效。</p>
+                  <footer class="model-editor-actions"><button type="button" class="secondary" onClick={closeEditor}>取消</button><button type="submit" class="primary">完成编辑</button></footer>
+                </section>}</Show>
+              }>
+                <div class="model-active-summary" aria-label="已保存的当前模型">
+                  <div class="model-active-heading"><span><Show when={savedActive()}><Check size={16} /></Show>{savedActive() ? "正在使用" : "当前模型"}</span></div>
+                  <Show when={savedActive()} fallback={<strong>暂未启用模型</strong>}>{item => <>
+                    <span class="model-active-provider"><ProviderIcon provider={item().provider} />{providerPreset(item().provider)?.label || "原有服务商"}</span>
+                    <strong>{modelTitle(item().provider, item().model)}</strong>
+                    <span class="muted">{configurationDescription(item())}</span>
+                  </>}</Show>
                 </div>
-              )}</Show>
+                <div class="model-list-heading"><h2>我的配置</h2><button type="button" class="secondary model-config-add" onClick={add} disabled={profiles().length >= 20} title={profiles().length >= 20 ? "最多保存 20 套配置" : undefined}><Plus size={16} />新增配置</button></div>
+                <Show when={modelWarning()}><p class="warning-text" role="alert">{modelWarning()}</p></Show>
+                <div class="model-config-list" aria-label="模型配置列表">
+                  <Show when={profiles().length} fallback={<p class="muted model-list-empty">还没有模型配置</p>}>
+                    <For each={providerGroups()}>{group => <section class="model-provider-group" aria-labelledby={`model-provider-group-${group.id}`}>
+                      <h3 id={`model-provider-group-${group.id}`}><ProviderIcon provider={group.id} />{group.label}</h3>
+                      <div class="model-provider-children"><For each={group.profiles}>{item => <div class="model-config-row" data-model-profile={item.id} classList={{ "is-new": isNew(item.id) }}>
+                        <div class="model-config-info"><ModelIcon provider={item.provider} /><span class="model-config-description"><strong>{modelTitle(item.provider, item.model)}</strong><small>{configurationDescription(item)}</small></span>
+                          <Show when={isNew(item.id)}><span class="model-state-label">新增 · 未保存</span></Show>
+                          <Show when={!isNew(item.id) && profileDirty(item)}><span class="model-state-label">已修改 · 未保存</span></Show>
+                          <Show when={savedActiveId() === item.id && !profileDirty(item)}><span class="model-state-label"><Check size={14} />正在使用</span></Show>
+                        </div>
+                        <div class="model-row-actions">
+                          <button type="button" class="model-use-button" disabled={activeId() === item.id} aria-label={`使用配置 ${label(item)}`} onClick={() => { setActiveId(item.id); setSavedMessage(""); }}>{activeId() === item.id ? savedActiveId() === item.id ? "已选用" : "保存后使用" : "设为使用"}</button>
+                          <button type="button" class="model-config-edit" aria-label={`编辑配置 ${label(item)}`} onClick={() => openEditor(item)}>编辑</button>
+                          <button type="button" class="model-config-delete" aria-label={`删除配置 ${label(item)}`} onClick={() => setDeletingId(item.id)}><Trash2 size={16} />删除</button>
+                        </div>
+                      </div>}</For></div>
+                    </section>}</For>
+                  </Show>
+                </div>
+                <div class="model-selection-note"><span class="muted">{activeId() !== savedActiveId() ? active() ? `保存后将使用：${label(active()!)}` : "保存后将停用模型" : ""}</span><Show when={activeId()}><button type="button" onClick={() => { setActiveId(null); setSavedMessage(""); }}>暂不使用模型</button></Show></div>
+              </Show>
             </Show>
           </Show>
         </section>
@@ -331,7 +607,7 @@ export function Settings(props: {
         <p class="muted">修改仍保留在此处。重新读取将放弃本次模型配置修改。</p>
         <button type="button" class="secondary" disabled={busy() || loading()} onClick={() => load(true)}>重新读取（放弃本次修改）</button>
       </Show>
-              <footer class="settings-footer"><span role="status" class="muted">{savedMessage()}</span><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存"}</button></footer>
+              <Show when={!editing()}><footer class="settings-footer"><span role="status" class="muted">{savedMessage() || (modelDirty() ? "有未保存的修改" : "")}</span><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存"}</button></footer></Show>
             </form>
           </Show>
           <Show when={section() === "ocr"}>
@@ -353,6 +629,7 @@ export function Settings(props: {
                         onInput={(event) => updateOcr("apiKey", event.currentTarget.value)} />
                     </label>
                     <p class="muted">识别密钥与模型密钥独立，在本机加密保存，不会回显。</p>
+                    <a class="settings-key-link" href="https://aistudio.baidu.com/paddleocr" target="_blank" rel="noopener noreferrer">前往 PaddleOCR 获取 API Key<ExternalLink size={14} /></a>
                     <Show when={ocrHasKey()}>
                       <label class="check-row"><input type="checkbox" checked={ocr().clearApiKey} onChange={(event) => {
                         const checked = event.currentTarget.checked;
@@ -373,10 +650,21 @@ export function Settings(props: {
             </form>
           </Show>
           <Show when={section() === "data"}>
-            <section class="settings-data"><h2>存储位置</h2><p class="data-directory">{props.dataDirectory}</p><p class="muted">试卷、学生记录和题库保存在此设备。</p><h2>题库维护</h2><p class="muted">使用当前模型重新评估现有题目，支持暂停、恢复和失败重试。</p><button class="secondary" onClick={()=>setAnnotating(true)}>重新标注题库</button></section>
+            <section class="settings-data"><h2>存储位置</h2><p class="data-directory">{props.dataDirectory}</p><p class="muted">试卷、学生记录和题库保存在此设备。</p><h2>题库维护</h2><p class="muted">使用当前模型重新评估现有题目，支持暂停、恢复和失败重试。</p><button class="secondary" onClick={()=>setAnnotating(true)}>重新标注题库</button>
+              <section class="settings-developer" aria-labelledby="developer-mode-title">
+                <div class="settings-developer-heading"><h2 id="developer-mode-title">开发者模式</h2><button type="button" class="settings-developer-switch" role="switch" aria-label="开发者模式" aria-checked={developerMode()?.enabled === true} disabled={!developerMode()?.configurable || developerLoading() || developerSaving()} onClick={toggleDeveloperMode}><span aria-hidden="true" /><span>{developerSaving() ? "保存中…" : developerMode()?.enabled ? "已开启" : "已关闭"}</span></button></div>
+                <p class="muted">开启后，后续组卷请求的详细正文记录在本机，右下角可查看；关闭即停止正文采集。</p>
+                <Show when={developerSource()}><p class="muted settings-developer-source">{developerSource()}，请调整启动方式后更改。</p></Show>
+                <Show when={developerLoading()}><p class="muted" role="status">正在读取开发者设置…</p></Show>
+                <Show when={developerError()}><ErrorBanner message={developerError()} /><button type="button" class="secondary" disabled={developerLoading() || developerSaving()} onClick={loadDeveloperMode}>重试读取</button></Show>
+              </section>
+            </section>
           </Show>
         </div>
       </main>
+      <Show when={deleting()}>{item => <Modal title="删除模型配置" onClose={() => setDeletingId(null)} footer={<><button type="button" class="secondary" onClick={() => setDeletingId(null)}>保留配置</button><button type="button" class="primary" onClick={remove}>确认删除</button></>}>
+        <p>保存后将删除“{label(item())}”{activeId() === item().id ? "并停用此配置" : ""}。</p>
+      </Modal>}</Show>
       <Show when={discarding()}>
         <Modal title="有未保存的修改" onClose={() => setDiscarding(false)} footer={<><button type="button" class="secondary" onClick={() => setDiscarding(false)}>继续编辑</button><button type="button" class="primary" onClick={props.onClose}>放弃并返回</button></>}>
           <p>返回组卷将放弃尚未保存的设置。已保存的配置不受影响。</p>

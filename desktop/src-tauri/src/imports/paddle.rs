@@ -156,23 +156,12 @@ pub(super) fn context(document: &crate::ocr::OcrDocument) -> Value {
             o.remove("sourcePath");
         }
     }
-    let document_only_assets = document
-        .assets
-        .iter()
-        .filter(|asset| {
-            document
-                .pages
-                .iter()
-                .any(|page| page["page"] == asset["page"] && blank_score_grid(asset, page))
-        })
-        .map(|a| a["id"].clone())
-        .collect::<Vec<_>>();
-    let required_material_assets = document.assets.iter().filter(|asset| asset["role"]!="source_page" && !document_only_assets.contains(&asset["id"])).map(|asset| {
-        let block_ids = document.pages.iter().filter(|p|p["page"]==asset["page"]).flat_map(|p|rows(&p["blocks"])).filter(|b|b["assetId"]==asset["id"] || b["bbox"]==asset["bbox"]).filter_map(|b|b["id"].as_u64()).map(|id|format!("p{}-b{id}",asset["page"])).collect::<Vec<_>>();
+    let required_material_assets = document.assets.iter().filter(|asset| asset["role"]!="source_page").map(|asset| {
+        let block_ids = document.pages.iter().filter(|p|p["page"]==asset["page"]).flat_map(|p|rows(&p["blocks"])).filter(|b|b["assetId"]==asset["id"] || asset["bbox"].is_array() && b["bbox"]==asset["bbox"]).filter_map(|b|b["id"].as_u64()).map(|id|format!("p{}-b{id}",asset["page"])).collect::<Vec<_>>();
         json!({"assetId":asset["id"],"page":asset["page"],"role":asset["role"],"sourceBlockIds":block_ids})
     }).collect::<Vec<_>>();
-    json!({"provider":"paddleocr","pages":document.pages,"assets":assets,"sourceIssues":document.issues,"documentOnlyAssets":document_only_assets,"requiredMaterialAssets":required_material_assets,
-      "instructions":"逐页读取原始Markdown及版面块，不将null顺序当作0。页脚可能包含跨页题号，按题号及内容核对，不省略。题目保留sourceBlockIds（p{page}-b{原id}），只能引用实际块。所有图片引用保留asset:真实id；表格逐行逐格保留，原空格不得填值。不得将答案页图片放入学生题面。附录公式和表格是题目材料，不能省略。没有原文答案或完整解法时保持缺项。"})
+    json!({"provider":"paddleocr","pages":document.pages,"assets":assets,"sourceIssues":document.issues,"requiredMaterialAssets":required_material_assets,
+      "instructions":"逐页读取原始Markdown及版面块，不将null顺序当作0。页脚可能包含跨页题号，按题号及内容核对，不省略。题目保留sourceBlockIds（p{page}-b{原id}），只能引用实际块。所有图片引用保留asset:真实id；表格逐行逐格保留，原空格不得填值。逐项用materialRoles说明每个实际非source_page素材属于student题面、teacher答案解析或document非题目资料，给出真实sourceBlockIds和basis，不根据页标题把整页所有图统一归类。图片未实际可见且文字不足以证实归属时检查意见保留needs_review。原始整页不能作为学生题图。附录公式和表格是题目材料，不能省略。没有原文答案或完整解法时保持缺项。"})
 }
 
 fn text(q: &Value, teacher: bool) -> String {
@@ -201,11 +190,6 @@ fn references(value: &str) -> Vec<String> {
         .filter_map(|c| c.get(1).or_else(|| c.get(2)))
         .map(|m| m.as_str().trim().trim_start_matches("asset:").to_owned())
         .collect()
-}
-fn answer_page(page: &Value) -> bool {
-    regex::Regex::new(r"(?m)^\s*(?:#{1,6}\s*)?(?:参考答案|答案及解析|答案与解析|答案详解|试题解析)")
-        .unwrap()
-        .is_match(s(page, "text"))
 }
 fn table_shapes(q: &Value, teacher: bool) -> Value {
     json!(
@@ -245,6 +229,29 @@ pub(super) fn bind(
     source_sha: &str,
     manifest_sha: &str,
 ) -> AppResult<()> {
+    let known_blocks: HashSet<_> = document.pages.iter()
+        .filter(|p| rows(&question["pages"]).contains(&p["page"]))
+        .flat_map(|p| rows(&p["blocks"]).into_iter().map(move |b| format!("p{}-b{}",p["page"],b["id"])))
+        .collect();
+    let mut material_roles = vec![];
+    let mut role_ids = HashSet::new();
+    for assignment in rows(&proposed["materialRoles"]) {
+        let asset = document.assets.iter().find(|asset| asset["id"] == assignment["assetId"])
+            .ok_or_else(|| err("ocr_material_role", "素材归属使用了不存在的素材身份。"))?;
+        let blocks = ids(&assignment["sourceBlockIds"]);
+        let asset_blocks: HashSet<_> = document.pages.iter().filter(|page|page["page"]==asset["page"])
+            .flat_map(|page|rows(&page["blocks"]).into_iter().filter(|block|block["assetId"]==asset["id"] || asset["bbox"].is_array() && block["bbox"]==asset["bbox"]).map(move |block|format!("p{}-b{}",page["page"],block["id"]))).collect();
+        if asset["role"] == "source_page" || !rows(&question["pages"]).contains(&asset["page"])
+            || !role_ids.insert(s(&assignment,"assetId").to_owned())
+            || !matches!(s(&assignment,"role"), "student"|"teacher"|"document")
+            || s(&assignment,"basis").trim().is_empty() || s(&assignment,"basis").chars().count() > 2000
+            || blocks.is_empty() || blocks.len() != rows(&assignment["sourceBlockIds"]).len()
+            || blocks.iter().any(|block| !known_blocks.contains(block))
+            || !blocks.iter().any(|block| asset_blocks.contains(block)) {
+            return Err(err("ocr_material_role", "素材归属缺少有效的角色、原文块或依据，原件保留，请重新整理。"));
+        }
+        material_roles.push(json!({"assetId":assignment["assetId"],"role":assignment["role"],"sourceBlockIds":blocks,"basis":assignment["basis"],"requiresVisualReview":asset["role"]=="figure"}));
+    }
     let mut payloads = vec![];
     for (role, teacher) in [("student", false), ("teacher", true)] {
         let mut refs = vec![];
@@ -265,19 +272,8 @@ pub(super) fn bind(
                     "题目配图不属于所标注的来源页。",
                 ));
             }
-            let page = document.pages.iter().find(|p| p["page"] == asset["page"]);
-            if !teacher {
-                if page.is_some_and(answer_page) {
-                    return Err(err(
-                        "ocr_answer_asset",
-                        "答案页中的图片不能作为学生题面，需单独核对来源。",
-                    ));
-                }
-            } else if !page.is_some_and(answer_page) {
-                return Err(err(
-                    "ocr_teacher_asset_unverified",
-                    "原题页图表被归入答案或解析，未继续导入；请重试核对图表归属。",
-                ));
+            if !material_roles.iter().any(|assignment| assignment["assetId"] == id && assignment["role"] == role) {
+                return Err(err("ocr_material_role", "素材实际引用位置与模型给出的原文角色不一致，未继续导入。"));
             }
             let reference = json!({"assetId":id,"path":format!("ocr/{}.png",&hash_json(&json!(id))[..32]),"sha256":asset["sha256"],"mimeType":asset["mimeType"],"alt":if asset["role"]=="table"{"原卷表格"}else{"原卷配图"}});
             let mut payload = reference.clone();
@@ -288,21 +284,12 @@ pub(super) fn bind(
         }
         question[role] = json!({"assets":refs});
     }
-    let known_blocks: HashSet<_> = document
-        .pages
-        .iter()
-        .filter(|p| rows(&question["pages"]).contains(&p["page"]))
-        .flat_map(|p| {
-            rows(&p["blocks"])
-                .into_iter()
-                .map(move |b| format!("p{}-b{}", p["page"], b["id"]))
-        })
-        .collect();
     let blocks = ids(&proposed["sourceBlockIds"]);
     if blocks.iter().any(|id| !known_blocks.contains(id)) {
         return Err(err("ocr_invalid_source", "模型返回了不存在的原文块。"));
     }
     question["sourceBlockIds"] = json!(blocks);
+    question["sourceMaterialRoles"] = json!(material_roles);
     question["sourceIdentity"] = json!({"system":"paddleocr_upload","sourceSha256":source_sha,"manifestSha256":manifest_sha});
     question["sourceMaterialRequirements"] = json!({"studentTables":table_shapes(question,false),"teacherTables":table_shapes(question,true)});
     question["assetPayloads"] = json!(payloads);
@@ -322,6 +309,7 @@ pub(super) fn preserve(out: &mut Value, input: &Value) -> AppResult<()> {
         "assetPayloads",
         "sourceIssues",
         "sourceMaterialRequirements",
+        "sourceMaterialRoles",
     ] {
         if let Some(value) = input.get(key) {
             out[key] = value.clone();
@@ -338,77 +326,21 @@ fn number(label: &str) -> Option<String> {
         .and_then(|c| c[1].parse::<u32>().ok())
         .map(|n| n.to_string())
 }
-/// An empty score-registration grid is retained in the source audit, but is
-/// not a question table. Only this narrow, source-derived form is exempt;
-/// filled tables, formula tables and model claims never qualify.
-fn blank_score_grid(asset: &Value, page: &Value) -> bool {
-    if asset["role"] != "table" {
-        return false;
-    }
-    rows(&page["blocks"]).iter().any(|block| {
-        if block["type"] != "table" || block["bbox"] != asset["bbox"] {
-            return false;
-        }
-        let parsed = tables(s(block, "text"));
-        if parsed.len() != 1 {
-            return false;
-        }
-        let table = &parsed[0];
-        if table.len() != 3 || table[0].len() < 3 || table[1].is_empty() || table[2].len() < 3 {
-            return false;
-        }
-        let header = &table[0];
-        let numbers = &table[1];
-        let score = &table[2];
-        if header[0].2 != "题号"
-            || header.last().unwrap().2 != "总分"
-            || !matches!(score[0].2.as_str(), "分数" | "得分")
-            || score[1..].iter().any(|cell| !cell.2.is_empty())
-        {
-            return false;
-        }
-        // Fixed outer rowspan cells and consistent expanded widths prevent
-        // malformed or merely similarly labelled data tables being exempted.
-        let width = header.iter().map(|cell| cell.1).sum::<usize>();
-        let carried = header
-            .iter()
-            .filter(|cell| cell.0 == 2)
-            .map(|cell| cell.1)
-            .sum::<usize>();
-        if header[0].0 != 2
-            || header[0].1 != 1
-            || header.last().unwrap().0 != 2
-            || header.last().unwrap().1 != 1
-            || header
-                .iter()
-                .any(|cell| !matches!(cell.0, 1 | 2) || cell.1 == 0)
-            || numbers
-                .iter()
-                .chain(score.iter())
-                .any(|cell| cell.0 != 1 || cell.1 != 1)
-            || score.len() != width
-            || carried + numbers.len() != width
-        {
-            return false;
-        }
-        let section_label = |value: &str| {
-            !value.is_empty()
-                && value
-                    .chars()
-                    .all(|c| "一二三四五六七八九十ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ".contains(c))
-        };
-        header[1..header.len() - 1]
-            .iter()
-            .all(|cell| section_label(&cell.2))
-            && numbers.iter().all(|cell| number(&cell.2).is_some())
-    })
-}
-pub(super) fn coverage(
-    questions: &mut [Value],
-    document: &crate::ocr::OcrDocument,
-) -> AppResult<()> {
+fn expected_question_numbers(document: &crate::ocr::OcrDocument) -> HashSet<String> {
     let line_number = regex::Regex::new(
         r"(?m)^[ \t]*(?:#{1,6}[ \t]*)?(?:[（(][ \t]*([1-9]\d{0,2})[ \t]*[）)]|([1-9]\d{0,2})(?:\\?\.|、|．|[ \t]+[\p{Han}A-Za-z$（(]))",
+    )
+    .unwrap();
+    // OCR may join a section heading and its first scored question in Markdown,
+    // while retaining the question on a separate layout line. Only recognize
+    // the explicit scored title here, not arbitrary numbers in a long block.
+    // In particular, UTF-8 byte length is not a question-identity boundary.
+    let scored_title = regex::Regex::new(
+        r"^[ \t]*(?:#{1,6}[ \t]*)?(?:第[ \t]*)?([1-9]\d{0,2})(?:[ \t]*题)?[.、．]?[ \t]*[（(][ \t]*(?:本(?:小)?题[ \t]*)?(?:满分[ \t]*)?[1-9]\d*(?:\.\d+)?[ \t]*分[ \t]*[）)][ \t]*$",
+    )
+    .unwrap();
+    let merged_section = regex::Regex::new(
+        r"^[ \t]*(?:#{1,6}[ \t]*)?[一二三四五六七八九十]+[、．.](?:[^\r\n$=+*/\\]*?[^\d\r\n$=+*/\\])?([1-9]\d{0,2}[.、．][ \t]*[（(](?:本(?:小)?题|满分)[^\r\n]*)$",
     )
     .unwrap();
     let mut expected = HashSet::new();
@@ -422,21 +354,33 @@ pub(super) fn coverage(
                 expected.insert(n);
             }
         }
-        for block in rows(&page["blocks"]) {
-            let body = s(&block, "text");
-            if body.len() < 100 && body.contains('分') {
-                for c in line_number.captures_iter(body) {
-                    if let Some(n) = c
-                        .get(1)
-                        .or_else(|| c.get(2))
-                        .and_then(|m| number(m.as_str()))
-                    {
-                        expected.insert(n);
-                    }
+        for body in std::iter::once(s(page, "text")).chain(
+            rows(&page["blocks"])
+                .iter()
+                .map(|block| s(block, "text")),
+        ) {
+            for line in body.lines() {
+                let merged = merged_section.captures(line);
+                let title = merged
+                    .as_ref()
+                    .and_then(|c| c.get(1))
+                    .map_or(line, |m| m.as_str());
+                if let Some(n) = scored_title
+                    .captures(title)
+                    .and_then(|c| number(&c[1]))
+                {
+                    expected.insert(n);
                 }
             }
         }
     }
+    expected
+}
+pub(super) fn coverage(
+    questions: &mut [Value],
+    document: &crate::ocr::OcrDocument,
+) -> AppResult<()> {
+    let expected = expected_question_numbers(document);
     let mut actual = HashSet::new();
     for q in questions.iter() {
         if let Some(n) = number(s(q, "sourceLabel")) {
@@ -493,6 +437,93 @@ pub(super) fn coverage(
             ),
         ));
     }
+    material_coverage(questions, document)
+}
+
+/// Material-only validation is also performed before a source batch is saved.
+/// Its shared answer block may mention other question numbers, so number
+/// coverage remains a separate whole-document check.
+fn bounded_representation_image(value:&Value)->AppResult<image::RgbaImage> {
+    let encoded=s(value,"contentBase64");
+    if encoded.len()>8*1024*1024/3*4+4 {return Err(err("ocr_material_limit","素材压缩内容超过像素核验上限。"));}
+    let bytes=base64::engine::general_purpose::STANDARD.decode(encoded).map_err(|_|err("ocr_material_role","素材像素数据损坏。"))?;
+    if sha(&bytes)!=s(value,"sha256") {return Err(err("ocr_material_role","素材像素哈希不一致。"));}
+    let dimensions=image::ImageReader::new(std::io::Cursor::new(&bytes)).with_guessed_format()
+        .map_err(|_|err("ocr_material_role","素材图像格式无效。"))?.into_dimensions().map_err(|_|err("ocr_material_role","素材图像尺寸头无效。"))?;
+    if dimensions.0==0 || dimensions.1==0 || dimensions.0>8192 || dimensions.1>8192 || u64::from(dimensions.0)*u64::from(dimensions.1)>8*1024*1024 {
+        return Err(err("ocr_material_limit","素材实际像素超过核验上限，未解码分配大图。"));
+    }
+    let mut reader=image::ImageReader::new(std::io::Cursor::new(&bytes)).with_guessed_format().map_err(|_|err("ocr_material_role","素材图像格式无效。"))?;
+    let mut limits=image::Limits::default();limits.max_image_width=Some(8192);limits.max_image_height=Some(8192);limits.max_alloc=Some(32*1024*1024);reader.limits(limits);
+    Ok(reader.decode().map_err(|_|err("ocr_material_limit","素材图像解码超过安全上限或内容无效。"))?.to_rgba8())
+}
+
+fn exact_pixels_with_budget(small:&image::RgbaImage,big:&image::RgbaImage,mut bytes_left:usize,mut windows_left:usize)->Option<[u32;2]> {
+    if small.width()>big.width() || small.height()>big.height() {return None;}
+    let sw=small.width() as usize;let bw=big.width() as usize;
+    for y in 0..=big.height()-small.height() {
+        for x in 0..=big.width()-small.width() {
+            windows_left=windows_left.checked_sub(1)?;
+            bytes_left=bytes_left.checked_sub(sw*4)?;
+            let first=((y as usize)*bw+x as usize)*4;
+            if big.as_raw()[first..first+sw*4]!=small.as_raw()[..sw*4] {continue;}
+            let mut matched=true;
+            for row in 1..small.height() {
+                bytes_left=bytes_left.checked_sub(sw*4)?;
+                let start=(((y+row) as usize)*bw+x as usize)*4;let source=row as usize*sw*4;
+                if big.as_raw()[start..start+sw*4]!=small.as_raw()[source..source+sw*4] {matched=false;break;}
+            }
+            if matched {return Some([x,y]);}
+        }
+    }
+    None
+}
+
+pub(super) fn exact_representation_offset(asset: &Value, representative: &Value) -> AppResult<Option<[u32;2]>> {
+    if asset["id"]==representative["id"] || asset["page"]!=representative["page"] { return Ok(None); }
+    let small=bounded_representation_image(asset)?;let big=bounded_representation_image(representative)?;
+    // Exhausting a work budget is not equivalence: callers retain both images
+    // and create a concrete presentation-review issue.
+    Ok(exact_pixels_with_budget(&small,&big,32*1024*1024,1_000_000))
+}
+
+#[cfg(test)]
+mod representation_resource_tests {
+    use super::*;
+    #[test]
+    fn repeated_white_rows_exhaust_comparison_budget_without_claiming_containment() {
+        let big=image::RgbaImage::from_pixel(32,32,image::Rgba([255,255,255,255]));
+        let mut small=image::RgbaImage::from_pixel(8,8,image::Rgba([255,255,255,255]));small.put_pixel(7,7,image::Rgba([254,255,255,255]));
+        assert_eq!(exact_pixels_with_budget(&small,&big,64,1_000_000),None);
+        assert_eq!(exact_pixels_with_budget(&small,&big,usize::MAX,0),None);
+        let exact=image::imageops::crop_imm(&big,0,0,8,8).to_image();assert_eq!(exact_pixels_with_budget(&exact,&big,256,1),Some([0,0]));
+    }
+    #[test]
+    fn oversized_png_header_is_rejected_before_pixel_decode() {
+        let mut cursor=std::io::Cursor::new(Vec::new());image::DynamicImage::new_rgb8(2,2).write_to(&mut cursor,image::ImageFormat::Png).unwrap();let mut bytes=cursor.into_inner();
+        bytes[16..20].copy_from_slice(&8192u32.to_be_bytes());bytes[20..24].copy_from_slice(&8192u32.to_be_bytes());
+        let mut crc=0xffff_ffffu32;for byte in &bytes[12..29] {crc^=u32::from(*byte);for _ in 0..8 {crc=if crc&1!=0 {(crc>>1)^0xedb8_8320}else{crc>>1};}}
+        bytes[29..33].copy_from_slice(&(!crc).to_be_bytes());
+        let asset=json!({"contentBase64":base64::engine::general_purpose::STANDARD.encode(&bytes),"sha256":sha(&bytes)});
+        assert_eq!(bounded_representation_image(&asset).unwrap_err().code,"ocr_material_limit");
+    }
+}
+
+fn represented_material_valid(question:&Value, assignment:&Value, asset:&Value, document:&crate::ocr::OcrDocument) -> AppResult<bool> {
+    let role=s(assignment,"role");
+    if !matches!(role,"student"|"teacher") { return Ok(false); }
+    let id=s(assignment,"representedByAssetId");
+    let Some(representative)=document.assets.iter().find(|a|s(a,"id")==id) else {return Ok(false);};
+    let linked=rows(&question["sourceMaterialRoles"]).iter().any(|r|r["assetId"]==id && r["role"]==role && r.get("representedByAssetId").is_none());
+    let presented=rows(&question[role]["assets"]).iter().any(|a|a["assetId"]==id && a["sha256"]==representative["sha256"]);
+    if !linked || !presented {return Ok(false);}
+    Ok(exact_representation_offset(asset,representative)?.is_some_and(|offset|assignment["representationOffset"]==json!(offset)))
+}
+
+pub(super) fn material_coverage(
+    questions: &mut [Value],
+    document: &crate::ocr::OcrDocument,
+) -> AppResult<()> {
     // A real image or table cannot vanish because the model says it preserved it.
     for page in &document.pages {
         let page_questions = questions
@@ -501,20 +532,31 @@ pub(super) fn coverage(
             .filter(|(_, q)| rows(&q["pages"]).contains(&page["page"]))
             .map(|(i, _)| i)
             .collect::<Vec<_>>();
-        let all = page_questions
-            .iter()
-            .map(|i| text(&questions[*i], answer_page(page)))
-            .collect::<Vec<_>>()
-            .join("\n");
         for asset in document
             .assets
             .iter()
             .filter(|a| a["page"] == page["page"] && a["role"] != "source_page")
         {
-            if blank_score_grid(asset, page) {
+            let assignments: Vec<_> = page_questions.iter().flat_map(|i| rows(&questions[*i]["sourceMaterialRoles"]).into_iter().filter(move |assignment| assignment["assetId"] == asset["id"]).map(move |assignment| (*i,assignment))).collect();
+            let roles: HashSet<_> = assignments.iter().map(|(_,assignment)| s(assignment,"role")).collect();
+            if roles.len() != 1 {
+                return Err(err("ocr_material_role", "原卷素材缺少唯一的模型归属及原文依据，原件保留，请重新整理。"));
+            }
+            let role = *roles.iter().next().unwrap();
+            for (index,assignment) in &assignments {
+                if assignment.get("representedByAssetId").is_some() && !represented_material_valid(&questions[*index],assignment,asset,document)? {
+                    return Err(err("ocr_material_role","素材代表关系缺少同题同角色实际呈现或精确像素包含证据。"));
+                }
+            }
+            if role == "document" {
                 continue;
             }
-            let used = references(&all).iter().any(|r| asset["id"] == *r);
+            let all = assignments.iter().map(|(i,_)| text(&questions[*i],role=="teacher")).collect::<Vec<_>>().join("\n");
+            let used = references(&all).iter().any(|r| asset["id"] == *r)
+                // Paper and Bank normally render non-inline assets from these
+                // arrays. Supplemental assets need not rewrite original text.
+                || assignments.iter().any(|(index,_)| rows(&questions[*index][role]["assets"]).iter().any(|a|a["assetId"]==asset["id"] && a["sha256"]==asset["sha256"]))
+                || assignments.iter().any(|(_,a)|a.get("representedByAssetId").is_some());
             let is_table = asset["role"] == "table";
             let source_tables = rows(&page["blocks"])
                 .iter()
@@ -545,6 +587,9 @@ fn tables(body: &str) -> Vec<Vec<Vec<(usize, usize, String)>>> {
     let row = regex::Regex::new(r"(?is)<tr\b[^>]*>(.*?)</tr>").unwrap();
     let cell = regex::Regex::new(r"(?is)<t[dh]\b([^>]*)>(.*?)</t[dh]>").unwrap();
     let tags = regex::Regex::new(r"<[^>]+>").unwrap();
+    // Braces around one ASCII script token do not change a LaTeX index or
+    // exponent. Keep multi-token groups, values and the complete table grid.
+    let single_script = regex::Regex::new(r"([_^])\{([A-Za-z0-9])\}").unwrap();
     let span = |attrs: &str, name: &str| -> usize {
         regex::Regex::new(&format!(r#"(?i)\b{name}\s*=\s*["']?(\d+)"#))
             .unwrap()
@@ -559,13 +604,22 @@ fn tables(body: &str) -> Vec<Vec<Vec<(usize, usize, String)>>> {
                 .map(|r| {
                     cell.captures_iter(&r[1])
                         .map(|c| {
+                            let plain=tags.replace_all(&c[2], "");
+                            // Do this before stripping LaTeX backslashes so
+                            // escaped literal braces/underscores stay distinct.
+                            let notation=single_script.replace_all(&plain,|matched:&regex::Captures<'_>| {
+                                let start=matched.get(0).unwrap().start();
+                                let escaped=plain.as_bytes()[..start].iter().rev().take_while(|b|**b==b'\\').count()%2==1;
+                                if escaped {matched[0].to_owned()}else{format!("{}{}",&matched[1],&matched[2])}
+                            });
+                            let compact: String=notation
+                                .chars()
+                                .filter(|c| !c.is_whitespace() && *c != '$' && *c != '\\')
+                                .collect();
                             (
                                 span(&c[1], "rowspan"),
                                 span(&c[1], "colspan"),
-                                tags.replace_all(&c[2], "")
-                                    .chars()
-                                    .filter(|c| !c.is_whitespace() && *c != '$' && *c != '\\')
-                                    .collect(),
+                                compact,
                             )
                         })
                         .collect()
@@ -579,48 +633,20 @@ fn tables(body: &str) -> Vec<Vec<Vec<(usize, usize, String)>>> {
 mod tests {
     use super::*;
     #[test]
-    fn blank_score_registration_grid_stays_in_source_without_becoming_question_content() {
-        let original = "<table><tr><td rowspan='2'>题号</td><td rowspan='2'>二</td><td colspan='2'>三</td><td rowspan='2'>总分</td></tr><tr><td>15</td><td>16</td></tr><tr><td>分数</td><td></td><td></td><td></td><td></td></tr></table>";
-        let page = json!({"page":1,"text":"（1）模拟题目","blocks":[{"type":"table","bbox":[1,2,3,4],"text":original}]});
+    fn simulated_non_question_material_requires_model_assignment_not_table_header_rules() {
+        let original = "<table><tr><td>题号</td><td>总分</td></tr><tr><td>分数</td><td></td></tr></table>";
+        let page = json!({"page":1,"text":"（1）模拟题目","blocks":[{"id":1,"type":"table","bbox":[1,2,3,4],"text":original}]});
         let asset = json!({"id":"simulated-score-grid","page":1,"role":"table","bbox":[1,2,3,4]});
-        assert!(blank_score_grid(&asset, &page));
-        let doc = crate::ocr::OcrDocument {
-            pages: vec![page.clone()],
-            assets: vec![asset.clone()],
-            issues: vec![],
-        };
+        let doc = crate::ocr::OcrDocument { pages:vec![page], assets:vec![asset], issues:vec![] };
         let mut qs = vec![json!({"sourceLabel":"1","pages":[1],"stem":"模拟题目"})];
-        coverage(&mut qs, &doc).unwrap();
-        assert_eq!(
-            context(&doc)["documentOnlyAssets"],
-            json!(["simulated-score-grid"])
-        );
-        assert_eq!(context(&doc)["requiredMaterialAssets"], json!([]));
-        assert_eq!(context(&doc)["pages"][0]["blocks"][0]["text"], original);
-        for changed in [
-            original.replacen("<td></td>", "<td>0</td>", 1),
-            original.replace("总分", "概率"),
-            original.replace("题号", "组别"),
-            original.replace("分数", "频数"),
-            original.replace("colspan='2'", "colspan='3'"),
-            original.replace("rowspan='2'", "rowspan='1'"),
-        ] {
-            let mut page = page.clone();
-            page["blocks"][0]["text"] = json!(changed);
-            assert!(!blank_score_grid(&asset, &page));
-            let doc = crate::ocr::OcrDocument {
-                pages: vec![page],
-                assets: vec![asset.clone()],
-                issues: vec![],
-            };
-            assert_eq!(
-                coverage(&mut qs, &doc).unwrap_err().code,
-                "ocr_material_unassigned"
-            );
-        }
-        let mut figure = asset;
-        figure["role"] = json!("figure");
-        assert!(!blank_score_grid(&figure, &page));
+        assert_eq!(coverage(&mut qs,&doc).unwrap_err().code,"ocr_material_role");
+        qs[0]["sourceMaterialRoles"] = json!([{"assetId":"simulated-score-grid","role":"document","sourceBlockIds":["p1-b1"],"basis":"模拟模型对照原文认定为非题目登分栏"}]);
+        coverage(&mut qs,&doc).unwrap();
+        assert_eq!(rows(&context(&doc)["requiredMaterialAssets"]).len(),1);
+        assert!(context(&doc).get("documentOnlyAssets").is_none());
+        assert_eq!(context(&doc)["pages"][0]["blocks"][0]["text"],original);
+        qs[0]["sourceMaterialRoles"][0]["role"] = json!("student");
+        assert_eq!(coverage(&mut qs,&doc).unwrap_err().code,"ocr_material_unassigned");
     }
     #[test]
     fn parenthesized_exam_numbers_are_covered_alongside_instruction_numbers() {
@@ -685,6 +711,105 @@ mod tests {
         }
     }
     #[test]
+    fn merged_scored_question_title_preserves_unicode_layout_evidence() {
+        // Regression shape from the saved Guizhou OCR: 54 characters but 144
+        // UTF-8 bytes. The question number is real text, not inferred from a gap.
+        let heading = "四、解答题：共5个小题，满分77分。解答应写出相应的文字说明，证明过程或演算步骤。";
+        let block = format!("{heading}\n15.（本题满分13分）");
+        assert!(block.len() > 100);
+        assert!(block.chars().count() < 100);
+        for blocks in [
+            json!([{"id":7,"type":"paragraph_title","text":block}]),
+            json!([]),
+        ] {
+            let document = crate::ocr::OcrDocument {
+                pages: vec![json!({"page":2,"text":format!("### {heading} 15.（本题满分13分）"),"blocks":blocks})],
+                assets: vec![],
+                issues: vec![],
+            };
+            assert_eq!(expected_question_numbers(&document), HashSet::from(["15".to_owned()]));
+            let mut questions = vec![json!({"sourceLabel":"15","pages":[2]})];
+            coverage(&mut questions, &document).unwrap();
+            assert_eq!(coverage(&mut [], &document).unwrap_err().code, "ocr_question_coverage");
+        }
+    }
+    #[test]
+    fn long_layout_scored_title_is_not_cut_off_by_block_size() {
+        let block = format!("{}\n16.（本题满分15分）", "栏目说明文字。".repeat(40));
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":1,"text":"栏目说明","blocks":[{"id":1,"type":"paragraph_title","text":block}]})],
+            assets: vec![],
+            issues: vec![],
+        };
+        assert_eq!(expected_question_numbers(&document), HashSet::from(["16".to_owned()]));
+    }
+    #[test]
+    fn layout_fallback_does_not_promote_unknown_labels_or_math_numbers() {
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":1,"text":"1. 模拟真实题目","blocks":[
+                {"id":1,"text":"98. 计算2x+3，单位为分"},
+                {"id":2,"text":"97. (x+1分)=0"},
+                {"id":3,"text":"（96）小问得分为3分"},
+                {"id":4,"text":"$95.（本题满分13分）$"},
+                {"id":5,"text":"未知题号（本题满分13分）"},
+                {"id":6,"text":"2026.（本题满分13分）"},
+                {"id":7,"text":"证明中引用15.（本题满分13分）"},
+                {"id":8,"text":"四、编号年份2026.（本题满分13分）"},
+                {"id":9,"text":"四、算式1/94.（本题满分13分）"}
+            ]})],
+            assets: vec![],
+            issues: vec![],
+        };
+        assert_eq!(expected_question_numbers(&document), HashSet::from(["1".to_owned()]));
+        let mut questions = vec![json!({"sourceLabel":"1","pages":[1]})];
+        coverage(&mut questions, &document).unwrap();
+        questions.push(json!({"sourceLabel":"98","pages":[1]}));
+        assert_eq!(coverage(&mut questions, &document).unwrap_err().code, "ocr_question_coverage");
+    }
+    #[test]
+    fn coverage_does_not_fill_number_gaps_or_relax_duplicate_rejection() {
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":1,"text":"14. 模拟原题\n16. 模拟原题","blocks":[]})],
+            assets: vec![],
+            issues: vec![],
+        };
+        let questions = vec![json!({"sourceLabel":"14"}), json!({"sourceLabel":"16"})];
+        coverage(&mut questions.clone(), &document).unwrap();
+        for added in ["15", "16", "未知"] {
+            let mut changed = questions.clone();
+            changed.push(json!({"sourceLabel":added}));
+            assert_eq!(coverage(&mut changed, &document).unwrap_err().code, "ocr_question_coverage");
+        }
+        assert_eq!(coverage(&mut questions[..1].to_vec(), &document).unwrap_err().code, "ocr_question_coverage");
+    }
+    #[test]
+    #[ignore = "explicit offline saved OCR regression; paths must be supplied by maintenance"]
+    fn saved_ocr_question_number_coverage_regression() {
+        // Read-only number coverage check. Real assets are deliberately outside
+        // this test's scope; this neither admits questions nor bypasses their
+        // separate material validation in the application.
+        let manifest: Value = serde_json::from_slice(
+            &std::fs::read(std::env::var_os("TUTOR_COVERAGE_MANIFEST").expect("manifest path")).unwrap(),
+        ).unwrap();
+        let response: Value = serde_json::from_slice(
+            &std::fs::read(std::env::var_os("TUTOR_COVERAGE_RESPONSE").expect("response path")).unwrap(),
+        ).unwrap();
+        let proposed: Value = serde_json::from_str(s(&response["choices"][0]["message"], "content")).unwrap();
+        let mut questions = rows(&proposed["questions"]);
+        let document = crate::ocr::OcrDocument {
+            pages: rows(&manifest["pages"]), assets: vec![], issues: vec![],
+        };
+        assert_eq!(questions.len(), 19);
+        assert_eq!(expected_question_numbers(&document), (1..=19).map(|n| n.to_string()).collect());
+        coverage(&mut questions, &document).unwrap();
+        let mut missing = questions.clone();
+        missing.retain(|q| q["sourceLabel"] != "15");
+        assert_eq!(coverage(&mut missing, &document).unwrap_err().code, "ocr_question_coverage");
+        let duplicate = questions.iter().find(|q| q["sourceLabel"] == "15").unwrap().clone();
+        questions.push(duplicate);
+        assert_eq!(coverage(&mut questions, &document).unwrap_err().code, "ocr_question_coverage");
+    }
+    #[test]
     fn table_comparison_preserves_rows_blank_cells_and_merged_cells() {
         let original =
             "<table><tr><td rowspan=\"2\">A</td><td></td></tr><tr><td>3</td></tr></table>";
@@ -701,5 +826,44 @@ mod tests {
         ] {
             assert_ne!(tables(original), tables(changed));
         }
+    }
+    #[test]
+    fn simulated_ocr_table_text_difference_requires_preserved_image_and_reference_figures_must_be_used() {
+        let original = "<table><tr><td colspan='2'>模拟分类</td></tr><tr><td>中轴线南路遗存</td><td></td></tr></table>";
+        let corrected = original.replace("南路遗存", "南段道路遗存");
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":1,"text":"1. 模拟原图保真题","blocks":[{"id":1,"type":"table","bbox":[0,0,200,100],"text":original},{"id":2,"type":"figure","bbox":[0,120,200,220],"assetId":"simulated-reference"}]})],
+            assets: vec![json!({"id":"simulated-table","page":1,"role":"table","bbox":[0,0,200,100]}), json!({"id":"simulated-reference","page":1,"role":"figure","bbox":[0,120,200,220]})],
+            issues: vec![],
+        };
+        let mut question = json!({"sourceLabel":"1","pages":[1],"stem":corrected,"solution":"![解析原图](asset:simulated-reference)","sourceMaterialRoles":[{"assetId":"simulated-table","role":"student","sourceBlockIds":["p1-b1"],"basis":"模拟真实表格"},{"assetId":"simulated-reference","role":"teacher","sourceBlockIds":["p1-b2"],"basis":"模拟原卷解析图"}]});
+        assert_eq!(material_coverage(&mut [question.clone()], &document).unwrap_err().code, "ocr_material_unassigned");
+        question["stem"] = json!("![原卷表格](asset:simulated-table)");
+        material_coverage(&mut [question.clone()], &document).unwrap();
+        question["solution"] = json!("仅声明teacher角色，未实际使用图片。");
+        assert_eq!(material_coverage(&mut [question], &document).unwrap_err().code, "ocr_material_unassigned");
+    }
+    #[test]
+    fn simulated_table_single_token_script_braces_do_not_report_lost_material() {
+        // Regression for Huizhou page 4, question 17: all 22 cells survived;
+        // only x_{i} -> x_i changed notation. No math equivalence is inferred.
+        let original="<table><tr><td>序号i</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td></tr><tr><td>成绩 $ x_{i} $/分</td><td>38</td><td>41</td><td>44</td><td>51</td><td>54</td><td>56</td><td>58</td><td>64</td><td>74</td><td>80</td></tr></table>";
+        let equivalent=original.replace("$ x_{i} $","$x_i$");
+        let document=crate::ocr::OcrDocument{pages:vec![json!({"page":4,"text":"17. 模拟成绩表格题","blocks":[{"id":2,"type":"table","bbox":[83,431,1177,618],"text":original}]})],assets:vec![json!({"id":"simulated-p4-table","page":4,"role":"table","bbox":[83,431,1177,618]})],issues:vec![]};
+        let question=json!({"sourceLabel":"17","pages":[4],"stem":equivalent,"sourceMaterialRoles":[{"assetId":"simulated-p4-table","role":"student","sourceBlockIds":["p4-b2"],"basis":"模拟对照成绩表"}]});
+        coverage(&mut [question.clone()],&document).unwrap();
+        for changed in [
+            equivalent.replace("<td>38</td>","<td>83</td>"),
+            equivalent.replace("<td>38</td><td>41</td>","<td>41</td><td>38</td>"),
+            equivalent.replace("<td>38</td>","<td></td>"),
+            equivalent.replace("<td>38</td>",""),
+            equivalent.replace("<td>38</td>","<td colspan='2'>38</td>"),
+            equivalent.replace("x_i","x_j"),
+        ] {let mut changed_question=question.clone();changed_question["stem"]=json!(changed);assert_eq!(coverage(&mut [changed_question],&document).unwrap_err().code,"ocr_material_unassigned");}
+        assert_eq!(tables("<table><tr><td>$x^{2}+a_{1}$</td></tr></table>"),tables("<table><tr><td>$x^2+a_1$</td></tr></table>"));
+        assert_ne!(tables("<table><tr><td>$x_{12}$</td></tr></table>"),tables("<table><tr><td>$x_12$</td></tr></table>"));
+        assert_ne!(tables("<table><tr><td>$x^{10}$</td></tr></table>"),tables("<table><tr><td>$x^10$</td></tr></table>"));
+        assert_ne!(tables(r"<table><tr><td>$x_\{i\}$</td></tr></table>"),tables("<table><tr><td>$x_i$</td></tr></table>"));
+        assert_ne!(tables(r"<table><tr><td>$x\_{i}$</td></tr></table>"),tables("<table><tr><td>$x_i$</td></tr></table>"));
     }
 }

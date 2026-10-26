@@ -61,8 +61,8 @@ export function BankBasket(props: {
       <form class="bank-basket-actions" onSubmit={event => { event.preventDefault(); props.onCreate(); }}>
         <Show when={props.error}><p class="bank-create-error" role="alert">{props.error}</p></Show>
         <label><span>试卷标题</span><input aria-label="试卷标题" value={props.title} disabled={props.busy} maxlength={120} required placeholder="例如：集合单元练习" onInput={event => props.onTitle(event.currentTarget.value)} /></label>
-        <button class="primary" type="submit" disabled={!props.selections.length || props.busy || !props.title.trim()}>{props.busy ? <><LoaderCircle class="spin" size={16} />正在创建…</> : `生成试卷草稿${props.selections.length ? `（${props.selections.length}）` : ""}`}</button>
-        <Show when={props.selections.length}><div class="bank-basket-tools"><span class="bank-basket-order-note">按题型整理，同题型保留选题顺序</span><button type="button" class="bank-basket-clear" aria-label="清空组卷篮" disabled={props.busy} onClick={() => { if (window.confirm(`确定清空组卷篮中的 ${props.selections.length} 道题吗？`)) props.onClear(); }}>清空</button></div></Show>
+        <button class="primary" type="submit" title="按题型整理，同题型保留选题顺序" disabled={!props.selections.length || props.busy || !props.title.trim()}>{props.busy ? <><LoaderCircle class="spin" size={16} />正在创建…</> : `生成试卷草稿${props.selections.length ? `（${props.selections.length}）` : ""}`}</button>
+        <Show when={props.selections.length}><div class="bank-basket-tools"><button type="button" class="bank-basket-clear" aria-label="清空组卷篮" disabled={props.busy} onClick={() => { if (window.confirm(`确定清空组卷篮中的 ${props.selections.length} 道题吗？`)) props.onClear(); }}>清空</button></div></Show>
       </form>
       <div class="bank-basket-list">
         <For each={props.selections}>{(question, index) => <article class="bank-basket-item">
@@ -70,7 +70,7 @@ export function BankBasket(props: {
           <div class="bank-basket-question"><BankQuestionPreview question={question} manifest={props.manifest} basket /></div>
           <dl class="bank-basket-detail"><dt>章节</dt><dd>{location(question)}</dd><dt>考查</dt><dd><RichText text={bankMetadata(question).taskSummary} question={question} /></dd><dt>知识</dt><dd><RichText text={bankMetadata(question).requiredKnowledge.join("、") || bankMetadata(question).topics.join("、") || "未单独标注"} question={question} /></dd><dt>来源</dt><dd>{questionSourcePresentation(question, props.manifest).caption}</dd></dl>
         </article>}</For>
-        <Show when={!props.selections.length}><div class="bank-basket-empty"><ShoppingBasket size={22} /><strong>还没有选择题目</strong><span>从题目卡片加入组卷篮，题目会保留在这里。</span></div></Show>
+        <Show when={!props.selections.length}><div class="bank-basket-empty"><ShoppingBasket size={22} /><strong>还没有选择题目</strong></div></Show>
       </div>
     </aside>
   </>;

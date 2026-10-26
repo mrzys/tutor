@@ -24,12 +24,34 @@ mod duplicates;
 mod listing;
 mod review;
 mod source_compare;
+mod source_batches;
+mod source_recovery;
+#[cfg(debug_assertions)]
+mod layout_reading;
+#[cfg(debug_assertions)]
+mod source_trial;
+#[cfg(debug_assertions)]
+mod whole_transcription_trial;
+#[cfg(debug_assertions)]
+mod index_batch_trial;
+#[cfg(debug_assertions)]
+mod index_batch_runner;
+#[cfg(debug_assertions)]
+pub mod source_trial_adoption;
+#[cfg(debug_assertions)]
+mod source_display_adapter;
+#[cfg(debug_assertions)]
+mod index_batch_retry;
+pub(crate) mod teaching;
 pub fn recover_background_jobs(store: &Store) -> AppResult<()> {
     background::recover(store)
 }
 #[cfg(debug_assertions)]
 pub mod agent_review;
+#[cfg(debug_assertions)]
+pub mod teaching_adoption;
 mod docx_pdf;
+mod pdf_inspection;
 mod paddle;
 #[cfg(test)]
 mod paddle_tests;
@@ -174,10 +196,13 @@ struct Extracted {
 fn issue(code: &str, page: usize, message: &str) -> Value {
     json!({"code":code,"page":page,"message":message,"blocking":true})
 }
-fn visual_text(text: &str) -> bool {
-    regex::Regex::new(r"如图|下图|图中|见图|!\[[^\]]*\]\(|(?i:<img|<svg|<canvas|<iframe|<script)")
+fn image_reference(text: &str) -> bool {
+    regex::Regex::new(r"!\[[^\]]*\]\(|asset:|(?i:<img\b)")
         .unwrap()
         .is_match(text)
+}
+fn unsupported_embedded_markup(text: &str) -> bool {
+    regex::Regex::new(r"(?i:<svg\b|<canvas\b|<iframe\b|<script\b)").unwrap().is_match(text)
 }
 fn extract(extension: &str, bytes: &[u8], cancel: &AtomicBool) -> AppResult<Extracted> {
     cancelled(cancel)?;
@@ -214,7 +239,7 @@ fn extract(extension: &str, bytes: &[u8], cancel: &AtomicBool) -> AppResult<Extr
         if page.contains('\0') {
             return Err(err("invalid_encoding", "文本包含无效字符。"));
         }
-        if visual_text(page) {
+        if image_reference(page) || unsupported_embedded_markup(page) {
             extracted.issues.push(issue(
                 "source_visual_unresolved",
                 i + 1,
@@ -814,12 +839,9 @@ fn question_issues(q: &Value, source_issues: &Value) -> Vec<Value> {
     }
     let body = json!({"stem":q["stem"],"options":q["options"],"parts":q["parts"]}).to_string();
     let trusted_assets = structured::is_structured(q) || paddle::uses(q);
-    let visual_required = if trusted_assets {
-        regex::Regex::new(r"如图|下图|见图|图中阴影|图中所示|!\[[^\]]*\]\(|(?i:<img|<svg|<canvas|<iframe|<script)").unwrap().is_match(&body)
-    } else {
-        visual_text(&body)
-    };
+    let visual_required = image_reference(&body);
     if (visual_required && !(trusted_assets && structured::has_student_assets(q)))
+        || unsupported_embedded_markup(&body)
         || body.contains("SOURCE_VISUAL_UNRESOLVED")
         || body.contains("SOURCE_FORMULA_UNRESOLVED")
     {
@@ -830,6 +852,11 @@ fn question_issues(q: &Value, source_issues: &Value) -> Vec<Value> {
         ))
     }
     result
+}
+fn import_task_identity(task: &Value) -> Value {
+    // Imported tasks may contain large prior-paper provenance, review prose
+    // and alternatives. They are not source material for this new upload.
+    json!({"id":task["id"],"label":task["label"],"questionType":task["questionType"],"sectionIds":task["sectionIds"]})
 }
 fn trusted_catalog(store: &Store) -> AppResult<Value> {
     let config = store.bank.config()?;
@@ -849,7 +876,7 @@ fn trusted_catalog(store: &Store) -> AppResult<Value> {
         flatten(&catalog["knowledgePoints"], None, &mut knowledge);
     }
     Ok(
-        json!({"sections":config["chapters"],"tasks":config["tasks"],"premises":config["premises"],"knowledgePoints":knowledge}),
+        json!({"sections":config["chapters"],"tasks":rows(&config["tasks"]).iter().map(import_task_identity).collect::<Vec<_>>(),"premises":config["premises"],"knowledgePoints":knowledge}),
     )
 }
 /// Ordinary uploads keep each provider attempt beside the preserved original.
@@ -911,6 +938,18 @@ fn prepare_questions(
     page_count: usize,
     ocr_document: Option<&crate::ocr::OcrDocument>,
 ) -> AppResult<Vec<Value>> {
+    prepare_questions_batch(store, result, record, page_count, ocr_document, 0, true)
+}
+
+fn prepare_questions_batch(
+    store: &Store,
+    result: &Value,
+    record: &Value,
+    page_count: usize,
+    ocr_document: Option<&crate::ocr::OcrDocument>,
+    offset: usize,
+    complete_document: bool,
+) -> AppResult<Vec<Value>> {
     let questions = result["questions"]
         .as_array()
         .filter(|q| !q.is_empty() && q.len() <= MAX_QUESTIONS)
@@ -924,8 +963,15 @@ fn prepare_questions(
     let config = store.bank.config()?;
     let catalogue = trusted_catalog(store)?;
     for (i, q) in questions.iter().enumerate() {
-        let id = format!("{}-q{}", s(&record, "importId"), i + 1);
+        let id = format!("{}-q{}", s(&record, "importId"), offset + i + 1);
         let mut proposed = q.clone();
+        if record["sourceStructuring"]["pipelineVersion"] == "indexed_parallel_v2" || record["sourceStructuring"]["sourceOnlyCurrent"] == true {
+            // The source stage cannot accidentally publish generated pedagogy.
+            if let Some(object)=proposed.as_object_mut() {
+                for key in ["difficultyAssessment","sectionIds","knowledgeUids","knowledgeTopics","task","requiredSectionIds","requiredPremises","allowedSolution","primaryKnowledgeUids","solutionPaths","generatedTeaching"] { object.remove(key); }
+                object.insert("knowledgeSchemaVersion".into(),json!(2));
+            }
+        }
         for field in structured::IMMUTABLE_FIELDS {
             if let Some(object) = proposed.as_object_mut() {
                 object.remove(*field);
@@ -958,13 +1004,20 @@ fn prepare_questions(
         }
         q["reviewDecision"] = json!("pending");
         q["mappingConfirmed"] = json!(false);
-        q["knowledgeMappingSource"] = json!("model");
+        q["knowledgeMappingSource"] = json!(if record["sourceStructuring"]["pipelineVersion"]=="indexed_parallel_v2" || record["sourceStructuring"]["sourceOnlyCurrent"]==true {"unknown"}else{"model"});
         q["reviewBasis"] = json!("");
         q["reviewChecks"] = json!({"sourceMatched":false,"answerChecked":false,"solutionChecked":false,"formulaChecked":false});
         q["reviewIssues"] = json!(question_issues(&q, &record["sourceIssues"]));
+        teaching::initialize_pending(&mut q);
+        #[cfg(test)]
+        if proposed.get("generatedTeaching").is_some() {
+            // Older isolation fixtures supply a prepared classroom candidate;
+            // the new pending-generation route has separate transport tests.
+            teaching::initialize(&mut q, &proposed);
+        }
         pending.push(q)
     }
-    if let Some(document) = ocr_document {
+    if let Some(document) = ocr_document.filter(|_| complete_document) {
         paddle::coverage(&mut pending, document)?;
     }
     if pending.iter().map(structured::body_chars).sum::<usize>() > MAX_TEXT {
@@ -990,6 +1043,7 @@ fn stage_import(
     if !model.configured() {
         return Err(err("not_configured", "请先在设置中配置模型，再导入试卷。"));
     }
+    model.import_generator()?;
     let ocr = crate::ocr_settings::OcrSettings::open(&store.data_dir)?;
     if !s(payload, "filename").is_empty()
         && paddle::document_extension(
@@ -1029,8 +1083,12 @@ fn stage_import(
                 "请先在设置的“试卷识别”中配置 PaddleOCR，再重新识别。",
             ));
         }
+        let resume_teaching = !rows(&record["questions"]).is_empty()
+            && (record["status"] == "failed" || record["status"] == "pending_review"
+                || matches!(s(&record["backgroundJob"],"status"),"interrupted"|"cancelled"|"failed"))
+            && rows(&record["questions"]).iter().all(|q| q["teachingWorkflow"].is_object());
         if !rows(&record["publishedQuestionIds"]).is_empty()
-            || !rows(&record["questions"]).is_empty()
+            || (!rows(&record["questions"]).is_empty() && !resume_teaching)
         {
             return Err(err(
                 "review_exists",
@@ -1100,9 +1158,34 @@ fn process_import(
     op: &str,
     hash: &str,
     cancel: &AtomicBool,
-    mut record: Value,
+    record: Value,
     bytes: Vec<u8>,
 ) -> AppResult<Value> {
+    process_import_scoped(store, model, op, hash, cancel, record, bytes, ImportScope::Full)
+}
+
+#[derive(Clone, Copy)]
+enum ImportScope {
+    Full,
+    #[cfg(debug_assertions)]
+    OcrTrial,
+    #[cfg(debug_assertions)]
+    SourceTrial { layout: bool, plan_only: bool },
+}
+impl ImportScope {
+    fn source_only(self) -> bool { !matches!(self, Self::Full) }
+    fn plan_only(self) -> bool {
+        #[cfg(debug_assertions)]
+        if let Self::SourceTrial { plan_only, .. } = self { return plan_only; }
+        false
+    }
+}
+fn process_import_scoped(
+    store: &mut Store, model: &ModelClient, op: &str, hash: &str,
+    cancel: &AtomicBool, mut record: Value, bytes: Vec<u8>, scope: ImportScope,
+) -> AppResult<Value> {
+    let generator = model.import_generator()?;
+    let model = &generator;
     let ocr = crate::ocr_settings::OcrSettings::open(&store.data_dir)?;
     let mut saved = record.clone();
     record["status"] = json!("processing");
@@ -1110,6 +1193,13 @@ fn process_import(
     save_cas(store, Some(&saved), &record)?;
     saved = record.clone();
     let outcome = (|| -> AppResult<()> {
+        if !rows(&record["questions"]).is_empty() {
+            if scope.source_only() { return Err(err("source_trial_completed", "拆题试验不覆盖已有题目。")); }
+            let assets = if record["ocrSource"].is_object() { paddle::load_document(store,&record)?.assets } else {vec![]};
+            teaching::process(store,model,&mut record,&mut saved,&assets,cancel)?;
+            record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
+            return Ok(());
+        }
         let attempt_path = prepare_attempt_path(store, &record, op)?;
         let provider_path = attempt_path.with_extension("provider-response.json");
         if attempt_path.exists() || provider_path.exists() {
@@ -1141,12 +1231,12 @@ fn process_import(
                 } else {
                     bytes.clone()
                 };
-                let pdf = lopdf::Document::load_mem(&pdf_bytes).map_err(|_| {
-                    err(
-                        "invalid_pdf",
-                        "原文件无法读取为 PDF；DOCX 转换失败时请先导出 PDF。",
-                    )
-                })?;
+                let (pdf, inspection) = pdf_inspection::inspect(&pdf_bytes)?;
+                if let Some(inspection) = inspection {
+                    record["pdfInspection"] = inspection;
+                    save_cas(store, Some(&saved), &record)?;
+                    saved = record.clone();
+                }
                 if pdf.is_encrypted() {
                     return Err(err("encrypted_pdf", "请先移除 PDF 密码后再导入。"));
                 }
@@ -1221,6 +1311,42 @@ fn process_import(
         save_cas(store, Some(&saved), &record)?;
         saved = record.clone();
         cancelled(cancel)?;
+        #[cfg(debug_assertions)]
+        if matches!(scope,ImportScope::OcrTrial) {
+            if ocr_document.is_none() {return Err(err("source_trial_ocr_required","OCR隔离试验仅接受普通PDF或DOCX来源。"));}
+            record["ocrTrial"]=json!({"experiment":"index-batch-120s-v1","modelCalls":0,"sourceOnly":true});
+            record["status"]=json!("pending_review");
+            record["recognitionStage"]=json!("ocr_ready");
+            return Ok(());
+        }
+        // The formal OCR source stage owns its catalog GET and shared 120s
+        // budget. Cached source replay must not make a redundant preflight call.
+        if matches!(scope,ImportScope::Full) {
+            if let Some(document)=ocr_document.as_ref() {
+                let replayed=if record["sourceStructuring"].is_null() {
+                    source_recovery::replay(store,model,&mut record,&mut saved,document,op)?
+                } else {None};
+                let mut pending=if let Some(q)=replayed {q} else {
+                    source_batches::process_indexed(store,model,&mut record,&mut saved,document,cancel,op,hash)?
+                };
+                cancelled(cancel)?;duplicates::annotate(&store.bank,&mut pending)?;
+                record["questions"]=json!(pending);save_cas(store,Some(&saved),&record)?;saved=record.clone();
+                teaching::process(store,model,&mut record,&mut saved,&document.assets,cancel)?;
+                record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
+                return Ok(());
+            }
+        }
+        // Configuration is already checked before import. A temporary model
+        // catalogue outage must not discard or prevent preserving valid OCR.
+        // Still verify the actual provider catalogue before any new LLM work.
+        record["teachingGenerationModel"] = model.verify_import_role_catalog()?;
+        save_cas(store,Some(&saved),&record)?;saved=record.clone();
+        #[cfg(debug_assertions)]
+        if let ImportScope::SourceTrial { layout: true, .. } = scope {
+            let document = ocr_document.as_ref().ok_or_else(|| err("source_trial_ocr_required", "本次拆题试验只使用真实有效OCR材料。"))?;
+            record["sourceTrial"]["readingView"] = layout_reading::build(document)?;
+            save_cas(store,Some(&saved),&record)?;saved=record.clone();
+        }
         record["recognitionStage"] = json!("structuring");
         save_cas(store, Some(&saved), &record)?;
         saved = record.clone();
@@ -1235,12 +1361,51 @@ fn process_import(
             model.import_review_images_supported()
                 && ocr_document.as_ref().is_some_and(|d| !d.assets.is_empty())
         );
+        if let Some(document) = ocr_document.as_ref().filter(|document| {
+            matches!(scope, ImportScope::Full)
+                || record["sourceStructuring"].is_object()
+                || scope.source_only()
+                || document.pages.len() > 3
+                || extracted.pages.iter().map(|page| page.chars().count()).sum::<usize>() > 12_000
+        }) {
+            if scope.plan_only() {
+                let plan=source_batches::prepare_plan(store,model,&mut record,&mut saved,document,cancel,op,hash)?;
+                record["sourceTrial"]["planQuestionCount"]=json!(rows(&plan["questions"]).len());
+                record["sourceTrial"]["phase"]=json!("plan_only_complete");
+                record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
+                return Ok(());
+            }
+            let mut pending = if matches!(scope, ImportScope::Full) {
+                source_batches::process_indexed(store,model,&mut record,&mut saved,document,cancel,op,hash)?
+            } else {
+                source_batches::process(store,model,&mut record,&mut saved,document,cancel,op,hash)?
+            };
+            cancelled(cancel)?;
+            duplicates::annotate(&store.bank, &mut pending)?;
+            record["questions"] = json!(pending);
+            save_cas(store, Some(&saved), &record)?;
+            saved = record.clone();
+            if !scope.source_only() { teaching::process(store, model, &mut record, &mut saved, &document.assets, cancel)?; }
+            record["status"] = json!("pending_review");
+            record["recognitionStage"] = json!("complete");
+            return Ok(());
+        }
+        if let Some(document) = &ocr_document {
+            if let Some(mut pending) = source_recovery::replay(store,model,&mut record,&mut saved,document,op)? {
+                cancelled(cancel)?;
+                duplicates::annotate(&store.bank,&mut pending)?;
+                record["questions"]=json!(pending);
+                save_cas(store,Some(&saved),&record)?;saved=record.clone();
+                if !scope.source_only() { teaching::process(store,model,&mut record,&mut saved,&document.assets,cancel)?; }
+                record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
+                return Ok(());
+            }
+        }
         let mut pending = vec![];
-        // Invalid JSON or missing source material is not usable question data.
-        // Regenerate once from the same source without repairing text or
-        // attaching guessed assets, and without rerunning OCR. Each
-        // provider response remains separately auditable, including failures.
-        for attempt_number in 1..=2 {
+        // Unsafe source structure cannot supply stable question identities to
+        // a classroom reviewer. Preserve the failed response; only an explicit
+        // new import retry may request source transcription again.
+        for attempt_number in 1..=1 {
             cancelled(cancel)?;
             let call_path = if attempt_number == 1 {
                 attempt_path.clone()
@@ -1287,17 +1452,6 @@ fn process_import(
                 cancel,
                 Some(&response_path),
             );
-            let mut unreferenced_materials = vec![];
-            if let (Ok(raw), Some(document)) = (&proposed, ocr_document.as_ref()) {
-                // Feedback only: this is not an asset-to-question assignment.
-                // The independent source coverage checks still decide whether
-                // the next complete candidate can reach review.
-                let candidate = serde_json::to_string(&raw["questions"])?;
-                unreferenced_materials = rows(&paddle::context(document)["requiredMaterialAssets"])
-                    .into_iter()
-                    .filter(|asset| !candidate.contains(s(asset, "assetId")))
-                    .collect();
-            }
             let proposed = proposed.and_then(|result| {
                 let questions = prepare_questions(
                     store,
@@ -1329,6 +1483,15 @@ fn process_import(
                     json!(audit_relative_path(store, &response_path)?);
                 entry["providerResponseSha256"] = json!(sha(&std::fs::read(&response_path)?));
             }
+            let request_path=response_path.with_extension("request.json");
+            if request_path.exists() {
+                let audit_bytes=std::fs::read(&request_path)?;
+                let audit:Value=serde_json::from_slice(&audit_bytes)?;
+                entry["requestRelativePath"]=json!(audit_relative_path(store,&request_path)?);
+                entry["requestFileSha256"]=json!(sha(&audit_bytes));
+                entry["requestBodySha256"]=audit["bodySha256"].clone();
+                entry["promptSha256"]=audit["promptSha256"].clone();
+            }
             save_cas(store, Some(&saved), &record)?;
             saved = record.clone();
             match proposed {
@@ -1342,17 +1505,18 @@ fn process_import(
                         &response_path,
                         &mut value,
                     )?;
+                    #[cfg(test)]
+                    for q in value.iter_mut().filter(|q|q["teachingWorkflow"]["version"]=="import-teaching-workflow-v1") {
+                        let attempt=record["modelAttempts"].as_array().unwrap().last().unwrap();
+                        q["teachingWorkflow"]["model"]=model.public_settings()["model"].clone();
+                        q["teachingWorkflow"]["requestSha256"]=attempt["requestBodySha256"].clone();
+                        q["teachingWorkflow"]["promptSha256"]=attempt["promptSha256"].clone();
+                        q["teachingWorkflow"]["requestRelativePath"]=attempt["requestRelativePath"].clone();
+                        q["teachingWorkflow"]["requestFileSha256"]=attempt["requestFileSha256"].clone();
+                        q["teachingWorkflow"]["generationAudit"]=json!({"responseRelativePath":attempt["providerResponseRelativePath"],"responseSha256":attempt["providerResponseSha256"]});
+                    }
                     pending = value;
                     break;
-                }
-                Err(error) if attempt_number == 1 && error.code == "model_output_invalid_json" => {
-                    context["formatRetry"] = json!({"attempt":1,"previousError":error,"instruction":"上一次返回的JSON存在语法错误，结果未被采用。请重新读取同一原文，完整返回合法JSON；不补写或改正原题。严格闭合字符串、对象和数组，字符串结束后不得出现多余引号或悬空键，LaTeX反斜杠按JSON规则转义。"});
-                }
-                Err(error) if attempt_number == 1 && error.code == "ocr_material_unassigned" => {
-                    context["materialRetry"] = json!({"attempt":1,"previousError":error,"instruction":"上次整理遗漏原卷图表，结果未被采用。重新从同一原文完整整理全部题目，逐项检查sourceMaterialChecklist，每个非记分栏素材都必须保留到正确题目中，包含真实页码和sourceBlockIds。重点检查上一页页尾孤立图与下一页页首题干的跨页归属。不得猜测或替换图片，不得生成原文没有的内容。"});
-                    if !unreferenced_materials.is_empty() {
-                        context["sourceMaterialChecklist"] = json!(unreferenced_materials);
-                    }
                 }
                 Err(error) => return Err(error),
             }
@@ -1360,6 +1524,11 @@ fn process_import(
         cancelled(cancel)?;
         duplicates::annotate(&store.bank, &mut pending)?;
         record["questions"] = json!(pending);
+        // Persist the faithful transcription and initial draft before any
+        // conditional reviewer call. Cancellation never discards source work.
+        save_cas(store,Some(&saved),&record)?;saved=record.clone();
+        let source_assets=ocr_document.as_ref().map(|d|d.assets.as_slice()).unwrap_or(&[]);
+        if !scope.source_only() { teaching::process(store,model,&mut record,&mut saved,source_assets,cancel)?; }
         record["status"] = json!("pending_review");
         record["recognitionStage"] = json!("complete");
         Ok(())
@@ -1431,7 +1600,10 @@ fn check_approved(q: &Value, record: &Value) -> AppResult<()> {
             "请核对本题题干、选项与公式图表；仅当原卷有答案或解析时核对对应内容，并填写实际审核依据。",
         ));
     }
-    if !question_issues(q, &record["sourceIssues"]).is_empty() {
+    let source_issues=question_issues(q,&record["sourceIssues"]);
+    #[cfg(debug_assertions)]
+    let source_issues=source_trial_adoption::acknowledged_layout_issues(q,record,source_issues);
+    if !source_issues.is_empty() {
         return Err(err(
             "source_content_unresolved",
             "原文图片、公式或表格未完整保留，相关题目不能发布，请改用完整可编辑原文件重新导入。",
@@ -1502,8 +1674,8 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
             continue;
         }
         structured::check_review_immutable(old, q)?;
-        if paddle::uses(old) && old["sourceBlockIds"] != q["sourceBlockIds"] {
-            return Err(err("immutable_source", "来源版面块不能通过审核改写。"));
+        if paddle::uses(old) && (old["sourceBlockIds"] != q["sourceBlockIds"] || old["sourceMaterialRoles"] != q["sourceMaterialRoles"]) {
+            return Err(err("immutable_source", "来源版面块和已记录素材归属不能通过审核改写。"));
         }
         let mut next = if structured::is_structured(old) {
             normalize_question_inner(q, id, page_count, true)?
@@ -1542,6 +1714,7 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
                 next["modelReview"]["summary"] = json!("题目内容已修改，请重新检查或人工核对。");
             }
         }
+        teaching::preserve(old,&mut next);
         next["reviewIssues"] = json!(question_issues(&next, &record["sourceIssues"]));
         check_approved(&next, &record)?;
         normalized.push(next)
@@ -1561,6 +1734,27 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
     save_cas(store, Some(&saved), &record)?;
     Ok(json!({"reviewEligibility":review::eligibility(&record),"import":record}))
 }
+fn verify_recovered_source_for_publication(store: &Store, record: &Value) -> AppResult<()> {
+    #[cfg(debug_assertions)]
+    if record["sourceTrialAdoption"].is_object() {
+        return source_trial_adoption::verify(store,record);
+    }
+    if (!record["sourceStructuring"].is_null() && !record["sourceStructuring"].is_object())
+        || (!record["sourceMaterialSupplement"].is_null() && !record["sourceMaterialSupplement"].is_object())
+        || (!record["sourceResponseReplays"].is_null() && !record["sourceResponseReplays"].is_array()) {
+        return Err(err("source_checkpoint_changed", "来源恢复记录结构无效，未加入题库。"));
+    }
+    let has_recovery = record["sourceMaterialSupplement"].is_object()
+        || !rows(&record["sourceResponseReplays"]).is_empty()
+        || rows(&record["questions"]).iter().any(|q| rows(&q["sourceMaterialRoles"]).iter().any(|role|role.get("supplementInputSha256").is_some() || role.get("representedByAssetId").is_some()));
+    if has_recovery || record["sourceStructuring"].is_object() {
+        // The normal release publication path must replay the same evidence as
+        // the explicit maintenance path; a pending manifest cannot bypass it.
+        read_source(store, record)?;
+        source_batches::verify_completed_source(store, record)?;
+    }
+    Ok(())
+}
 fn build_manifest(store: &Store, record: &Value) -> AppResult<Value> {
     build_manifest_with_review(store, record, None)
 }
@@ -1570,6 +1764,7 @@ fn build_manifest_with_review(
     agent_review: Option<&Value>,
 ) -> AppResult<Value> {
     paddle::verify_audit(store, record)?;
+    verify_recovered_source_for_publication(store, record)?;
     // The agent authority is only constructed by the debug maintenance entry.
     // Ordinary UI publication continues to require the teacher gate unchanged.
     #[cfg(not(debug_assertions))]
@@ -1836,6 +2031,8 @@ fn build_manifest_with_review(
         let mut assessed = q.clone();
         assessed["difficultyAssessment"] = annotations::normalize_difficulty(q)?;
         annotations::apply_difficulty(&mut entry, &assessed);
+        teaching::verify_audit(store,q)?;
+        teaching::apply_to_entry(q,questions.last().unwrap(),&mut entry,s(record,"importId"))?;
         entries.push(entry);
     }
     if questions.is_empty() {
@@ -1883,6 +2080,7 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
     cancelled(cancel)?;
     read_source(store, &record)?;
     paddle::verify_audit(store, &record)?;
+    verify_recovered_source_for_publication(store, &record)?;
     // Pending publication retries must still retain their bound source audit;
     // a frozen manifest is not permission to ignore damaged review evidence.
     for question in rows(&record["questions"])
@@ -1906,6 +2104,19 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
         save_cas(store, Some(&saved), &record)?;
         manifest
     };
+    // Revalidate the actual classroom request/response even when reusing a
+    // frozen manifest after a failed bank write. Freezing is not permission to
+    // publish a draft whose supporting files disappeared or were modified.
+    for entry in rows(&manifest["configPatch"]["assemblyIndex"]["entries"]) {
+        if entry["teachingAnalysis"].is_object() {
+            let question=rows(&record["questions"]).into_iter().find(|q|q["questionId"]==entry["questionId"])
+                .ok_or_else(||err("teaching_audit_changed","冻结发布清单的教学稿题目身份已失效。"))?;
+            if !teaching::ready(&question) {
+                return Err(err("teaching_audit_changed","冻结发布清单的教学稿已失效，未加入题库。"));
+            }
+            teaching::verify_audit(store,&question)?;
+        }
+    }
     cancelled(cancel)?;
     let saved = record.clone();
     let receipt = match if manifest["userConfirmedPublication"] == true {
@@ -1949,6 +2160,25 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
         json!({"reviewEligibility":review::eligibility(&record),"import":record,"publication":receipt}),
     )
 }
+/// Explicit offline repair of exact failed teaching drafts; not a UI read or
+/// ordinary whole-paper import retry, and excluded from release builds.
+#[cfg(debug_assertions)]
+pub fn retry_failed_teaching(store: &Store, model: &ModelClient, payload: &Value, cancel: &AtomicBool) -> AppResult<Value> {
+    teaching::retry_failed(store, model, payload, cancel)
+}
+#[cfg(debug_assertions)]
+pub fn review_saved_teaching_candidates(model: &ModelClient, manifest: &Value, output: &Path, cancel: &AtomicBool) -> AppResult<Value> {
+    teaching::explicit_review_candidates(model, manifest, output, cancel)
+}
+#[cfg(debug_assertions)]
+pub fn acknowledge_teaching_by_agent(store:&Store,payload:&Value,cancel:&AtomicBool)->AppResult<Value>{
+    teaching::controls::agent_action(store,payload,false,cancel)
+}
+#[cfg(debug_assertions)]
+pub fn patch_teaching_by_agent(store:&Store,payload:&Value,cancel:&AtomicBool)->AppResult<Value>{
+    teaching::controls::agent_action(store,payload,true,cancel)
+}
+
 pub fn dispatch(
     store: &mut Store,
     model: &ModelClient,
@@ -1957,19 +2187,42 @@ pub fn dispatch(
     cancel: &AtomicBool,
 ) -> AppResult<Option<Value>> {
     if let Some(result) = background::dispatch(store, model, action, payload)? {
-        return Ok(Some(result));
+        return Ok(Some(with_teaching_controls(result)));
     }
     if let Some(result) = structured::dispatch(store, model, action, payload, cancel)? {
-        return Ok(Some(result));
+        return Ok(Some(with_teaching_controls(result)));
     }
     let result = match action {
         "imports_list" => listing::list(store, payload)?,
         "import_source_page" => source_compare::read(store, payload)?,
         "import_get" => {
             let record = store.document("imports", s(payload, "importId"))?;
-            json!({"diagnostic":diagnostics::for_record(store,&record),"reviewRequirements":review_requirement_map(&record),"reviewEligibility":review::eligibility(&record),"import":record})
+            json!({"diagnostic":diagnostics::for_record(store,&record),"reviewRequirements":review_requirement_map(&record),"reviewEligibility":review::eligibility(&record),"teachingControls":teaching::controls::projection(&record),"import":record})
         }
+        "import_teaching_quality_review" => teaching::record_quality_review(store,payload,cancel)?,
+        "import_teaching_controls" => {
+            let record=store.document("imports",s(payload,"importId"))?;
+            json!({"teachingControls":teaching::controls::projection(&record)})
+        }
+        "import_teaching_acknowledge" => teaching::controls::action(store,payload,false,cancel)?,
+        "import_teaching_patch" => teaching::controls::action(store,payload,true,cancel)?,
         "import_prepare" => prepare(store, model, payload, cancel)?,
+        #[cfg(debug_assertions)]
+        "import_source_trial_seed" => source_trial::seed(store,payload)?,
+        #[cfg(debug_assertions)]
+        "import_source_trial_baseline_plan" => source_trial::run(store,model,payload,cancel,false)?,
+        #[cfg(debug_assertions)]
+        "import_source_trial_layout" => source_trial::run(store,model,payload,cancel,true)?,
+        #[cfg(debug_assertions)]
+        "import_whole_transcription_trial" => source_trial::run_whole(store,model,payload,cancel)?,
+        #[cfg(debug_assertions)]
+        "import_ocr_trial_prepare" => source_trial::prepare_ocr(store,model,payload,cancel)?,
+        #[cfg(debug_assertions)]
+        "import_index_batch_trial" => index_batch_runner::run(store,model,payload,cancel)?,
+        #[cfg(debug_assertions)]
+        "import_index_batch_retry_failed" => index_batch_retry::run(store,model,payload,cancel)?,
+        #[cfg(debug_assertions)]
+        "import_ocr_existing_job_trial" => source_trial::resume_existing_ocr(store,model,payload,cancel)?,
         "import_review_save" => {
             cancelled(cancel)?;
             review_save(store, payload)?
@@ -1977,13 +2230,30 @@ pub fn dispatch(
         "import_publish" => publish(store, payload, cancel)?,
         _ => return Ok(None),
     };
-    Ok(Some(result))
+    Ok(Some(with_teaching_controls(result)))
+}
+fn with_teaching_controls(mut result:Value)->Value{
+    if result["import"].is_object(){result["teachingControls"]=teaching::controls::projection(&result["import"]);}
+    result
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::net::TcpListener;
+
+    #[test]
+    fn import_catalogue_excludes_old_paper_provenance_but_keeps_every_task_identity() {
+        let task = json!({"id":"simulated-task","label":"模拟任务","questionType":"fill_blank","sectionIds":["simulated-section"],"provenance":{"oldQuestion":"模拟旧卷正文不得混入新原卷"},"reviewBasis":"模拟旧解析","partialAlternatives":[{"answer":"模拟旧答案"}]});
+        let sent = import_task_identity(&task);
+        for key in ["id", "label", "questionType", "sectionIds"] {
+            assert_eq!(sent[key], task[key]);
+        }
+        assert!(sent.get("provenance").is_none());
+        assert!(sent.get("reviewBasis").is_none());
+        assert!(sent.get("partialAlternatives").is_none());
+        assert!(!sent.to_string().contains("旧"));
+    }
 
     fn store() -> (tempfile::TempDir, Store, ModelClient) {
         let dir = tempfile::tempdir().unwrap();
@@ -2163,6 +2433,7 @@ mod tests {
         model: &mut ModelClient,
         response: Value,
     ) -> std::thread::JoinHandle<String> {
+        let response=teaching::simulated_complete_response(response);
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         model.save(&json!({"baseUrl":format!("http://{address}/v1"),"model":"simulated-import-model","apiKey":"simulated-only-key"})).unwrap();
@@ -2616,6 +2887,18 @@ mod tests {
         );
     }
     #[test]
+    fn simulated_text_extraction_preserves_diagram_semantics_for_model_review_and_only_blocks_actual_unresolved_material() {
+        let cancel = AtomicBool::new(false);
+        for content in ["如图所示的判断应由模型结合原文进行", "下图只是材料中的普通表述", "图中阴影面积", "直方图中小矩形表示频率"] {
+            let extracted = extract("txt",content.as_bytes(),&cancel).unwrap();
+            assert!(extracted.issues.is_empty(),"{content}");
+            assert_eq!(extracted.pages,vec![content.to_owned()]);
+        }
+        for content in ["![原图](asset:missing)","<img src='external.png'>","<svg>原图</svg>","<script>untrusted</script>"] {
+            assert!(!extract("md",content.as_bytes(),&cancel).unwrap().issues.is_empty(),"{content}");
+        }
+    }
+    #[test]
     fn model_review_evidence_and_invalid_pages_cannot_approve_content() {
         let mut q = question();
         q["pages"] = json!([2]);
@@ -2633,7 +2916,7 @@ mod tests {
             "review_required"
         );
         let mut q = approve(&json!({"questions":[q]}), &[0])[0].clone();
-        q["stem"] = json!("模拟含图题，如图所示");
+        q["stem"] = json!("模拟含图题 ![原图](asset:missing)");
         assert_eq!(
             check_approved(&q, &json!({"sourceIssues":[]}))
                 .unwrap_err()
@@ -3008,7 +3291,7 @@ mod tests {
             "review_required"
         );
         record["questions"][0]["reviewChecks"]["sourceMatched"] = json!(true);
-        record["questions"][0]["stem"] = json!("模拟含图题，如图所示");
+        record["questions"][0]["stem"] = json!("模拟含图题 ![原图](asset:missing)");
         assert_eq!(
             build_manifest(&store, &record).unwrap_err().code,
             "source_content_unresolved"
@@ -3071,6 +3354,37 @@ mod tests {
             publish(&store, &payload, &AtomicBool::new(false)).unwrap()["import"],
             recovered["import"]
         );
+    }
+    #[test]
+    #[cfg(windows)]
+    fn simulated_frozen_publication_retry_rechecks_teaching_request_and_response_after_storage_failure() {
+        for request_file in [true,false] {
+            let (dir,mut store,mut model)=store();
+            let provider=server(&mut model,json!({"questions":[question()]}));
+            let cancel=AtomicBool::new(false);
+            let record=prepare(&mut store,&model,&upload("simulated-pending-teaching-audit","模拟冻结审计.txt",b"simulated original 1+1"),&cancel).unwrap()["import"].clone();
+            provider.join().unwrap();
+            let reviewed=review_save(&store,&json!({"importId":record["importId"],"operationId":"simulated-pending-teaching-approve","expectedRevision":record["revision"],"questions":approve(&record,&[0])})).unwrap()["import"].clone();
+            let payload=json!({"importId":reviewed["importId"],"operationId":"simulated-pending-teaching-publish","expectedRevision":reviewed["revision"],"acknowledgeReview":true});
+            store.bank.annotation_connection().execute_batch("CREATE TRIGGER simulated_storage_failure BEFORE INSERT ON bank_questions BEGIN SELECT RAISE(ABORT,'simulated storage failure'); END;").unwrap();
+            assert_eq!(publish(&store,&payload,&cancel).unwrap_err().code,"storage_error");
+            let pending=store.document("imports",s(&record,"importId")).unwrap();
+            assert!(pending["pendingPublication"]["manifest"]["configPatch"]["assemblyIndex"]["entries"][0]["teachingAnalysis"].is_object());
+            assert_eq!(store.bank.questions().unwrap().len(),1);
+            store.bank.annotation_connection().execute_batch("DROP TRIGGER simulated_storage_failure;").unwrap();
+            let workflow=&pending["questions"][0]["teachingWorkflow"];
+            let relative=if request_file{s(workflow,"requestRelativePath")}else{s(&workflow["generationAudit"],"responseRelativePath")};
+            let path=dir.path().join(relative);let original=std::fs::read(&path).unwrap();
+            if request_file {std::fs::write(&path,b"{}").unwrap();}else{std::fs::remove_file(&path).unwrap();}
+            assert_eq!(publish(&store,&payload,&cancel).unwrap_err().code,"teaching_audit_changed");
+            assert_eq!(store.bank.questions().unwrap().len(),1);
+            assert_eq!(store.document("imports",s(&record,"importId")).unwrap(),pending);
+            std::fs::write(&path,original).unwrap();
+            let recovered=publish(&store,&payload,&cancel).unwrap();
+            assert_eq!(recovered["publication"]["addedQuestions"],1);
+            assert_eq!(store.bank.questions().unwrap().len(),2);
+            assert_eq!(publish(&store,&payload,&cancel).unwrap()["publication"]["replayed"],false);
+        }
     }
     #[test]
     #[cfg(windows)]

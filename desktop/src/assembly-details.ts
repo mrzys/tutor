@@ -1,14 +1,11 @@
 import { typeIds } from "./bridge";
 import difficultyRubric from "../resources/difficulty-rubric.json";
+import { frozenAnnotation, frozenDifficultyBasis } from "./shared/assembly-evidence.mjs";
+export { frozenAnnotation } from "./shared/assembly-evidence.mjs";
 
 export const difficultyLevels = difficultyRubric.levels;
 const levels = Object.fromEntries(difficultyLevels.map(level => [level.id, level.label]));
 const basisText = (value: any): string => typeof value === "string" ? value : typeof value?.rationale === "string" ? value.rationale : "";
-
-export function frozenAnnotation(question: any, snapshot: any) {
-  return question && snapshot?.entries?.find((entry: any) =>
-    entry.questionId === question.questionId && entry.contentVersion === question.contentVersion && entry.teacherVersion === question.teacherVersion);
-}
 
 export function resizeQuestionCounts(requirements: any, amount: number) {
   if (!Number.isInteger(amount) || amount < 1 || amount > 60) return requirements;
@@ -54,7 +51,7 @@ export function slotDifficulty(slot: any, requirements: any, snapshot: any) {
     estimateLabel: estimate ? `题目：${estimate}` : question ? "题目未评估" : "尚未选题",
     targetLabel,
     estimate: estimate || (question ? "未评估" : "尚未选题"),
-    basis: basisText(annotation?.difficultyBasis),
+    basis: frozenDifficultyBasis(question, snapshot),
   };
 }
 

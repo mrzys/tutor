@@ -1,4 +1,14 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import type { PreparationProgressEvent } from "./preparation-progress";
+import type { BlueprintProgressEvent } from "./blueprint-progress";
+import type { SelectionProgressEvent } from "./selection-progress";
+import { createAssemblyTraceTracker } from "./shared/assembly-log-trace.mjs";
+
+const assemblyTrace = createAssemblyTraceTracker();
+export const currentAssemblyTraceId = assemblyTrace.current;
+export const beginAssemblyTrace = assemblyTrace.begin;
+export function subscribeAssemblyTrace(listener: (id: string) => void) { return assemblyTrace.subscribe(listener); }
 
 declare global {
   interface Window {
@@ -7,15 +17,34 @@ declare global {
       payload: unknown,
     ) => Promise<any>;
     __TUTOR_DESKTOP_CANCEL__?: () => Promise<void>;
+    __TUTOR_DESKTOP_LISTEN_PROGRESS__?: (handler: (event: PreparationProgressEvent) => void) => Promise<() => void>;
+    __TUTOR_DESKTOP_LISTEN_BLUEPRINT_PROGRESS__?: (handler: (event: BlueprintProgressEvent) => void) => Promise<() => void>;
+    __TUTOR_DESKTOP_LISTEN_SELECTION_PROGRESS__?: (handler: (event: SelectionProgressEvent) => void) => Promise<() => void>;
   }
+}
+
+export async function listenPreparationProgress(handler: (event: PreparationProgressEvent) => void) {
+  if (import.meta.env.DEV && window.__TUTOR_DESKTOP_LISTEN_PROGRESS__) return window.__TUTOR_DESKTOP_LISTEN_PROGRESS__(handler);
+  return listen<PreparationProgressEvent>("intake-progress", event => handler(event.payload));
+}
+
+export async function listenBlueprintProgress(handler: (event: BlueprintProgressEvent) => void) {
+  if (import.meta.env.DEV && window.__TUTOR_DESKTOP_LISTEN_BLUEPRINT_PROGRESS__) return window.__TUTOR_DESKTOP_LISTEN_BLUEPRINT_PROGRESS__(handler);
+  return listen<BlueprintProgressEvent>("blueprint-progress", event => handler(event.payload));
+}
+
+export async function listenSelectionProgress(handler: (event: SelectionProgressEvent) => void) {
+  if (import.meta.env.DEV && window.__TUTOR_DESKTOP_LISTEN_SELECTION_PROGRESS__) return window.__TUTOR_DESKTOP_LISTEN_SELECTION_PROGRESS__(handler);
+  return listen<SelectionProgressEvent>("selection-progress", event => handler(event.payload));
 }
 
 export async function request(action: string, payload: any = {}): Promise<any> {
   try {
+    const tracedPayload = assemblyTrace.payload(action, payload);
     const result =
       import.meta.env.DEV && window.__TUTOR_DESKTOP_REQUEST__
-        ? await window.__TUTOR_DESKTOP_REQUEST__(action, payload)
-        : await invoke("desktop_request", { action, payload });
+        ? await window.__TUTOR_DESKTOP_REQUEST__(action, tracedPayload)
+        : await invoke("desktop_request", { action, payload: tracedPayload });
     if (result?.ok === false) throw result.error;
     return result;
   } catch (error: any) {

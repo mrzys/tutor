@@ -1,10 +1,21 @@
-import { For, Show, createEffect, onCleanup, onMount, JSX } from "solid-js";
+import { For, Show, createEffect, createSignal, onCleanup, onMount, JSX } from "solid-js";
 import { Portal } from "solid-js/web";
 import { X, AlertCircle, LoaderCircle, UserRound } from "lucide-solid";
 import { studentsOf, displayTypeIds, typeLabels } from "./bridge";
 import "./Overlays.css";
 
 const overlayStack: HTMLElement[] = [];
+const developerToolRegions = new Set<HTMLElement>();
+const [developerToolOpen, setDeveloperToolOpen] = createSignal(false);
+const focusableSelector = 'button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],summary,[contenteditable="true"],[tabindex]:not([tabindex="-1"])';
+const developerToolEntry = () => document.querySelector<HTMLElement>('[aria-controls="developer-assembly-log-window"]');
+const isDeveloperToolRegion = (target: EventTarget | null) => target instanceof Node && [...developerToolRegions].some(region => region.contains(target));
+const isDeveloperToolEntry = (target: EventTarget | null) => target instanceof Node && Boolean(developerToolEntry()?.contains(target));
+export function registerDeveloperToolRegion(element: HTMLElement) {
+  developerToolRegions.add(element);
+  setDeveloperToolOpen(true);
+  return () => { developerToolRegions.delete(element); setDeveloperToolOpen(developerToolRegions.size > 0); };
+}
 let previousBodyOverflow = "";
 let overlayRevision = 0;
 
@@ -17,29 +28,35 @@ function useOverlay(
   const focusable = () =>
     Array.from(
       element().querySelectorAll<HTMLElement>(
-        'button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],summary,[contenteditable="true"],[tabindex]:not([tabindex="-1"])',
+        focusableSelector,
       ),
     ).filter((node) => node.tabIndex >= 0 && node.getClientRects().length > 0 && !node.closest('[inert],[aria-hidden="true"]'));
   const active = () => overlayStack.at(-1) === element();
   const focusInside = () => (focusable()[0] || element()).focus();
   const key = (event: KeyboardEvent) => {
     if (!active() || event.defaultPrevented) return;
+    if (isDeveloperToolRegion(event.target)) return;
+    const toolEntry = developerToolEntry();
+    if (isDeveloperToolEntry(event.target) && event.key !== "Tab") return;
     if (event.key === "Escape" && !event.isComposing) {
       event.preventDefault();
       event.stopPropagation();
       if (!busy()) close();
     }
     if (event.key !== "Tab") return;
-    const nodes = focusable();
+    const toolNodes = [...developerToolRegions].flatMap(region => Array.from(region.querySelectorAll<HTMLElement>(focusableSelector)))
+      .filter(node => node.tabIndex >= 0 && node.getClientRects().length > 0 && !node.closest('[inert],[aria-hidden="true"]'));
+    const nodes = [...focusable(), ...(toolEntry ? [toolEntry] : []), ...toolNodes];
     const index = nodes.indexOf(document.activeElement as HTMLElement);
-    if (!nodes.length || index < 0 || (event.shiftKey ? index === 0 : index === nodes.length - 1)) {
+    if (toolEntry || !nodes.length || index < 0 || (event.shiftKey ? index === 0 : index === nodes.length - 1)) {
       event.preventDefault();
-      (event.shiftKey ? nodes.at(-1) : nodes[0])?.focus();
+      const next = index < 0 ? (event.shiftKey ? nodes.length - 1 : 0) : (index + (event.shiftKey ? -1 : 1) + nodes.length) % nodes.length;
+      nodes[next]?.focus();
       if (!nodes.length) element().focus();
     }
   };
   const containFocus = (event: FocusEvent) => {
-    if (active() && !element().contains(event.target as Node)) focusInside();
+    if (active() && !element().contains(event.target as Node) && !isDeveloperToolRegion(event.target) && !isDeveloperToolEntry(event.target)) focusInside();
   };
   onMount(() => {
     previousFocus = document.activeElement as HTMLElement | null;
@@ -231,7 +248,7 @@ export function Modal(props: {
         ref={dialog}
         class={`modal ${props.wide ? "modal-wide" : ""} ${props.expanded ? "modal-expanded" : ""} ${(props.stable ?? props.wide) ? "modal-stable" : ""}`}
         role="dialog"
-        aria-modal="true"
+        aria-modal={developerToolOpen() ? "false" : "true"}
         aria-label={props.title}
         tabIndex={-1}
       >
@@ -264,7 +281,7 @@ export function Drawer(props: {
           if (event.target === event.currentTarget && !props.busy) props.onClose();
         }}
       >
-        <div ref={dialog} class="drawer" role="dialog" aria-modal="true" aria-label={props.title} tabIndex={-1}>
+        <div ref={dialog} class="drawer" role="dialog" aria-modal={developerToolOpen() ? "false" : "true"} aria-label={props.title} tabIndex={-1}>
           <header class="drawer-header">
             <h2>{props.title}</h2>
             <CloseButton onClick={props.onClose} disabled={props.busy} />

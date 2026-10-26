@@ -7,7 +7,7 @@ use crate::{
 use base64::Engine;
 use image::{DynamicImage, ImageFormat, ImageReader};
 use reqwest::{Client, Url};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{
     collections::{HashMap, HashSet},
@@ -17,6 +17,11 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::{Duration, Instant},
 };
+
+#[cfg(debug_assertions)]
+mod recovery_trial;
+#[cfg(debug_assertions)]
+pub(crate) use recovery_trial::recover_existing;
 
 const MAX_PAGES: usize = 50;
 const MAX_JSON: usize = 24 * 1024 * 1024;
@@ -140,7 +145,7 @@ fn official_paddle_origin(url: &Url) -> bool {
 fn known_paddle_fake_ip(url: &Url, endpoint: &Url, ip: IpAddr) -> bool {
     // Some local TUN resolvers assign RFC 2544 addresses to public domains.
     // This is not a general exemption for benchmarking/private networks: only
-    // exact official hosts observed in the three original-file trials qualify,
+    // exact official hosts observed in original-file and student-answer trials qualify,
     // and only while using the official service. Keep the DNS pin and TLS SNI
     // hostname unchanged so an intercepted endpoint still needs a valid cert.
     if !official_paddle_origin(endpoint)
@@ -156,9 +161,16 @@ fn known_paddle_fake_ip(url: &Url, endpoint: &Url, ip: IpAddr) -> bool {
         Some(
             "paddleocr.aistudio-app.com"
                 | "pplines-online.bj.bcebos.com"
+                | "paddleocr-store.bj.bcebos.com"
+                | "paddleocr-store-1.bj.bcebos.com"
                 | "paddleocr-store-2.bj.bcebos.com"
+                | "paddleocr-store-3.bj.bcebos.com"
+                | "paddleocr-store-4.bj.bcebos.com"
+                | "paddleocr-store-5.bj.bcebos.com"
                 | "paddleocr-store-6.bj.bcebos.com"
+                | "paddleocr-store-7.bj.bcebos.com"
                 | "paddleocr-store-8.bj.bcebos.com"
+                | "paddleocr-store-9.bj.bcebos.com"
         )
     ) {
         return false;
@@ -276,8 +288,19 @@ impl Run<'_> {
         limit: usize,
     ) -> AppResult<Vec<u8>> {
         check(self.cancel, self.start)?;
+        #[cfg(debug_assertions)]
+        let diagnostic_path=self.audit.join(format!("network-{phase}-{:03}.json",self.sequence+1));
+        #[cfg(debug_assertions)]
+        let diagnostic_started=self.start;
         let result = async {
-            let mut response = request.send().await.map_err(|_| {
+            let mut response = request.send().await.map_err(|failure| {
+                #[cfg(debug_assertions)]
+                if let Ok(mut file)=std::fs::OpenOptions::new().write(true).create_new(true).open(&diagnostic_path) {
+                    let diagnostic=json!({"phase":phase,"part":"headers","isConnect":failure.is_connect(),"isTimeout":failure.is_timeout(),"isBody":failure.is_body(),"isRequest":failure.is_request(),"elapsedMs":diagnostic_started.elapsed().as_millis() as u64,"urlOrCredentialsStored":false});
+                    let _=file.write_all(&serde_json::to_vec_pretty(&diagnostic).unwrap_or_default());
+                }
+                #[cfg(not(debug_assertions))]
+                let _=failure;
                 error(
                     "ocr_network",
                     "PaddleOCR 连接失败，原文件已保留，请检查网络后重试。",
@@ -453,6 +476,38 @@ fn bbox(v: &Value) -> Option<[u32; 4]> {
     }
     Some(out)
 }
+// Paddle may publish a smaller whole-page preview while keeping layout
+// coordinates in the original raster. Allow only uniform scaling within the
+// error introduced by rounding the preview dimensions to integer pixels.
+fn page_scale(layout: [u64; 2], image: [u32; 2]) -> bool {
+    let [w, h] = layout;
+    let [iw, ih] = image.map(u64::from);
+    if w == 0 || h == 0 || w > 12000 || h > 12000 || iw == 0 || ih == 0 {
+        return false;
+    }
+    let delta = (w * ih).abs_diff(h * iw);
+    // Less than one preview pixel in either dimension. In particular this
+    // does not accept arbitrary stretching or swapped non-square dimensions.
+    delta <= w.max(h)
+}
+fn image_bbox(b: [u32; 4], layout: [u64; 2], image: [u32; 2]) -> Option<[u32; 4]> {
+    if !page_scale(layout, image)
+        || b[2] as u64 > layout[0]
+        || b[3] as u64 > layout[1]
+        || b[0] >= b[2]
+        || b[1] >= b[3]
+    {
+        return None;
+    }
+    let min = |v: u32, axis: usize| (v as u64 * image[axis] as u64 / layout[axis]) as u32;
+    let max = |v: u32, axis: usize| (v as u64 * image[axis] as u64).div_ceil(layout[axis]) as u32;
+    let pixels = [min(b[0], 0), min(b[1], 1), max(b[2], 0), max(b[3], 1)];
+    (pixels[0] < pixels[2]
+        && pixels[1] < pixels[3]
+        && pixels[2] <= image[0]
+        && pixels[3] <= image[1])
+        .then_some(pixels)
+}
 async fn normalize(
     run: &mut Run<'_>,
     body: &[u8],
@@ -613,8 +668,17 @@ async fn normalize(
             );
             None
         };
+        let coordinate_transform = source_image.as_ref().and_then(|image| {
+            let layout = [width?, height?];
+            page_scale(layout, [image.width(), image.height()]).then(|| json!({
+                "kind":if layout == [image.width() as u64,image.height() as u64] {"identity"} else {"uniform_scale"},
+                "layoutWidth":layout[0],"layoutHeight":layout[1],
+                "imageWidth":image.width(),"imageHeight":image.height(),
+                "rounding":"floor_min_ceil_max"
+            }))
+        });
         let source_id = if let Some(image) = source_image.as_ref() {
-            if width != Some(image.width() as u64) || height != Some(image.height() as u64) {
+            if coordinate_transform.is_none() {
                 issue(
                     &mut out.issues,
                     "ocr_image_dimensions",
@@ -646,12 +710,11 @@ async fn normalize(
             }
             let role = if kind == "table" { "table" } else { "figure" };
             if let (Some(image), Some(b)) = (source_image.as_ref(), bbox(&block["bbox"])) {
-                if width == Some(image.width() as u64)
-                    && height == Some(image.height() as u64)
-                    && b[2] <= image.width()
-                    && b[3] <= image.height()
-                {
-                    let crop = image.crop_imm(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+                let pixels = width
+                    .zip(height)
+                    .and_then(|(w, h)| image_bbox(b, [w, h], [image.width(), image.height()]));
+                if let Some(p) = pixels {
+                    let crop = image.crop_imm(p[0], p[1], p[2] - p[0], p[3] - p[1]);
                     let id = asset(
                         &mut out.assets,
                         run.audit,
@@ -662,6 +725,12 @@ async fn normalize(
                         None,
                     )?;
                     block["assetId"] = json!(id);
+                    block["sourceImageBbox"] = json!(p);
+                    if let Some(a) = out.assets.iter_mut().find(|a| s(a, "id") == id) {
+                        a["sourceImageBbox"] = json!(p);
+                        a["coordinateTransform"] =
+                            coordinate_transform.clone().unwrap_or(Value::Null);
+                    }
                 } else {
                     issue(
                         &mut out.issues,
@@ -787,7 +856,7 @@ async fn normalize(
                 false,
             );
         }
-        out.pages.push(json!({"page":page,"text":markdown,"width":width,"height":height,"blocks":blocks,"omittedBlocks":omitted,"sourceImageAssetId":source_id,"readingOrder":"provider_response_with_explicit_optional_order"}));
+        out.pages.push(json!({"page":page,"text":markdown,"width":width,"height":height,"blocks":blocks,"omittedBlocks":omitted,"sourceImageAssetId":source_id,"coordinateTransform":coordinate_transform,"readingOrder":"provider_response_with_explicit_optional_order"}));
     }
     Ok(out)
 }
@@ -1094,11 +1163,9 @@ mod tests {
             assert_eq!(err.code, code);
             assert!(audit.join("001-submit.json").is_file());
             assert!(audit.join("002-failure.json").is_file());
-            assert!(
-                !std::fs::read_to_string(audit.join("001-submit.json"))
-                    .unwrap()
-                    .contains("simulated-ocr-secret")
-            );
+            assert!(!std::fs::read_to_string(audit.join("001-submit.json"))
+                .unwrap()
+                .contains("simulated-ocr-secret"));
         }
     }
     #[test]
@@ -1168,10 +1235,95 @@ mod tests {
         );
         let id = s(&doc.pages[0]["blocks"][1], "assetId");
         assert!(s(&doc.pages[0], "text").contains(&format!("asset:{id}")));
-        assert!(
-            doc.assets
-                .iter()
-                .any(|a| s(a, "id") == id && a["bbox"] == json!([2, 3, 7, 8]))
+        assert!(doc
+            .assets
+            .iter()
+            .any(|a| s(a, "id") == id && a["bbox"] == json!([2, 3, 7, 8])));
+    }
+    #[test]
+    fn uniform_preview_scale_preserves_layout_identity_and_audits_real_pixel_crop() {
+        let server = mock(|route, base| {
+            match route {
+                "/jobs" => (200, serde_json::to_vec(&json!({"code":0,"data":{"jobId":"j"}})).unwrap()),
+                "/jobs/j" => (200, serde_json::to_vec(&json!({"code":0,"data":{"state":"done","resultUrl":{"jsonUrl":format!("{base}/result")}}})).unwrap()),
+                "/result" => {
+                    let mut v = layout(base);
+                    let l = &mut v["result"]["layoutParsingResults"][0];
+                    l["prunedResult"]["width"] = json!(24);
+                    l["prunedResult"]["height"] = json!(32);
+                    l["prunedResult"]["parsing_res_list"][0]["block_bbox"] = json!([2,2,22,6]);
+                    l["prunedResult"]["parsing_res_list"][1]["block_bbox"] = json!([4,6,14,16]);
+                    l["prunedResult"]["parsing_res_list"][2]["block_bbox"] = json!([2,20,22,30]);
+                    l["markdown"]["text"] = json!("![图](imgs/img_in_image_box_4_6_14_16.jpg)");
+                    l["markdown"]["images"] = json!({"imgs/img_in_image_box_4_6_14_16.jpg":format!("{base}/must-not-download.png")});
+                    (200, serde_json::to_vec(&v).unwrap())
+                },
+                _ => (200, png())
+            }
+        });
+        let dir = tempfile::tempdir().unwrap();
+        let config = settings(dir.path(), &server.base);
+        let doc = recognize(
+            &config,
+            b"original",
+            "a.pdf",
+            "application/pdf",
+            &dir.path().join("audit"),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+        assert_eq!(doc.pages[0]["width"], 24);
+        assert_eq!(doc.pages[0]["height"], 32);
+        assert_eq!(doc.pages[0]["coordinateTransform"]["kind"], "uniform_scale");
+        assert_eq!(doc.pages[0]["coordinateTransform"]["imageWidth"], 12);
+        let block = &doc.pages[0]["blocks"][1];
+        assert_eq!(block["bbox"], json!([4, 6, 14, 16]));
+        assert_eq!(block["sourceImageBbox"], json!([2, 3, 7, 8]));
+        let a = doc
+            .assets
+            .iter()
+            .find(|a| a["id"] == block["assetId"])
+            .unwrap();
+        assert_eq!(a["bbox"], block["bbox"]);
+        assert_eq!(a["sourceImageBbox"], block["sourceImageBbox"]);
+        assert_eq!(a["width"], 5);
+        assert_eq!(a["height"], 5);
+        assert!(!doc
+            .issues
+            .iter()
+            .any(|i| matches!(s(i, "code"), "ocr_image_dimensions" | "ocr_invalid_crop")));
+        assert!(!server
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|(p, _, _)| p.contains("must-not-download")));
+    }
+    #[test]
+    fn preview_scaling_allows_pixel_rounding_but_rejects_stretch_rotation_and_layout_overflow() {
+        assert!(page_scale([3570, 5052], [1413, 2000]));
+        assert_eq!(
+            image_bbox([1056, 3855, 2302, 4590], [3570, 5052], [1413, 2000]),
+            Some([417, 1526, 912, 1818])
+        );
+        assert!(!page_scale([3570, 5052], [2000, 1413]));
+        assert!(!page_scale([3570, 5052], [1413, 1900]));
+        assert!(!page_scale([0, 5052], [1413, 2000]));
+        assert_eq!(
+            image_bbox([1, 1, 3571, 5052], [3570, 5052], [1413, 2000]),
+            None
+        );
+        assert_eq!(
+            image_bbox([1, 1, 3570, 5053], [3570, 5052], [1413, 2000]),
+            None
+        );
+        assert_eq!(
+            image_bbox([10, 10, 10, 11], [3570, 5052], [1413, 2000]),
+            None
+        );
+        assert_eq!(
+            image_bbox([3569, 5051, 3570, 5052], [3570, 5052], [1413, 2000]),
+            Some([1412, 1999, 1413, 2000])
         );
     }
     #[test]
@@ -1307,12 +1459,19 @@ mod tests {
         for host in [
             "paddleocr.aistudio-app.com",
             "pplines-online.bj.bcebos.com",
+            "paddleocr-store.bj.bcebos.com",
+            "paddleocr-store-1.bj.bcebos.com",
             "paddleocr-store-2.bj.bcebos.com",
+            "paddleocr-store-3.bj.bcebos.com",
             "paddleocr-store-6.bj.bcebos.com",
+            "paddleocr-store-7.bj.bcebos.com",
             "paddleocr-store-8.bj.bcebos.com",
+            "paddleocr-store-9.bj.bcebos.com",
+            "paddleocr-store-4.bj.bcebos.com",
+            "paddleocr-store-5.bj.bcebos.com",
         ] {
             let target = Url::parse(&format!("https://{host}/result")).unwrap();
-            for ip in ["198.18.0.137", "198.19.255.254"] {
+            for ip in ["198.18.0.137", "198.18.1.88", "198.19.255.254"] {
                 let ip = ip.parse().unwrap();
                 assert!(!public_ip(ip));
                 assert!(allowed_address(&target, &endpoint, ip));
@@ -1338,7 +1497,8 @@ mod tests {
             "https://paddleocr.aistudio-app.com.evil.example/result",
             "https://paddleocr-store-2.bj.bcebos.com.evil.example/result",
             "https://unrelated.bj.bcebos.com/result",
-            "https://paddleocr-store-9.bj.bcebos.com/result",
+            "https://paddleocr-store-9.bj.bcebos.com.evil.example/result",
+            "https://paddleocr-store-10.bj.bcebos.com/result",
             "https://paddleocr.aistudio-app.com:444/result",
             "http://paddleocr.aistudio-app.com/result",
             "https://user:password@paddleocr.aistudio-app.com/result",
@@ -1391,12 +1551,10 @@ mod tests {
                 Some(1),
             ))
             .unwrap();
-        assert!(
-            !result
-                .issues
-                .iter()
-                .any(|i| s(i, "code") == "ocr_reading_order_uncertain")
-        );
+        assert!(!result
+            .issues
+            .iter()
+            .any(|i| s(i, "code") == "ocr_reading_order_uncertain"));
         for (i, caption) in ["A.", "B.", "C.", "D.", "第17题图"].iter().enumerate() {
             let block = &result.pages[0]["blocks"][i + 1];
             assert_eq!(block["order"], Value::Null);
@@ -1406,8 +1564,8 @@ mod tests {
         }
         // The exception applies only to captions; real body order remains
         // checked even when its neighboring figure captions have no order.
-        data["result"]["layoutParsingResults"][0]["prunedResult"]["parsing_res_list"][6]["block_order"] =
-            Value::Null;
+        data["result"]["layoutParsingResults"][0]["prunedResult"]["parsing_res_list"][6]
+            ["block_order"] = Value::Null;
         let result = runtime
             .block_on(normalize(
                 &mut run,
@@ -1415,12 +1573,10 @@ mod tests {
                 Some(1),
             ))
             .unwrap();
-        assert!(
-            result
-                .issues
-                .iter()
-                .any(|i| s(i, "code") == "ocr_reading_order_uncertain" && i["blocking"] == true)
-        );
+        assert!(result
+            .issues
+            .iter()
+            .any(|i| s(i, "code") == "ocr_reading_order_uncertain" && i["blocking"] == true));
     }
     #[test]
     fn missing_pages_images_layout_and_truncated_jsonl_never_become_complete() {

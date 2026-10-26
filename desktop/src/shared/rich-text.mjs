@@ -1,12 +1,13 @@
+import { mathSegments } from './math-segments.mjs';
+
 function cells(line) {
-  const result = []; let cell = '', math = false;
-  for (let i = 0; i < line.length; i++) {
-    if (line[i] === '\\' && i + 1 < line.length) { cell += line[i] + line[++i]; continue; }
-    if (line[i] === '$') {
-      math = !math;
-      if (line[i + 1] === '$') { cell += '$$'; i++; continue; }
+  const result = []; let cell = '';
+  for (const part of mathSegments(line)) {
+    if (part.type === 'math') { cell += part.raw; continue; }
+    for (let i = 0; i < part.raw.length; i++) {
+      if (part.raw[i] === '\\' && i + 1 < part.raw.length) { cell += part.raw[i] + part.raw[++i]; continue; }
+      if (part.raw[i] === '|') { result.push(cell.trim()); cell = ''; } else cell += part.raw[i];
     }
-    if (line[i] === '|' && !math) { result.push(cell.trim()); cell = ''; } else cell += line[i];
   }
   result.push(cell.trim());
   if (line.trim().startsWith('|')) result.shift();
@@ -14,11 +15,10 @@ function cells(line) {
   return result;
 }
 function plainHtml(value) {
-  return value.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
+  return mathSegments(value.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ''))
     // Formula comparisons can resemble HTML tags, e.g. $a<b>c$.
     // Strip markup only outside the same math delimiters used by MathText.
-    .split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g)
-    .map((part, index) => index % 2 ? part : part.replace(/<br\s*\/?>/gi, '\n')
+    .map(part => part.type === 'math' ? part.raw : part.raw.replace(/<br\s*\/?>/gi, '\n')
       .replace(/<!--[\s\S]*?-->|<\/?[a-z][\w:-]*(?:\s[^<>]*|\/)?>/gi, ''))
     .join('')
     .replace(/&(#x[\da-f]+|#\d+|amp|lt|gt|nbsp|quot|apos);/gi, (all, entity) => {

@@ -48,13 +48,14 @@ export function Composer(props: {
   config: any;
   busy: boolean;
   configured: boolean;
+  onConfigure: () => void;
   initial?: any;
   initialStudentOffset?: number;
   onSubmit: (requirements: any, text: string, mode: string, studentOffset?: number) => void;
 }) {
   const defaults = () => props.config?.defaultRequirements || {};
   const [scope, setScope] = createSignal<string[]>(
-    props.initial?.mainScope || defaults().mainScope || [],
+    props.initial?.mainScope || [],
   );
   const [purpose, setPurpose] = createSignal(
     props.initial?.purpose || "consolidation",
@@ -79,7 +80,6 @@ export function Composer(props: {
   const [newGrade, setNewGrade] = createSignal("");
   const [savingStudent, setSavingStudent] = createSignal(false);
   let studentOperationId = operationId();
-  const [mode, setMode] = createSignal(props.configured ? "llm" : "rule");
   let editor!: HTMLDivElement;
   let studentTrigger!: HTMLButtonElement;
   let studentPopup!: HTMLDivElement;
@@ -344,7 +344,8 @@ export function Composer(props: {
     }
   }
   function submit() {
-    if (props.busy || !scope().length) return;
+    if (props.busy || (!scope().length && !text().trim())) return;
+    if (!props.configured) { props.onConfigure(); return; }
     props.onSubmit(
       {
         ...composerRequirements(defaults(), props.initial, scope(), text()),
@@ -358,7 +359,7 @@ export function Composer(props: {
         teacherRequest: text(),
       },
       text(),
-      mode(),
+      "llm",
       student() ? studentOffset() : undefined,
     );
   }
@@ -656,18 +657,8 @@ export function Composer(props: {
           <div class="composer-bottom">
             <span class="muted">Enter 发送 · Shift+Enter 换行</span>
             <div class="composer-submit">
-              <select
-                aria-label="组卷方式"
-                value={mode()}
-                onChange={(event) => setMode(event.currentTarget.value)}
-                disabled={props.busy}
-              >
-                <option value="llm" disabled={!props.configured}>
-                  AI 辅助{props.configured ? "" : "（需设置）"}
-                </option>
-                <option value="rule">规则预设</option>
-              </select>
-              <button class="primary" disabled={props.busy || !scope().length}>
+              <Show when={!props.configured}><button type="button" disabled={props.busy} onClick={props.onConfigure}>配置模型</button></Show>
+              <button class="primary" disabled={props.busy || (!scope().length && !text().trim())}>
                 开始组卷 <ArrowUp size={18} />
               </button>
             </div>

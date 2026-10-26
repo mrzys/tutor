@@ -1,0 +1,597 @@
+{
+  "version": 1,
+  "purpose": "Simulated structural patch conformance only; no math or classroom approval.",
+  "cases": [
+    {
+      "name": "one_field",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "teachingSolution",
+          "oldText": "模拟原文：1+1=2。",
+          "newText": "模拟局部说明：1+1=2。"
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingSolution"
+      ],
+      "accepted": true
+    },
+    {
+      "name": "student_requirement",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "teachingFocus.studentRequirements[1]",
+          "oldText": "模拟要求二",
+          "newText": "模拟仅改第二条要求"
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingFocus.studentRequirements[1]"
+      ],
+      "accepted": true
+    },
+    {
+      "name": "two_fields",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "teachingSolution",
+          "oldText": "模拟原文：1+1=2。",
+          "newText": "模拟新说明"
+        },
+        {
+          "fieldPath": "difficultyAssessment.basis",
+          "oldText": "模拟：直接计算。",
+          "newText": "模拟：补清具体操作。"
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingSolution",
+        "difficultyAssessment.basis"
+      ],
+      "accepted": true
+    },
+    {
+      "name": "unlisted_answer",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "answer",
+          "oldText": "2",
+          "newText": "3"
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingSolution"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "source_stem",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "stem",
+          "oldText": "模拟原题",
+          "newText": "改题"
+        }
+      ],
+      "allowedFieldPaths": [
+        "stem"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "identity",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "questionId",
+          "oldText": "simulated-patch-fixture",
+          "newText": "other"
+        }
+      ],
+      "allowedFieldPaths": [
+        "questionId"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "erase_issue",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "issues[0]",
+          "oldText": "模拟疑点",
+          "newText": ""
+        }
+      ],
+      "allowedFieldPaths": [
+        "issues[0]"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "whole_requirements",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "teachingFocus.studentRequirements",
+          "oldText": [
+            "模拟要求一",
+            "模拟要求二"
+          ],
+          "newText": []
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingFocus.studentRequirements"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "new_array_element",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "teachingFocus.studentRequirements[2]",
+          "oldText": "不存在",
+          "newText": "新增"
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingFocus.studentRequirements[2]"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "duplicate_field",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "answer",
+          "oldText": "2",
+          "newText": "3"
+        },
+        {
+          "fieldPath": "answer",
+          "oldText": "3",
+          "newText": "4"
+        }
+      ],
+      "allowedFieldPaths": [
+        "answer"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "stale_text",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "teachingSolution",
+          "oldText": "旧版本",
+          "newText": "模拟新内容"
+        }
+      ],
+      "allowedFieldPaths": [
+        "teachingSolution"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "atomic_reject_later_stale",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "answer",
+          "oldText": "2",
+          "newText": "3"
+        },
+        {
+          "fieldPath": "teachingSolution",
+          "oldText": "过期",
+          "newText": "模拟新内容"
+        }
+      ],
+      "allowedFieldPaths": [
+        "answer",
+        "teachingSolution"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "extra_operation_key",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "answer",
+          "oldText": "2",
+          "newText": "3",
+          "op": "replace"
+        }
+      ],
+      "allowedFieldPaths": [
+        "answer"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "no_entries",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [],
+      "allowedFieldPaths": [
+        "answer"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "not_string",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "answer",
+          "oldText": "2",
+          "newText": 3
+        }
+      ],
+      "allowedFieldPaths": [
+        "answer"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "level_not_textpatch",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "difficultyAssessment.level",
+          "oldText": "easy",
+          "newText": "hard"
+        }
+      ],
+      "allowedFieldPaths": [
+        "difficultyAssessment.level"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "proto_path",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "__proto__.answer",
+          "oldText": "2",
+          "newText": "3"
+        }
+      ],
+      "allowedFieldPaths": [
+        "__proto__.answer"
+      ],
+      "accepted": false
+    },
+    {
+      "name": "empty_text_is_structurally_valid_but_incomplete",
+      "candidate": {
+        "questionId": "simulated-patch-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "模拟原文：1+1=2。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数加法。",
+          "studentRequirements": [
+            "模拟要求一",
+            "模拟要求二"
+          ]
+        },
+        "issues": []
+      },
+      "patches": [
+        {
+          "fieldPath": "answer",
+          "oldText": "2",
+          "newText": ""
+        }
+      ],
+      "allowedFieldPaths": [
+        "answer"
+      ],
+      "accepted": true
+    }
+  ]
+}

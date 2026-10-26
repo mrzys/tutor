@@ -17,6 +17,7 @@ import {
   Check,
   ChevronRight,
   Download,
+  FileCode2,
   FileText,
   MessageSquare,
   PanelLeftClose,
@@ -35,11 +36,25 @@ import {
   operationId,
   purposeLabel,
   request,
+  listenPreparationProgress,
+  listenBlueprintProgress,
+  listenSelectionProgress,
+  currentAssemblyTraceId,
+  beginAssemblyTrace,
+  subscribeAssemblyTrace,
   typeIds,
   typeLabels,
 } from "./bridge";
 import { Busy, ErrorBanner, Modal, Drawer, StudentLabels } from "./ui";
 import { Composer } from "./Composer";
+import { PreparationConversation, type PreparationRun } from "./PreparationConversation";
+import { createPreparationPresenter, type PreparationStepId } from "./preparation-progress";
+import { BlueprintProgress, type BlueprintRun } from "./BlueprintProgress";
+import { createBlueprintPresenter, type BlueprintStepId } from "./blueprint-progress";
+import { SelectionProgress, type SelectionRun } from "./SelectionProgress";
+import { createSelectionPresenter, type SelectionStepId } from "./selection-progress";
+import { DeveloperAssemblyLog } from "./DeveloperAssemblyLog";
+import "./DeveloperLogEntry.css";
 import { Settings } from "./Settings";
 import { DraftView } from "./Draft";
 import { BlueprintView } from "./Blueprint";
@@ -51,6 +66,7 @@ import "./GuideEntry.css";
 import { PaperSheet, RichText } from "./Paper";
 import { waitForPaperAssets } from "./rich-content";
 import { resizeQuestionCounts, slotDifficulty } from "./assembly-details";
+import { teachingDisplayText } from "./teaching-text";
 const PdfPreview = lazy(() =>
   import("./PdfPreview").then((module) => ({ default: module.PdfPreview })),
 );
@@ -60,7 +76,8 @@ function ExportPage(props: { taskId: string; paperId: string; kind: string }) {
   const [error, setError] = createSignal("");
   onMount(async () => {
     try {
-      const result = await request("paper_get", { paperId: props.paperId });
+      const assemblyTraceId = new URLSearchParams(location.search).get("assemblyTraceId");
+      const result = await request("paper_get", { paperId: props.paperId, ...(assemblyTraceId ? { assemblyTraceId } : {}) });
       setPaper(result.paper);
       await document.fonts.ready;
       await new Promise<void>((resolve) =>
@@ -168,6 +185,34 @@ export default function App() {
     );
   const [loading, setLoading] = createSignal(true);
   const [fatal, setFatal] = createSignal("");
+  const [developerEnabled, setDeveloperEnabled] = createSignal(false);
+  const [developerLogOpen, setDeveloperLogOpen] = createSignal(false);
+  let developerRefreshInFlight = false, developerRefreshQueued = false, developerAlive = true;
+  async function refreshDeveloperCapabilities() {
+    if (!developerAlive) return;
+    if (developerRefreshInFlight) { developerRefreshQueued = true; return; }
+    developerRefreshInFlight = true;
+    try {
+      const result = await request("developer_log_capabilities");
+      if (developerAlive) setDeveloperEnabled(result.enabled === true);
+    } catch { /* A transient read error must not close an already open log. */ }
+    finally {
+      developerRefreshInFlight = false;
+      if (developerRefreshQueued && developerAlive) { developerRefreshQueued = false; void refreshDeveloperCapabilities(); }
+    }
+  }
+  onMount(() => {
+    const visible = () => { if (!document.hidden) void refreshDeveloperCapabilities(); };
+    window.addEventListener("focus", visible);
+    document.addEventListener("visibilitychange", visible);
+    onCleanup(() => {
+      developerAlive = false;
+      window.removeEventListener("focus", visible);
+      document.removeEventListener("visibilitychange", visible);
+    });
+  });
+  const [assemblyLogTrace, setAssemblyLogTrace] = createSignal(currentAssemblyTraceId());
+  onCleanup(subscribeAssemblyTrace(setAssemblyLogTrace));
   const [profile, setProfile] = createSignal<any>(null);
   const [directory, setDirectory] = createSignal("");
   const [config, setConfig] = createSignal<any>(null);
@@ -195,6 +240,15 @@ export default function App() {
   const [stage, setStage] = createSignal("requirements");
   const [req, setReq] = createSignal<any>(null);
   const [intakeSummary, setIntakeSummary] = createSignal<any>(null);
+  const [preparation, setPreparation] = createSignal<PreparationRun | null>(null);
+  let preparationPresenter: ReturnType<typeof createPreparationPresenter> | undefined;
+  onCleanup(() => preparationPresenter?.dispose());
+  const [planning, setPlanning] = createSignal<BlueprintRun | null>(null);
+  let planningPresenter: ReturnType<typeof createBlueprintPresenter> | undefined;
+  onCleanup(() => planningPresenter?.dispose());
+  const [selection, setSelection] = createSignal<SelectionRun | null>(null);
+  let selectionPresenter: ReturnType<typeof createSelectionPresenter> | undefined;
+  onCleanup(() => selectionPresenter?.dispose());
   const [warnings, setWarnings] = createSignal<string[]>([]);
   const [blueprint, setBlueprint] = createSignal<any>(null);
   const [draft, setDraft] = createSignal<any>(null);
@@ -232,6 +286,28 @@ export default function App() {
   const [toast, setToast] = createSignal("");
   const [pdfResult, setPdfResult] = createSignal<any>(null);
   const [pdfPreview, setPdfPreview] = createSignal(false);
+  function developerEvent(event: string, details: any = {}, traceId: string = currentAssemblyTraceId()) {
+    if (developerEnabled()) void request("developer_assembly_event", { traceId, event, details }).catch(() => {});
+  }
+  let lastPreview: { traceId: string; kind: string; draftId?: string; paperId?: string } | undefined;
+  createEffect(() => {
+    const enabled = developerEnabled();
+    const visible = !settings() && !openingHistory() && view() === "workbench" && (preview() || (stage() === "paper" && Boolean(paper())));
+    const next = visible ? { traceId: assemblyLogTrace(), kind: kind(), draftId: draft()?.draftId, paperId: paper()?.paperId } : undefined;
+    const changed = lastPreview && next && (lastPreview.traceId !== next.traceId || lastPreview.draftId !== next.draftId || lastPreview.paperId !== next.paperId);
+    if (enabled) {
+      if (lastPreview && (!next || changed)) developerEvent("preview_close", lastPreview, lastPreview.traceId);
+      if (next && (!lastPreview || changed)) developerEvent("preview_open", next, next.traceId);
+      else if (next && lastPreview?.kind !== next.kind) developerEvent("preview_kind_change", next, next.traceId);
+    }
+    lastPreview = next;
+  });
+  let lastPdfPreview = false;
+  createEffect(() => {
+    const visible = pdfPreview();
+    if (visible && !lastPdfPreview) developerEvent("pdf_preview_open", { kind: kind(), paperId: paper()?.paperId });
+    lastPdfPreview = visible;
+  });
   let toastTimer: ReturnType<typeof setTimeout>;
   let renameInput!: HTMLInputElement;
   function notify(text: string) {
@@ -250,6 +326,7 @@ export default function App() {
   async function load() {
     setLoading(true);
     setFatal("");
+    void refreshDeveloperCapabilities();
     try {
       const user = await request("profile_get");
       setProfile(user.profile);
@@ -286,11 +363,15 @@ export default function App() {
   }
   function newPaper() {
     if (busy()) return;
-    setView("new");
+    batch(() => { setView("new"); beginAssemblyTrace(); });
+    developerEvent("new_assembly");
     setStage("requirements");
     setReq(null);
     setComposerStudentOffset(undefined);
     setIntakeSummary(null);
+    setPreparation(null);
+    setPlanning(null);
+    setSelection(null);
     setBlueprint(null);
     setDraft(null);
     setPaper(null);
@@ -301,10 +382,11 @@ export default function App() {
   }
   async function open(kind: string, id: string) {
     if (busy() || (view() === "workbench" && ((kind === "draft" && stage() === "draft" && activeDraft() === id) || (kind === "paper" && stage() === "paper" && activePaper() === id)))) return;
-    setOpeningHistory(`${kind}:${id}`);
+    batch(() => { setOpeningHistory(`${kind}:${id}`); beginAssemblyTrace(); });
+    developerEvent("history_open", kind === "draft" ? { draftId: id } : { paperId: id });
     try {
       await perform("正在打开试卷…", async () => {
-        const result = await request(kind === "draft" ? "draft_get" : "paper_get", kind === "draft" ? {draftId: id} : {paperId: id});
+        const result = await request(kind === "draft" ? "draft_get" : "paper_get", { ...(kind === "draft" ? {draftId: id} : {paperId: id}), assemblyTraceId: currentAssemblyTraceId() });
         batch(() => {
           if (kind === "draft") {
             setDraft(result.draft);
@@ -356,65 +438,212 @@ export default function App() {
     }
     if (deleted && current) newPaper();
   }
-  function prepare(requirements: any, message: string, mode: string, studentOffset?: number) {
+  function configureAssemblyModel() {
+    setSettingsModel(true);
+    setSettingsOcr(false);
+    setSettings(true);
+  }
+  async function prepare(requirements: any, message: string, _mode: string, studentOffset?: number) {
+    if (busy()) return;
+    if (!configured()) { configureAssemblyModel(); return; }
+    const mode = "llm";
+    const runId = operationId();
     setComposerStudentOffset(studentOffset);
-    perform(
-      mode === "llm" ? "正在整理组卷要求…" : "正在整理要求…",
-      async () => {
+    setPreparation({ runId, requirements, message, mode, studentOffset, startedAt: Date.now(), status: "running" });
+    setView("preparing");
+    setBusy("正在整理组卷要求…");
+    setError("");
+    setErrorCode("");
+    const presenter = createPreparationPresenter(runId, mode, steps => setPreparation(run => run?.runId === runId ? { ...run, steps } : run));
+    preparationPresenter = presenter;
+    let unlisten: (() => void) | undefined;
+    try {
+        unlisten = await listenPreparationProgress(presenter.receive);
+        if (preparation()?.stopping) {
+          setPreparation(run => run && ({ ...run, status: "cancelled", finishedAt: Date.now() }));
+          return;
+        }
+        setPreparation(run => run && ({ ...run, requestStarted: true }));
         const result = await request("intake_prepare", {
+          runId,
           requirements,
           message,
           mode,
           quantityAuthority: requirements.quantityAuthority || {},
         });
-        setDraft(null);
-        setPaper(null);
-        setBlueprint(null);
-        setReq(result.requirements);
-        setIntakeSummary(result.summary);
-        setWarnings(
-          (result.warnings || []).map((item: any) =>
-            typeof item === "string" ? item : item.message,
-          ),
-        );
-        setView("workbench");
-        setStage("review");
-      },
-    );
+        setPreparation(run => run && ({ ...run, result, backendFinished: true, finishedAt: Date.now() }));
+        const shown = await presenter.finish(result.workflowSteps as PreparationStepId[]);
+        if (!shown || preparation()?.stopping) {
+          setPreparation(run => run && ({ ...run, status: "succeeded", stopping: false }));
+          return;
+        }
+        setPreparation(run => run && ({ ...run, result, status: "succeeded", finishedAt: run.finishedAt || Date.now() }));
+        acceptPreparedResult(result);
+    } catch (failure: any) {
+      setPreparation(run => run && ({ ...run, status: run.stopping || failure.code === "cancelled" ? "cancelled" : "failed", error: failure.message, finishedAt: Date.now() }));
+    } finally {
+      presenter.dispose();
+      unlisten?.();
+      if (preparationPresenter === presenter) preparationPresenter = undefined;
+      setBusy("");
+    }
   }
-  function plan(mode: string) {
-    perform("正在安排题位…", async () => {
+  function acceptPreparedResult(result: any) {
+    setDraft(null);
+    setPaper(null);
+    setBlueprint(null);
+    setReq(result.requirements);
+    setIntakeSummary(result.summary);
+    setWarnings((result.warnings || []).map((item: any) => typeof item === "string" ? item : item.message));
+    setView("workbench");
+    setStage("review");
+  }
+  async function stopPreparation() {
+    if (preparation()?.status !== "running" || preparation()?.stopping) return;
+    developerEvent("cancel", { mode: preparation()?.mode, runId: preparation()?.runId });
+    setPreparation(run => run && ({ ...run, stopping: true }));
+    preparationPresenter?.dispose();
+    if (preparation()?.backendFinished || !preparation()?.requestStarted) return;
+    try { await cancel(); }
+    catch (failure: any) {
+      setError(failure.message);
+      setPreparation(run => run && ({ ...run, stopping: false }));
+    }
+  }
+  function retryPreparation() {
+    const run = preparation();
+    developerEvent("retry", { mode: run?.mode, runId: run?.runId });
+    if (run) void prepare(run.requirements, run.message, run.mode, run.studentOffset);
+  }
+  async function plan(_mode: string, requirements = req()) {
+    if (busy()) return;
+    if (!configured()) { configureAssemblyModel(); return; }
+    const mode = "llm";
+    const runId = operationId();
+    const confirmed = structuredClone({ ...requirements, quantityAuthority: { questionCount: true, counts: true, typeConstraints: true } });
+    setPlanning({ runId, requirements: confirmed, mode, startedAt: Date.now(), status: "running" });
+    setView("planning");
+    setBusy("正在安排题位…");
+    setError("");
+    setErrorCode("");
+    const presenter = createBlueprintPresenter(runId, steps => setPlanning(run => run?.runId === runId ? { ...run, steps } : run));
+    planningPresenter = presenter;
+    let unlisten: (() => void) | undefined;
+    try {
+      unlisten = await listenBlueprintProgress(presenter.receive);
+      if (planning()?.stopping) {
+        setPlanning(run => run && ({ ...run, status: "cancelled", stopping: false, finishedAt: Date.now() }));
+        return;
+      }
+      setPlanning(run => run && ({ ...run, requestStarted: true }));
       const result = await request("blueprint_plan", {
-        requirements: { ...req(), quantityAuthority: { questionCount: true, counts: true, typeConstraints: true } },
+        runId,
+        requirements: confirmed,
         mode,
       });
-      setBlueprint(result.blueprint);
-      setReq(result.blueprint.requirements || req());
-      setStage("blueprint");
-    });
+      setPlanning(run => run && ({ ...run, result, backendFinished: true, finishedAt: Date.now() }));
+      const shown = await presenter.finish(result.workflowSteps as BlueprintStepId[]);
+      const advance = shown && !planning()?.stopping;
+      setPlanning(run => run && ({ ...run, status: "succeeded", stopping: false }));
+      if (advance) acceptPlannedResult(result);
+    } catch (failure: any) {
+      setPlanning(run => run && ({ ...run, status: run.stopping || failure.code === "cancelled" ? "cancelled" : "failed", stopping: false, error: failure.message, finishedAt: Date.now() }));
+    } finally {
+      presenter.dispose();
+      unlisten?.();
+      if (planningPresenter === presenter) planningPresenter = undefined;
+      setBusy("");
+    }
   }
-  function select(mode: string) {
-    perform(
-      mode === "llm" ? "正在比较本地题目并生成草稿…" : "正在从本地题库选题…",
-      async () => {
-        const checked = await request("blueprint_check", {
-          blueprint: blueprint(),
-        });
-        setBlueprint(checked.blueprint);
-        const result = await request("draft_create", {
-          blueprint: checked.blueprint,
-          mode,
-        });
-        setDraft(result.draft);
-        setReq(result.draft.baseline.requirements);
-        setStage("draft");
-        await refreshHistory();
-      },
-    );
+  function acceptPlannedResult(result: any) {
+    setBlueprint(result.blueprint);
+    setReq(result.blueprint.requirements || req());
+    setStage("blueprint");
+    setView("workbench");
+  }
+  async function stopPlanning() {
+    const run = planning();
+    if (run?.status !== "running" || run.stopping) return;
+    developerEvent("cancel", { mode: run.mode, runId: run.runId });
+    const presenter = planningPresenter;
+    setPlanning(run => run && ({ ...run, stopping: true, error: undefined }));
+    if (run.backendFinished || !run.requestStarted) { presenter?.dispose(); return; }
+    try {
+      await cancel();
+      presenter?.dispose();
+    }
+    catch (failure: any) {
+      setPlanning(current => current?.runId === run.runId && current.status === "running" ? { ...current, stopping: false, error: failure.message } : current);
+    }
+  }
+  function retryPlanning() {
+    const run = planning();
+    developerEvent("retry", { mode: run?.mode, runId: run?.runId });
+    if (run) void plan(run.mode, run.requirements);
+  }
+  async function select(_mode: string, confirmed = blueprint()) {
+    if (busy()) return;
+    if (!configured()) { configureAssemblyModel(); return; }
+    const runId = operationId();
+    const selectedBlueprint = structuredClone(confirmed);
+    setSelection({ runId, blueprint: selectedBlueprint, startedAt: Date.now(), status: "running" });
+    setView("selecting");
+    setBusy("正在选题并生成草稿…");
+    setError("");
+    setErrorCode("");
+    const presenter = createSelectionPresenter(runId, steps => setSelection(run => run?.runId === runId ? { ...run, steps } : run));
+    selectionPresenter = presenter;
+    let unlisten: (() => void) | undefined;
+    try {
+      unlisten = await listenSelectionProgress(presenter.receive);
+      if (selection()?.stopping) {
+        setSelection(run => run && ({ ...run, status: "cancelled", stopping: false, finishedAt: Date.now() }));
+        return;
+      }
+      setSelection(run => run && ({ ...run, requestStarted: true }));
+      const result = await request("draft_create", { runId, blueprint: selectedBlueprint, mode: "llm" });
+      setSelection(run => run && ({ ...run, result, backendFinished: true, finishedAt: Date.now() }));
+      await refreshHistory().catch(() => notify("草稿已保存，列表暂时无法刷新"));
+      const shown = await presenter.finish(result.workflowSteps as SelectionStepId[]);
+      const advance = shown && !selection()?.stopping;
+      setSelection(run => run && ({ ...run, status: "succeeded", stopping: false }));
+      if (advance) acceptSelectedResult(result);
+    } catch (failure: any) {
+      setSelection(run => run && ({ ...run, status: run.stopping || failure.code === "cancelled" ? "cancelled" : "failed", stopping: false, error: failure.message, finishedAt: Date.now() }));
+    } finally {
+      presenter.dispose();
+      unlisten?.();
+      if (selectionPresenter === presenter) selectionPresenter = undefined;
+      setBusy("");
+    }
+  }
+  function acceptSelectedResult(result: any) {
+    setDraft(result.draft);
+    setPaper(null);
+    setReq(result.draft.baseline.requirements);
+    setStage("draft");
+    setView("workbench");
+  }
+  async function stopSelection() {
+    const run = selection();
+    if (run?.status !== "running" || run.stopping) return;
+    developerEvent("cancel", { mode: "llm", runId: run.runId });
+    const presenter = selectionPresenter;
+    setSelection(current => current && ({ ...current, stopping: true, error: undefined }));
+    if (run.backendFinished || !run.requestStarted) { presenter?.dispose(); return; }
+    try { await cancel(); presenter?.dispose(); }
+    catch (failure: any) {
+      setSelection(current => current?.runId === run.runId && current.status === "running" ? { ...current, stopping: false, error: failure.message } : current);
+    }
+  }
+  function retrySelection() {
+    const run = selection();
+    developerEvent("retry", { mode: "llm", runId: run?.runId });
+    if (run) void select("llm", run.blueprint);
   }
   async function operation(operation: any) {
     if (busy()) throw new Error("正在处理，请稍后重试。");
-    setBusy("正在保存…");
+    setBusy(operation.type === "replace" && !operation.candidateId && draft()?.selectionGeneration?.mode !== "manual" ? "正在由模型评估题目…" : "正在保存…");
     setError("");
     setErrorCode("");
     try {
@@ -444,6 +673,7 @@ export default function App() {
     }
   }
   function revise() {
+    setPreparation(null);
     setStage("requirements");
     setView("new");
     setComposerKey((key) => key + 1);
@@ -762,17 +992,19 @@ export default function App() {
                 </button>
               </Show>
               <div
-                class={`main-content ${view() === "new" ? "new-content" : ""} ${view() === "students" ? "student-content" : ""} ${view() === "bank" ? "bank-content" : ""} ${view() === "import" ? "import-content" : ""} ${view() === "workbench" && stage() === "draft" ? "draft-content" : ""}`}
+                class={`main-content ${["new", "preparing", "planning", "selecting"].includes(view()) ? "new-content" : ""} ${["preparing", "planning", "selecting"].includes(view()) ? "preparation-workspace" : ""} ${view() === "students" ? "student-content" : ""} ${view() === "bank" ? "bank-content" : ""} ${view() === "import" ? "import-content" : ""} ${view() === "workbench" && stage() === "draft" ? "draft-content" : ""}`}
               >
                 <Show when={config()?.bankWarning}>
                   <p class="warning-text" role="alert">
                     {config().bankWarning}
                   </p>
                 </Show>
-                <div hidden={view() !== "new"} class="composer-workspace">
+                <Show when={view() === "preparing" && preparation()}>{run => <PreparationConversation run={run()} config={config()} onStop={() => void stopPreparation()} onRetry={retryPreparation} onEdit={() => { setPreparation(null); setView("new"); }} onReview={() => { if (!busy() && run().result) acceptPreparedResult(run().result); }} />}</Show>
+                <Show when={view() === "planning" && planning()}>{run => <BlueprintProgress run={run()} onStop={() => void stopPlanning()} onRetry={retryPlanning} onBack={() => { if (!busy()) { setView("workbench"); setStage("review"); } }} onReview={() => { if (!busy() && run().result) acceptPlannedResult(run().result); }} />}</Show>
+                <Show when={view() === "selecting" && selection()}>{run => <SelectionProgress run={run()} onStop={() => void stopSelection()} onRetry={retrySelection} onBack={() => { if (!busy()) { setView("workbench"); setStage("blueprint"); } }} onReview={() => { if (!busy() && run().result) acceptSelectedResult(run().result); }} />}</Show>
+                <div hidden={view() !== "new" || Boolean(preparation())} class="composer-workspace">
                   <div class="new-heading">
                     <h1>新建组卷</h1>
-                    <p class="muted">选择范围和用途，补充题量或考查重点。</p>
                     <button class="guide-entry guide-context-entry" onClick={() => setGuideTopic("assembly")}><CircleHelp size={16} />了解如何组卷</button>
                   </div>
                   <Show when={config()}>
@@ -785,6 +1017,7 @@ export default function App() {
                           busy={Boolean(busy())}
                           configured={configured()}
                           onSubmit={prepare}
+                          onConfigure={configureAssemblyModel}
                         />
                       )}
                     </Show>
@@ -849,6 +1082,7 @@ export default function App() {
                 </Show>
                 <Show when={studentsMounted()}><div hidden={view() !== "students"}><StudentWork active={view() === "students"} onJobs={setStudentJobs} onConfigure={() => { setSettingsModel(true); setSettingsOcr(true); setSettings(true); }} /></div></Show>
                 <Show when={view() === "workbench"}>
+                  <Show when={stage() === "review" && preparation()?.status === "succeeded"}><PreparationConversation run={preparation()!} config={config()} compact /></Show>
                   <header class="page-heading">
                     <div class="heading-main">
                       <Show
@@ -872,10 +1106,11 @@ export default function App() {
                                   });
                                 }}
                                 title="修改试卷名称"
+                                aria-label={`修改试卷名称：${currentTitle()}`}
                                 disabled={Boolean(busy())}
                               >
                                 {currentTitle()}
-                                <Pencil size={16} />
+                                <Pencil size={16} aria-hidden="true" />
                               </button>
                             </Show>
                           </h1>
@@ -948,8 +1183,11 @@ export default function App() {
                     <section class="requirements-review">
                       <h2>本次练习</h2>
                       <p class="review-goal">
-                        <RichText text={req()?.goal || "按选择范围安排练习"} />
+                        <RichText text={teachingDisplayText(req()?.goal || "按选择范围安排练习")} />
                       </p>
+                      <Show when={req()?.scopeResolution?.source === "model_suggestion"}>
+                        <div class="quantity-plan-reason"><span>AI 范围建议</span><RichText text={teachingDisplayText(req().scopeResolution.rationale)} /><Show when={req().scopeResolution.changed}>（已依据你的输入重新确定范围，请核对后确认。）</Show></div>
+                      </Show>
                       <div class="review-fields">
                         <label>
                           题量
@@ -997,7 +1235,7 @@ export default function App() {
                         </div>
                       </div>
                       <Show when={req()?.quantityPlan?.source === "model_suggestion" && typeIds.every(type => req().quantityPlan.counts?.[type] === req().counts?.[type])}>
-                        <p class="quantity-plan-reason"><span>AI 配比建议</span>{req().quantityPlan.rationale}</p>
+                        <div class="quantity-plan-reason"><span>AI 配比建议</span><RichText text={teachingDisplayText(req().quantityPlan.rationale)} /></div>
                       </Show>
                       <details>
                         <summary>安排说明</summary>
@@ -1022,20 +1260,20 @@ export default function App() {
                           <Show when={req()?.teacherRequest}>
                             <div>
                               <dt>补充</dt>
-                              <dd>{req().teacherRequest}</dd>
+                              <dd><RichText text={req().teacherRequest} /></dd>
                             </div>
                           </Show>
                           <Show when={typeof intakeSummary() === "string"}>
                             <div>
                               <dt>说明</dt>
-                              <dd>{intakeSummary()}</dd>
+                              <dd><RichText text={teachingDisplayText(intakeSummary())} /></dd>
                             </div>
                           </Show>
                           <For each={warnings()}>
                             {(warning) => (
                               <div>
                                 <dt>提示</dt>
-                                <dd class="warning-text">{warning}</dd>
+                                <dd class="warning-text"><RichText text={teachingDisplayText(warning)} /></dd>
                               </div>
                             )}
                           </For>
@@ -1045,18 +1283,10 @@ export default function App() {
                         <button
                           class="primary"
                           disabled={Boolean(busy())}
-                          onClick={() => plan(configured() ? "llm" : "rule")}
+                          onClick={() => plan("llm")}
                         >
                           确认需求，安排练习 <ChevronRight size={17} />
                         </button>
-                        <Show when={configured()}>
-                          <button
-                            disabled={Boolean(busy())}
-                            onClick={() => plan("rule")}
-                          >
-                            使用规则预设
-                          </button>
-                        </Show>
                       </div>
                     </section>
                   </Show>
@@ -1066,6 +1296,7 @@ export default function App() {
                       config={config()}
                       busy={Boolean(busy())}
                       configured={configured()}
+                      onConfigure={configureAssemblyModel}
                       onChange={setBlueprint}
                       onSelect={select}
                     />
@@ -1076,6 +1307,7 @@ export default function App() {
                       config={config()}
                       busy={Boolean(busy())}
                       operation={operation}
+                      onRefreshDraft={next => setDraft(current => current?.draftId === next?.draftId && next.revision >= current.revision ? next : current)}
                       preview={() => {
                         setPreview(true);
                         setKind("student");
@@ -1167,11 +1399,12 @@ export default function App() {
                     重新读取草稿
                   </button>
                 </Show>
-                <Show when={busy() && view() !== "import" && view() !== "bank"}>
+                <Show when={busy() && !["import", "bank", "preparing", "planning", "selecting"].includes(view())}>
                   <Busy
                     label={busy()}
                     cancel={
                       busy().includes("比较") ||
+                      busy().includes("评估") ||
                       busy().includes("安排") ||
                       busy().includes("整理")
                         ? () =>
@@ -1181,15 +1414,6 @@ export default function App() {
                         : undefined
                     }
                   />
-                </Show>
-                <Show when={error() && stage() === "review" && configured()}>
-                  <button
-                    class="secondary"
-                    disabled={Boolean(busy())}
-                    onClick={() => plan("rule")}
-                  >
-                    使用规则预设
-                  </button>
                 </Show>
               </div>
             </main>
@@ -1204,6 +1428,7 @@ export default function App() {
               showModel={settingsModel()}
               showOcr={settingsOcr()}
               onBankChanged={async()=>setConfig((await request("bootstrap")).config)}
+              onDeveloperModeChange={enabled => { setDeveloperEnabled(enabled); if (!enabled) setDeveloperLogOpen(false); }}
               onClose={() => {
                 setSettings(false);
                 if (innerWidth <= 760) setSidebar(false);
@@ -1444,7 +1669,7 @@ export default function App() {
                   <div><dt>用途</dt><dd>{purposeLabel(currentRequirements()?.purpose)}</dd></div>
                   <div><dt>范围</dt><dd>{scopeNames()}</dd></div>
                   <div><dt>原定题量</dt><dd>{counts(currentRequirements())} 题 · {currentRequirements()?.durationMinutes} 分钟</dd></div>
-                  <div><dt>要求</dt><dd>{currentRequirements()?.teacherRequest || currentRequirements()?.goal}</dd></div>
+                  <div><dt>要求</dt><dd><RichText text={currentRequirements()?.teacherRequest || currentRequirements()?.goal || ""} /></dd></div>
                 </dl>
               </section>
               <section class="assembly-details-section">
@@ -1461,7 +1686,7 @@ export default function App() {
                       {(slot: any) => <tr>
                         <td>{slot.number}</td>
                         <td>{typeLabels[slot.questionType] || slot.questionType}</td>
-                        <td>{slot.taskLabel || config()?.tasks.find((task: any) => task.id === slot.taskId)?.label || "未指定考查点"}</td>
+                        <td><RichText text={teachingDisplayText(slot.taskLabel || config()?.tasks.find((task: any) => task.id === slot.taskId)?.label || "未指定考查点")} /></td>
                         <td class="assembly-slot-difficulty">
                           {slotDifficulty(slot, currentRequirements(), draft()?.baseline?.questionIndexSnapshot).label}
                           <Show when={slotDifficulty(slot, currentRequirements(), draft()?.baseline?.questionIndexSnapshot).detail}>
@@ -1482,6 +1707,10 @@ export default function App() {
               {toast()}
             </div>
           </Show>
+          <Show when={developerEnabled() && !settings() && ["new", "preparing", "planning", "selecting", "workbench", "bank"].includes(view())}>
+            <button type="button" class="developer-log-entry" aria-controls="developer-assembly-log-window" aria-expanded={developerLogOpen()} onClick={() => setDeveloperLogOpen(value => !value)} title="查看组卷开发日志"><FileCode2 size={16} />开发日志</button>
+          </Show>
+          <Show when={developerEnabled() && developerLogOpen()}><DeveloperAssemblyLog traceId={assemblyLogTrace()} onClose={() => setDeveloperLogOpen(false)} /></Show>
         </Show>
       </Show>
       <Show when={pdfPreview() && paper()}>

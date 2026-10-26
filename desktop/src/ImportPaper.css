@@ -357,6 +357,7 @@
 .import-manual-fields { border: 0; padding: 12px 0 0; margin: 0; min-width: 0; }
 .import-manual-fields .check-row { align-items: flex-start; }
 .import-manual-fields .field-label { margin-top: 12px; }
+.import-teaching-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 .import-leave-hint { font-size: 12px; margin-top: 16px; }
 .import-audit-workspace.import-audit-workspace-plain { grid-template-columns: minmax(0, 1fr); }
 .import-opinion-heading { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
