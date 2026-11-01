@@ -22,9 +22,9 @@
 .student-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .student-list-heading h2 { margin: 0; font-size: 15px; font-weight: 600; }
 .student-list-heading > span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.student-list-items { min-height: 0; overflow-y: auto; scrollbar-width: thin; display: grid; gap: 4px; }
+.student-list-items { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-gutter: stable; display: grid; align-content: start; gap: 4px; }
 .student-list-avatar { width: 36px; height: 36px; border: 1px solid var(--line); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; background: white; color: var(--muted); }
-.student-list-identity { flex: 1; }
+.student-list-identity { flex: 1; min-width: 0; }
 .student-list-panel .search-field {
   width: 100%;
   flex-shrink: 0;

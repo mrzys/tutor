@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { validateTeachingResult } from './teaching-term-pipeline.mjs';
 import { validateQualityResolutions } from './teaching-quality-signals.mjs';
+import { mergeTeachingSentencePatch } from './teaching-sentence-patch.mjs';
 
 const fail = code => Object.assign(new Error(code), { code });
 const exact = (value, fields) => value && typeof value === 'object' && !Array.isArray(value)
@@ -85,6 +86,7 @@ export function createTeachingPatchContract(context) {
  * hashing here binds the exact offline originalMaterial; Rust imports bind
  * their own complete source-content contract. Neither trusts response hashes. */
 export function mergeTeachingBoundedPatch(context, patch) {
+  if ([1,2].includes(context?.patchContract?.segmentPatchVersion)) return mergeTeachingSentencePatch(context, patch);
   const contract = createTeachingPatchContract(context);
   if (!contract || teachingPatchHash(contract) !== teachingPatchHash(context.patchContract)
     || !exact(patch, ['questionId', 'candidateSha256', 'sourceContentSha256', 'patches', 'unresolvedIssues', ...(contract?.qualityFindings ? ['qualityResolutions'] : [])])

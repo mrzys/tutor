@@ -1,7 +1,40 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requiredReviewChecks, sourceReviewLabel, sourceReviewDescription, briefReviewReasons, importTeachingPresentation, hasUnstartedTeaching,
+import { requiredReviewChecks, sourceReviewLabel, sourceReviewDescription, briefReviewReasons, importTeachingPresentation, importAssessmentPresentation, hasUnstartedTeaching,
   teachingIssueRows, teachingAcknowledgementPayload, teachingPatchPayload } from "../src/import-review.ts";
+
+test('simulated assessment: ready draft fills display gaps without inventing formal knowledge or paths', () => {
+  const q = {difficultyAssessment:{level:null},primaryKnowledgeUids:[],solutionPaths:[],task:{id:'',label:''},teachingWorkflow:{status:'ready_candidate',finalResult:{difficultyAssessment:{level:'easy_medium',basis:'定义域与包含关系'},teachingFocus:{examFocus:'判断充分必要条件'},teachingSolution:'完整解析',issues:[]}}};
+  const original = JSON.stringify(q);
+  const view = importAssessmentPresentation(q);
+  assert.equal(view.level,'easy_medium');
+  assert.equal(view.examFocus,'判断充分必要条件');
+  assert.equal(view.difficultyOrigin,'AI内容估计');
+  assert.equal(view.hasTeachingSolution,true);
+  assert.equal(view.needsSupplement,true);
+  assert.deepEqual(view.paths,[]);
+  assert.equal(JSON.stringify(q),original);
+});
+
+test('simulated assessment: manual difficulty wins and pending drafts never become usable assessments', () => {
+  const q = {difficultyAssessment:{level:'medium',basis:'人工依据'},task:{id:'t',label:'正式任务'},primaryKnowledgeUids:['k'],solutionPaths:[{id:'p'}],teachingWorkflow:{status:'needs_review',candidateResult:{difficultyAssessment:{level:'hard'},teachingFocus:{examFocus:'待核考点'},teachingSolution:'问题稿'}}};
+  const view=importAssessmentPresentation(q);
+  assert.equal(view.level,'medium'); assert.equal(view.basis,'人工依据');
+  assert.equal(view.examFocus,'正式任务'); assert.equal(view.needsSupplement,false);
+  assert.equal(view.hasTeachingSolution,false); assert.equal(view.teachingSolutionPending,true);
+  assert.equal(importAssessmentPresentation({...q,knowledgeMappingSource:'teacher_edit',teachingWorkflow:{...q.teachingWorkflow,status:'ready_candidate',finalResult:q.teachingWorkflow.candidateResult}}).examFocus,'正式任务');
+  assert.equal(importAssessmentPresentation({...q,difficultyAssessment:{level:null}}).level,null);
+});
+
+test('simulated assessment: stale bindings and failed review holds never supply effective metadata', () => {
+  const q = {teachingWorkflow:{status:'ready_candidate',sourceContentSha256:'a'.repeat(64),finalResult:{difficultyAssessment:{level:'medium'},teachingFocus:{examFocus:'旧考点'},teachingSolution:'旧稿'}}};
+  const control = {sourceContentSha256:'a'.repeat(64),candidateSha256:'c'.repeat(64)};
+  assert.equal(importAssessmentPresentation(q,control).level,'medium');
+  assert.equal(importAssessmentPresentation(q,{...control,sourceContentSha256:'b'.repeat(64)}).level,null);
+  assert.equal(importAssessmentPresentation(q,{...control,candidateSha256:null}).examFocus,'');
+  q.teachingWorkflow.reviewFailurePending=true;
+  assert.equal(importAssessmentPresentation(q,control).level,null);
+});
 
 test("simulated review: absent answers and solutions require only source and material checks", () => {
   assert.deepEqual(requiredReviewChecks({answer:"",solution:"",parts:[]}), ["sourceMatched","formulaChecked"]);
@@ -54,6 +87,20 @@ test("simulated review: continue only exposes unspent teaching work", () => {
   assert.equal(hasUnstartedTeaching(q("generation_failed",0,{reviewEligible:true})),true);
   assert.equal(hasUnstartedTeaching(q("generation_failed",0,{reviewEligible:false})),false);
   for(const code of ["source_changed","generation_interrupted","review_interrupted"]) assert.equal(hasUnstartedTeaching(q("needs_review",0,{findings:[{code}]})),false);
+});
+
+test("simulated teaching display translates codes while every unresolved finding still blocks readiness", () => {
+  for (const code of ["literal_newline_escape", "unpaired_math_delimiter", "future_display_defect"]) {
+    const question = { teachingWorkflow: { status: "ready_candidate", finalResult: { answer: "2", teachingSolution: "模拟解析" }, findings: [{ type: "display", code }] } };
+    const before = structuredClone(question);
+    const view = importTeachingPresentation(question);
+    assert.equal(view.ready, false);
+    assert.equal(view.issues.length, 1);
+    assert.match(view.issues[0], /解析/);
+    assert.ok(!view.issues[0].includes(code));
+    if (code === "literal_newline_escape") assert.equal(view.issues[0], "解析中存在未正确处理的换行符，需修复排版");
+    assert.deepEqual(question, before);
+  }
 });
 
 function simulatedTeachingControls() {

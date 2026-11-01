@@ -90,7 +90,14 @@ pub fn adopt(store: &Store, payload: &Value) -> AppResult<Value> {
             || request["promptSha256"] != hash_json(&body["messages"][0]["content"])) {
             return Err(err("teaching_audit_changed", "原请求封装缺失或哈希不一致。"));
         }
-        let material_hash = same_material(q, body)?;
+        let actual_context:Value=serde_json::from_str(s(&body["messages"][1],"content"))?;
+        let context=if actual_context["patchContract"]["segmentPatchVersion"]==2 {
+            let (_,full)=external_file(&entry["reviewContextFile"])?;
+            let full=full.get("context").cloned().unwrap_or(full);
+            if teaching::model_context(&full)!=actual_context {return Err(err("teaching_audit_changed","外部短编号请求与完整本机版本绑定不一致。"));}full
+        }else{actual_context};
+        let mut bound_body=body.clone();bound_body["messages"][1]["content"]=json!(context.to_string());
+        let material_hash = same_material(q, &bound_body)?;
         // Historical Rust response audits intentionally omitted the provider's
         // model field. Preserve that absence; model identity still comes from
         // the exact actual request, never a fabricated response field.
@@ -102,7 +109,6 @@ pub fn adopt(store: &Store, payload: &Value) -> AppResult<Value> {
             return Err(err("invalid_teaching_adoption", "实际模型响应未完整完成或模型身份不符。"));
         }
         let parsed: Value = serde_json::from_str(s(&response["choices"][0]["message"], "content"))?;
-        let context: Value=serde_json::from_str(s(&body["messages"][1],"content"))?;
         let (candidate, task) = if parsed["questions"].is_array() {
             (rows(&parsed["questions"]).into_iter().find(|c|c["questionId"]==id).unwrap_or(Value::Null), "question_import_teaching_generation")
         } else if context["patchContract"].is_object() {
@@ -159,19 +165,32 @@ pub fn adopt(store: &Store, payload: &Value) -> AppResult<Value> {
         wf["controlActionsHistory"] = json!([]);
         wf["reviewDispositions"] = Value::Null;
         if let Some(object)=wf.as_object_mut() {
-            for key in ["reviewPatchContract","reviewPatchBaseCandidate","reviewPatchResponse","reviewPatchSourceHashDomain"] {object.remove(key);}
+            for key in ["reviewPatchContract","reviewPatchContext","reviewPatchBaseCandidate","reviewPatchResponse","reviewPatchSourceHashDomain"] {object.remove(key);}
         }
-        let context:Value=serde_json::from_str(s(&envelope["body"]["messages"][1],"content"))?;
+        let actual_context:Value=serde_json::from_str(s(&envelope["body"]["messages"][1],"content"))?;
+        let context=if actual_context["patchContract"]["segmentPatchVersion"]==2 {
+            let (_,full)=external_file(&entry["reviewContextFile"])?;full.get("context").cloned().unwrap_or(full)
+        }else{actual_context};
         if context["patchContract"].is_object() {
             wf["reviewPatchContract"]=context["patchContract"].clone();
             wf["reviewPatchBaseCandidate"]=context["candidate"].clone();
+            if context["patchContract"]["segmentPatchVersion"]==2 {wf["reviewPatchContext"]=context.clone();}
             let actual_response:Value=serde_json::from_slice(&response_bytes)?;
             wf["reviewPatchResponse"]=serde_json::from_str(s(&actual_response["choices"][0]["message"],"content"))?;
             wf["reviewPatchSourceHashDomain"]=json!(if context["patchContract"]["sourceContentSha256"]==source_hash{"question_content"}else{"original_material"});
         }
         wf["candidateResult"] = candidate.clone();
         wf["reviewedCandidate"] = candidate.clone();
-        let mut flags = teaching::findings(&candidate, s(&candidate,"questionId"));
+        // This explicit adoption has independent, candidate-bound evidence;
+        // it may clear a prior model failure hold, unlike reading an initial draft.
+        wf["reviewFailurePending"] = json!(false);
+        let mut flags = if context["patchContract"]["resolutionVersion"]==2 {
+            let filtered=teaching::filtered_review_findings(&candidate,&context,&wf["reviewPatchResponse"]);
+            wf["termResolvedCandidateSha256"]=json!(hash_json(&candidate));
+            wf["termResolvedSourceSha256"]=context["patchContract"]["sourceContentSha256"].clone();
+            wf["termReviewFindings"]=context["reviewFindings"].clone();
+            filtered
+        }else{teaching::findings(&candidate,s(&candidate,"questionId"))};
         if audit["classroomUsable"] != true && flags.is_empty() {
             flags.push(json!({"type":"independent_review","code":"classroom_review_required",
                 "message":"独立核查尚未确认课堂可用，需显式修订并重新核对。"}));

@@ -125,11 +125,11 @@ mod tests {
     #[test]
     fn resumed_ocr_audit_path_uses_canonical_parent_even_before_directory_creation() {
         let directory=tempfile::tempdir().unwrap();
-        let store=Store::open(directory.path(),&crate::bank::tests::seed()).unwrap();
         let parent=directory.path().join("imports/import-simulated-recovery");
         std::fs::create_dir_all(&parent).unwrap();
         let target=parent.canonicalize().unwrap().join("ocr-recovery-simulated");
-        assert_eq!(audit_relative_path(&store,&target).unwrap(),"imports/import-simulated-recovery/ocr-recovery-simulated");
+        assert!(audit_relative_path_in(directory.path(),&target).is_err());
+        assert_eq!(planned_audit_relative_path_in(directory.path(),&target).unwrap(),"imports/import-simulated-recovery/ocr-recovery-simulated");
         assert!(!target.exists());
     }
     #[test]
@@ -191,8 +191,16 @@ pub(super) fn resume_existing_ocr(store:&Store,model:&ModelClient,payload:&Value
     // Derive from the canonical import parent (Windows may use a \\?\ prefix).
     let path=root.join(format!("ocr-recovery-{}",&hash_json(&json!(op))[..24]));
     let before=record.clone();
-    let result=crate::ocr::recover_existing(&settings,&old,&path,s(&record,"filename"),cancel);
-    record["ocrRecovery"]=json!({"mode":"existing_job_get_only","newOcrSubmission":false,"previousAttemptSha256":payload["previousAttemptSha256"],"previousAttempt":record["ocrAttempt"],"recoveryRelativePath":audit_relative_path(store,&path)?,"operationId":op});
+    let submit=files.iter().find(|f|f["name"]=="001-submit.json")
+        .ok_or_else(||err("ocr_resume_missing_job","旧识别记录缺少已受理任务的原始凭据。"))?;
+    let binding=json!({"sourceSha256":sha(&bytes),"submitSha256":submit["sha256"],
+        "oldAuditPath":old.to_string_lossy(),"files":files});
+    let result=crate::ocr::resume_existing(&settings,&bytes,s(&record,"filename"),&old,&path,Some(&binding),cancel);
+    record["ocrRecovery"]=json!({"mode":"existing_job_get_only","newOcrSubmission":false,"previousAttemptSha256":payload["previousAttemptSha256"],"previousAttempt":record["ocrAttempt"],"recoveryRelativePath":planned_audit_relative_path(store,&path)?,"operationId":op});
+    if path.join("accepted-job.json").is_file() {
+        record["ocrAttempt"]=json!({"relativePath":planned_audit_relative_path(store,&path)?,"provider":settings.descriptor(),
+            "sourceSha256":record["source"]["sha256"],"startedAt":now(),"newOcrSubmission":false,"resumeFrom":record["ocrRecovery"]["previousAttempt"]});
+    }
     match result {
         Ok(document)=>{if document.pages.len()!=pages{return Err(err("ocr_page_mismatch","恢复页数与真实PDF不一致，未采纳。"));}paddle::save_document(store,&mut record,&document,&path,settings.descriptor())?;record["source"]["physicalPages"]=json!(pages);record["extractedPages"]=json!(document.pages.iter().map(|p|s(p,"text")).collect::<Vec<_>>());record["sourceIssues"]=json!(document.issues);record["status"]=json!("pending_review");record["recognitionStage"]=json!("ocr_ready");record["error"]=Value::Null;},
         Err(error)=>{record["status"]=json!("failed");record["error"]=serde_json::to_value(error)?;},

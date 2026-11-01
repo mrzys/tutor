@@ -44,6 +44,11 @@ pub(super) fn list(store: &Store, payload: &Value) -> AppResult<Value> {
         'revision',json_extract(payload,'$.revision'),
         'createdAt',json_extract(payload,'$.createdAt'),
         'updatedAt',json_extract(payload,'$.updatedAt'),
+        'recognitionStage',json_extract(payload,'$.recognitionStage'),
+        'backgroundJob',CASE WHEN json_type(payload,'$.backgroundJob')='object' THEN json_object(
+            'mode',json_extract(payload,'$.backgroundJob.mode'),'status',json_extract(payload,'$.backgroundJob.status'),
+            'error',CASE WHEN json_type(payload,'$.backgroundJob.error')='object' THEN json_object('code',substr(COALESCE(json_extract(payload,'$.backgroundJob.error.code'),''),1,120),'message',substr(COALESCE(json_extract(payload,'$.backgroundJob.error.message'),''),1,600)) ELSE NULL END
+        ) ELSE NULL END,
         'error',CASE WHEN json_type(payload,'$.error')='object' THEN json_object('code',substr(COALESCE(json_extract(payload,'$.error.code'),''),1,120),'message',substr(COALESCE(json_extract(payload,'$.error.message'),''),1,600)) ELSE NULL END,
         'questionCount',CASE WHEN json_type(payload,'$.questions')='array' THEN json_array_length(payload,'$.questions') ELSE 0 END,
         'publishedCount',CASE WHEN json_type(payload,'$.publishedQuestionIds')='array' THEN json_array_length(payload,'$.publishedQuestionIds') ELSE 0 END
@@ -53,9 +58,21 @@ pub(super) fn list(store: &Store, payload: &Value) -> AppResult<Value> {
         .query_map(rusqlite::params![page_size as i64, offset as i64], |row| {
             row.get::<_, String>(0)
         })?;
-    let imports = summaries
+    let mut imports = summaries
         .map(|row| serde_json::from_str::<Value>(&row?).map_err(AppError::from))
         .collect::<AppResult<Vec<_>>>()?;
+    for record in &mut imports {
+        let process = diagnostics::process_metadata(record);
+        record["stageKey"] = process["stageKey"].clone();
+        record["stageLabel"] = process["stageLabel"].clone();
+        if record["status"] == "failed" || record["backgroundJob"]["status"] == "failed" {
+            for (target,source) in [("errorCategory","category"),("errorCategoryLabel","categoryLabel"),
+                ("errorSubcategory","subcategory"),("errorSubcategoryLabel","subcategoryLabel"),
+                ("errorServiceLabel","serviceLabel"),("errorOperationLabel","operationLabel"),("errorCauseNote","causeNote")] {
+                record[target] = process[source].clone();
+            }
+        }
+    }
     drop(statement);
     transaction.commit()?;
     Ok(
@@ -111,6 +128,18 @@ mod tests {
             .user
             .query_row("SELECT total_changes()", [], |r| r.get(0))
             .unwrap()
+    }
+    #[test]
+    fn history_exposes_bounded_stage_and_current_failure_without_deserializing_material() {
+        let (_dir,mut store,model)=fixture();
+        let record=json!({"importId":"sim-classification","status":"pending_review","recognitionStage":"annotating",
+            "filename":"模拟.pdf","createdAt":"2026-10-29T00:00:00Z","questions":[],
+            "backgroundJob":{"mode":"annotation","status":"failed","error":{"code":"model_request_timeout","message":"连接模型服务超时","privatePayload":"must-not-leak"},"privateJob":"must-not-leak"},
+            "ocrSource":{"private":"must-not-leak"}});
+        store.put_document("imports","sim-classification",&record).unwrap();let writes=changes(&store);
+        let result=call(&mut store,&model,json!({}));let row=&result["imports"][0];
+        assert_eq!(row["stageKey"],"annotation");assert_eq!(row["errorCategory"],"infrastructure");assert_eq!(row["errorSubcategory"],"network");
+        assert!(!result.to_string().contains("must-not-leak"));assert_eq!(changes(&store),writes);assert_eq!(store.document("imports","sim-classification").unwrap(),record);
     }
     #[test]
     fn simulated_seventy_five_imports_page_without_big_fields_or_model_configuration() {

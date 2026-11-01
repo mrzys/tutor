@@ -44,10 +44,14 @@ test('real maintenance orchestrator performs N+H calls, audits requests/scans an
   assert((await readdir(path.join(options.outputDirectory, 'review-requests'))).length === 1);
 });
 
-test('real model catalogue omission blocks chat; no static available-model fallback', async t => {
-  const options = await setup(t); const fake = client(() => assert.fail(), ['other']);
-  await assert.rejects(runTeachingTermMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake }), { code: 'requested_model_not_in_provider_catalogue' });
-  assert.equal(fake.calls.length, 0); assert.equal(JSON.parse(await readFile(path.join(options.outputDirectory, 'failure.json'), 'utf8')).code, 'requested_model_not_in_provider_catalogue');
+test('configured model executes without a model catalogue request or saved fictitious list', async t => {
+  const options = await setup(t); const fake = client(data => draft(data.questionId, '由题意计算得2。'), ['other']);
+  fake.getModels = () => assert.fail('execution must not fetch a model list');
+  const { summary } = await runTeachingTermMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake });
+  assert.equal(fake.calls.length, 2); assert.equal(summary.modelListRequests, 0);
+  assert.equal(summary.providers.generation.modelListFetched, false);
+  assert.equal(JSON.parse(await readFile(path.join(options.outputDirectory, 'protocol.json'), 'utf8')).modelSelectionSource, 'configured_model');
+  assert(!(await readdir(options.outputDirectory)).includes('models-public.json'));
 });
 
 test('existing destination is refused before credentials/client access', async t => {

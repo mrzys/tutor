@@ -29,6 +29,7 @@ const MISSING_MATERIAL_ROLES: usize = 16;
 const FORGED_MATERIAL_BLOCK: usize = 17;
 const SOURCE_PAGE_AS_QUESTION: usize = 18;
 const UNRELATED_MATERIAL_BLOCK: usize = 19;
+const IMAGE_DOWNLOAD_FAIL: usize = 20;
 // Simulates an invalid LaTeX escape in the JSON content, not provider HTTP JSON.
 const INVALID_MODEL_JSON: &str = r#"{"questions":[{"stem":"simulated \sqrt{2}"}]}"#;
 const TABLE: &str =
@@ -206,8 +207,9 @@ fn server(mode: usize) -> Server {
             "/ocr/jobs"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"jobId":"simulated-job"}})).unwrap()),
             "/ocr/jobs/simulated-job"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"state":"done","resultUrl":{"jsonUrl":format!("{b}/result.jsonl")},"extractProgress":{"totalPages":if mode==PAGE_MISMATCH{2}else{1}}}})).unwrap()),
             "/result.jsonl"=>(200,serde_json::to_vec(&layout(&b,mode)).unwrap()),
+            "/page.png" if mode==IMAGE_DOWNLOAD_FAIL=>(503,br#"{"message":"simulated image download failure"}"#.to_vec()),
             "/page.png"=>(200,page_png()),
-            "/v1/models"=>(200,serde_json::to_vec(&json!({"data":[{"id":"simulated-import-model"}]})).unwrap()),
+            "/v1/models"=>(503,br#"{"error":{"message":"simulated unavailable catalogue"}}"#.to_vec()),
             "/v1/chat/completions"=>{
                 let request:Value=serde_json::from_slice(&bytes[split..]).unwrap();
                 let input=&request["messages"][1]["content"];
@@ -396,7 +398,7 @@ fn simulated_upload_preserves_graph_table_and_null_order_through_review_publish_
     assert_eq!(record["status"], "pending_review", "{record:#}");
     assert_eq!(f.server.count("/ocr/jobs"), 1);
     assert_eq!(f.server.count("/v1/chat/completions"), 3); // index + source + independent classroom draft
-    assert_eq!(f.server.count("/v1/models"), 1);
+    assert_eq!(f.server.count("/v1/models"), 0);
     assert_eq!(
         record["ocrSource"]["pages"][0]["blocks"][1]["order"],
         Value::Null
@@ -483,6 +485,45 @@ fn simulated_ocr_failure_preserves_original_and_explicit_retry_recovers() {
     let recovered = retry(&mut f, &failed);
     assert_eq!(recovered["status"], "pending_review", "{recovered:#}");
     assert_eq!(f.server.count("/ocr/jobs"), 2);
+}
+#[test]
+fn simulated_completed_ocr_image_failure_resumes_old_job_in_ordinary_import() {
+    let mut f=fixture(IMAGE_DOWNLOAD_FAIL,true);
+    let failed=upload(&mut f);
+    assert_eq!(failed["status"],"failed");
+    assert!(failed["ocrSource"].is_null());
+    assert_eq!(f.server.count("/ocr/jobs"),1);
+    assert_eq!(f.server.count("/ocr/jobs/simulated-job"),1);
+    let old=f.dir.path().join(s(&failed["ocrAttempt"],"relativePath"));
+    let accepted=std::fs::read(old.join("accepted-job.json")).unwrap();
+    let old_submit=std::fs::read(old.join("001-submit.json")).unwrap();
+    f.server.mode.store(SUCCESS,Ordering::SeqCst);
+    let recovered=retry(&mut f,&failed);
+    assert_eq!(recovered["status"],"pending_review","{recovered:#}");
+    assert_eq!(f.server.count("/ocr/jobs"),1,"ordinary continuation must not submit OCR again");
+    assert_eq!(f.server.count("/ocr/jobs/simulated-job"),2);
+    assert_eq!(recovered["ocrAttempt"]["newOcrSubmission"],false);
+    assert_eq!(recovered["ocrAttempt"]["resumeFrom"]["relativePath"],failed["ocrAttempt"]["relativePath"]);
+    assert_eq!(std::fs::read(old.join("001-submit.json")).unwrap(),old_submit);
+    assert_eq!(std::fs::read(old.join("accepted-job.json")).unwrap(),accepted);
+    paddle::verify_audit(&f.store,&recovered).unwrap();
+}
+#[test]
+fn simulated_pdf_preflight_failure_preserves_existing_accepted_ocr_pointer() {
+    let mut f=fixture(IMAGE_DOWNLOAD_FAIL,true);
+    let failed=upload(&mut f);
+    let prior=failed["ocrAttempt"].clone();
+    let old=f.dir.path().join(s(&prior,"relativePath"));
+    let accepted=std::fs::read(old.join("accepted-job.json")).unwrap();
+    let calls=f.server.calls.lock().unwrap().len();
+    // Fault injection at the internal PDF-inspection boundary, after a real
+    // accepted-task receipt exists. No replacement OCR task may be persisted.
+    let result=process_import_scoped(&mut f.store,&f.model,"simulated-invalid-pdf-preflight","simulated-hash",
+        &AtomicBool::new(false),failed,b"invalid PDF inspection fixture".to_vec(),ImportScope::Full).unwrap();
+    assert_eq!(result["import"]["status"],"failed");
+    assert_eq!(result["import"]["ocrAttempt"],prior);
+    assert_eq!(f.server.calls.lock().unwrap().len(),calls);
+    assert_eq!(std::fs::read(old.join("accepted-job.json")).unwrap(),accepted);
 }
 #[test]
 fn simulated_llm_failure_preserves_ocr_and_retry_reuses_it_without_uploading_again() {

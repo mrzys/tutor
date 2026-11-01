@@ -73,7 +73,7 @@ test('one explicit review uses shared prompt and distinct audit scope; saves exa
   const before = await readFile(options.manifestFile, 'utf8');
   const { results, summary } = await runScopedTeachingReview({ ...options, validateDisplay: noDisplayFindings,
     reviewClientFactory: async opts => { factoryOptions = opts; return client; } });
-  assert.equal(client.calls, 1); assert.equal(client.listCalls, 1);
+  assert.equal(client.calls, 1); assert.equal(client.listCalls, 0);
   assert.equal(factoryOptions.timeoutMs, 300000);
   assert(factoryOptions.agentEnvFile.endsWith('__disabled_agent_env_fallback__'));
   assert.equal(summary.totalAdditionalReviewCalls, 1);
@@ -113,15 +113,24 @@ test('clean fresh generation never discovers reviewer; flagged generation gets e
   const reviewer = fake('qwen3.8-flash', context => draft(context.originalMaterial.questionId));
   const flagged = await runScopedTeachingReview({ ...options, outputDirectory: path.join(options.root, 'flagged'), validateDisplay: noDisplayFindings,
     generationClientFactory: async () => flaggedGenerator, reviewClientFactory: async () => reviewer });
-  assert.equal(flaggedGenerator.calls, 1); assert.equal(reviewer.calls, 1); assert.equal(reviewer.listCalls, 1);
+  assert.equal(flaggedGenerator.calls, 1); assert.equal(reviewer.calls, 1); assert.equal(reviewer.listCalls, 0);
   assert.equal(flagged.results[0].generationCalls, 1); assert.equal(flagged.results[0].additionalReviewCalls, 1);
 });
 
-test('wrong model catalogue blocks request and no saved candidate is promoted', async t => {
+test('direct unavailable-model response retains the candidate without a list, retry or fallback', async t => {
   const options = await setup(t);
   const client = fake('qwen3.8-flash', () => draft('sim-scoped'));
-  client.getModels = async () => ({ models: ['another-provider-model'] });
+  client.getModels = () => assert.fail('execution must not fetch a model list');
+  client.complete = async (messages, { onRequest }) => {
+    client.calls++;
+    const request = { model: client.publicProfile.model, messages, max_tokens: 16384 };
+    await onRequest(request);
+    throw Object.assign(new Error('http_error'), { code: 'http_error', safeRecord: { status: 404 } });
+  };
   const { results } = await runScopedTeachingReview({ ...options, validateDisplay: noDisplayFindings, reviewClientFactory: async () => client });
-  assert.equal(client.calls, 0); assert.equal(results[0].candidate, null);
-  assert.equal(results[0].error.code, 'requested_model_not_in_provider_catalogue');
+  assert.equal(client.calls, 1); assert.equal(results[0].candidate, null);
+  assert.equal(results[0].error.code, 'http_error');
+  assert.equal(results[0].additionalReviewCalls, 1);
+  assert.equal((await json(path.join(options.outputDirectory, 'protocol.json'))).modelListFetched, false);
+  assert(!(await readdir(options.outputDirectory)).some(name => name.endsWith('models-public.json')));
 });

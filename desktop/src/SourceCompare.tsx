@@ -2,14 +2,136 @@ import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount }
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
 import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Columns2, FileText, Image, ZoomIn, ZoomOut } from "lucide-solid";
+import { Columns2, FileText, Image, ZoomIn, ZoomOut, LocateFixed, Maximize2 } from "lucide-solid";
 import { request } from "./bridge";
 import { RichText } from "./Paper";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import "./SourceCompare.css";
+import { sourcePageFocus } from "./source-page-focus";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 type CompareMode = "split" | "image" | "text";
+
+async function verifiedSourceBytes(value: any): Promise<Uint8Array> {
+  if (typeof value?.dataBase64 !== "string" || !/^[a-f0-9]{64}$/i.test(value.sha256 || "")) throw new Error("原件数据或校验信息不完整，请重新打开。");
+  const bytes = Uint8Array.from(atob(value.dataBase64), char => char.charCodeAt(0));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const actual = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  if (actual !== value.sha256) throw new Error("原件内容校验失败，请保留原件重新导入。");
+  return bytes;
+}
+
+/** Review-only original page. The host places the actual transcribed question
+ * beside this viewer; source pages never become student question assets. */
+export function SourcePageViewer(props: { importId: string; pages?: number[]; question?: any; focusRequest?: number; onExpand?: () => void }) {
+  const [page, setPage] = createSignal(props.pages?.find(number => number > 0) || 1);
+  const [zoom, setZoom] = createSignal(1), [width, setWidth] = createSignal(500);
+  const [source, setSource] = createSignal<any>(null), [loading, setLoading] = createSignal(false);
+  const [rendering, setRendering] = createSignal(false), [imageReady, setImageReady] = createSignal(false);
+  const [error, setError] = createSignal(""), [retry, setRetry] = createSignal(0), [focusTick, setFocusTick] = createSignal(0);
+  let pane!: HTMLDivElement, stage!: HTMLDivElement, canvas!: HTMLCanvasElement;
+  let closed = false, loadVersion = 0, renderVersion = 0, pdfVersion = 0, identity = "", pdfOwner = "", autoFocusIdentity = "";
+  let pdfTask: PDFDocumentLoadingTask | null = null, pdfPromise: Promise<PDFDocumentProxy> | null = null, renderTask: RenderTask | null = null;
+  let drag: { pointer: number; x: number; y: number; left: number; top: number } | null = null;
+  const cache = new Map<string, any>();
+  const focus = createMemo(() => sourcePageFocus(source(), String(props.question?.questionId || "")));
+  const pages = createMemo(() => [...new Set((props.pages || []).filter(number => Number.isSafeInteger(number) && number > 0))]);
+  const pageCount = () => source()?.pageCount || Math.max(1, ...pages());
+  function stopRender() { renderVersion++; renderTask?.cancel(); renderTask = null; if (canvas) { canvas.width = 0; canvas.height = 0; } }
+  function resetPdf() { stopRender(); pdfVersion++; void pdfTask?.destroy().catch(() => {}); pdfTask = null; pdfPromise = null; pdfOwner = ""; }
+  createEffect(() => {
+    const next = `${props.importId}|${props.question?.questionId || ""}`;
+    if (next === identity) return;
+    if (identity.split("|")[0] !== props.importId) { resetPdf(); cache.clear(); }
+    identity = next; setPage(pages()[0] || 1); setZoom(1); setFocusTick(value => value + 1);
+  });
+  createEffect(() => {
+    const importId = props.importId, questionId = String(props.question?.questionId || ""), number = page(); retry();
+    const own = ++loadVersion, key = `${importId}|${questionId}|${number}`;
+    stopRender(); setSource(null); setImageReady(false); setError(""); setLoading(true);
+    (async () => {
+      let value = cache.get(key);
+      if (!value) {
+        value = await request("import_source_page", { importId, page: number, ...(questionId ? { questionId } : {}) });
+        if (value.importId !== importId || value.page !== number || (questionId && value.questionId !== questionId)) throw new Error("原页与当前题目不一致，请重试。");
+        if (value.image) { if (value.image.mimeType !== "image/png") throw new Error("原页图像格式不受支持。"); await verifiedSourceBytes(value.image); }
+        if (closed || own !== loadVersion) return;
+        cache.set(key, value); if (cache.size > 3) cache.delete(cache.keys().next().value!);
+      }
+      if (!closed && own === loadVersion) { setSource(value); setFocusTick(tick => tick + 1); }
+    })().catch(failure => { if (!closed && own === loadVersion) setError(failure.message || "无法读取原卷材料。"); })
+      .finally(() => { if (!closed && own === loadVersion) setLoading(false); });
+  });
+  async function originalPdf(importId: string) {
+    if (!pdfPromise || pdfOwner !== importId) {
+      void pdfTask?.destroy().catch(() => {}); pdfTask = null; pdfPromise = null; pdfOwner = importId;
+      const own = ++pdfVersion;
+      pdfPromise = (async () => {
+        const value = await request("import_original_read", { importId });
+        if (value.importId !== importId) throw new Error("原卷与当前导入记录不一致。");
+        const bytes = await verifiedSourceBytes(value);
+        if (closed || own !== pdfVersion || pdfOwner !== importId || props.importId !== importId) throw new Error("原卷已切换。");
+        pdfTask = getDocument({ data: bytes }); return pdfTask.promise;
+      })().catch(failure => { if (own === pdfVersion && pdfOwner === importId) pdfPromise = null; throw failure; });
+    }
+    return pdfPromise;
+  }
+  createEffect(() => {
+    const value = source(), available = width(), scale = zoom(), importId = props.importId;
+    stopRender(); setRendering(false);
+    if (!value || value.image || !value.hasPdf) return;
+    const number = value.page, own = renderVersion; setRendering(true);
+    (async () => {
+      const pdf = await originalPdf(importId); if (closed || own !== renderVersion) return;
+      const pdfPage = await pdf.getPage(number); if (closed || own !== renderVersion) return;
+      const natural = pdfPage.getViewport({ scale: 1 }), viewport = pdfPage.getViewport({ scale: Math.max(120, available - 24) / natural.width * scale });
+      const density = Math.min(devicePixelRatio || 1, 2); canvas.width = Math.ceil(viewport.width * density); canvas.height = Math.ceil(viewport.height * density);
+      canvas.style.width = `${viewport.width}px`; canvas.style.height = `${viewport.height}px`;
+      const context = canvas.getContext("2d"); if (!context) throw new Error("无法显示原卷页面。");
+      renderTask = pdfPage.render({ canvas, canvasContext: context, viewport, transform: density === 1 ? undefined : [density, 0, 0, density, 0, 0] });
+      await renderTask.promise; if (!closed && own === renderVersion) pdfPage.cleanup();
+    })().catch(failure => { if (!closed && own === renderVersion && failure.name !== "RenderingCancelledException") setError(failure.message || "原卷页面显示失败。"); })
+      .finally(() => { if (!closed && own === renderVersion) setRendering(false); });
+  });
+  function locate() {
+    if (!pane || !stage) return; const bounds = focus()?.bounds;
+    pane.scrollTo({ left: bounds ? Math.max(0, stage.offsetLeft + stage.clientWidth * bounds.left / 100 - 16) : 0,
+      top: bounds ? Math.max(0, stage.offsetTop + stage.clientHeight * bounds.top / 100 - 24) : 0, behavior: "instant" });
+  }
+  createEffect(() => {
+    focusTick(); props.focusRequest; zoom(); width(); if (!imageReady()) return;
+    const current = focus(); if (!current) return;
+    const key = `${identity}|${page()}|${source()?.image?.sha256}`;
+    if (key !== autoFocusIdentity) {
+      autoFocusIdentity = key;
+      // Fit only a validated question range on first display. Subsequent user
+      // zoom choices are retained until switching question or page.
+      setZoom(Math.max(1, Math.min(2.5, Math.round(90 / current.bounds.width * 4) / 4)));
+    }
+    requestAnimationFrame(() => { if (!closed) locate(); });
+  });
+  onMount(() => { const observer = new ResizeObserver(entries => { const next = entries[0]?.contentRect.width; if (next && Math.round(next) !== width()) setWidth(Math.round(next)); }); observer.observe(pane); onCleanup(() => observer.disconnect()); });
+  onCleanup(() => { closed = true; loadVersion++; resetPdf(); cache.clear(); });
+  function beginDrag(event: PointerEvent) { if (event.button !== 0 || event.pointerType === "touch" || (event.target as HTMLElement).closest("button,a,input,select,textarea")) return; drag = { pointer:event.pointerId, x:event.clientX, y:event.clientY, left:pane.scrollLeft, top:pane.scrollTop }; pane.setPointerCapture(event.pointerId); pane.classList.add("is-dragging"); event.preventDefault(); }
+  function endDrag() { drag = null; pane.classList.remove("is-dragging"); }
+  return <section class="source-page-viewer" aria-label="本题原卷">
+    <div class="source-page-toolbar">
+      <label>原卷<select aria-label="本题原卷页码" value={page()} onChange={event => { setPage(Number(event.currentTarget.value)); setZoom(1); }}><For each={pages().length ? pages() : Array.from({ length:pageCount() }, (_,index)=>index+1)}>{number=><option value={number}>第 {number} 页{pages().includes(number) ? " · 本题" : ""}</option>}</For></select></label>
+      <div class="source-page-controls"><button type="button" aria-label="缩小原图" title="缩小原图" disabled={zoom() <= 1} onClick={()=>setZoom(v=>Math.max(1,v-.25))}><ZoomOut size={17}/></button><button type="button" title="恢复适合宽度" aria-label="恢复适合宽度" onClick={()=>setZoom(1)}>{Math.round(zoom()*100)}%</button><button type="button" aria-label="放大原图" title="放大原图" disabled={zoom() >= 3} onClick={()=>setZoom(v=>Math.min(3,v+.25))}><ZoomIn size={17}/></button><button type="button" aria-label="定位当前题原图" title="定位当前题原图" disabled={!focus() || !imageReady()} onClick={locate}><LocateFixed size={17}/></button><Show when={props.onExpand}><button type="button" aria-label="展开原卷对照" title="展开原卷对照" onClick={props.onExpand}><Maximize2 size={17}/></button></Show></div>
+    </div>
+    <div class="source-page-image-scroll" ref={pane} tabIndex={0} aria-label="原图，可滚动或拖动浏览" onPointerDown={beginDrag} onPointerMove={event=>{ if (drag?.pointer===event.pointerId) { pane.scrollLeft=drag.left+drag.x-event.clientX; pane.scrollTop=drag.top+drag.y-event.clientY; } }} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
+      <Show when={loading()}><Busy label="正在读取已保存的原卷…"/></Show><ErrorBanner message={error()} retry={()=>{cache.clear();setRetry(v=>v+1);}}/>
+      <Show when={rendering()}><p class="muted" role="status">正在显示原卷页面…</p></Show>
+      <div class="source-page-image-stage" ref={stage} style={{width:`${zoom()*100}%`}}>
+        <Show when={source()?.image}><img class="source-page-original" draggable={false} src={`data:image/png;base64,${source()?.image.dataBase64}`} alt={`原卷第 ${page()} 页`} onLoad={event=>{ const value=source()?.image; if (value?.width && (event.currentTarget.naturalWidth!==value.width || event.currentTarget.naturalHeight!==value.height)) {setError("原页图像尺寸与已保存材料不一致，未定位题目。");setImageReady(false);return;}setImageReady(true); }} onError={()=>{setImageReady(false);setError("已保存的原页图像无法显示，请查看原卷 PDF。");}}/></Show>
+        <canvas class="source-page-canvas" ref={canvas} hidden={Boolean(source()?.image) || !source()?.hasPdf} aria-label={`原卷 PDF 第 ${page()} 页`}/>
+        <Show when={imageReady()}><For each={focus()?.boxes || []}>{box=><span class="source-page-focus" aria-hidden="true" style={{left:`${box.left}%`,top:`${box.top}%`,width:`${box.width}%`,height:`${box.height}%`}}/>}</For></Show>
+      </div>
+      <Show when={source() && !source().image && !source().hasPdf}><p class="warning-text">此记录未保存原页图像或 PDF，无法显示原图。</p></Show>
+    </div>
+    <p class="source-page-status" role="status">{error() ? "原卷显示未完成，请重试。" : loading() || rendering() ? "读取本机材料，不会重新识别。" : focus() && imageReady() ? "已定位本题原文范围 · 可缩放、拖动查看" : "缺少可靠的本题坐标，当前显示整页，请按题号核对。"}</p>
+  </section>;
+}
 
 export function SourceCompare(props: {
   importId: string;
@@ -75,7 +197,7 @@ export function SourceCompare(props: {
     const own = ++loadVersion;
     stopRender(); setSource(null); setError(""); setLoading(true);
     (async () => {
-      const value = await request("import_source_page", { importId: props.importId, page: number });
+      const value = await request("import_source_page", { importId: props.importId, page: number, includeTextAssets: true });
       if (closed || own !== loadVersion) return;
       if (value.importId !== props.importId || value.page !== number) throw new Error("原页与当前选择不一致，请重试。");
       if (value.image) {
@@ -163,7 +285,7 @@ export function SourceCompare(props: {
           </section>
           <section class="source-compare-panel source-compare-text-panel" hidden={mode() === "image"} aria-label="OCR 识别原文">
             <h3>识别原文 · 第 {page()} 页</h3>
-            <div class="source-compare-text-scroll paper-rich-text"><Show when={sourceText()} fallback={<p class="muted">此页未保存识别原文，请查看原图。</p>}><RichText text={sourceText()} question={props.question} teacher/></Show></div>
+            <div class="source-compare-text-scroll paper-rich-text"><Show when={sourceText()} fallback={<p class="muted">此页未保存识别原文，请查看原图。</p>}><RichText text={sourceText()} question={source()?.context ?? props.question} teacher/></Show></div>
           </section>
         </div>
       </div>

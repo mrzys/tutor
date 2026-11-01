@@ -4,23 +4,38 @@ use super::*;
 use regex::Regex;
 use std::sync::OnceLock;
 pub(super) mod controls;
+mod sentence_patch;
+mod resolutions;
+mod review_protocol;
+mod question_type;
 
 const DICTIONARY: &str = include_str!("../../../../scripts/resources/teaching-term-triggers.json");
 const PROMPT: &str = include_str!("../../../../docs/design/math-teaching-analysis-prompt.md");
 const REVIEW: &str =
     include_str!("../../../../scripts/resources/teaching-quality-review-instruction.txt");
 const PATCH_REVIEW: &str = include_str!("../../../../scripts/resources/teaching-bounded-patch-instruction.txt");
+const SENTENCE_REVIEW: &str = include_str!("../../../../scripts/resources/teaching-sentence-review-instruction.txt");
 const QUALITY_INSTRUCTION: &str = include_str!("../../../../scripts/resources/teaching-quality-signals-instruction.txt");
+
+/// Select only for a new request. Audit replay uses its persisted actual prompt.
+pub(crate) fn review_instruction(context:&Value)->&'static str{
+    if matches!(context["patchContract"]["segmentPatchVersion"].as_u64(),Some(1|2)) {SENTENCE_REVIEW}
+    else if context["patchContract"].is_object(){PATCH_REVIEW}
+    else {REVIEW}
+}
+pub(crate) fn model_context(context:&Value)->Value {review_protocol::model_context(context)}
 
 const QUALITY_DIMENSIONS: [&str; 5] = ["mathematics", "proof", "method", "explanation", "assessment"];
 fn parse_quality_findings(value: &Value, origin: &str) -> AppResult<Vec<Value>> {
     let entries=value.as_array().filter(|a|a.len()<=30).ok_or_else(||err("invalid_quality_signals","质量疑点列表无效。"))?;
     let mut seen=HashSet::new();let mut out=vec![];
     for f in entries {
-        if !exact(f,&["id","dimension","fieldPath","reason"]) || s(f,"id").is_empty() || s(f,"id").len()>80
+        let keys=if f.get("quote").is_some(){vec!["id","dimension","fieldPath","reason","quote"]}else{vec!["id","dimension","fieldPath","reason"]};
+        if !exact(f,&keys) || s(f,"id").is_empty() || s(f,"id").len()>80
             || !s(f,"id").bytes().all(|c|c.is_ascii_alphanumeric()||c==b'_'||c==b'-') || !seen.insert(s(f,"id").to_owned())
             || (!QUALITY_DIMENSIONS.contains(&s(f,"dimension"))&&f["dimension"]!="material")
-            || !f["fieldPath"].is_string() || s(f,"fieldPath").len()>120 || s(f,"reason").trim().is_empty() || s(f,"reason").chars().count()>4000 {
+            || !f["fieldPath"].is_string() || s(f,"fieldPath").len()>120 || s(f,"reason").trim().is_empty() || s(f,"reason").chars().count()>4000
+            || (f.get("quote").is_some()&&(!f["quote"].is_string()||s(f,"quote").trim().is_empty()||s(f,"quote").chars().count()>1600)) {
             return Err(err("invalid_quality_signals","质量疑点身份、维度或具体说明不完整。"));
         }
         let mut v=f.clone();v["type"]=json!("quality");v["origin"]=json!(origin);v["message"]=f["reason"].clone();out.push(v);
@@ -60,7 +75,7 @@ pub(super) fn attach_quality_review(q:&mut Value,payload:&Value)->AppResult<()> 
 pub(in crate::imports) fn record_quality_review(store:&Store,payload:&Value,cancel:&AtomicBool)->AppResult<Value> {
     cancelled(cancel)?;let op=operation(payload)?;let digest=hash_json(payload);let mut record=store.document("imports",s(payload,"importId"))?;
     if replay(&record,op,&digest)? {return Ok(json!({"import":record}));}revision(&record,payload)?;
-    if record["pendingPublication"].is_object()||matches!(s(&record["backgroundJob"],"status"),"queued"|"running") {return Err(err("import_running","试卷仍在处理，不能附加核验。"));}
+    if record["pendingPublication"].is_object()||record["pendingTeachingPublication"].is_object()||matches!(s(&record["backgroundJob"],"status"),"queued"|"running") {return Err(err("import_running","试卷仍在处理，不能附加核验。"));}
     let saved=record.clone();let index=rows(&record["questions"]).iter().position(|q|q["questionId"]==payload["questionId"]).ok_or_else(||err("invalid_import","题目不属于本次导入。"))?;
     if ids(&record["publishedQuestionIds"]).contains(&s(payload,"questionId").to_owned()){return Err(err("already_published","已发布题目不由此维护入口改写。"));}
     attach_quality_review(&mut record["questions"][index],payload)?;finish(&mut record,op,&digest,"teaching_quality_finding");save_cas(store,Some(&saved),&record)?;Ok(json!({"import":record}))
@@ -86,12 +101,80 @@ fn quality_findings(q:&Value,candidate:&Value)->Vec<Value> {
     })();
     result.unwrap_or_else(|e|vec![json!({"type":"format","code":e.code,"message":e.message})])
 }
+/// Source defects are separate from the revisable teaching draft. Only an
+/// explicitly located, trusted external finding can hold source publication;
+/// terminology scans and model self-assessments never acquire that authority.
+pub(super) fn source_material_findings(q: &Value) -> Vec<Value> {
+    let wf = &q["teachingWorkflow"];
+    let source = source_hash(q);
+    if wf["sourceContentSha256"] != source { return vec![]; }
+    let current = controls::active_candidate(q);
+    let mut candidates = vec![];
+    for candidate in [&current, &wf["initialCandidate"]] {
+        if validate(candidate, s(q, "questionId")).is_ok() {
+            candidates.push(hash_json(candidate));
+        }
+    }
+    // A manual teaching-only edit cannot erase a same-source material defect.
+    // Earlier candidates are usable evidence only after replaying the complete
+    // authorized patch chain against the actual current candidate.
+    if !rows(&wf["manualPatchHistory"]).is_empty()
+        && controls::base_before_manual(q, &current).is_ok()
+    {
+        for item in rows(&wf["manualPatchHistory"]) {
+            candidates.push(hash_json(&item["baseCandidate"]));
+        }
+    }
+    let source_field = |path: &str| -> bool {
+        if path == "stem" { return q["stem"].is_string(); }
+        if path == "options" { return !rows(&q["options"]).is_empty(); }
+        for (prefix, suffix, field) in [
+            ("options[", "].text", "text"),
+            ("parts[", "].prompt", "prompt"),
+            ("parts[", "].stem", "stem"),
+        ] {
+            if let Some(index) = path.strip_prefix(prefix).and_then(|p|p.strip_suffix(suffix)) {
+                if index.is_empty() || !index.bytes().all(|c|c.is_ascii_digit()) { return false; }
+                let Ok(index) = index.parse::<usize>() else { return false; };
+                let key = if prefix == "options[" { "options" } else { "parts" };
+                return q[key].get(index).is_some_and(|entry|entry[field].is_string());
+            }
+        }
+        false
+    };
+    let mut audits = rows(&wf["externalQualityReviewHistory"]);
+    audits.push(wf["externalQualityReview"].clone());
+    let mut out = vec![];
+    let mut seen = HashSet::new();
+    for audit in audits {
+        if audit["questionId"] != q["questionId"] || audit["sourceContentSha256"] != source
+            || !candidates.iter().any(|hash|audit["candidateSha256"] == *hash)
+            || !matches!((s(&audit,"method"),s(&audit,"checkedBy")),
+                ("teacher_review","teacher")|("user_authorized_agent_review","codex"))
+            || s(&audit,"evidence").trim().is_empty() || s(&audit,"evidence").chars().count() > 5000
+        { continue; }
+        let Ok(findings) = parse_quality_findings(&audit["findings"], "external_review") else { continue; };
+        for finding in findings {
+            if finding["dimension"] == "material" && source_field(s(&finding,"fieldPath"))
+                && seen.insert(hash_json(&finding))
+            { out.push(finding); }
+        }
+    }
+    out
+}
+pub(super) fn verify_source_material(q: &Value) -> AppResult<()> {
+    if source_material_findings(q).is_empty() { return Ok(()); }
+    Err(err("source_content_unresolved", "独立核对指出原题材料仍有具体疑点，请核对并修正原题后再入库；修改解析或确认原题不能消除此问题。"))
+}
 fn validate_quality_resolutions(context:&Value,response:&Value,next:&Value)->AppResult<()> {
     let flags=rows(&context["reviewFindings"]).into_iter().filter(|f|f["type"]=="quality").collect::<Vec<_>>();
     if flags.is_empty(){return Ok(());}
     let resolutions=rows(&response["qualityResolutions"]);let mut seen=HashSet::new();
-    if !response["qualityResolutions"].is_array()||resolutions.len()!=flags.len()||resolutions.iter().any(|r|!exact(r,&["id","status","basis"])||!seen.insert(s(r,"id").to_owned())||!flags.iter().any(|f|f["id"]==r["id"])||r["status"]!="resolved"||s(r,"basis").trim().is_empty()||s(r,"basis").chars().count()>4000){return Err(err("teaching_quality_unresolved","质量疑点未逐项给出可靠修正依据，保留待复核。"));}
-    if flags.iter().any(|f|matches!(s(f,"dimension"),"mathematics"|"proof"|"method"))&&next["teachingSolution"]==context["candidate"]["teachingSolution"] {return Err(err("teaching_quality_unchanged","数学、证明或方法问题未实际修订推导，保留待复核。"));}
+    if resolutions::typed(context) {resolutions::quality(context,response,next)?;}
+    else {
+        if !response["qualityResolutions"].is_array()||resolutions.len()!=flags.len()||resolutions.iter().any(|r|!exact(r,&["id","status","basis"])||!seen.insert(s(r,"id").to_owned())||!flags.iter().any(|f|f["id"]==r["id"])||r["status"]!="resolved"||s(r,"basis").trim().is_empty()||s(r,"basis").chars().count()>4000){return Err(err("teaching_quality_unresolved","质量疑点未逐项给出可靠修正依据，保留待复核。"));}
+        if flags.iter().any(|f|matches!(s(f,"dimension"),"mathematics"|"proof"|"method"))&&next["teachingSolution"]==context["candidate"]["teachingSolution"] {return Err(err("teaching_quality_unchanged","数学、证明或方法问题未实际修订推导，保留待复核。"));}
+    }
     let mut allowed=HashSet::new();
     for f in rows(&context["reviewFindings"]) {
         if f["type"]=="quality"&&matches!(s(&f,"dimension"),"mathematics"|"proof"|"method"|"material") {for k in ["answer","teachingSolution","difficultyAssessment","teachingFocus"]{allowed.insert(k.to_owned());}}
@@ -117,6 +200,10 @@ pub(crate) fn generation_instruction() -> String {
     format!(
         "\n【本次导入的独立课堂教学生成】\n原题与参考均已保存，本请求只输出独立教学稿，不修改或重新转录原卷。原卷缺少答案解析时，referenceAnswer/referenceSolution仍为空；你生成的答案只属于新稿。\n{main}\n【本批输出合同】只返回严格JSON对象{{\"questions\":[{{\"questionId\":\"输入精确ID\",\"answer\":\"新生成答案\",\"difficultyAssessment\":{{\"level\":null,\"basis\":\"\"}},\"teachingSolution\":\"新生成课堂解析\",\"teachingFocusSchemaVersion\":2,\"teachingFocus\":{{\"examFocus\":\"\",\"studentRequirements\":[]}},\"issues\":[]}}]}}。完整覆盖本批每个questionId且仅一次，不新增、遗漏、合并或换题；每个元素恰含上述7个字段。原文冲突写入issues，不静默改正原卷或冒称官方解析。公式用成对$或$$，JSON反斜杠规范转义。正常可解题完整填写，不能可靠完成的部分留空并说明疑点。默认不附加八板块方法参考。{QUALITY_INSTRUCTION}"
     )
+}
+
+pub(crate) fn generation_instruction_for(context: &Value) -> String {
+    format!("{}{}", generation_instruction(), question_type::generation(context))
 }
 
 fn dictionary() -> &'static Value {
@@ -273,6 +360,33 @@ fn review_context(q: &Value) -> Value {
     context
 }
 
+/// Only new calls use sentence contracts. Historical audit contexts retain
+/// their original field-level contract and are decoded without migration.
+fn new_review_context(q:&Value)->Value{
+    let mut context=review_context(q);
+    context["reviewResolutionVersion"]=json!(2);
+    context["classroomPolicyVersion"]=json!(1);
+    context["reviewPatchVersion"]=json!(2);
+    context["falsePositiveScopeVersion"]=json!(1);
+    review_protocol::attach_method_scopes(q,&mut context);
+    context["verifiedInputFacts"]=json!({"questionId":q["questionId"],"questionType":q["questionType"]});
+    context["reviewScopePolicy"]=json!("explicit_segments_or_method_parts");
+    if let Some(contract)=sentence_patch::contract(s(q,"questionId"),&source_hash(q),&context){context["patchContract"]=contract;}
+    if matches!(context["patchContract"]["segmentPatchVersion"].as_u64(),Some(1|2)) {
+        let c=context["patchContract"].clone();let mut keys=vec!["questionId","candidateSha256","sourceContentSha256","patches","unresolvedIssues"];
+        if c["qualityFindings"].is_array(){keys.push("qualityResolutions");}
+        if c["allowedIssues"].is_array(){keys.push("issueResolutions");}
+        if c["termFindings"].is_array(){keys.push("termResolutions");}
+        context["reviewResponseContract"]=json!({"requiredKeys":keys,"patchKeys":["segmentId","oldTextSha256","newText"],"textMutationAllowed":!rows(&c["allowedSegments"]).is_empty(),"issueResolutionAllowed":!rows(&c["allowedIssues"]).is_empty(),"issueResolutionNeedsTextPatch":false,"resolutionVersion":2,"resolutionStatuses":["repaired","false_positive","confirmed_defect","unresolved"]});
+        if c["segmentPatchVersion"]==2 {context["reviewResponseContract"]=review_protocol::response_contract(&c);}
+    }
+    context
+}
+#[cfg(test)]
+pub(super) fn simulated_review_context(q:&Value)->Value{new_review_context(q)}
+#[cfg(test)]
+pub(super) fn simulated_refresh(q:&mut Value){controls::refresh(q);}
+
 /// Explicit development-only re-review of saved candidates. A fresh user
 /// operation is separate from the archived workflow: no Store/DB is opened and
 /// the original reviewCalls are neither reset nor modified.
@@ -306,18 +420,41 @@ pub(super) fn explicit_review_candidates(
         let new_hit = wf["reviewCalls"] == 0
             && wf["dictionaryVersion"] != dictionary()["version"]
             && current.iter().any(|f| f["type"] == "term"
-                && matches!(s(f,"ruleId"), "integral-tool" | "higher-derivative" | "infinite-series" | "english-method-language" | "linear-combination-language" | "limit-notation")
+                && matches!(s(f,"ruleId"), "integral-tool" | "higher-derivative" | "second-derivative-test" | "infinite-series" | "english-method-language" | "linear-combination-language" | "limit-notation")
                 && !rows(&wf["initialFindings"]).iter().any(|old| old["type"] == "term" && old["ruleId"] == f["ruleId"] && old["fieldPath"] == f["fieldPath"] && old["start"] == f["start"] && old["end"] == f["end"]))
             && !current.is_empty();
-        if !matches!(s(item,"reason"), "previous_timeout" | "new_rule_hit")
+        let regression=item["reason"]=="typed_outcome_regression"
+            && manifest["experimentKind"]=="typed_review_outcomes_v2"
+            && item["expectedCandidateHash"]==hash_json(&controls::active_candidate(q))
+            && item["independentlyRejected"]==true
+            && item["independentEvidenceSha256"].as_str().is_some_and(|h|h.len()==64&&h.bytes().all(|b|b.is_ascii_hexdigit()));
+        // A failed catalogue preflight never spent a review HTTP allowance.
+        // Explicit continuation reuses the exact saved draft, including one
+        // independently judged usable; it must not be called rejected to run.
+        let catalogue_continuation=item["reason"]=="previous_catalogue_failure"
+            && manifest["experimentKind"]=="catalogue_failure_continuation_v1"
+            && wf["status"]=="needs_review" && wf["generationCalls"]==1
+            && wf["reviewCalls"]==0 && wf["finalResult"].is_null()
+            && &controls::active_candidate(q)==draft
+            && item["expectedCandidateHash"]==hash_json(&controls::active_candidate(q))
+            && rows(&wf["findings"]).iter().any(|f|f["type"]=="technical"&&f["code"]=="model_catalog_error");
+        if !matches!(s(item,"reason"), "previous_timeout" | "new_rule_hit" | "typed_outcome_regression" | "previous_catalogue_failure")
             || (item["reason"] == "previous_timeout" && !timeout)
             || (item["reason"] == "new_rule_hit" && !new_hit)
+            || (item["reason"] == "typed_outcome_regression" && !regression)
+            || (item["reason"] == "previous_catalogue_failure" && !catalogue_continuation)
         {
-            return Err(err("teaching_review_ineligible", "仅允许本次明确授权的旧复核超时题或新词表补检题，合格稿不重跑。"));
+            return Err(err("teaching_review_ineligible", "仅允许显式授权的失败复核或绑定独立疑点的新隔离回归，合格稿不重跑。"));
+        }
+        if let Some(facts)=item.get("operatorInputFacts") {
+            if !regression || !exact(facts,&["sourceContentSha256","evidenceSha256","facts","author"])
+                || facts["sourceContentSha256"]!=source_hash(q) || facts["author"]!="codex"
+                || !facts["evidenceSha256"].as_str().is_some_and(|h|h.len()==64&&h.bytes().all(|b|b.is_ascii_hexdigit()))
+                || !strings(&facts["facts"],10,1600) {return Err(err("teaching_review_target_changed","人工提供事实必须单独声明并绑定本次原题与核对证据。"));}
         }
     }
     cancelled(cancel)?;
-    // Reserve the whole operation before discovering a provider or sending
+    // Reserve the whole operation before selecting a provider or sending
     // HTTP. Existing output, including an interrupted attempt, cannot replay.
     std::fs::create_dir(output).map_err(|_| err("teaching_review_output_exists", "复核输出目录必须是不存在的新目录；已有操作不重复调用。"))?;
     let save_new = |path: &Path, value: &Value| -> AppResult<()> {
@@ -329,8 +466,8 @@ pub(super) fn explicit_review_candidates(
     save_new(&output.join("manifest.json"), manifest)?;
     save_new(&output.join("operation.json"), &json!({"operationId":op,"manifestSha256":hash_json(manifest),"startedAt":now(),"questionIds":entries.iter().map(|e|e["question"]["questionId"].clone()).collect::<Vec<_>>(),"databaseOpened":false,"maximumAdditionalReviewCallsPerQuestion":1}))?;
     let reviewer = model.import_teaching_reviewer()?;
-    let catalogue = reviewer.verify_import_role_catalog()?;
-    save_new(&output.join("provider-catalogue.json"), &catalogue)?;
+    let identity = reviewer.import_execution_identity()?;
+    save_new(&output.join("execution-model.json"), &identity)?;
     let settings = reviewer.public_settings();
     save_new(&output.join("review-profile.json"), &json!({"model":settings["model"],"baseUrl":settings["baseUrl"],"reasoningEffort":settings["reasoningEffort"],"profileId":settings["activeProfileId"]}))?;
     let mut results = vec![];
@@ -342,7 +479,8 @@ pub(super) fn explicit_review_candidates(
         let directory = output.join(stem);
         std::fs::create_dir(&directory)?;
         let previous_calls = q["teachingWorkflow"]["reviewCalls"].as_u64().unwrap_or(0);
-        let context = review_context(q);
+        let mut context = new_review_context(q);
+        if item.get("operatorInputFacts").is_some(){context["operatorInputFacts"]=item["operatorInputFacts"].clone();}
         save_new(&directory.join("input.json"), &json!({"operationId":op,"questionId":id,"questionSha256":item["expectedQuestionHash"],"reason":item["reason"],"context":context}))?;
         let started_at = now();
         // This receipt consumes this new authorization before HTTP. If the
@@ -350,15 +488,15 @@ pub(super) fn explicit_review_candidates(
         save_new(&directory.join("attempt.json"), &json!({"operationId":op,"questionId":id,"startedAt":started_at,"previousReviewCalls":previous_calls,"additionalReviewCalls":1,"totalReviewCallsObserved":previous_calls+1,"state":"issued","sourceWorkflowUnchanged":true}))?;
         let response = directory.join("provider-response.json");
         let outcome = reviewer.propose_teaching_review_with_audit(&context, &[], cancel, &response);
-        let mut result = json!({"operationId":op,"questionId":id,"questionSha256":item["expectedQuestionHash"],"reason":item["reason"],"startedAt":started_at,"finishedAt":now(),"previousReviewCalls":previous_calls,"additionalReviewCalls":1,"totalReviewCallsObserved":previous_calls+1,"dictionaryVersion":dictionary()["version"],"initialFindings":context["reviewFindings"],"candidate":null,"findings":[],"status":"review_failed","error":null,"auditDirectory":stem,"databaseOpened":false});
-        match outcome {
-            Ok(candidate) => {
-                let detected = findings(&candidate,id);
+        let mut result = json!({"operationId":op,"questionId":id,"questionSha256":item["expectedQuestionHash"],"reason":item["reason"],"startedAt":started_at,"finishedAt":now(),"previousReviewCalls":previous_calls,"additionalReviewCalls":1,"totalReviewCallsObserved":previous_calls+1,"dictionaryVersion":dictionary()["version"],"initialFindings":context["reviewFindings"],"candidate":null,"retainedInitialCandidate":q["teachingWorkflow"]["initialCandidate"],"retainedInitialReason":null,"findings":[],"status":"review_failed","error":null,"auditDirectory":stem,"databaseOpened":false});
+        match outcome.and_then(|returned|decode_review_candidate(id,&source_hash(q),&context,&returned).map(|candidate|(candidate,returned))) {
+            Ok((candidate,returned)) => {
+                let detected = resolutions::filter_terms(findings(&candidate,id),&context,&returned,&candidate);
                 result["status"] = json!(if detected.is_empty(){"ready_candidate"}else{"needs_review"});
                 result["candidate"] = candidate;
                 result["findings"] = json!(detected);
             }
-            Err(error) => {result["error"] = serde_json::to_value(error)?;}
+            Err(error) => {result["retainedInitialReason"]=json!(error.code);result["error"] = serde_json::to_value(error)?;}
         }
         save_new(&directory.join("result.json"), &result)?;
         results.push(result);
@@ -369,6 +507,21 @@ pub(super) fn explicit_review_candidates(
     Ok(summary)
 }
 fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
+    if name == "vector-cross-product" {
+        // Require two explicit vector operands, not scalar multiplication or
+        // a dot product. Match only a review location, not mathematical error.
+        let vector = r"\\(?:overrightarrow|vec)\s*\{\s*[A-Za-z][A-Za-z0-9]{0,11}\s*\}";
+        return Regex::new(&format!(r"{vector}\s*\\times\s*{vector}")).unwrap()
+            .find_iter(text).map(|m| (m.start(), m.end())).collect();
+    }
+    if name == "higher-derivative-fraction" {
+        let differential=r"(?:d|\\mathrm\s*\{\s*d\s*\}|\\mathrm\s+d)";
+        let order=r"(?:\{\s*(?:[3-9]|[1-9][0-9]+)\s*\}|[3-9]|[1-9][0-9]+)";
+        let dependent=r"(?:[A-Za-z]|\\[A-Za-z]+)(?:\s*_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?(?:\s*\([^{}()\r\n]{0,80}\))?";
+        let pattern=format!(r"\\(?:frac|dfrac|tfrac)\s*\{{\s*{differential}\s*\^\s*{order}\s*(?:{dependent})?\s*\}}\s*\{{\s*{differential}\s*(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*{order}\s*\}}");
+        let unicode=format!(r"{differential}[³⁴⁵⁶⁷⁸⁹]\s*(?:{dependent})?\s*/\s*{differential}\s*(?:[A-Za-z]|\\[A-Za-z]+)[³⁴⁵⁶⁷⁸⁹]");
+        return Regex::new(&format!("{pattern}|{unicode}")).unwrap().find_iter(text).map(|m|(m.start(),m.end())).collect();
+    }
     if name == "modulo-notation" {
         // LaTeX command names end before a digit, underscore or Chinese text.
         // A regex word boundary would miss valid compact forms like \pmod3.
@@ -384,11 +537,11 @@ fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
     let contextual = match name {
         "integral-notation" => Some((r"\\(?:int|iint|iiint|oint)|[∫∮]", false, true)),
         "english-classroom-method" => Some((r"(?:telescoping|geometric\s+series|infinite\s+series|integration\s+constant)", true, true)),
-        "higher-derivative-primes" => Some((r"(?:[A-Za-z]|\\[A-Za-z]+)(?:_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?\s*(?:'{2,}|′{2,}|[″‴]|\^\s*\{\s*\\prime\s*\\prime(?:\s*\\prime)*\s*\})", true, false)),
-        "higher-derivative-order" => Some((r"(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*\{\s*\(\s*(?:[2-9]|[1-9]\d+)\s*\)\s*\}", true, false)),
-        "higher-derivative-fraction" => Some((r"\\(?:frac|dfrac|tfrac)\s*\{\s*(?:d|\\mathrm\s*\{d\})\s*\^\s*\{?\s*(?:[2-9]|[1-9]\d+)\s*\}?", false, false)),
+        "higher-derivative-primes" => Some((r"(?:[A-Za-z]|\\[A-Za-z]+)(?:_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?\s*(?:(?:['′]{3}|['′]{1,2}″|″['′″‴⁗]|['′]{0,2}[‴⁗])['′″‴⁗]*|\^\s*\{\s*\\prime\s*\\prime\s*\\prime(?:\s*\\prime)*\s*\})", true, false)),
+        "higher-derivative-order" => Some((r"(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*\{\s*\(\s*(?:[3-9]|[1-9]\d+)\s*\)\s*\}", true, false)),
         "infinite-sum-notation" => Some((r"(?:\\sum|[∑Σ])\s*(?:\\limits\s*)?(?:_\s*(?:\{[^{}\r\n]{1,80}\}|[A-Za-z0-9=]+)\s*)?(?:\^\s*\{?\s*\+?\s*(?:\\infty|∞)|∞)", false, true)),
         "endpoint-limit-shorthand" => Some((r"(?:[A-Za-z]|\\[A-Za-z]+)\s*(?:\\left\s*)?\(\s*(?:(?:[+-]?\d+(?:\.\d+)?|[a-zA-Z])\s*(?:[+-]|\^\s*(?:\{\s*[+-]\s*\}|[+-]))|[+-]?\s*(?:\\infty|∞))\s*(?:\\right\s*)?\)", true, false)),
+        "epsilon-delta-argument" => Some((r"(?:取|任意|给定|设)[^。；\r\n]{0,160}(?:\\(?:varepsilon|epsilon)(?:[^A-Za-z]|$)|[εϵ])[^。；\r\n]{0,240}(?:存在|取)[^。；\r\n]{0,80}(?:\\delta(?:[^A-Za-z]|$)|δ)", false, false)),
         _ => None,
     };
     if let Some((pattern, left, right)) = contextual {
@@ -551,6 +704,9 @@ fn display_findings(field: &str, text: &str) -> Vec<Value> {
     }
     out
 }
+pub(super) fn filtered_review_findings(candidate:&Value,context:&Value,response:&Value)->Vec<Value>{
+    resolutions::filter_terms(findings(candidate,s(candidate,"questionId")),context,response,candidate)
+}
 pub(super) fn findings(candidate: &Value, id: &str) -> Vec<Value> {
     let mut out = vec![];
     if let Err(error) = validate(candidate, id) {
@@ -629,6 +785,11 @@ pub(super) fn material(q: &Value) -> Value {
 pub(super) fn decode_review_candidate(id:&str,expected_source_hash:&str,context:&Value,response:&Value)->AppResult<Value>{
     if context["patchContract"].is_object(){
         controls::merge_bound_patch(id,expected_source_hash,context,response)
+    }else if matches!(s(context,"reviewScopePolicy"),"sentence_only"|"explicit_segments_or_method_parts")&&sentence_patch::complete(&context["candidate"],id){
+        // A complete draft without a locatable finding does not become a
+        // whole-object rewrite merely because a contract could not be built.
+        if *response!=context["candidate"]{return Err(err("teaching_patch_scope_exceeded","没有获准句段，完整初稿不能由复核整稿替换。"));}
+        Ok(response.clone())
     }else if rows(&context["reviewFindings"]).iter().any(|f|f["type"]=="quality") {
         if !exact(response,&["candidate","qualityResolutions"]){return Err(err("teaching_quality_unresolved","质量复核须返回候选及逐项处理依据。"));}
         validate(&response["candidate"],id)?;validate_quality_resolutions(context,response,&response["candidate"])?;Ok(response["candidate"].clone())
@@ -671,7 +832,7 @@ fn generation_batches(record: &Value, targets: &[usize]) -> Vec<Vec<usize>> {
     }
     batches
 }
-fn generate(
+pub(super) fn generate(
     store: &Store,
     model: &ModelClient,
     record: &mut Value,
@@ -697,6 +858,14 @@ fn generate(
     } else {
         generation_batches(record, &targets)
     };
+    if batches.is_empty() {
+        return Ok(());
+    }
+    let generator = model.import_generator()?;
+    let model = &generator;
+    record["teachingGenerationModel"] = model.import_execution_identity()?;
+    save_cas(store, Some(saved), record)?;
+    *saved = record.clone();
     for indices in &batches {
         cancelled(cancel)?;
         let qids = indices
@@ -852,6 +1021,14 @@ fn generate(
 fn mark(question: &mut Value, code: &str, message: &str) {
     question["teachingWorkflow"]["status"] = json!("needs_review");
     question["teachingWorkflow"]["finalResult"] = Value::Null;
+    let initial=question["teachingWorkflow"]["initialCandidate"].clone();
+    if question["teachingWorkflow"]["reviewCalls"].as_u64().unwrap_or(0)>0
+        && validate(&initial,s(question,"questionId")).is_ok() {
+        question["teachingWorkflow"]["retainedInitialCandidate"]=initial;
+        question["teachingWorkflow"]["retainedInitialReason"]=json!(code);
+        question["teachingWorkflow"]["retainedInitialMessage"]=json!(message);
+        question["teachingWorkflow"]["reviewFailurePending"]=json!(true);
+    }
     let mut flags = rows(&question["teachingWorkflow"]["findings"]);
     let finding = json!({"type":"technical","code":code,"message":message});
     if !flags.contains(&finding) {
@@ -875,6 +1052,7 @@ pub(super) fn preserve(old: &Value, next: &mut Value) {
 pub(super) fn ready(question: &Value) -> bool {
     let workflow = &question["teachingWorkflow"];
     workflow["status"] == "ready_candidate"
+        && workflow["reviewFailurePending"] != true
         && workflow["sourceContentSha256"] == source_hash(question)
         && controls::effective_findings(question, &workflow["finalResult"]).is_empty()
         && rows(&workflow["findings"]).iter().all(|f| f["type"] == "model_issue" && controls::acknowledged(question,&workflow["finalResult"],s(f,"issue")))
@@ -885,6 +1063,9 @@ pub(super) fn reason(question: &Value) -> String {
     }
     let candidate=controls::active_candidate(question);
     let mut flags = rows(&question["teachingWorkflow"]["findings"]).into_iter().filter(|f| f["type"]!="model_issue" || !controls::acknowledged(question,&candidate,s(f,"issue"))).collect::<Vec<_>>();
+    if question["teachingWorkflow"]["reviewFailurePending"]==true {
+        flags.insert(0,json!({"type":"technical","message":format!("复核未通过，已保留初稿待核对。{}",s(&question["teachingWorkflow"],"retainedInitialMessage"))}));
+    }
     if candidate.is_object(){for finding in controls::effective_findings(question,&candidate){if !flags.contains(&finding){flags.push(finding);}}}
     let detail = flags
         .iter()
@@ -1018,7 +1199,6 @@ pub(super) fn retry_failed(
     } else {
         vec![]
     };
-    let generator = model.import_generator()?;
     let audit_path =
         prepare_attempt_path(store, &record, op)?.with_extension("teaching-retry.json");
     let audit = json!({"task":"explicit_failed_teaching_retry","operationId":op,"payloadSha256":payload_hash,
@@ -1040,10 +1220,10 @@ pub(super) fn retry_failed(
     // provider discovery and every request. Replaying it never resumes HTTP.
     save_cas(store, Some(&saved), &record)?;
     saved = record.clone();
-    let outcome = generator.verify_import_role_catalog().and_then(|_| {
+    let outcome = (|| {
         process_selected(
             store,
-            &generator,
+            model,
             &mut record,
             &mut saved,
             &assets,
@@ -1051,7 +1231,7 @@ pub(super) fn retry_failed(
             Some(&selected),
             Some(op),
         )
-    });
+    })();
     record["status"] = json!("pending_review");
     record["recognitionStage"] = json!("complete");
     record["teachingRetry"]["finishedAt"] = json!(now());
@@ -1151,10 +1331,7 @@ fn process_selected(
             continue;
         }
         if reviewer.is_none() {
-            reviewer = Some(model.import_teaching_reviewer().and_then(|client| {
-                client.verify_import_role_catalog()?;
-                Ok(client)
-            }));
+            reviewer = Some(model.import_teaching_reviewer());
         }
         let client = match reviewer.as_ref().unwrap() {
             Ok(client) => client,
@@ -1167,8 +1344,7 @@ fn process_selected(
         };
         let q = &record["questions"][index];
         let id = s(q, "questionId").to_owned();
-        let mut context = review_context(q);
-        if let Some(contract)=controls::patch_contract(q,&context) { context["patchContract"]=contract; }
+        let context = new_review_context(q);
         let bounded_patch=context["patchContract"].is_object();
         let directory = prepare_attempt_path(store, record, "teaching-review")?
             .parent()
@@ -1187,9 +1363,10 @@ fn process_selected(
         if bounded_patch {
             record["questions"][index]["teachingWorkflow"]["reviewPatchBaseCandidate"]=context["candidate"].clone();
             record["questions"][index]["teachingWorkflow"]["reviewPatchContract"]=context["patchContract"].clone();
+            if context["patchContract"]["segmentPatchVersion"]==2 {record["questions"][index]["teachingWorkflow"]["reviewPatchContext"]=context.clone();}
             record["questions"][index]["teachingWorkflow"]["reviewPatchSourceHashDomain"]=json!("question_content");
         } else {
-            for field in ["reviewPatchBaseCandidate","reviewPatchContract","reviewPatchResponse","reviewPatchSourceHashDomain"] {
+            for field in ["reviewPatchBaseCandidate","reviewPatchContract","reviewPatchContext","reviewPatchResponse","reviewPatchSourceHashDomain"] {
                 record["questions"][index]["teachingWorkflow"].as_object_mut().unwrap().remove(field);
             }
         }
@@ -1197,7 +1374,7 @@ fn process_selected(
         save_cas(store, Some(saved), record)?;
         *saved = record.clone();
         let review_result = (|| -> AppResult<Value> {
-            let body = json!({"task":"question_import_teaching_review","instruction":if bounded_patch {PATCH_REVIEW}else{REVIEW},"context":context,"model":client.public_settings()["model"],"reasoningEffort":"on","sourceContentSha256":source_hash(&record["questions"][index])});
+            let body = json!({"task":"question_import_teaching_review","instruction":review_instruction(&context),"context":context,"model":client.public_settings()["model"],"reasoningEffort":client.public_settings()["reasoningEffort"],"sourceContentSha256":source_hash(&record["questions"][index])});
             let mut file = std::fs::OpenOptions::new()
                 .create_new(true)
                 .write(true)
@@ -1230,12 +1407,18 @@ fn process_selected(
         });
         match review_result {
             Ok(candidate) => {
-                let detected = findings(&candidate, &id);
+                let detected = resolutions::filter_terms(findings(&candidate, &id),&context,&record["questions"][index]["teachingWorkflow"]["reviewPatchResponse"],&candidate);
                 let resolved=rows(&context["reviewFindings"]).iter().any(|f|f["type"]=="quality");
                 let src=source_hash(&record["questions"][index]);
                 let workflow = &mut record["questions"][index]["teachingWorkflow"];
                 if resolved {workflow["qualityResolvedCandidateSha256"]=json!(hash_json(&candidate));workflow["qualityResolvedSourceSha256"]=json!(src);}
+                if context["patchContract"]["resolutionVersion"]==2 {
+                    workflow["termResolvedCandidateSha256"]=json!(hash_json(&candidate));
+                    workflow["termResolvedSourceSha256"]=json!(context["patchContract"]["sourceContentSha256"]);
+                    workflow["termReviewFindings"]=context["reviewFindings"].clone();
+                }
                 workflow["reviewedCandidate"] = candidate.clone();
+                workflow["reviewFailurePending"] = json!(false);
                 workflow["candidateResult"] = candidate.clone();
                 workflow["findings"] = json!(detected);
                 workflow["status"] = json!(if detected.is_empty() {
@@ -1248,6 +1431,10 @@ fn process_selected(
                 } else {
                     Value::Null
                 };
+                if !detected.is_empty(){
+                    workflow["retainedInitialCandidate"]=workflow["initialCandidate"].clone();
+                    workflow["retainedInitialReason"]=json!("review_findings_remaining");
+                }
             }
             Err(error) => {
                 let unresolved=rows(&record["questions"][index]["teachingWorkflow"]["reviewPatchResponse"]["unresolvedIssues"]);
@@ -1311,6 +1498,8 @@ pub(super) fn apply_to_entry(
     Ok(())
 }
 pub(super) fn verify_audit(store: &Store, question: &Value) -> AppResult<()> {
+    // Also runs for source-only publication and frozen publication retries.
+    verify_source_material(question)?;
     if !ready(question) {
         return Ok(());
     }
@@ -1362,8 +1551,12 @@ pub(super) fn verify_audit(store: &Store, question: &Value) -> AppResult<()> {
         .map_err(|_| err("teaching_audit_changed", "教学稿原始响应已损坏。"))?;
     let result = if request["task"] == "question_import_teaching_review" {
         if wf["reviewPatchContract"].is_object() {
-            let context:Value=serde_json::from_str(s(&request["body"]["messages"][1],"content"))
+            let actual_context:Value=serde_json::from_str(s(&request["body"]["messages"][1],"content"))
                 .map_err(|_|err("teaching_audit_changed","受限复核请求上下文不可读取。"))?;
+            let context=if wf["reviewPatchContract"]["segmentPatchVersion"]==2 {
+                let full=wf["reviewPatchContext"].clone();
+                if !full.is_object() || model_context(&full)!=actual_context {return Err(err("teaching_audit_changed","短编号请求与本机完整版本绑定不一致。"));}full
+            }else{actual_context};
             if context["patchContract"]!=wf["reviewPatchContract"]||context["candidate"]!=wf["reviewPatchBaseCandidate"]||raw!=wf["reviewPatchResponse"] {
                 return Err(err("teaching_audit_changed","受限复核原请求与响应绑定不一致。"));
             }
@@ -1449,6 +1642,41 @@ mod tests {
     fn candidate() -> Value {
         json!({"questionId":"simulated-q1","answer":"2","difficultyAssessment":{"level":"easy","basis":"题面已明确运算，直接相加即可。"},"teachingSolution":"由题意，$1+1=2$。","teachingFocusSchemaVersion":2,"teachingFocus":{"examFocus":"整数相加。","studentRequirements":["写出正确的和。"]},"issues":[]})
     }
+    fn assert_compact_model_context(context:&Value){
+        assert!(context.get("rawCandidate").is_none());
+        assert!(context["candidate"].get("questionId").is_none());
+        let c=&context["patchContract"];assert_eq!(c["segmentPatchVersion"],2);
+        for key in ["questionId","candidateSha256","sourceContentSha256"] {assert!(c.get(key).is_none(),"{key}");}
+        assert!(!s(c,"requestId").is_empty());assert!(s(c,"requestId").len()<64);
+        for span in rows(&c["allowedSegments"]) {assert!(span.get("expectedTextSha256").is_none());}
+        for (key,id,prefix) in [("qualityFindings","id","q"),("termFindings","findingId","t")] {
+            for (i,f) in rows(&c[key]).iter().enumerate(){assert_eq!(f[id],format!("{prefix}{i}"));}
+        }
+    }
+    fn empty_sentence_response(context:&Value)->Value{
+        let c=&context["patchContract"];
+        let mut output=if c["segmentPatchVersion"]==2 {
+            assert_compact_model_context(context);
+            json!({"requestId":c["requestId"],"patches":[],"unresolvedIssues":[]})
+        }else{
+            assert_eq!(c["segmentPatchVersion"],1);
+            json!({"questionId":c["questionId"],"candidateSha256":c["candidateSha256"],"sourceContentSha256":c["sourceContentSha256"],"patches":[],"unresolvedIssues":[]})
+        };
+        for (key,findings) in [("qualityResolutions","qualityFindings"),("termResolutions","termFindings"),("issueResolutions","allowedIssues")] {
+            if c[findings].is_array(){output[key]=json!([]);}
+        }
+        output
+    }
+    fn sentence_response(context:&Value,new_text:&Value)->Value{
+        let c=&context["patchContract"];
+        let span=&c["allowedSegments"][0];assert_eq!(span["fieldPath"],"teachingSolution");
+        let mut output=empty_sentence_response(context);
+        let mut patch=json!({"segmentId":span["segmentId"],"newText":new_text});
+        if c["segmentPatchVersion"]==1 {patch["oldTextSha256"]=span["expectedTextSha256"].clone();}
+        output["patches"]=json!([patch]);
+        if c["termFindings"].is_array(){output["termResolutions"]=json!(rows(&c["termFindings"]).iter().map(|f|json!({"findingId":f["findingId"],"status":"repaired","basis":"模拟：在授权句段修改对应表达，仍由后续重扫检查残留。"})).collect::<Vec<_>>());}
+        output
+    }
     fn explicit_saved_question(reason: &str) -> Value {
         let mut q = json!({"questionId":"simulated-q1","stem":"模拟回归：1+1","answer":"原参考2","solution":"原卷计算","student":{"assets":[]}});
         let mut c = candidate();
@@ -1462,10 +1690,27 @@ mod tests {
     }
     #[test]
     fn simulated_explicit_candidate_review_uses_shared_http_once_without_db_or_old_quota_changes() {
-        for reason in ["previous_timeout","new_rule_hit"] {
+        for reason in ["previous_timeout","new_rule_hit","typed_outcome_regression","previous_catalogue_failure"] {
             let directory = tempfile::tempdir().unwrap();
-            let q = explicit_saved_question(reason);
-            let manifest = explicit_manifest(&q,reason);
+            let mut q = explicit_saved_question(reason);
+            if reason=="previous_catalogue_failure" {
+                q["teachingWorkflow"]["status"]=json!("needs_review");
+                q["teachingWorkflow"]["generationCalls"]=json!(1);
+                q["teachingWorkflow"]["findings"]=json!([{"type":"technical","code":"model_catalog_error"}]);
+            }
+            let mut manifest = explicit_manifest(&q,reason);
+            if reason=="previous_catalogue_failure" {
+                manifest["experimentKind"]=json!("catalogue_failure_continuation_v1");
+                manifest["entries"][0]["expectedCandidateHash"]=json!(hash_json(&controls::active_candidate(&q)));
+            }
+            if reason=="typed_outcome_regression" {
+                manifest["experimentKind"]=json!("typed_review_outcomes_v2");
+                let entry=&mut manifest["entries"][0];
+                entry["expectedCandidateHash"]=json!(hash_json(&controls::active_candidate(&q)));
+                entry["independentlyRejected"]=json!(true);
+                entry["independentEvidenceSha256"]=json!("b".repeat(64));
+                entry["operatorInputFacts"]=json!({"sourceContentSha256":source_hash(&q),"evidenceSha256":"a".repeat(64),"facts":["模拟核对事实，非模型自动发现。"],"author":"codex"});
+            }
             let preserved = manifest.clone();
             let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
             let model = ModelClient::test_client(directory.path(), &format!("http://{}/v1",listener.local_addr().unwrap()));
@@ -1473,9 +1718,14 @@ mod tests {
                 let (mut stream,_) = listener.accept().unwrap();
                 let request = read_http(&mut stream);
                 let context: Value = serde_json::from_str(s(&request["messages"][1],"content")).unwrap();
-                assert_eq!(context["originalMaterial"]["questionId"],"simulated-q1");
-                assert_eq!(context["rawCandidateSameAsCandidate"],true);
-                let body=json!({"choices":[{"finish_reason":"stop","message":{"content":candidate().to_string()}}]}).to_string();
+                assert_eq!(context["originalMaterial"]["stem"],"模拟回归：1+1");
+                if context["patchContract"]["segmentPatchVersion"]==2 {assert!(context.get("rawCandidate").is_none());}
+                else {assert!(context.get("rawCandidate").is_some());}
+                assert_eq!(context["candidate"]["teachingSolution"],if reason=="new_rule_hit" {json!("积分得结果为2。")} else {candidate()["teachingSolution"].clone()});
+                if context["patchContract"].is_object(){assert_compact_model_context(&context);assert_eq!(context["patchContract"]["resolutionVersion"],2);}
+                if reason=="typed_outcome_regression" {assert_eq!(context["operatorInputFacts"]["author"],"codex");}
+                let output=if context["patchContract"].is_object(){sentence_response(&context,&candidate()["teachingSolution"])}else{candidate()};
+                let body=json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();
                 write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",body.len(),body).unwrap();
                 listener.set_nonblocking(true).unwrap();
                 std::thread::sleep(std::time::Duration::from_millis(80));
@@ -1494,6 +1744,35 @@ mod tests {
             assert_eq!(transport["status"],"completed");
             assert_eq!(explicit_review_candidates(&model,&manifest,&output,&AtomicBool::new(false)).unwrap_err().code,"teaching_review_output_exists");
             server.join().unwrap();
+        }
+    }
+    #[test]
+    fn simulated_catalogue_review_continuation_rejects_spent_ready_changed_and_unbound_before_http() {
+        let directory=tempfile::tempdir().unwrap();
+        let model=ModelClient::test_client(directory.path(),"http://127.0.0.1:1/v1");
+        let mut q=explicit_saved_question("previous_catalogue_failure");
+        q["teachingWorkflow"]["status"]=json!("needs_review");
+        q["teachingWorkflow"]["generationCalls"]=json!(1);
+        q["teachingWorkflow"]["findings"]=json!([{"type":"technical","code":"model_catalog_error"}]);
+        let mut valid=explicit_manifest(&q,"previous_catalogue_failure");
+        valid["experimentKind"]=json!("catalogue_failure_continuation_v1");
+        valid["entries"][0]["expectedCandidateHash"]=json!(hash_json(&controls::active_candidate(&q)));
+        for mode in ["spent","ready","wrong_error","wrong_generation_count","bad_candidate","wrong_kind","source_changed"] {
+            let mut manifest=valid.clone();
+            match mode {
+                "spent"=>manifest["entries"][0]["question"]["teachingWorkflow"]["reviewCalls"]=json!(1),
+                "ready"=>manifest["entries"][0]["question"]["teachingWorkflow"]["finalResult"]=candidate(),
+                "wrong_error"=>manifest["entries"][0]["question"]["teachingWorkflow"]["findings"]=json!([{"type":"technical","code":"model_request_timeout"}]),
+                "wrong_generation_count"=>manifest["entries"][0]["question"]["teachingWorkflow"]["generationCalls"]=json!(2),
+                "bad_candidate"=>manifest["entries"][0]["expectedCandidateHash"]=json!("0".repeat(64)),
+                "wrong_kind"=>manifest["experimentKind"]=json!("unapproved"),
+                _=>manifest["entries"][0]["question"]["stem"]=json!("changed source"),
+            }
+            let target=&manifest["entries"][0]["question"];
+            manifest["entries"][0]["expectedQuestionHash"]=json!(hash_json(target));
+            let output=directory.path().join(mode);
+            assert!(explicit_review_candidates(&model,&manifest,&output,&AtomicBool::new(false)).is_err(),"{mode}");
+            assert!(!output.exists(),"{mode}");
         }
     }
     #[test]
@@ -1582,6 +1861,37 @@ mod tests {
         }
     }
     #[test]
+    fn simulated_twice_differentiation_is_not_a_notation_block_and_source_is_untouched() {
+        let mut c = candidate();
+        c["teachingSolution"] = json!("对 $f'(x)=2x$ 再次求导，得 $f''(x)=2>0$，所以导函数递增；由 $f'(0)=0$ 可判断两侧导数正负，从而求出原函数的最小值。");
+        assert!(findings(&c, "simulated-q1").is_empty());
+        let mut q = json!({"questionId":"simulated-q1","stem":"模拟原题内容，不应改写","answer":"原参考","solution":"原卷解析"});
+        initialize(&mut q, &json!({"generatedTeaching":c}));
+        assert_eq!(q["teachingWorkflow"]["status"], "ready_candidate");
+        assert_eq!(q["teachingWorkflow"]["reviewCalls"], 0);
+        assert_eq!(q["teachingWorkflow"]["finalResult"], c);
+        assert_eq!(q["answer"], "原参考");
+        assert_eq!(q["solution"], "原卷解析");
+        c["teachingSolution"] = json!("直接使用二阶导数判别法得到极小值。");
+        assert!(findings(&c, "simulated-q1").iter().any(|f|f["ruleId"]=="second-derivative-test"));
+        c["teachingSolution"] = json!("由 $f''(x)>0$ 就断言原函数递增。");
+        c["issues"] = json!(["模拟核验：缺少一阶导数的符号分析，证明尚未完成。"]);
+        assert!(findings(&c, "simulated-q1").iter().any(|f|f["type"]=="model_issue"));
+    }
+    #[test]
+    fn simulated_dictionary_update_and_read_projection_never_clear_saved_review_hold() {
+        let mut q = json!({"questionId":"simulated-q1","stem":"模拟原题"});
+        let mut c = candidate();c["teachingSolution"]=json!("对导函数再次求导，得 $f''(x)=2$。");
+        q["teachingWorkflow"]=json!({"sourceContentSha256":source_hash(&q),"dictionaryVersion":"teaching-term-review-v4","status":"needs_review","reviewCalls":1,"candidateResult":c,"initialCandidate":c,"finalResult":null,"findings":[{"type":"term","ruleId":"higher-derivative","term":"f''"}]});
+        let record=json!({"questions":[q]});let before=record.clone();
+        let _ = controls::projection(&record);
+        let _ = review_context(&record["questions"][0]);
+        assert_eq!(record,before);
+        assert_eq!(record["questions"][0]["teachingWorkflow"]["status"],"needs_review");
+        assert!(record["questions"][0]["teachingWorkflow"]["finalResult"].is_null());
+        assert_eq!(record["questions"][0]["teachingWorkflow"]["reviewCalls"],1);
+    }
+    #[test]
     fn simulated_explicit_review_context_rechecks_old_unreviewed_draft_without_spending_quota() {
         let mut c = candidate();
         c["teachingSolution"] = json!("积分得结果为2。");
@@ -1590,7 +1900,7 @@ mod tests {
         let context = review_context(&q);
         assert_eq!(q, before);
         assert!(rows(&context["reviewFindings"]).iter().any(|f| f["ruleId"] == "integral-tool"));
-        assert_eq!(context["dictionaryVersion"], "teaching-term-review-v3");
+        assert_eq!(context["dictionaryVersion"], "teaching-term-review-v7-method-gaps");
     }
     #[test]
     fn simulated_shared_dictionary_and_source_isolation() {
@@ -1708,7 +2018,57 @@ mod tests {
         json!({"questionId":q["questionId"],"sourceContentSha256":source_hash(q),"candidateSha256":hash_json(&controls::active_candidate(q)),"method":"user_authorized_agent_review","checkedBy":"codex","evidence":"模拟独立核验具体等式和题面。","findings":[{"id":"sim-quality-proof","dimension":dimension,"fieldPath":"teachingSolution","reason":"模拟核验：缺少关键等式1+1=2。"}]})
     }
     #[test]
-    fn simulated_quality_without_terms_repairs_once_and_replays_actual_http_audit() {
+    fn simulated_source_material_gate_requires_exact_external_authority_source_and_candidate() {
+        let (_dir,_store,mut record)=fixture("由题意得2。");
+        record["questions"][0]["options"]=json!([{"label":"A","text":"2"}]);
+        record["questions"][0]["parts"]=json!([{"partId":"p1","prompt":"求和","answer":"2"}]);
+        let q=&mut record["questions"][0];
+        q["teachingWorkflow"]["sourceContentSha256"]=json!(source_hash(q));
+        for field in ["stem","options","options[0].text","parts[0].prompt"] {
+            let mut payload=quality_payload(q,"material");payload["findings"][0]["fieldPath"]=json!(field);
+            attach_quality_review(q,&payload).unwrap();
+            assert!(source_material_findings(q).iter().any(|f|f["fieldPath"]==field));
+        }
+        let bound=q.clone();
+        for (field,bad) in [("questionId",json!("other-q")),("sourceContentSha256",json!("stale-source")),("candidateSha256",json!("stale-candidate")),("method",json!("generation_self_check")),("checkedBy",json!("model")),("evidence",json!(""))] {
+            let mut changed=bound.clone();changed["teachingWorkflow"]["externalQualityReviewHistory"]=json!([]);
+            changed["teachingWorkflow"]["externalQualityReview"][field]=bad;
+            assert!(source_material_findings(&changed).is_empty(),"{field}");
+        }
+        let mut changed=bound.clone();changed["stem"]=json!("核对后修改的原题");
+        assert!(source_material_findings(&changed).is_empty());
+        changed["teachingWorkflow"]["sourceContentSha256"]=json!(source_hash(&changed));
+        assert!(source_material_findings(&changed).is_empty());
+        let mut untrusted=bound;untrusted["teachingWorkflow"]["externalQualityReview"]=Value::Null;untrusted["teachingWorkflow"]["externalQualityReviewHistory"]=json!([]);
+        untrusted["teachingWorkflow"]["qualitySignals"]=json!({"findings":[{"id":"self","dimension":"material","fieldPath":"stem","reason":"模型自评"}]});
+        assert!(source_material_findings(&untrusted).is_empty());
+    }
+    #[test]
+    fn simulated_source_material_history_survives_teaching_only_manual_patches() {
+        let (_dir,store,mut record)=fixture("由题意得2。");
+        // First authorized edit creates a candidate absent from initialCandidate.
+        let apply=|record:&Value,op:&str,text:&str| {
+            let q=&record["questions"][0];let candidate=controls::active_candidate(q);
+            controls::action(&store,&json!({"importId":record["importId"],"expectedRevision":record["revision"],"operationId":op,"questionId":q["questionId"],"sourceContentSha256":source_hash(q),"candidateSha256":hash_json(&candidate),"basis":"模拟：仅修订讲解文字。","patches":[{"fieldPath":"teachingSolution","oldText":candidate["teachingSolution"],"newText":text}]}),true,&AtomicBool::new(false)).unwrap()["import"].clone()
+        };
+        record=apply(&record,"sim-material-manual-1","由 $1+1=2$ 得答案。");
+        let mut payload=quality_payload(&record["questions"][0],"material");payload["findings"][0]["fieldPath"]=json!("stem");
+        attach_quality_review(&mut record["questions"][0],&payload).unwrap();
+        store.put_document("imports",s(&record,"importId"),&record).unwrap();
+        record=apply(&record,"sim-material-manual-2","计算 $1+1=2$，所以答案为2。");
+        // A later teaching-only concern cannot overwrite the source concern.
+        let latest=quality_payload(&record["questions"][0],"explanation");
+        attach_quality_review(&mut record["questions"][0],&latest).unwrap();
+        assert_eq!(source_material_findings(&record["questions"][0]).len(),1);
+        assert_eq!(verify_source_material(&record["questions"][0]).unwrap_err().code,"source_content_unresolved");
+        let mut forged=record["questions"][0].clone();
+        forged["teachingWorkflow"]["manualPatchHistory"][0]["basis"]=json!("");
+        assert!(source_material_findings(&forged).is_empty(),"an unverified historical candidate cannot authorize a source defect");
+        let mut changed=record["questions"][0].clone();changed["stem"]=json!("原题经核对后修改");
+        assert!(source_material_findings(&changed).is_empty());
+    }
+    #[test]
+    fn simulated_unlocated_quality_without_terms_is_held_once_without_whole_field_rewrite() {
         for dimension in ["mathematics","proof","method"] {
             let (_dir,store,mut record)=fixture("由题意得2。");
             assert!(findings(&record["questions"][0]["teachingWorkflow"]["initialCandidate"],"simulated-q1").is_empty());
@@ -1720,13 +2080,16 @@ mod tests {
             let server=std::thread::spawn(move|| {
                 let(mut stream,_)=listener.accept().unwrap();let request=read_http(&mut stream);
                 let ctx:Value=serde_json::from_str(s(&request["messages"][1],"content")).unwrap();let c=&ctx["patchContract"];
-                assert!(rows(&c["allowedFields"]).iter().any(|f|f["fieldPath"]=="answer"));
-                let output=json!({"questionId":c["questionId"],"candidateSha256":c["candidateSha256"],"sourceContentSha256":c["sourceContentSha256"],"patches":[{"fieldPath":"teachingSolution","oldTextSha256":hash_json(&ctx["candidate"]["teachingSolution"]),"newText":"计算 $1+1=2$，所以答案为2。"}],"unresolvedIssues":[],"qualityResolutions":[{"id":"sim-quality-proof","status":"resolved","basis":"模拟已补足并核算整数加法等式。"}]});
+                assert_eq!(c["segmentPatchVersion"],2);assert!(rows(&c["allowedSegments"]).is_empty());
+                assert_eq!(c["qualityFindings"][0]["id"],"q0");
+                let mut output=empty_sentence_response(&ctx);
+                output["unresolvedIssues"]=json!(["模拟：缺少确切句段，需进一步定位。"]);
+                output["qualityResolutions"]=json!([{"id":"q0","status":"unresolved","basis":"模拟：本次没有获准修改的句段。"}]);
                 let body=json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();
                 write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",body.len(),body).unwrap();
             });
             let mut saved=record.clone();process(&store,&model,&mut record,&mut saved,&[],&AtomicBool::new(false)).unwrap();server.join().unwrap();
-            let q=&record["questions"][0];assert!(ready(q));assert_eq!(q["teachingWorkflow"]["reviewCalls"],1);assert_eq!(source_hash(q),src);verify_audit(&store,q).unwrap();
+            let q=&record["questions"][0];assert!(!ready(q));assert!(q["teachingWorkflow"]["finalResult"].is_null());assert_eq!(q["teachingWorkflow"]["retainedInitialCandidate"],q["teachingWorkflow"]["initialCandidate"]);assert_eq!(q["teachingWorkflow"]["reviewCalls"],1);assert_eq!(source_hash(q),src);
             let before=record.clone();process(&store,&model,&mut record,&mut saved,&[],&AtomicBool::new(false)).unwrap();assert_eq!(record,before);
         }
     }
@@ -1760,6 +2123,59 @@ mod tests {
         assert!(parse_quality_signals(&signals,"another-id").is_err());assert!(parse_quality_signals(&Value::Null,"simulated-q1").unwrap().is_empty());
     }
     #[test]
+    fn simulated_review_prompt_selection_keeps_legacy_and_full_contracts_separate(){
+        let segment=json!({"patchContract":{"segmentPatchVersion":1}});
+        let compact=json!({"patchContract":{"segmentPatchVersion":2}});
+        let legacy=json!({"patchContract":{"allowedFields":[],"fieldHashMode":true}});
+        assert_eq!(review_instruction(&segment),SENTENCE_REVIEW);
+        assert_eq!(review_instruction(&compact),SENTENCE_REVIEW);
+        assert_eq!(review_instruction(&legacy),PATCH_REVIEW);
+        assert_eq!(review_instruction(&json!({})),REVIEW);
+        assert_ne!(SENTENCE_REVIEW,PATCH_REVIEW);
+    }
+    #[test]
+    fn simulated_optional_quality_quote_validates_without_weakening_identity_or_extra_keys(){
+        let base=json!({"id":"sim-quote","dimension":"proof","fieldPath":"teachingSolution","reason":"模拟：这里需要补足理由。"});
+        assert!(parse_quality_findings(&json!([base.clone()]),"external_review").is_ok());
+        let mut located=base.clone();located["quote"]=json!("模拟原稿的确切句段。");
+        assert_eq!(parse_quality_findings(&json!([located.clone()]),"external_review").unwrap()[0]["quote"],located["quote"]);
+        for invalid in [Value::Null,json!(""),json!("  "),json!(2),json!("甲".repeat(1601))]{
+            let mut f=located.clone();f["quote"]=invalid;assert!(parse_quality_findings(&json!([f]),"external_review").is_err());
+        }
+        let mut extra=located.clone();extra["start"]=json!(0);assert!(parse_quality_findings(&json!([extra]),"external_review").is_err());
+        let (_dir,_store,mut record)=fixture("首句。模拟原稿的确切句段。末句。");
+        let mut payload=quality_payload(&record["questions"][0],"proof");payload["findings"][0]["quote"]=located["quote"].clone();
+        let mut stale=payload.clone();stale["candidateSha256"]=json!("old");let before=record.clone();assert!(attach_quality_review(&mut record["questions"][0],&stale).is_err());assert_eq!(record,before);
+        attach_quality_review(&mut record["questions"][0],&payload).unwrap();
+        let ctx=new_review_context(&record["questions"][0]);assert_eq!(ctx["patchContract"]["allowedSegments"][0]["expectedText"],"模拟原稿的确切句段。");
+        assert_eq!(ctx["reviewResponseContract"]["requiredKeys"],json!(["requestId","patches","unresolvedIssues","qualityResolutions"]));
+        assert_eq!(ctx["reviewResponseContract"]["textMutationAllowed"],true);assert_eq!(ctx["reviewResponseContract"]["issueResolutionAllowed"],false);
+    }
+    #[test]
+    fn simulated_quality_quote_repeated_or_absent_never_grants_scope_from_reason(){
+        for text in ["首句。相同句。相同句。末句。","首句。另一个句子。末句。"]{
+            let (_dir,_store,mut record)=fixture(text);let mut payload=quality_payload(&record["questions"][0],"proof");
+            payload["findings"][0]["quote"]=json!("相同句");payload["findings"][0]["reason"]=json!(format!("模拟：请修改整段{text}"));
+            attach_quality_review(&mut record["questions"][0],&payload).unwrap();let ctx=new_review_context(&record["questions"][0]);
+            assert!(rows(&ctx["patchContract"]["allowedSegments"]).is_empty());assert_eq!(ctx["reviewResponseContract"]["textMutationAllowed"],false);
+        }
+    }
+    #[test]
+    fn simulated_issue_only_contract_describes_empty_text_patch_without_auto_clearing_warning(){
+        let (_dir,_store,mut record)=fixture("由题意，$1+1=2$。");
+        record["questions"][0]["questionType"]=json!("multiple_choice");
+        record["questions"][0]["teachingWorkflow"]["initialCandidate"]["issues"]=json!(["模拟：未注明是否多选。"]);
+        record["questions"][0]["teachingWorkflow"]["candidateResult"]=record["questions"][0]["teachingWorkflow"]["initialCandidate"].clone();
+        record["questions"][0]["teachingWorkflow"]["initialFindings"]=json!([]);
+        record["questions"][0]["teachingWorkflow"]["sourceContentSha256"]=json!(source_hash(&record["questions"][0]));
+        let before=record.clone();let ctx=new_review_context(&record["questions"][0]);assert_eq!(record,before);
+        assert!(rows(&ctx["patchContract"]["allowedSegments"]).is_empty());assert_eq!(rows(&ctx["patchContract"]["allowedIssues"]).len(),1);
+        let desc=&ctx["reviewResponseContract"];assert_eq!(desc["textMutationAllowed"],false);assert_eq!(desc["issueResolutionAllowed"],true);assert_eq!(desc["issueResolutionNeedsTextPatch"],false);
+        assert_eq!(desc["requiredKeys"],json!(["requestId","patches","unresolvedIssues","issueResolutions"]));
+        assert_eq!(desc["patchKeys"],json!(["segmentId","newText"]));
+        assert_eq!(ctx["candidate"]["issues"][0],"模拟：未注明是否多选。");assert_eq!(ctx["verifiedInputFacts"]["questionType"],"multiple_choice");
+    }
+    #[test]
     fn simulated_same_generation_quality_envelope_routes_without_a_separate_audit_call() {
         let (_dir,store,mut record)=fixture("由题意得2。");initialize_pending(&mut record["questions"][0]);store.put_document("imports",s(&record,"importId"),&record).unwrap();
         let listener=std::net::TcpListener::bind("127.0.0.1:0").unwrap();let model=ModelClient::test_client(&store.data_dir,&format!("http://{}/v1",listener.local_addr().unwrap()));
@@ -1771,13 +2187,17 @@ mod tests {
                     json!({"questions":[c],"qualitySignals":[{"questionId":"simulated-q1","checks":{"mathematics":"pass","proof":"concern","method":"pass","explanation":"pass","assessment":"pass"},"findings":[{"id":"same-response-proof","dimension":"proof","fieldPath":"teachingSolution","reason":"模拟缺少决定结论的加法等式。"}]}]})
                 }else{
                     let c=&ctx["patchContract"];assert_eq!(ctx["reviewFindings"][0]["origin"],"generation_self_check");
-                    json!({"questionId":c["questionId"],"candidateSha256":c["candidateSha256"],"sourceContentSha256":c["sourceContentSha256"],"patches":[{"fieldPath":"teachingSolution","oldTextSha256":hash_json(&ctx["candidate"]["teachingSolution"]),"newText":"由 $1+1=2$ 得答案。"}],"unresolvedIssues":[],"qualityResolutions":[{"id":"same-response-proof","status":"resolved","basis":"模拟补全并核算原等式。"}]})
+                    assert_eq!(c["segmentPatchVersion"],2);assert!(rows(&c["allowedSegments"]).is_empty());
+                    assert_eq!(c["qualityFindings"][0]["id"],"q0");assert_eq!(ctx["reviewFindings"][0]["id"],"q0");
+                    let mut output=empty_sentence_response(&ctx);
+                    output["unresolvedIssues"]=json!(["模拟：自检疑点未给出确切句段，保留待核对。"]);
+                    output["qualityResolutions"]=json!([{"id":"q0","status":"unresolved","basis":"模拟没有修改未获准的全文。"}]);output
                 };
                 let body=json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",body.len(),body).unwrap();
             }
         });
         let mut saved=record.clone();process(&store,&model,&mut record,&mut saved,&[],&AtomicBool::new(false)).unwrap();server.join().unwrap();
-        let q=&record["questions"][0];assert!(ready(q));assert_eq!(q["teachingWorkflow"]["generationCalls"],1);assert_eq!(q["teachingWorkflow"]["reviewCalls"],1);assert_eq!(q["teachingWorkflow"]["semanticAssessment"],"model_self_check_only");verify_audit(&store,q).unwrap();
+        let q=&record["questions"][0];assert!(!ready(q));assert!(q["teachingWorkflow"]["finalResult"].is_null());assert_eq!(q["teachingWorkflow"]["generationCalls"],1);assert_eq!(q["teachingWorkflow"]["reviewCalls"],1);assert_eq!(q["teachingWorkflow"]["semanticAssessment"],"model_self_check_only");assert_eq!(q["teachingWorkflow"]["retainedInitialCandidate"],q["teachingWorkflow"]["initialCandidate"]);
     }
     #[test]
     fn simulated_external_quality_action_is_persistent_cas_bound_and_idempotent_without_http() {
@@ -1808,6 +2228,26 @@ mod tests {
         assert_eq!(record["questions"][0]["answer"], "原卷答案2");
     }
     #[test]
+    fn simulated_typed_term_false_positive_survives_audit_refresh_without_a_global_allowlist() {
+        let (_dir,store,mut record)=fixture("模拟：这个下界来自本题给定条件。");
+        let listener=std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let model=ModelClient::test_client(&store.data_dir,&format!("http://{}/v1",listener.local_addr().unwrap()));
+        let before=record["questions"][0]["teachingWorkflow"]["initialCandidate"].clone();
+        let server=std::thread::spawn(move||{
+            let (mut stream,_)=listener.accept().unwrap();let req=read_http(&mut stream);
+            let context:Value=serde_json::from_str(s(&req["messages"][1],"content")).unwrap();let c=&context["patchContract"];
+            let mut output=empty_sentence_response(&context);
+            output["termResolutions"]=json!(rows(&c["termFindings"]).iter().map(|f|json!({"findingId":f["findingId"],"status":"false_positive","basis":"模拟：只确认当前原文中该处表达有材料依据。"})).collect::<Vec<_>>());
+            let body=json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();
+            write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",body.len(),body).unwrap();
+        });
+        let mut saved=record.clone();process(&store,&model,&mut record,&mut saved,&[],&AtomicBool::new(false)).unwrap();server.join().unwrap();
+        let q=&mut record["questions"][0];assert!(ready(q));assert_eq!(q["teachingWorkflow"]["candidateResult"],before);
+        verify_audit(&store,q).unwrap();controls::refresh(q);assert!(ready(q));
+        q["teachingWorkflow"]["candidateResult"]["teachingSolution"]=json!("模拟：另一处下界尚未核对。");
+        controls::refresh(q);assert!(!ready(q));assert_eq!(q["teachingWorkflow"]["reviewCalls"],1);
+    }
+    #[test]
     fn simulated_one_review_success_or_remaining_terms_never_loops_or_overwrites_source() {
         for remaining in [false, true] {
             let (_dir, store, mut record) = fixture("由柯西不等式，下界为2。");
@@ -1824,9 +2264,8 @@ mod tests {
                 let (mut stream, _) = listener.accept().unwrap();
                 let req = read_http(&mut stream);
                 let context:Value=serde_json::from_str(s(&req["messages"][1],"content")).unwrap();
-                assert_eq!(rows(&context["patchContract"]["allowedFields"]).len(),1);
-                let contract=&context["patchContract"];
-                let output=json!({"questionId":contract["questionId"],"candidateSha256":contract["candidateSha256"],"sourceContentSha256":contract["sourceContentSha256"],"patches":[{"fieldPath":"teachingSolution","oldText":context["candidate"]["teachingSolution"],"newText":result["teachingSolution"]}],"unresolvedIssues":[]});
+                assert_eq!(rows(&context["patchContract"]["allowedSegments"]).len(),1);
+                let output=sentence_response(&context,&result["teachingSolution"]);
                 let body=json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();
                 write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",body.len(),body).unwrap();
                 req
@@ -1847,7 +2286,7 @@ mod tests {
                 req["messages"][0]["content"]
                     .as_str()
                     .unwrap()
-                    .contains("只允许一次复核")
+                    .contains(SENTENCE_REVIEW)
             );
             assert_eq!(review::content_hash(&record["questions"][0]), original);
             assert_eq!(ready(&record["questions"][0]), !remaining);
@@ -1946,11 +2385,17 @@ mod tests {
         let q = &record["questions"][0];
         let raw = json!({"questionId":"simulated-q1","contentVersion":"c1","teacherVersion":"t1","teacher":{"answer":"原卷答案2","solutions":["原卷解析1+1=2"]}});
         let mut entry = json!({"questionId":"simulated-q1"});
+        assert_eq!(review::eligibility(&record)["simulated-q1"]["publicationScope"],"source_and_teaching");
         apply_to_entry(q, &raw, &mut entry, "simulated-publication").unwrap();
         assert_eq!(entry["teachingAnalysis"]["status"], "ready");
         assert_eq!(entry["teachingAnalysis"]["baseTeacherVersion"], "t1");
         assert_eq!(entry["teachingAnalysis"]["answer"], "2");
         assert_eq!(raw["teacher"]["answer"], "原卷答案2");
+        let mut held=record.clone();held["questions"][0]["teachingWorkflow"]["status"]=json!("needs_review");
+        let mut source_only=json!({"questionId":"simulated-q1"});
+        apply_to_entry(&held["questions"][0],&raw,&mut source_only,"simulated-source-only-publication").unwrap();
+        assert_eq!(review::eligibility(&held)["simulated-q1"]["publicationScope"],"source_only");
+        assert!(source_only["teachingAnalysis"].is_null());
         let mut snapshot = raw;
         snapshot["teachingAnalysis"] = entry["teachingAnalysis"].clone();
         crate::bank_teaching::verify_projection(&snapshot).unwrap();
@@ -2246,6 +2691,34 @@ mod tests {
         assert!(!ready(&changed["questions"][0]));
     }
     #[test]
+    fn simulated_explicit_teaching_resume_needs_neither_active_nor_source_profile() {
+        let (_dir, mut store, mut record) = fixture("模拟保留原教学稿");
+        initialize_pending(&mut record["questions"][0]);
+        record["status"] = json!("pending_review");
+        record["questions"][0]["teachingWorkflow"]["generationCalls"] = json!(1);
+        record["questions"][0]["teachingWorkflow"]["status"] = json!("generating");
+        store.put_document("imports", s(&record, "importId"), &record).unwrap();
+        let mut model = ModelClient::test_client(&store.data_dir, "http://127.0.0.1:1/v1");
+        model.save(&json!({"expectedRevision":0,"activeProfileId":null,
+            "profiles":[{"id":"simulated-teaching-only","name":"模拟解析生成","baseUrl":"http://127.0.0.1:1/v1","model":"simulated-teaching-only","apiKey":"simulated-isolated-key"}],
+            "importRoles":{"sourceParsing":null,"teachingGeneration":"simulated-teaching-only","teachingReview":null}})).unwrap();
+        assert!(!model.configured());
+        assert_eq!(model.public_settings()["importTeachingConfigured"], true);
+        assert_eq!(model.public_settings()["importSourceConfigured"], false);
+        let upload = json!({"operationId":"simulated-new-import-needs-source","filename":"模拟.txt","contentBase64":"%%%invalid"});
+        assert_eq!(stage_import(&mut store, &model, &upload, &AtomicBool::new(false)).err().unwrap().code, "import_model_not_configured");
+        let payload = json!({"operationId":"simulated-role-resume","importId":record["importId"],"expectedRevision":record["revision"]});
+        let StagedImport::Ready(staged, bytes) = stage_import(&mut store, &model, &payload, &AtomicBool::new(false)).unwrap()
+        else { panic!("expected teaching-only resume"); };
+        let result = process_import(&mut store, &model, "simulated-role-resume", &hash_json(&payload), &AtomicBool::new(false), staged, bytes).unwrap();
+        assert_eq!(result["import"]["status"], "pending_review");
+        assert_eq!(result["import"]["questions"][0]["teachingWorkflow"]["generationCalls"], 1);
+        assert_eq!(result["import"]["questions"][0]["teachingWorkflow"]["reviewCalls"], 0);
+        assert_eq!(result["import"]["questions"][0]["teachingWorkflow"]["status"], "needs_review");
+        assert!(result["import"]["sourceParsingModel"].is_null());
+    }
+
+    #[test]
     fn simulated_orphaned_background_generation_can_explicitly_resume_without_source_reparse() {
         let (_dir, mut store, mut record) = fixture("模拟旧稿");
         initialize_pending(&mut record["questions"][0]);
@@ -2488,12 +2961,10 @@ mod tests {
                     json!({"questions":[fresh]})
                 } else {
                     let context: Value = serde_json::from_str(s(&request["messages"][1], "content")).unwrap();
-                    assert!(context["rawCandidate"].is_null());
-                    assert_eq!(context["rawCandidateSameAsCandidate"], true);
+                    assert!(context.get("rawCandidate").is_none());
                     assert_eq!(context["candidate"]["teachingSolution"], "下界为2。");
                     assert!(!context.to_string().contains("old malformed draft marker"));
-                    let contract=&context["patchContract"];
-                    json!({"questionId":contract["questionId"],"candidateSha256":contract["candidateSha256"],"sourceContentSha256":contract["sourceContentSha256"],"patches":[{"fieldPath":"teachingSolution","oldText":context["candidate"]["teachingSolution"],"newText":candidate()["teachingSolution"]}],"unresolvedIssues":[]})
+                    sentence_response(&context,&candidate()["teachingSolution"])
                 };
                 let body = json!({"choices":[{"finish_reason":"stop","message":{"content":output.to_string()}}]}).to_string();
                 write!(stream,"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",body.len(),body).unwrap();

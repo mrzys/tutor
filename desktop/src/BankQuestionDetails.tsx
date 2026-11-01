@@ -4,6 +4,7 @@ import { typeLabels } from "./bridge";
 import { RichText } from "./Paper";
 import { TeachingAnalysis } from "./TeachingAnalysis";
 import { teachingDisplayText } from "./teaching-text";
+import { teachingFindingMessage } from "./teaching-finding-display";
 import { teachingAnalysisPresentation, teachingFocusPresentation } from "./shared/teaching-analysis.mjs";
 import { difficultyLevels } from "./assembly-details";
 import { BankQuestionPreview, bankMetadata } from "./BankQuestionCard";
@@ -16,9 +17,7 @@ export function BankQuestionDetails(props: { row: any; config: any; onClose: () 
   const pendingTeaching = createMemo(() => question().importTeachingReview?.status === "needs_review"
     ? question().importTeachingReview : null);
   const pendingTeachingReasons = createMemo(() => [...new Set<string>((pendingTeaching()?.findings || [])
-    .map((finding: any) => finding.type === "term" && typeof finding.term === "string"
-      ? `仍含需复核术语“${finding.term}”`
-      : finding.message || finding.issue || finding.code)
+    .map(teachingFindingMessage)
     .filter((value: unknown): value is string => typeof value === "string" && value.trim().length > 0))]);
   const knowledge = () => metadata().topics.length ? metadata().topics : focus()?.knowledgePoints || [];
   const task = () => focus()?.examFocus.trim() || metadata().taskLabels.join("；") || metadata().taskSummary;

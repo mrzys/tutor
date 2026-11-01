@@ -260,7 +260,7 @@ fn main() {
                     value("--report").ok_or("--report is required for an uploaded paper")?;
                     let file = value("--file").ok_or("--file is required")?;
                     let operation = value("--operation").ok_or("--operation is required")?;
-                    ("import_prepare", upload_payload(model.configured(), std::path::Path::new(&file), &operation)?)
+                    ("import_prepare", upload_payload(model.public_settings()["importConfigured"] == true, std::path::Path::new(&file), &operation)?)
                 },
                 "import-retry" => {
                     value("--report").ok_or("--report is required for an import retry")?;

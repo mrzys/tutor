@@ -1,6 +1,13 @@
 * {
   box-sizing: border-box;
 }
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+}
 body {
   margin: 0;
   font-family: var(--font-family);
@@ -232,6 +239,8 @@ svg {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   height: 100dvh;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 .sidebar {
@@ -277,6 +286,7 @@ svg {
 }
 .history-scroll {
   overflow: auto;
+  scrollbar-gutter: stable;
   flex: 1;
   padding-top: 8px;
   scrollbar-width: thin;
@@ -433,6 +443,8 @@ svg {
 }
 .main-panel {
   position: relative;
+  min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
@@ -446,6 +458,8 @@ svg {
   border-radius: 10px;
 }
 .main-content {
+  width: 100%;
+  min-width: 0;
   max-width: 1150px;
   margin: auto;
   padding: 34px 42px 40px;
@@ -918,6 +932,8 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
   padding: 10px 16px;
   border-bottom: 2px solid transparent;
   white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 600;
 }
 .type-tabs > button[aria-selected="true"] {
   border-color: #111;
@@ -1441,6 +1457,7 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
   width: min(520px, 100%);
   max-height: 90dvh;
   display: flex;
+  min-width: 0;
   flex-direction: column;
   animation: dialog-in 0.18s;
 }
@@ -1465,6 +1482,7 @@ html[data-input-mode="keyboard"] .composer-field:has(.composer-editor:focus) {
   overflow-y: auto;
   min-height: 0;
   scrollbar-width: thin;
+  scrollbar-gutter: stable;
 }
 .modal-footer {
   display: flex;
@@ -2489,14 +2507,14 @@ details summary {
 
 /* Standalone settings workspace: navigation stays separate from saved content. */
 .settings-page { display: grid; grid-template-columns: 240px minmax(0, 1fr); height: 100dvh; width: 100%; overflow: hidden; background: var(--surface); }
-.settings-sidebar { border-right: 1px solid var(--line); background: var(--surface-subtle, #fafafa); padding: 24px 16px; overflow-y: auto; }
+.settings-sidebar { min-width: 0; min-height: 0; border-right: 1px solid var(--line); background: var(--surface-subtle, #fafafa); padding: 24px 16px; overflow-y: auto; scrollbar-gutter: stable; }
 .settings-back { width: 100%; min-height: 44px; justify-content: flex-start; margin-bottom: 32px; }
 .settings-nav { display: flex; flex-direction: column; gap: 6px; }
-.settings-nav button { min-height: 44px; justify-content: flex-start; width: 100%; color: var(--muted); }
+.settings-nav button { min-height: 44px; justify-content: flex-start; width: 100%; color: var(--muted); font-weight: 600; }
 .settings-nav button[aria-current="page"] { background: var(--surface-hover); color: var(--text); font-weight: 600; }
-.settings-main { min-width: 0; min-height: 0; overflow-y: auto; padding: 48px 48px 32px; }
-.settings-content { max-width: 760px; margin: 0 auto; }
-.settings-heading { padding-bottom: 24px; margin-bottom: 32px; border-bottom: 1px solid var(--line); }
+.settings-main { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; scrollbar-width: thin; padding: 30px 48px 32px; }
+.settings-content { width: 100%; min-width: 0; max-width: 880px; margin: 0 auto; }
+.settings-heading { padding-bottom: 18px; margin-bottom: 20px; border-bottom: 1px solid var(--line); }
 .settings-current { margin-top: 0; }
 .settings-page .settings-model > p { margin-top: 0; }
 .settings-page .model-config-list { margin: 24px 0; }

@@ -1056,7 +1056,10 @@ export default function App() {
                 <Show when={importMounted()}>
                   <div hidden={view() !== "import"}>
                   <ImportPaper
+                    visible={view() === "import"}
                     config={config()}
+                    sidebarExpanded={sidebar()}
+                    onFocusReview={() => setSidebar(false)}
                     onGuide={() => setGuideTopic("import")}
                     onAssembly={() => setView("new")}
                     modelRevision={modelRevision()}

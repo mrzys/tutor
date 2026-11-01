@@ -2,7 +2,7 @@
 //! No keyword is a semantic severity decision; raw model issues always remain.
 use super::*;
 
-pub(super) fn active_candidate(q: &Value) -> Value {
+pub(in crate::imports) fn active_candidate(q: &Value) -> Value {
     let wf = &q["teachingWorkflow"];
     for key in ["candidateResult", "finalResult", "reviewedCandidate", "initialCandidate"] {
         let candidate = &wf[key];
@@ -13,7 +13,7 @@ pub(super) fn active_candidate(q: &Value) -> Value {
     Value::Null
 }
 
-fn field_pointer(path: &str) -> Option<String> {
+pub(super) fn field_pointer(path: &str) -> Option<String> {
     match path {
         "answer" => Some("/answer".into()),
         "teachingSolution" => Some("/teachingSolution".into()),
@@ -53,26 +53,36 @@ pub(super) fn acknowledged(q: &Value, candidate: &Value, issue: &str) -> bool {
 }
 
 pub(super) fn effective_findings(q: &Value, candidate: &Value) -> Vec<Value> {
-    let mut all=findings(candidate,s(q,"questionId"));all.extend(quality_findings(q,candidate));
+    let mut all=super::resolutions::reviewed_findings(q,candidate,findings(candidate,s(q,"questionId")));all.extend(quality_findings(q,candidate));
     all.into_iter().filter(|finding| {
         finding["type"] != "model_issue" || !acknowledged(q,candidate,s(finding,"issue"))
     }).collect()
 }
 
 pub(in crate::imports) fn projection(record: &Value) -> Value {
+    project(record, true, None)
+}
+pub(in crate::imports) fn summary_projection(record: &Value) -> Value {
+    project(record, false, None)
+}
+pub(in crate::imports) fn question_projection(record: &Value, id: &str) -> Value {
+    project(record, false, Some(id))
+}
+fn project(record: &Value, all_detail: bool, only_question: Option<&str>) -> Value {
     let mut map = serde_json::Map::new();
     for q in rows(&record["questions"]) {
+        let detail = all_detail || only_question == Some(s(&q,"questionId"));
         let candidate = active_candidate(&q);
         let valid = candidate.is_object() && q["teachingWorkflow"]["sourceContentSha256"] == source_hash(&q);
         let hard = !question_issues(&q,&record["sourceIssues"]).is_empty()
             || rows(&q["duplicateCandidates"]).iter().any(|c|c["exact"]==true)
-            || ids(&record["publishedQuestionIds"]).contains(&s(&q,"questionId").to_owned());
+            ;
         let issues:Vec<_> = rows(&candidate["issues"]).iter().enumerate().map(|(index,issue)| {
             let seen = acknowledged(&q,&candidate,issue.as_str().unwrap_or(""));
             let ack = rows(&q["teachingWorkflow"]["reviewDispositions"]["acknowledgements"]).into_iter().find(|a|a["issueIndex"].as_u64()==Some(index as u64));
             json!({"issueIndex":index,"issue":issue,"issueSha256":hash_json(issue),"disposition":if seen{"informative"}else{"blocking"},"acknowledged":seen,"basis":ack.map(|a|a["basis"].clone()),"acknowledgeable":valid&&!hard})
         }).collect();
-        map.insert(s(&q,"questionId").to_owned(),json!({"sourceContentSha256":source_hash(&q),"candidateSha256":if valid{json!(hash_json(&candidate))}else{Value::Null},"issues":issues,"editableFields":if valid{editable_fields(&candidate)}else{vec![]},"canAcknowledge":valid&&!hard,"canPatch":valid&&!hard}));
+        map.insert(s(&q,"questionId").to_owned(),json!({"sourceContentSha256":source_hash(&q),"candidateSha256":if valid{json!(hash_json(&candidate))}else{Value::Null},"issues":issues,"editableFields":if valid&&detail{editable_fields(&candidate)}else{vec![]},"canAcknowledge":valid&&!hard,"canPatch":valid&&!hard}));
     }
     Value::Object(map)
 }
@@ -123,6 +133,7 @@ pub(super) fn merge_model_patch(q:&Value,context:&Value,patch:&Value)->AppResult
 }
 pub(super) fn merge_bound_patch(id:&str,expected_source_hash:&str,context:&Value,patch:&Value)->AppResult<Value> {
     let contract=&context["patchContract"];
+    if matches!(contract["segmentPatchVersion"].as_u64(),Some(1|2)){return super::sentence_patch::merge(id,expected_source_hash,context,patch);}
     let mut keys=vec!["questionId","candidateSha256","sourceContentSha256","patches","unresolvedIssues"];
     if contract["qualityFindings"].is_array(){keys.push("qualityResolutions");}
     if !exact(patch,&keys)
@@ -151,28 +162,31 @@ pub(super) fn merge_bound_patch(id:&str,expected_source_hash:&str,context:&Value
     validate_quality_resolutions(context,patch,&next)?;Ok(next)
 }
 
-fn response(record:Value)->Value{json!({"reviewEligibility":review::eligibility(&record),"reviewRequirements":review_requirement_map(&record),"teachingControls":projection(&record),"import":record})}
+fn response(record:Value)->Value{json!({"reviewEligibility":review::eligibility(&record),"reviewRequirements":review_requirement_map(&record),"import":record})}
 
 pub(in crate::imports) fn action(store:&Store,payload:&Value,patch:bool,cancel:&AtomicBool)->AppResult<Value>{
     action_with_authority(store,payload,patch,cancel,"teacher_review","teacher")
 }
 #[cfg(debug_assertions)]
 pub(in crate::imports) fn agent_action(store:&Store,payload:&Value,patch:bool,cancel:&AtomicBool)->AppResult<Value>{
-    action_with_authority(store,payload,patch,cancel,"user_authorized_agent_review","codex")
+    let mut result=action_with_authority(store,payload,patch,cancel,"user_authorized_agent_review","codex")?;
+    // Maintenance actions bypass dispatch and retain their direct-call response.
+    result["teachingControls"]=projection(&result["import"]);
+    Ok(result)
 }
 fn action_with_authority(store:&Store,payload:&Value,patch:bool,cancel:&AtomicBool,method:&str,checked_by:&str)->AppResult<Value>{
     cancelled(cancel)?;let op=operation(payload)?;let payload_hash=hash_json(payload);
     let mut record=store.document("imports",s(payload,"importId"))?;
     if replay(&record,op,&payload_hash)? {return Ok(response(record));}
     revision(&record,payload)?;
-    if record["pendingPublication"].is_object()||matches!(s(&record["backgroundJob"],"status"),"queued"|"running") {return Err(err("import_running","试卷仍在处理或等待发布，暂不能修改教学复核。"));}
+    if record["pendingPublication"].is_object()||record["pendingTeachingPublication"].is_object()||matches!(s(&record["backgroundJob"],"status"),"queued"|"running") {return Err(err("import_running","试卷仍在处理或等待发布，暂不能修改教学复核。"));}
     paddle::verify_audit(store,&record)?;
     let saved=record.clone();let id=s(payload,"questionId");
     let index=rows(&record["questions"]).iter().position(|q|q["questionId"]==id).ok_or_else(||err("invalid_import","题目不属于本次导入。"))?;
     let q=&record["questions"][index];let candidate=active_candidate(q);
     if candidate.is_null()||q["teachingWorkflow"]["sourceContentSha256"]!=source_hash(q)
         ||payload["sourceContentSha256"]!=source_hash(q)||payload["candidateSha256"]!=hash_json(&candidate){return Err(err("revision_conflict","原题或候选教学稿已变化，请重新核对。"));}
-    if ids(&record["publishedQuestionIds"]).contains(&id.to_owned())||!question_issues(q,&record["sourceIssues"]).is_empty()
+    if !question_issues(q,&record["sourceIssues"]).is_empty()
         ||rows(&q["duplicateCandidates"]).iter().any(|v|v["exact"]==true){return Err(err("review_required","原题保真、重复或已发布状态不能通过教学复核绕过。"));}
     structured::verify_assets(q)?;
     if s(payload,"basis").trim().is_empty()||s(payload,"basis").chars().count()>5000 {return Err(err("review_required","请填写本次实际核对或修改依据。"));}
@@ -199,14 +213,23 @@ fn action_with_authority(store:&Store,payload:&Value,patch:bool,cancel:&AtomicBo
     }
     let mut control_history=rows(&record["questions"][index]["teachingWorkflow"]["controlActionsHistory"]);control_history.push(before_action);
     record["questions"][index]["teachingWorkflow"]["controlActionsHistory"]=json!(control_history);
+    // Only this explicit, source/candidate-bound human review operation may
+    // clear the model-failure hold; projection and source reads never do so.
+    record["questions"][index]["teachingWorkflow"]["reviewFailurePending"]=json!(false);
     refresh(&mut record["questions"][index]);
     finish(&mut record,op,&payload_hash,if patch{"teaching_patch"}else{"teaching_issue_acknowledgement"});
     save_cas(store,Some(&saved),&record)?;Ok(response(record))
 }
 
 pub(super) fn refresh(q:&mut Value){
-    let candidate=active_candidate(q);let all=findings(&candidate,s(q,"questionId"));
-    let effective=effective_findings(q,&candidate);let wf=&mut q["teachingWorkflow"];
+    let candidate=active_candidate(q);let all=super::resolutions::reviewed_findings(q,&candidate,findings(&candidate,s(q,"questionId")));
+    let mut effective=effective_findings(q,&candidate);
+    // Re-projecting or attaching findings must never turn a failed model
+    // review's retained initial draft into an automatically adopted result.
+    if q["teachingWorkflow"]["reviewFailurePending"]==true {
+        effective.push(json!({"type":"technical","code":"teaching_review_failed_retained_initial","message":"复核未完成，初稿仅保留待核对，不自动放行。"}));
+    }
+    let wf=&mut q["teachingWorkflow"];
     wf["candidateResult"]=candidate.clone();wf["findings"]=json!(all);wf["effectiveFindings"]=json!(effective);
     wf["status"]=json!(if effective.is_empty(){"ready_candidate"}else{"needs_review"});
     wf["finalResult"]=if effective.is_empty(){candidate}else{Value::Null};
@@ -252,10 +275,22 @@ mod tests {
         let result=action(&store,&input,false,&AtomicBool::new(false)).unwrap();let q=&result["import"]["questions"][0];
         assert!(ready(q));assert_eq!(q["teachingWorkflow"]["candidateResult"],c);assert_eq!(q["teachingWorkflow"]["findings"][0]["type"],"model_issue");
         assert!(rows(&q["teachingWorkflow"]["effectiveFindings"]).is_empty());assert_eq!(q["teachingWorkflow"]["reviewCalls"],1);
-        assert_eq!(result["teachingControls"]["sim-control-q"]["issues"][0]["disposition"],"informative");
+        assert!(result.get("teachingControls").is_none(),"dispatch adds controls once after the action");
+        assert_eq!(projection(&result["import"])["sim-control-q"]["issues"][0]["disposition"],"informative");
         assert_eq!(action(&store,&input,false,&AtomicBool::new(false)).unwrap()["import"],result["import"]);
         let mut changed=q.clone();changed["stem"]=json!("模拟源已改变");assert!(!ready(&changed));
         let mut forged=q.clone();forged["teachingWorkflow"]["finalResult"]["answer"]=json!("3");assert!(!ready(&forged));
+    }
+    #[test]
+    #[cfg(debug_assertions)]
+    fn simulated_direct_agent_action_keeps_fresh_controls_on_save_and_replay(){
+        let mut c=candidate();c["issues"]=json!(["模拟已核对的参考说明。"]);
+        let (_dir,store,record)=setup(c);let input=ack(&record);
+        let result=agent_action(&store,&input,false,&AtomicBool::new(false)).unwrap();
+        assert_eq!(result["teachingControls"],projection(&result["import"]));
+        assert_eq!(result["teachingControls"]["sim-control-q"]["issues"][0]["disposition"],"informative");
+        assert_eq!(result["import"]["questions"][0]["teachingWorkflow"]["reviewDispositions"]["acknowledgements"][0]["checkedBy"],"codex");
+        assert_eq!(agent_action(&store,&input,false,&AtomicBool::new(false)).unwrap(),result);
     }
     #[test]
     fn simulated_ack_never_silences_terms_format_or_hard_source_or_forged_identity(){
@@ -278,6 +313,20 @@ mod tests {
         }
         let before=store.document("imports","sim-controls").unwrap();let mut mixed=bound(&before,"atomic-wrong");mixed["patches"]=json!([{"fieldPath":"answer","oldText":"2","newText":"3"},{"fieldPath":"teachingSolution","oldText":"not-current","newText":"wrong"}]);assert!(action(&store,&mixed,true,&AtomicBool::new(false)).is_err());assert_eq!(store.document("imports","sim-controls").unwrap(),before);
         assert_eq!(action(&store,&input,true,&AtomicBool::new(false)).unwrap()["import"],before);
+    }
+    #[test]
+    fn simulated_published_source_allows_separate_teaching_patch_without_mutating_source(){
+        let c=candidate();let (_dir,store,mut record)=setup(c.clone());
+        record["publishedQuestionIds"]=json!(["sim-control-q"]);record["status"]=json!("published");
+        store.put_document("imports","sim-controls",&record).unwrap();
+        assert_eq!(projection(&record)["sim-control-q"]["canPatch"],true);
+        let mut input=bound(&record,"sim-published-local-teaching");
+        input["patches"]=json!([{"fieldPath":"teachingSolution","oldText":c["teachingSolution"],"newText":"模拟人工核对：1+1=2，故答案为2。"}]);
+        let result=action(&store,&input,true,&AtomicBool::new(false)).unwrap();
+        let after=&result["import"]["questions"][0];
+        for key in ["stem","answer","solution","options","parts","sourceLabel"] {assert_eq!(after[key],record["questions"][0][key]);}
+        assert_eq!(result["import"]["publishedQuestionIds"],record["publishedQuestionIds"]);
+        assert_eq!(after["teachingWorkflow"]["reviewCalls"],1);
     }
     #[test]
     fn simulated_model_patch_allowlist_rejects_expansion_and_preserves_raw_output(){

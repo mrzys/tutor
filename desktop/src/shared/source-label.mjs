@@ -1,5 +1,17 @@
 const text = value => typeof value === 'string' ? value.trim() : '';
 
+// Import preview already prints the preserved original number separately.
+// Remove only an exact repeated decimal question heading from the view copy;
+// never remove bracketed subparts, decimal values, scores, or stored source text.
+export function importPreviewStem(stem, sourceLabel) {
+  if (typeof stem !== 'string') return '';
+  const label = String(sourceLabel ?? '').trim().match(/^(?:\d+|[（(]\d+[）)])$/u);
+  if (!label) return stem;
+  const number = label[0].replace(/[（）()]/gu, '');
+  const prefix = stem.match(/^\s*(\d+)[.．、](?!\d)\s*/u);
+  return prefix?.[1] === number ? stem.slice(prefix[0].length) : stem;
+}
+
 // A subquestion number or a mathematical condition is never a source citation.
 export function embeddedExamSource(stem) {
   const match = text(stem).match(/^(?:[（(]\d+[）)]\s*)?[（(]([^（）()\n]{3,160})[）)]/u);

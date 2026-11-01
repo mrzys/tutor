@@ -124,7 +124,7 @@ test('dictionary uses literal terms and fixed matcher identifiers only', () => {
   assert.equal(dictionary.version, scan('范数').dictionaryVersion);
   const known = new Set(['modulo-number', 'modulo-notation', 'contextual-congruence', 'operation-closure', 'phi-notation', 'limit-notation',
     'integral-notation', 'english-classroom-method', 'higher-derivative-primes', 'higher-derivative-order',
-    'higher-derivative-fraction', 'infinite-sum-notation', 'endpoint-limit-shorthand']);
+    'higher-derivative-fraction', 'infinite-sum-notation', 'endpoint-limit-shorthand', 'epsilon-delta-argument', 'vector-cross-product']);
   for (const rule of dictionary.rules) {
     assert.deepEqual(Object.keys(rule).filter(key => !['id', 'category', 'terms', 'matchers', 'guidance'].includes(key)), []);
     assert.ok(rule.terms.every(term => typeof term === 'string' && term.length > 0));
@@ -147,6 +147,29 @@ test('new curriculum-context triggers share positive and negative notation fixtu
   }
 });
 
+test('mean-value and vector-product gaps only locate review and preserve source text', () => {
+  const value = {
+    teachingSolution: String.raw`由中值定理得到等式，再取 $\overrightarrow{AB}\times\overrightarrow{AP}$ 求法向量。`,
+    stem: '源材料中的叉积与中值定理保持原样。',
+    referenceSolution: String.raw`$\vec{a}\times\vec{b}$`,
+  };
+  const before = JSON.stringify(value);
+  const actual = scanTeachingTerms(value);
+  assert.equal(actual.dictionaryVersion, 'teaching-term-review-v7-method-gaps');
+  assert.deepEqual(actual.findings.map(item => item.ruleId), ['differential-mean-value', 'vector-cross-product']);
+  assert.ok(actual.findings.every(item => item.fieldPath === 'teachingSolution' && item.category === 'special_tool'));
+  assert.equal(JSON.stringify(value), before);
+  for (const finding of actual.findings) {
+    assert.equal(Object.hasOwn(finding, 'correct'), false);
+    assert.equal(Object.hasOwn(finding, 'autoReplace'), false);
+    assert.equal(value.teachingSolution.slice(finding.start, finding.end), finding.term);
+  }
+  const guidance = actual.findings.find(item => item.ruleId === 'vector-cross-product').guidance;
+  assert.match(guidance, /数量积分别为0/u);
+  assert.match(guidance, /不能只删除叉积名称或公式/u);
+  assert.deepEqual(scanTeachingTerms({ stem: value.stem, referenceSolution: value.referenceSolution }).findings, []);
+});
+
 test('context triggers inspect newly generated prose only and leave ordinary classroom notation alone', () => {
   const sourceOnly = {
     stem: String.raw`已知积分常数及 f''，按 telescoping 求无穷和。`,
@@ -157,12 +180,38 @@ test('context triggers inspect newly generated prose only and leave ordinary cla
   assert.deepEqual(scanTeachingTerms(sourceOnly).findings, []);
   const result = scanTeachingTerms({
     answer: String.raw`$\int_0^1x\,dx$`,
-    difficultyAssessment: { basis: '使用二阶导后仍需说明理由。' },
+    difficultyAssessment: { basis: '使用三阶导后仍需说明理由。' },
     teachingFocus: { examFocus: '无穷等比级数', studentRequirements: ['理解 telescoping 的实际相消过程。'] },
   });
   assert.deepEqual(new Set(result.findings.map(f => f.fieldPath)), new Set([
     'answer', 'difficultyAssessment.basis', 'teachingFocus.examFocus', 'teachingFocus.studentRequirements[0]',
   ]));
+});
+
+test('higher derivative fractions require the full numerator and differential denominator', () => {
+  const source = String.raw`🧑‍🏫普通分式 $\frac{d^2}{e^d-1}$，再看 $\dfrac{\mathrm d^{3} f_1(x)}{\mathrm d x^{3}}$。`;
+  const before = JSON.stringify({ teachingSolution: source });
+  const found = scan(source).findings;
+  assert.equal(found.length, 1);
+  assert.equal(found[0].ruleId, 'higher-derivative');
+  assert.equal(found[0].term, String.raw`\dfrac{\mathrm d^{3} f_1(x)}{\mathrm d x^{3}}`);
+  assert.equal(source.slice(found[0].start, found[0].end), found[0].term);
+  assert.equal(JSON.stringify({ teachingSolution: source }), before);
+  assert.deepEqual(scan(String.raw`$\frac{d^2+1}{dx^2}$、$\frac{d^2f}{x^2}$、$\frac{d^2}{e^d-1}$`).findings, []);
+});
+
+test('contextual bounds and linear representation remain review triggers without a mathematical verdict', () => {
+  const input = { teachingSolution: '由a²+b²>e²/2可知e²/2是参数平方和下界；向量的线性表示写为u=2v+w。' };
+  const before = JSON.stringify(input);
+  const actual = scanTeachingTerms(input);
+  assert.deepEqual(actual.findings.map(item => item.ruleId), ['optimization-language', 'linear-representation']);
+  assert.deepEqual(actual.findings.map(item => item.term), ['下界', '线性表示']);
+  assert.equal(JSON.stringify(input), before);
+  for (const finding of actual.findings) {
+    assert.equal(Object.hasOwn(finding, 'mathematics'), false);
+    assert.equal(Object.hasOwn(finding, 'correct'), false);
+    assert.equal(Object.hasOwn(finding, 'autoReplace'), false);
+  }
 });
 
 test('LaTeX command boundaries allow numeric arguments and subscripts without matching longer commands', () => {
@@ -192,4 +241,50 @@ test('dictionary strings are literal data and unrecognized matcher programs are 
   writeFileSync(dictionaryPath, JSON.stringify(fixture));
   await assert.rejects(import(`${pathToFileURL(modulePath).href}?invalid-matcher`), /Invalid teaching term dictionary rule/);
   assert.equal(globalThis.__dictionaryScanInjected, undefined);
+});
+
+
+test('second differentiation alone does not demand rewriting or a review call', () => {
+  const value = { teachingSolution: String.raw`设 $f(x)=x^3$，$f'(x)=3x^2$。对导函数再次求导得 $f''(x)=6x$，先说明导函数的增减，再结合其正负研究原函数。`, difficultyAssessment: { basis: '本题需要二阶导数计算，即对导函数再次求导。' } };
+  const before = JSON.stringify(value);
+  assert.deepEqual(scanTeachingTerms(value).findings, []);
+  assert.equal(JSON.stringify(value), before);
+});
+
+test('named second-derivative tests locate the theory without declaring the candidate wrong', () => {
+  const value = { teachingSolution: '用二阶导数判别法判断极值，接着说明其理由。' };
+  const before = JSON.stringify(value);
+  const found = scanTeachingTerms(value).findings;
+  assert.equal(found.length, 1);
+  assert.equal(found[0].ruleId, 'second-derivative-test');
+  assert.equal(found[0].category, 'context');
+  assert.equal(found[0].term, '二阶导数判别法');
+  assert.equal(value.teachingSolution.slice(found[0].start, found[0].end), found[0].term);
+  assert.equal(Object.hasOwn(found[0], 'correct'), false);
+  assert.equal(JSON.stringify(value), before);
+});
+
+
+test('prime-glyph runs distinguish second order from every higher-order combination without truncation', () => {
+  const singles = ["'", '′'];
+  const glyphs = ["'", '′', '″', '‴', '⁗'];
+  const weight = { "'": 1, '′': 1, '″': 2, '‴': 3, '⁗': 4 };
+  const runs = [...glyphs];
+  for (const first of glyphs) for (const second of glyphs) runs.push(first + second);
+  for (const first of singles) for (const second of singles) for (const third of glyphs) runs.push(first + second + third);
+  for (const run of runs) {
+    const source = `🧑‍🏫 $f${run}`;
+    const before = JSON.stringify({ teachingSolution: source });
+    const found = scan(source).findings;
+    if ([...run].reduce((sum, glyph) => sum + weight[glyph], 0) < 3) {
+      assert.deepEqual(found, [], run);
+    } else {
+      assert.equal(found.length, 1, run);
+      assert.equal(found[0].term, `f${run}`, run);
+      assert.equal(found[0].start, source.indexOf('f'), run);
+      assert.equal(found[0].end, source.length, run);
+      assert.equal(source.slice(found[0].start, found[0].end), `f${run}`, run);
+    }
+    assert.equal(JSON.stringify({ teachingSolution: source }), before, run);
+  }
 });

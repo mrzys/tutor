@@ -22,6 +22,8 @@ use std::{
 mod recovery_trial;
 #[cfg(debug_assertions)]
 pub(crate) use recovery_trial::recover_existing;
+mod resume;
+pub(crate) use resume::{resume_existing, derive_layout_links, has_accepted_job};
 
 const MAX_PAGES: usize = 50;
 const MAX_JSON: usize = 24 * 1024 * 1024;
@@ -263,6 +265,7 @@ struct Run<'a> {
     sequence: usize,
     total: usize,
     docx: bool,
+    cached_images: HashMap<String, resume::CachedImage>,
 }
 impl Run<'_> {
     fn save(&mut self, phase: &str, status: u16, body: &[u8]) -> AppResult<()> {
@@ -395,9 +398,18 @@ impl Run<'_> {
     }
     async fn image(&mut self, raw: &str) -> AppResult<DynamicImage> {
         let url = validate_url(raw, &self.endpoint)?;
+        let key = resume::resource_key(&url);
+        if let Some(cached) = self.cached_images.get(&key) {
+            let image = cached.load()?;
+            resume::save_image_receipt(self.audit, &key, &image, Some(&cached.path))?;
+            return Ok(image);
+        }
         let client = safe_client(&url, &self.endpoint)?;
         // Credentials are intentionally absent for result and image hosts.
-        let bytes = self.response("image", client.get(url), MAX_IMAGE).await?;
+        let bytes = self.response("image", client.get(url), MAX_IMAGE).await.map_err(|mut failure| {
+            failure.message=format!("试卷识别已完成，下载原页或配图失败。{} 已下载图片保留，可继续下载。",failure.message);
+            failure
+        })?;
         let mut reader = ImageReader::new(Cursor::new(&bytes))
             .with_guessed_format()
             .map_err(|_| error("ocr_invalid_image", "PaddleOCR 返回的图片格式无效。"))?;
@@ -406,12 +418,14 @@ impl Run<'_> {
         limits.max_image_height = Some(12000);
         limits.max_alloc = Some(160 * 1024 * 1024);
         reader.limits(limits);
-        reader.decode().map_err(|_| {
+        let image = reader.decode().map_err(|_| {
             error(
                 "ocr_invalid_image",
                 "PaddleOCR 图片无法解码或分辨率超过上限。",
             )
-        })
+        })?;
+        resume::save_image_receipt(self.audit, &key, &image, None)?;
+        Ok(image)
     }
 }
 fn asset(
@@ -619,7 +633,7 @@ async fn normalize(
                     && kind != "figure_title"
                     && !matches!(
                         kind,
-                        "number" | "header" | "footer" | "footnote" | "aside_text"
+                        "number" | "header" | "header_image" | "footer" | "footer_image" | "footnote" | "aside_text"
                     )
                     && (!content.trim().is_empty())
                     && (order.is_none() || order.is_some_and(|o| !orders.insert(o)))
@@ -705,7 +719,7 @@ async fn normalize(
         // tables as images too, alongside editable structured table text.
         for block in &mut blocks {
             let kind = s(block, "type");
-            if !matches!(kind, "image" | "chart" | "table") {
+            if !matches!(kind, "image" | "chart" | "table" | "header_image" | "footer_image") {
                 continue;
             }
             let role = if kind == "table" { "table" } else { "figure" };
@@ -727,6 +741,7 @@ async fn normalize(
                     block["assetId"] = json!(id);
                     block["sourceImageBbox"] = json!(p);
                     if let Some(a) = out.assets.iter_mut().find(|a| s(a, "id") == id) {
+                        a["layoutType"] = block["type"].clone();
                         a["sourceImageBbox"] = json!(p);
                         a["coordinateTransform"] =
                             coordinate_transform.clone().unwrap_or(Value::Null);
@@ -856,6 +871,10 @@ async fn normalize(
                 false,
             );
         }
+        // Keep the exact layout identity on omitted header/footer evidence too.
+        for entry in &mut omitted {
+            if let Some(block) = blocks.iter().find(|b| b["id"] == entry["id"]) {*entry = block.clone();}
+        }
         out.pages.push(json!({"page":page,"text":markdown,"width":width,"height":height,"blocks":blocks,"omittedBlocks":omitted,"sourceImageAssetId":source_id,"coordinateTransform":coordinate_transform,"readingOrder":"provider_response_with_explicit_optional_order"}));
     }
     Ok(out)
@@ -889,11 +908,13 @@ async fn run(
         sequence: 0,
         total: 0,
         docx: filename.to_ascii_lowercase().ends_with(".docx"),
+        cached_images: HashMap::new(),
     };
     let result=async{
         let client=safe_client(&endpoint,&endpoint)?;let form=reqwest::multipart::Form::new().text("model",settings.model().to_owned()).text("optionalPayload",json!({"useDocOrientationClassify":false,"useDocUnwarping":false,"useChartRecognition":false}).to_string()).part("file",reqwest::multipart::Part::bytes(bytes.to_vec()).file_name(filename.to_owned()).mime_str(mime).map_err(|_|error("invalid_file","试卷文件类型无效。"))?);
         let submitted=run.json("submit",client.post(endpoint.clone()).bearer_auth(settings.api_key()).multipart(form)).await?;
         let id=submitted["data"]["jobId"].as_str().map(str::to_owned).or_else(||submitted["data"]["jobId"].as_u64().map(|x|x.to_string())).filter(|x|!x.is_empty()&&x.len()<=150).ok_or_else(||error("ocr_invalid_job","PaddleOCR 未返回有效任务编号。"))?;
+        resume::save_job(&run, &id)?;
         let mut poll=endpoint.clone();poll.path_segments_mut().map_err(|_|error("ocr_invalid_url","PaddleOCR 接口地址无效。"))?.pop_if_empty().push(&id);
         loop{check(cancel,run.start)?;let status=run.json("poll",client.get(poll.clone()).bearer_auth(settings.api_key())).await?;match s(&status["data"],"state"){
             "done"=>{let url=validate_url(s(&status["data"]["resultUrl"],"jsonUrl"),&endpoint)?;let result_client=safe_client(&url,&endpoint)?;let data=run.response("result",result_client.get(url),MAX_JSON).await?;return normalize(&mut run,&data,status["data"]["extractProgress"]["totalPages"].as_u64().map(|n|n as usize)).await;},
@@ -931,6 +952,7 @@ pub fn recognize(
     }
     check(cancel, Instant::now())?;
     std::fs::create_dir_all(audit_dir)?;
+    resume::save_binding(settings, bytes, filename, audit_dir)?;
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -1065,6 +1087,51 @@ mod tests {
     }
     fn layout(base: &str) -> Value {
         json!({"result":{"layoutParsingResults":[{"inputImage":format!("{base}/page.png?signature=simulated-signature"),"prunedResult":{"width":12,"height":16,"page_index":0,"parsing_res_list":[{"block_id":1,"block_order":1,"block_label":"text","block_content":"1. \\sqrt{x}+1","block_bbox":[1,1,11,3]},{"block_id":2,"block_order":null,"block_label":"image","block_content":"","block_bbox":[2,3,7,8]},{"block_id":3,"block_order":2,"block_label":"table","block_content":"<table><tr><td></td><td>3</td></tr></table>","block_bbox":[1,10,11,15]}]},"markdown":{"text":"1. \\sqrt{x}+1\n![图](imgs/x.png)\n<table><tr><td></td><td>3</td></tr></table>","images":{"imgs/x.png":format!("{base}/figure.png")}},"outputImages":{}}]}})
+    }
+    #[test]
+    fn accepted_ocr_resume_reuses_verified_images_across_multiple_failures_without_post() {
+        let succeeds=Arc::new(AtomicBool::new(false));let flag=succeeds.clone();
+        let server=mock(move |route,base|match route {
+            "/jobs"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"jobId":"simulated-kept"}})).unwrap()),
+            "/jobs/simulated-kept"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"state":"done","resultUrl":{"jsonUrl":format!("{base}/result?signature=new")},"extractProgress":{"totalPages":2}}})).unwrap()),
+            r if r.starts_with("/result?")=>(200,serde_json::to_vec(&json!({"result":{"layoutParsingResults":(0..2).map(|i|json!({"inputImage":format!("{base}/page{}.png?signature=new",i+1),"prunedResult":{"width":12,"height":16,"page_index":i,"parsing_res_list":[{"block_id":1,"block_order":1,"block_label":"text","block_content":format!("{}. 模拟原题",i+1),"block_bbox":[0,0,12,3]}]},"markdown":{"text":format!("{}. 模拟原题",i+1),"images":{}}})).collect::<Vec<_>>()}})).unwrap()),
+            r if r.starts_with("/page2.png")&&!flag.load(Ordering::SeqCst)=>(503,b"simulated image GET failure".to_vec()),
+            _=>(200,png()),
+        });
+        let dir=tempfile::tempdir().unwrap();let config=settings(dir.path(),&server.base);let bytes=b"%PDF-simulated";
+        let first=dir.path().join("first");let cancel=AtomicBool::new(false);
+        assert_eq!(recognize(&config,bytes,"sim.pdf","application/pdf",&first,&cancel).err().unwrap().code,"ocr_http_error");
+        assert!(has_accepted_job(&first).unwrap());
+        let before=std::fs::read(first.join("accepted-job.json")).unwrap();
+        let second=dir.path().join("second");
+        assert_eq!(resume_existing(&config,bytes,"sim.pdf",&first,&second,None,&cancel).err().unwrap().code,"ocr_http_error");
+        assert!(has_accepted_job(&second).unwrap());
+        succeeds.store(true,Ordering::SeqCst);
+        let third=dir.path().join("third");let result=resume_existing(&config,bytes,"sim.pdf",&second,&third,None,&cancel).unwrap();
+        assert_eq!(result.pages.len(),2);assert_eq!(result.assets.iter().filter(|a|a["role"]=="source_page").count(),2);
+        assert_eq!(std::fs::read(first.join("accepted-job.json")).unwrap(),before);
+        let requests=server.requests.lock().unwrap();
+        assert_eq!(requests.iter().filter(|(r,_,_)|r=="/jobs").count(),1);
+        assert_eq!(requests.iter().filter(|(r,_,_)|r.starts_with("/page1.png")).count(),1);
+        assert_eq!(requests.iter().filter(|(r,_,_)|r.starts_with("/page2.png")).count(),3);
+        assert!(requests.iter().all(|(r,h,_)|r.starts_with("/jobs")||!h.to_lowercase().contains("authorization:")));
+        let audits=std::fs::read_dir(third).unwrap().filter_map(Result::ok).filter(|x|x.path().extension().is_some_and(|e|e=="json")).map(|x|std::fs::read_to_string(x.path()).unwrap()).collect::<String>();
+        assert!(!audits.contains("signature=new"));assert!(!audits.contains("simulated-ocr-secret"));
+    }
+    #[test]
+    fn footer_images_keep_exact_original_block_and_coordinates_without_becoming_student_diagrams() {
+        let server=mock(|route,base|match route{
+            "/jobs"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"jobId":"footer"}})).unwrap()),
+            "/jobs/footer"=>(200,serde_json::to_vec(&json!({"code":0,"data":{"state":"done","resultUrl":{"jsonUrl":format!("{base}/result")},"extractProgress":{"totalPages":1}}})).unwrap()),
+            "/result"=>(200,serde_json::to_vec(&json!({"result":{"layoutParsingResults":[{"inputImage":format!("{base}/page"),"prunedResult":{"width":12,"height":16,"page_index":0,"parsing_res_list":[{"block_id":1,"block_label":"text","block_order":1,"block_content":"1. 模拟原题","block_bbox":[0,0,12,3]},{"block_id":2,"block_label":"footer_image","block_order":null,"block_content":"![页脚](imgs/footer_box_2_12_5_15.png)","block_bbox":[2,12,5,15]}]},"markdown":{"text":"1. 模拟原题\n![页脚](imgs/footer_box_2_12_5_15.png)","images":{"imgs/footer_box_2_12_5_15.png":format!("{base}/must-not-download")}}}]}})).unwrap()),
+            "/page"=>(200,png()),_=>panic!("unexpected footer download"),
+        });
+        let dir=tempfile::tempdir().unwrap();let config=settings(dir.path(),&server.base);
+        let result=recognize(&config,b"%PDF-simulated","footer.pdf","application/pdf",&dir.path().join("audit"),&AtomicBool::new(false)).unwrap();
+        let block=&result.pages[0]["blocks"][1];let asset=result.assets.iter().find(|a|a["id"]==block["assetId"]).unwrap();
+        assert_eq!(asset["bbox"],json!([2,12,5,15]));assert_eq!(asset["layoutType"],"footer_image");
+        assert_eq!(asset["role"],"figure");assert_eq!(result.pages[0]["omittedBlocks"][0]["assetId"],asset["id"]);
+        assert!(!result.issues.iter().any(|x|x["code"]=="ocr_reading_order_uncertain"));
     }
     #[test]
     fn multipart_poll_jsonl_retains_real_images_tables_and_unknown_order_without_forwarding_key() {
@@ -1534,6 +1601,7 @@ mod tests {
             sequence: 0,
             total: 0,
             docx: false,
+            cached_images: HashMap::new(),
         };
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let mut blocks = vec![
@@ -1591,6 +1659,7 @@ mod tests {
             sequence: 0,
             total: 0,
             docx: false,
+            cached_images: HashMap::new(),
         };
         let runtime = tokio::runtime::Runtime::new().unwrap();
         let data = json!({"result":{"layoutParsingResults":[{"prunedResult":{"page_index":3},"markdown":{"text":"![missing](imgs/missing.png)","images":{}}}]}});

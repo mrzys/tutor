@@ -246,12 +246,13 @@ export function QuestionBody(props: {
   difficultyLabel?: string;
   difficultyBasis?: string;
   formalKnowledge?: string[];
+  reviewFieldPrefix?: string;
 }) {
   const presentation = () =>
     questionSourcePresentation(props.question, props.manifest);
   const exportLayout = new URLSearchParams(window.location.search).has("exportTask");
   const choices = createMemo(() => exportLayout
-    ? { stem: presentation().stem, options: props.question?.student?.options || [], ambiguous: false }
+    ? { stem: presentation().stem, options: props.question?.student?.options || [], ambiguous: false, extracted:false }
     : choicePresentation(presentation().stem, props.question?.student?.options || [], props.question?.questionType,
       source => !!resolveAsset(props.question, { source, alt: "" }, false)));
   const options = () => choices().options;
@@ -279,7 +280,7 @@ export function QuestionBody(props: {
         <Show when={props.number !== undefined}>
           <span class="question-number">{props.number}.</span>
         </Show>
-        <div class="question-stem">
+        <div class="question-stem" data-import-field={props.reviewFieldPrefix ? `${props.reviewFieldPrefix}stem` : undefined} tabIndex={props.reviewFieldPrefix ? -1 : undefined}>
           <Show
             when={props.question}
             fallback={
@@ -325,19 +326,26 @@ export function QuestionBody(props: {
                 )}
               </For>
             </div>}>
-              <AdaptiveOptions options={options()} render={option => <RichText text={option.text} question={props.question} />} />
+              <div data-import-field={props.reviewFieldPrefix ? `${props.reviewFieldPrefix}options` : undefined} tabIndex={props.reviewFieldPrefix ? -1 : undefined}>
+                <AdaptiveOptions options={options()} reviewField={props.reviewFieldPrefix && !choices().extracted ? option => {
+                  const index = (props.question?.student?.options || []).indexOf(option);
+                  return index < 0 ? undefined : `${props.reviewFieldPrefix}options[${index}].text`;
+                } : undefined} render={option => <RichText text={option.text} question={props.question} />} />
+              </div>
             </Show>
           </Show>
           <Show when={choices().ambiguous}><p class="option-layout-notice">图选项结构尚不明确，已保留原文顺序；可对照原图检查选项归属。</p></Show>
           <For each={props.question?.student?.parts || []}>
             {(part: any, index) => (
-              <div class="question-part" classList={{"question-part-child":Boolean(part.parentPartId)}}>
+              <div class="question-part" classList={{"question-part-child":Boolean(part.parentPartId)}} data-import-field={props.reviewFieldPrefix ? `${props.reviewFieldPrefix}parts[${index()}].prompt` : undefined} tabIndex={props.reviewFieldPrefix ? -1 : undefined}>
                 {exportLayout ? part.label || `（${index() + 1}）` : partDisplayLabel(part.label, part.prompt, index())}
                 <RichText text={part.prompt} question={props.question} />
               </div>
             )}
           </For>
-          <Show when={props.teacher}>
+          <Show when={props.teacher && (!props.hideMissingTeacherMaterials || props.difficultyBasis !== undefined || teachingAnalysis()
+            || ["answers","solutions",...(props.showPoints ? ["scoringSuggestions"] : [])].some(field => props.question?.teacher?.[field]?.length)
+            || assetReferences(props.question,true).some(asset => asset.role === "teacher" && !teacherInline().has(assetKey(asset))))}>
             <div class="teacher-material">
               <Show when={props.difficultyBasis !== undefined}>
                 <section class="question-difficulty-basis">
@@ -363,7 +371,7 @@ export function QuestionBody(props: {
               >
                 {([field, label]) => (
                   <Show when={field === "solutions" && teachingAnalysis()} fallback={
-                  <section>
+                  <section data-import-field={props.reviewFieldPrefix ? `${props.reviewFieldPrefix}${field === "answers" ? "answer" : "solution"}` : undefined} tabIndex={props.reviewFieldPrefix ? -1 : undefined}>
                     <h4>{label}</h4>
                     <Show
                       when={props.question?.teacher?.[field]?.length}
@@ -373,7 +381,7 @@ export function QuestionBody(props: {
                     >
                       <For each={props.question?.teacher?.[field] || []}>
                         {(entry: any) => (
-                          <p>
+                          <p data-import-field={props.reviewFieldPrefix && entry.importField ? `${props.reviewFieldPrefix}${entry.importField}` : undefined} tabIndex={props.reviewFieldPrefix && entry.importField ? -1 : undefined}>
                             <RichText
                               text={entry.text}
                               question={props.question}

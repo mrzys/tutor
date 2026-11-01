@@ -40,6 +40,9 @@ fn hard_problem(q: &Value, record: &Value) -> Option<String> {
     if !question_issues(q, &record["sourceIssues"]).is_empty() {
         return Some("原文、公式或图表仍有保真问题，修正后再处理。".into());
     }
+    if let Err(error) = teaching::verify_source_material(q) {
+        return Some(error.message);
+    }
     if matches!(s(q, "questionType"), "single_choice" | "multiple_choice")
         && (rows(&q["options"]).len() < 2
             || rows(&q["options"])
@@ -93,9 +96,31 @@ pub(super) fn eligibility(record: &Value) -> Value {
                 "尚未完成模型检查或人工核对".into()
             }
         });
-        result.insert(id.to_owned(),json!({"eligible":eligible,"method":if teacher {json!("teacher_review")} else if model {json!("model_review")}else{Value::Null},"reason":reason}));
+        // Match apply_to_entry exactly; this describes the prospective payload,
+        // not a new eligibility gate or an independent correctness claim.
+        let publication_scope = if teaching::ready(&q) {"source_and_teaching"} else {"source_only"};
+        result.insert(id.to_owned(),json!({"eligible":eligible,"method":if teacher {json!("teacher_review")} else if model {json!("model_review")}else{Value::Null},"reason":reason,"publicationScope":publication_scope,"sourceMaterialFindings":teaching::source_material_findings(&q)}));
     }
     Value::Object(result)
+}
+fn import_response_question_hash_matches(
+    raw: &Value,
+    index: usize,
+    expected: &Value,
+    source_bound: bool,
+) -> bool {
+    let Some(original) = raw["questions"].get(index).filter(|q| q.is_object()) else {
+        return false;
+    };
+    if hash_json(original) == *expected {
+        return true;
+    }
+    // Historic source batches bound the known contract-normalized clone instead
+    // of the provider question. Recompute only that identity compatibility from
+    // the preserved provider bytes, never from the current/asset-bound question.
+    source_bound
+        && source_batches::canonical_source_contract(&json!({"questions":[original]}))
+            .is_ok_and(|canonical| hash_json(&canonical["questions"][0]) == *expected)
 }
 pub(super) fn verify_opinion(store: &Store, q: &Value, record: &Value) -> AppResult<()> {
     if !model_ready(q, record) {
@@ -104,6 +129,27 @@ pub(super) fn verify_opinion(store: &Store, q: &Value, record: &Value) -> AppRes
             "本题模型检查未通过或内容已更改，请重新检查或人工核对。",
         ));
     }
+    verify_bound_opinion(store, q, record)
+}
+/// Optional correction display shares the same preserved request/response
+/// proof as publication, without treating a needs-review opinion as ready.
+pub(super) fn verify_display_opinion(store: &Store, q: &Value, record: &Value) -> AppResult<()> {
+    if q["modelReview"]["origin"] != "import" || q["modelReview"]["status"] != "needs_review"
+        || q["modelReview"]["contentSha256"] != content_hash(q)
+        || q["modelReview"]["evidence"]["imageReviewAvailable"] != true {
+        return Err(err("review_audit_changed", "修正展示缺少当前原题的原页核对依据。"));
+    }
+    let root=store.data_dir.join("imports").canonicalize()?;
+    let owned=root.join(s(record,"importId")).canonicalize()?;
+    if !owned.starts_with(&root) {return Err(err("review_audit_changed","修正展示不属于当前原卷。"));}
+    for key in ["relativePath","requestRelativePath"] {
+        if !store.data_dir.join(s(&q["modelReview"]["audit"],key)).canonicalize()?.starts_with(&owned) {
+            return Err(err("review_audit_changed","修正展示审计不属于当前原卷。"));
+        }
+    }
+    verify_bound_opinion(store, q, record)
+}
+fn verify_bound_opinion(store: &Store, q: &Value, record: &Value) -> AppResult<()> {
     let review = &q["modelReview"];
     let root = store.data_dir.join("imports").canonicalize()?;
     let path = store
@@ -125,7 +171,7 @@ pub(super) fn verify_opinion(store: &Store, q: &Value, record: &Value) -> AppRes
             "模型检查审计校验失败，未加入题库。",
         ));
     }
-    let response: Value = serde_json::from_slice(&std::fs::read(path)?)?;
+    let response: Value = serde_json::from_slice(&std::fs::read(&path)?)?;
     let raw: Value = serde_json::from_str(s(&response["choices"][0]["message"], "content"))
         .map_err(|_| err("review_audit_changed", "模型检查响应已损坏。"))?;
     let integrated = review["origin"] == "import";
@@ -134,8 +180,12 @@ pub(super) fn verify_opinion(store: &Store, q: &Value, record: &Value) -> AppRes
         .unwrap_or(u64::MAX) as usize;
     let input = if integrated {
         if review["audit"]["task"] != "question_import"
-            || hash_json(&raw["questions"][response_index])
-                != review["audit"]["responseQuestionSha256"]
+            || !import_response_question_hash_matches(
+                &raw,
+                response_index,
+                &review["audit"]["responseQuestionSha256"],
+                paddle::uses(q),
+            )
         {
             return Err(err(
                 "review_audit_changed",
@@ -202,6 +252,11 @@ pub(super) fn verify_opinion(store: &Store, q: &Value, record: &Value) -> AppRes
             "模型检查请求未绑定当前题目与原卷。",
         ));
     }
+    if integrated && review["model"]["identityEvidence"]["kind"] == "provider_request_receipt"
+        && source_model_identity(store, &path)? != review["model"]
+    {
+        return Err(err("review_audit_changed", "来源模型归因与已保存实际请求不一致。"));
+    }
     Ok(())
 }
 fn original_context(
@@ -258,7 +313,7 @@ fn original_context(
         json!({"source":{"sha256":record["source"]["sha256"],"filename":record["filename"],"pages":originals},"questions":[question],"reviewScope":{"questionType":q["questionType"],"optionsApplicable":matches!(s(q,"questionType"),"single_choice"|"multiple_choice"),"extractedAnswerPresent":review_requirements(q).contains(&"answerChecked"),"extractedSolutionPresent":review_requirements(q).contains(&"solutionChecked"),"sourceAbsenceUnknownFromEmptyFields":true,"requiredChecks":review_requirements(q)}}),
     )
 }
-fn normalize_opinion(value: &Value, q: &Value, record: &Value, images: bool) -> AppResult<Value> {
+pub(super) fn normalize_opinion(value: &Value, q: &Value, record: &Value, images: bool) -> AppResult<Value> {
     let values = value["questions"]
         .as_array()
         .filter(|v| v.len() == 1)
@@ -295,8 +350,11 @@ fn normalize_opinion(value: &Value, q: &Value, record: &Value, images: bool) -> 
         if message.trim().is_empty() {
             return Err(err("model_review_invalid", "模型检查疑点缺少说明。"));
         }
-        issues
-            .push(json!({"field":bounded_text(s(issue,"field"),40,"疑点位置")?,"message":message}));
+        let mut normalized_issue = json!({"field":bounded_text(s(issue,"field"),40,"疑点位置")?,"message":message});
+        if let Some(correction) = source_display::normalize_model_correction(&issue["correction"], q, record, images) {
+            normalized_issue["correction"] = correction;
+        }
+        issues.push(normalized_issue);
     }
     let evidence = rows(&result["evidencePages"]);
     let pages = rows(&q["pages"]);
@@ -358,14 +416,35 @@ fn preserve_request_audit(store: &Store, path: &Path, bytes: &[u8]) -> AppResult
         Err(error) => Err(error.into()),
     }
 }
-fn model_identity(model: &ModelClient) -> Value {
-    let settings = model.public_settings();
-    let profile = rows(&settings["profiles"])
-        .into_iter()
-        .find(|p| p["id"] == settings["activeProfileId"])
-        .unwrap_or(Value::Null);
-    json!({"profileId":settings["activeProfileId"],"name":profile["name"],"model":settings["model"],"baseUrl":settings["baseUrl"]})
+fn source_model_identity(store: &Store, response_path: &Path) -> AppResult<Value> {
+    let receipt = response_path.with_extension("request.json");
+    let unknown = || json!({"profileId":null,"name":null,"model":null,"baseUrl":null,"reasoningEffort":null,"identityEvidence":{"kind":"unavailable"}});
+    if !receipt.exists() {
+        return Ok(unknown());
+    }
+    let root = store.data_dir.join("imports").canonicalize()?;
+    let path = receipt.canonicalize()?;
+    if !path.starts_with(&root) || std::fs::metadata(&path)?.len() > 45 * 1024 * 1024 {
+        return Err(err("review_audit_changed", "来源模型请求路径或大小无效。"));
+    }
+    let bytes = std::fs::read(&path)?;
+    let request: Value = serde_json::from_slice(&bytes)?;
+    let actual = request["body"]["model"].as_str().filter(|v| !v.is_empty() && v.len() <= 200 && !v.chars().any(char::is_control));
+    let Some(actual) = actual else { return Ok(unknown()); };
+    if request.get("bodySha256").is_some() && request["bodySha256"] != hash_json(&request["body"]) {
+        return Err(err("review_audit_changed", "来源模型请求正文校验失败。"));
+    }
+    let saved = &request["sourceModelIdentity"];
+    if saved.is_object() && saved["model"] != actual {
+        return Err(err("review_audit_changed", "来源模型快照与实际请求模型不一致。"));
+    }
+    // A historic receipt's body proves its model, not which current profile or
+    // credential produced it. Only an identity frozen in that receipt can do so.
+    Ok(json!({"profileId":saved["profileId"],"name":saved["name"],"model":actual,
+        "baseUrl":saved["baseUrl"],"reasoningEffort":saved["reasoningEffort"],
+        "identityEvidence":{"kind":"provider_request_receipt","relativePath":audit_relative_path(store,&path)?,"sha256":sha(&bytes)}}))
 }
+
 fn imported_opinion(raw: &Value, index: usize, q: &Value) -> AppResult<Value> {
     let original = raw["questions"]
         .get(index)
@@ -393,7 +472,7 @@ fn imported_opinion(raw: &Value, index: usize, q: &Value) -> AppResult<Value> {
 /// trigger an unrequested second model call.
 pub(super) fn attach_import_opinions(
     store: &Store,
-    model: &ModelClient,
+    _model: &ModelClient,
     record: &Value,
     raw: &Value,
     context: &Value,
@@ -403,7 +482,7 @@ pub(super) fn attach_import_opinions(
     let image_available = context["imageReviewAvailable"] == true;
     let provider_sha = sha(&std::fs::read(response_path)?);
     let provider_relative = audit_relative_path(store, &response_path.canonicalize()?)?;
-    let identity = model_identity(model);
+    let identity = source_model_identity(store, response_path)?;
     for (index, q) in questions.iter_mut().enumerate() {
         let outcome = (|| -> AppResult<Value> {
             // Ensure actual preserved source pages exist independently from the
@@ -415,7 +494,7 @@ pub(super) fn attach_import_opinions(
             result["model"] = identity.clone();
             let request = json!({"schemaVersion":1,"task":"question_import","origin":"import","context":context,"contentSha256":result["contentSha256"],"evidence":result["evidence"],"model":identity,"responseQuestionIndex":index,"responseQuestionSha256":hash_json(&raw["questions"][index]),"sourceLabel":q["sourceLabel"]});
             let request_path = response_path.with_file_name(format!(
-                "{}-opinion-q{index}.request.json",
+                "{}-opinion-v2-q{index}.request.json",
                 response_path
                     .file_stem()
                     .and_then(|v| v.to_str())
@@ -556,6 +635,179 @@ mod tests {
     fn raw(record: &Value) -> Value {
         json!({"questions":[{"questionId":record["questions"][0]["questionId"],"status":"ready","confidence":"high","summary":"Compared source page 1: exact calculation and all original conditions retained; source has no answer or solution.","issues":[],"evidencePages":[1]}]})
     }
+    fn source_material_fixture(dimension: &str, field: &str) -> (tempfile::TempDir, Store, Value) {
+        let (dir, store, mut record) = fixture();
+        let q = &mut record["questions"][0];
+        q["reviewDecision"] = json!("approve");
+        q["reviewBasis"] = json!("模拟回归：人工核对原题，非真实教师使用证据。");
+        q["reviewChecks"] = json!({"sourceMatched":true,"formulaChecked":true,"answerChecked":true,"solutionChecked":true});
+        teaching::initialize(q, &json!({"generatedTeaching":{"questionId":q["questionId"],"answer":"2","difficultyAssessment":{"level":"easy","basis":"模拟：直接相加。"},"teachingSolution":"模拟：由1+1=2得答案。","teachingFocusSchemaVersion":2,"teachingFocus":{"examFocus":"模拟加法。","studentRequirements":["计算正确的和。"]},"issues":[]}}));
+        let audit = json!({"questionId":q["questionId"],"sourceContentSha256":teaching::source_hash(q),"candidateSha256":hash_json(&teaching::controls::active_candidate(q)),"method":"user_authorized_agent_review","checkedBy":"codex","evidence":"模拟独立核对原题与具体条件。","findings":[{"id":"sim-source-material","dimension":dimension,"fieldPath":field,"reason":"模拟：指定位置仍需核对。"}]});
+        teaching::attach_quality_review(q, &audit).unwrap();
+        store.put_document("imports", s(&record,"importId"), &record).unwrap();
+        (dir, store, record)
+    }
+    #[test]
+    fn simulated_source_material_finding_blocks_teacher_source_only_and_frozen_publication() {
+        let (_dir, store, mut record) = source_material_fixture("material", "stem");
+        let q = &record["questions"][0];
+        let id = s(q,"questionId").to_owned();
+        assert_eq!(eligibility(&record)[&id]["eligible"], false);
+        assert_eq!(eligibility(&record)[&id]["publicationScope"], "source_only");
+        assert_eq!(rows(&eligibility(&record)[&id]["sourceMaterialFindings"]).len(), 1);
+        assert_eq!(check_approved(q,&record).unwrap_err().code,"source_content_unresolved");
+        let payload = json!({"importId":record["importId"],"expectedRevision":record["revision"],"operationId":"sim-material-publish","acknowledgeReview":true});
+        assert_eq!(publish(&store,&payload,&AtomicBool::new(false)).unwrap_err().code,"source_content_unresolved");
+        assert!(store.bank.question(&id).is_err());
+        assert_eq!(store.document("imports",s(&record,"importId")).unwrap(),record);
+        // Simulate an already frozen source-only publication that previously
+        // failed at the bank write; the retry must not skip the new source gate.
+        record["pendingPublication"] = json!({"operationId":payload["operationId"],"payloadHash":hash_json(&payload),"manifest":{"questions":[{"questionId":id}],"configPatch":{"assemblyIndex":{"entries":[]}}}});
+        store.put_document("imports",s(&record,"importId"),&record).unwrap();
+        assert_eq!(publish(&store,&payload,&AtomicBool::new(false)).unwrap_err().code,"source_content_unresolved");
+        assert!(store.bank.question(&id).is_err());
+    }
+    #[test]
+    fn simulated_teaching_or_unlocated_material_findings_allow_checked_source_only_publication() {
+        for (dimension, field) in [("proof","stem"),("material","teachingSolution"),("material",""),("material","parts[0].answer")] {
+            let (_dir,store,record) = source_material_fixture(dimension,field);
+            let id=s(&record["questions"][0],"questionId");
+            assert!(rows(&eligibility(&record)[id]["sourceMaterialFindings"]).is_empty());
+            assert_eq!(eligibility(&record)[id]["eligible"],true,"{dimension}/{field}");
+            let payload=json!({"importId":record["importId"],"expectedRevision":record["revision"],"operationId":"sim-teaching-source-only","acknowledgeReview":true});
+            let result=publish(&store,&payload,&AtomicBool::new(false)).unwrap();
+            assert_eq!(result["import"]["publishedQuestionIds"],json!([id]));
+            assert!(store.bank.question(id).is_ok());
+        }
+    }
+    #[test]
+    fn legacy_source_opinion_hash_accepts_only_provider_or_known_identity_contract() {
+        for identity in [
+            json!({"options":[{"key":"A","text":"2"},{"key":"B","text":"3"}],"parts":[]}),
+            json!({"options":[],"parts":[{"label":"(1)","prompt":"Calculate 1+1.","answer":"","solution":""}]}),
+        ] {
+            let (_dir, store, mut record) = fixture();
+            record["ocrSource"] = json!({"manifestSha256":"simulated-source-manifest"});
+            let mut provider_question = record["questions"][0].clone();
+            provider_question["options"] = identity["options"].clone();
+            provider_question["parts"] = identity["parts"].clone();
+            if !rows(&identity["options"]).is_empty() {
+                provider_question["questionType"] = json!("single_choice");
+            }
+            provider_question["review"] = json!({"status":"ready","confidence":"high","summary":"Compared original page; source text retained.","issues":[],"evidencePages":[1]});
+            let provider = json!({"questions":[provider_question]});
+            let canonical = source_batches::canonical_source_contract(&provider).unwrap();
+            let provider_hash = json!(hash_json(&provider["questions"][0]));
+            let canonical_hash = json!(hash_json(&canonical["questions"][0]));
+            assert_ne!(provider_hash, canonical_hash);
+            assert!(import_response_question_hash_matches(&provider, 0, &provider_hash, false));
+            assert!(import_response_question_hash_matches(&provider, 0, &canonical_hash, true));
+            assert!(!import_response_question_hash_matches(&provider, 0, &canonical_hash, false));
+            let mut question = normalize_question(&canonical["questions"][0], "simulated-review-q", 1).unwrap();
+            question["sourceIdentity"] = json!({"system":"paddleocr_upload","sourceSha256":record["source"]["sha256"],"manifestSha256":record["ocrSource"]["manifestSha256"]});
+            question["sourceMaterialRequirements"] = json!({"studentTables":[],"teacherTables":[]});
+            record["questions"] = json!([question]);
+            let response_path = store.data_dir.join("imports").join(s(&record,"importId")).join("legacy-provider.json");
+            let response_bytes = serde_json::to_vec(&json!({"httpStatus":200,"choices":[{"finish_reason":"stop","message":{"content":provider.to_string()}}]})).unwrap();
+            std::fs::write(&response_path, &response_bytes).unwrap();
+            let mut questions = rows(&record["questions"]);
+            let context = json!({"sourceSha256":record["source"]["sha256"],"imageReviewAvailable":false});
+            // Reproduce the old caller exactly: canonical question hash, actual
+            // immutable provider response file and unchanged original opinion.
+            attach_import_opinions(&store, &ModelClient::open(&store.data_dir).unwrap(), &record, &canonical, &context, &response_path, &mut questions).unwrap();
+            assert_eq!(questions[0]["modelReview"]["status"], "ready", "{}", questions[0]["modelReview"]);
+            assert_eq!(questions[0]["modelReview"]["audit"]["responseQuestionSha256"], canonical_hash);
+            let request_path = store.data_dir.join(s(&questions[0]["modelReview"]["audit"],"requestRelativePath"));
+            let request_bytes = std::fs::read(&request_path).unwrap();
+            verify_opinion(&store, &questions[0], &record).unwrap();
+            assert_eq!(std::fs::read(&response_path).unwrap(), response_bytes);
+            assert_eq!(std::fs::read(&request_path).unwrap(), request_bytes);
+            for (field, changed) in [
+                ("stem", json!("Altered original prose")),
+                ("review", json!({"status":"ready","confidence":"high","summary":"Altered opinion","issues":[],"evidencePages":[1]})),
+                ("sourceAssetBindingAudit", json!({"derived":true})),
+                ("assetPlacements", json!([{"assetId":"derived-hint","target":{"field":"stem"}}])),
+            ] {
+                let mut derived = canonical["questions"][0].clone();
+                derived[field] = changed;
+                let derived_hash = json!(hash_json(&derived));
+                assert!(!import_response_question_hash_matches(&provider, 0, &derived_hash, true), "{field}");
+                let mut forged = questions[0].clone();
+                forged["modelReview"]["audit"]["responseQuestionSha256"] = derived_hash;
+                assert_eq!(verify_opinion(&store, &forged, &record).unwrap_err().code, "review_audit_changed");
+            }
+            let mut changed_opinion = questions[0].clone();
+            changed_opinion["modelReview"]["summary"] = json!("Altered saved opinion");
+            assert_eq!(verify_opinion(&store, &changed_opinion, &record).unwrap_err().code, "review_audit_changed");
+        }
+    }
+    #[test]
+    #[ignore = "read-only actual provider fixture; supply TUTOR_REVIEW_PROVIDER_RESPONSE"]
+    fn saved_source_provider_legacy_opinion_hash_regression() {
+        let path = std::env::var_os("TUTOR_REVIEW_PROVIDER_RESPONSE").expect("provider response path");
+        let bytes = std::fs::read(&path).unwrap();
+        let response: Value = serde_json::from_slice(&bytes).unwrap();
+        let provider: Value = serde_json::from_str(s(&response["choices"][0]["message"],"content")).unwrap();
+        let canonical = source_batches::canonical_source_contract(&provider).unwrap();
+        let mut normalized = 0;
+        for (index, question) in rows(&provider["questions"]).iter().enumerate() {
+            let canonical_question = &canonical["questions"][index];
+            let hash = json!(hash_json(canonical_question));
+            assert!(import_response_question_hash_matches(&provider, index, &json!(hash_json(question)), true));
+            assert!(import_response_question_hash_matches(&provider, index, &hash, true));
+            normalized += usize::from(question != canonical_question);
+            for field in ["stem", "review", "sourceAssetBindingAudit", "assetPlacements"] {
+                let mut changed = canonical_question.clone();
+                changed[field] = json!("not actual provider content");
+                assert!(!import_response_question_hash_matches(&provider, index, &json!(hash_json(&changed)), true));
+            }
+        }
+        assert!(normalized > 0, "fixture must reproduce historic key/part identity normalization");
+        assert_eq!(std::fs::read(path).unwrap(), bytes);
+    }
+    #[test]
+    fn simulated_source_identity_uses_actual_receipt_and_keeps_unknown_historic_profile() {
+        let (_dir, store, record) = fixture();
+        let root = store.data_dir.join(s(&record["source"], "relativePath")).parent().unwrap().to_path_buf();
+        let response = root.join("simulated-old-response.json");
+        let body = json!({"model":"simulated-original-source","messages":[]});
+        let receipt = json!({"bodySha256":hash_json(&body),"body":body});
+        std::fs::write(response.with_extension("request.json"), serde_json::to_vec(&receipt).unwrap()).unwrap();
+        let original = std::fs::read(response.with_extension("request.json")).unwrap();
+        let identity = source_model_identity(&store, &response).unwrap();
+        assert_eq!(identity["model"], "simulated-original-source");
+        for field in ["profileId", "name", "baseUrl", "reasoningEffort"] { assert!(identity[field].is_null()); }
+        assert_eq!(identity["identityEvidence"]["kind"], "provider_request_receipt");
+        assert_eq!(std::fs::read(response.with_extension("request.json")).unwrap(), original);
+        assert_eq!(source_model_identity(&store, &root.join("no-receipt.json")).unwrap()["identityEvidence"]["kind"], "unavailable");
+    }
+
+    #[test]
+    fn simulated_source_identity_accepts_frozen_profile_without_using_current_selector() {
+        let (_dir, store, record) = fixture();
+        let root = store.data_dir.join(s(&record["source"], "relativePath")).parent().unwrap().to_path_buf();
+        let response = root.join("simulated-frozen-response.json");
+        let body = json!({"model":"simulated-original-source","messages":[]});
+        let receipt = json!({"bodySha256":hash_json(&body),"body":body,"sourceModelIdentity":{"profileId":"simulated-old-profile","model":"simulated-original-source","baseUrl":"http://127.0.0.1:1/v1","reasoningEffort":null}});
+        std::fs::write(response.with_extension("request.json"), serde_json::to_vec(&receipt).unwrap()).unwrap();
+        let identity = source_model_identity(&store, &response).unwrap();
+        assert_eq!(identity["profileId"], "simulated-old-profile");
+        assert_eq!(identity["baseUrl"], "http://127.0.0.1:1/v1");
+        assert!(identity["reasoningEffort"].is_null());
+    }
+
+    #[test]
+    fn simulated_source_identity_rejects_changed_receipt_or_model_snapshot_conflict() {
+        let (_dir, store, record) = fixture();
+        let root = store.data_dir.join(s(&record["source"], "relativePath")).parent().unwrap().to_path_buf();
+        let response = root.join("simulated-conflict-response.json");
+        let body = json!({"model":"simulated-real-source","messages":[]});
+        for receipt in [json!({"bodySha256":"wrong","body":body}),json!({"bodySha256":hash_json(&body),"body":body,"sourceModelIdentity":{"model":"simulated-different-model"}})] {
+            std::fs::write(response.with_extension("request.json"), serde_json::to_vec(&receipt).unwrap()).unwrap();
+            assert_eq!(source_model_identity(&store,&response).unwrap_err().code,"review_audit_changed");
+        }
+    }
+
     #[test]
     fn simulated_model_status_drives_review_but_never_overrides_missing_material_or_specific_doubt() {
         let (_dir, _store, record) = fixture();

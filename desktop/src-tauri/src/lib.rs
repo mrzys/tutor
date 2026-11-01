@@ -7,6 +7,7 @@ pub mod bank_annotations;
 pub mod bank_supplement;
 pub mod bank_teaching;
 pub mod error;
+pub mod import_events;
 pub mod imports;
 pub mod intake;
 pub mod knowledge;
@@ -23,6 +24,15 @@ pub mod workflow_progress;
 
 // Keep intake, planning and selection observations on independent channels.
 // Only these user-triggered actions expose workflow progress through IPC.
+/// A new explicit operation clears the previous workspace Stop flag. Reads and
+/// independently cancelled background jobs never reset it.
+pub fn resets_workflow_cancel(action: &str) -> bool {
+    matches!(action, "intake_prepare" | "blueprint_plan" | "draft_create" | "draft_candidates"
+        | "draft_operation" | "manual_draft_create" | "import_prepare" | "import_review_save"
+        | "import_question_review_save" | "import_publish" | "import_teaching_publish"
+        | "import_teaching_acknowledge" | "import_teaching_patch")
+}
+
 pub fn workflow_progress_channel(action: &str) -> Option<&'static str> {
     match action {
         "intake_prepare" => Some("intake-progress"),
@@ -613,7 +623,7 @@ async fn desktop_request(
         log.finish(&result, json!({"kind":payload["kind"]}));
         return result;
     }
-    if matches!(action.as_str(), "intake_prepare" | "blueprint_plan" | "draft_create" | "draft_candidates" | "draft_operation" | "manual_draft_create" | "import_prepare" | "import_review_save" | "import_publish" | "import_teaching_acknowledge" | "import_teaching_patch") {
+    if resets_workflow_cancel(&action) {
         // Reset before dispatch, so an immediate Stop cannot be lost while waiting for the worker.
         state.cancel.store(false, Ordering::Relaxed);
     }
@@ -664,7 +674,7 @@ fn desktop_pdf_failed(
 
 #[cfg(feature = "desktop")]
 pub fn run() {
-    use tauri::Manager;
+    use tauri::{Emitter, Manager};
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -677,6 +687,11 @@ pub fn run() {
                 app.path().app_data_dir()?
             };
             let runtime = Runtime::open(&directory)?;
+            let emitter = app.handle().clone();
+            let import_subscription = import_events::subscribe(&runtime.store.data_dir, move |payload| {
+                let _ = emitter.emit("import-progress", payload);
+            })?;
+            app.manage(import_subscription);
             app.manage(DesktopState {
                 data_dir: runtime.store.data_dir.canonicalize()?,
                 runtime: Mutex::new(runtime),
@@ -698,6 +713,15 @@ pub fn run() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn explicit_single_question_save_resets_previous_stop_while_reads_and_independent_jobs_do_not() {
+        for action in ["import_question_review_save","import_review_save","import_teaching_patch","import_teaching_acknowledge","import_teaching_publish","import_publish","intake_prepare","draft_create"] {
+            assert!(resets_workflow_cancel(action), "{action}");
+        }
+        for action in ["import_summary_get","import_question_get","import_job_get","import_jobs_list","import_start","import_job_cancel","paper_get"] {
+            assert!(!resets_workflow_cancel(action), "{action}");
+        }
+    }
     #[test]
     fn simulated_workflow_progress_channels_do_not_mix_intake_planning_and_other_actions() {
         assert_eq!(workflow_progress_channel("intake_prepare"), Some("intake-progress"));

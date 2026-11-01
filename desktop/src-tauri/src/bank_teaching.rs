@@ -294,7 +294,7 @@ pub fn project(raw: &Value, config: &Value) -> AppResult<Value> {
             let mut safe = json!({"status":"needs_review","findings":projected,"sourceContentSha256":marker["sourceContentSha256"]});
             for key in ["generationCalls", "reviewCalls"] {
                 if let Some(value) = marker.get(key) {
-                    if !matches!(value.as_u64(), Some(0 | 1)) {
+                    if !(if key == "generationCalls" { value.as_u64().is_some_and(|n| n <= 10_000) } else { matches!(value.as_u64(), Some(0 | 1)) }) {
                         return Err(invalid("导入教学稿执行次数格式无效。"));
                     }
                     safe[key] = value.clone();
@@ -508,6 +508,40 @@ pub fn apply(bank: &LocalQuestionBank, manifest: &Value) -> AppResult<Value> {
     Ok(receipt)
 }
 
+/// Explicit import-workspace adoption. Only the separate teaching projection
+/// changes; source, references, knowledge and frozen papers remain untouched.
+pub(crate) fn apply_import_analysis(bank: &LocalQuestionBank, manifest: &Value) -> AppResult<Value> {
+    let op = text(manifest,"operationId",160)?;
+    if op.chars().any(char::is_control) {return Err(invalid("解析更新操作身份无效。"));}
+    let id = text(manifest,"questionId",250)?;
+    let tx = rusqlite::Transaction::new_unchecked(bank.annotation_connection(),TransactionBehavior::Immediate)?;
+    tx.execute_batch("CREATE TABLE IF NOT EXISTS bank_import_teaching_operations(operation_id TEXT PRIMARY KEY,manifest_sha256 TEXT NOT NULL,payload TEXT NOT NULL,sha256 TEXT NOT NULL);")?;
+    let old:Option<(String,String,String)>=tx.query_row("SELECT manifest_sha256,payload,sha256 FROM bank_import_teaching_operations WHERE operation_id=?1",[op],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).optional()?;
+    if let Some((hash,payload,digest))=old {
+        let saved:Value=serde_json::from_str(&payload)?;
+        if hash!=hash_json(manifest)||hash_json(&saved)!=digest{return Err(conflict("解析更新操作身份冲突或审计损坏。"));}
+        let mut receipt=saved["receipt"].clone();receipt["replayed"]=json!(true);tx.commit()?;return Ok(receipt);
+    }
+    let raw=bank.question(id)?;
+    if sha(manifest,"expectedQuestionSha256")?!=hash_json(&raw)||["contentVersion","teacherVersion"].iter().any(|k|manifest[*k]!=raw[*k]) {return Err(conflict("题库原题或参考版本已变化，未更新解析。"));}
+    let payload:String=tx.query_row("SELECT value FROM bank_metadata WHERE key='config'",[],|r|r.get(0))?;
+    let mut config:Value=serde_json::from_str(&payload)?;
+    let entries=config["assemblyIndex"]["entries"].as_array_mut().ok_or_else(||invalid("题库索引无效。"))?;
+    let indices:Vec<_>=entries.iter().enumerate().filter(|(_,e)|e["questionId"]==id).map(|(i,_)|i).collect();
+    if indices.len()!=1{return Err(conflict("题库标注身份不唯一。"));}
+    let index=indices[0];let previous=entries[index].clone();
+    if sha(manifest,"expectedAnnotationSha256")?!=hash_json(&previous)||["contentVersion","teacherVersion"].iter().any(|k|previous[*k]!=raw[*k]){return Err(conflict("题库标注已变化，未更新解析。"));}
+    let analysis=&manifest["teachingAnalysis"];
+    verify_analysis(analysis,&raw)?;
+    if analysis["status"]!="ready"||manifest["importTeachingReview"]["status"]!="ready"{return Err(invalid("待复核解析不能补发布。"));}
+    let mut next=previous.clone();next["teachingAnalysis"]=analysis.clone();next["importTeachingReview"]=manifest["importTeachingReview"].clone();entries[index]=next.clone();
+    let receipt=json!({"operationId":op,"questionId":id,"teachingVersion":analysis["teachingVersion"],"replayed":false,"originalQuestionsChanged":0,"originalTeacherMaterialsChanged":0});
+    let audit=json!({"manifest":manifest,"previousAnnotation":previous,"annotation":next,"receipt":receipt,"appliedAt":chrono::Utc::now().to_rfc3339()});
+    tx.execute("UPDATE bank_metadata SET value=?1 WHERE key='config'",[config.to_string()])?;
+    tx.execute("INSERT INTO bank_import_teaching_operations(operation_id,manifest_sha256,payload,sha256) VALUES(?1,?2,?3,?4)",params![op,hash_json(manifest),audit.to_string(),hash_json(&audit)])?;
+    tx.commit()?;Ok(receipt)
+}
+
 /// Normalize only the live bank annotations. Legacy snapshots and original
 /// questions retain their original hashes; the complete old annotation is
 /// archived before its redundant generated knowledge names are removed.
@@ -670,6 +704,25 @@ mod tests {
                 "model":"simulated-model","promptSha256":"a".repeat(64),"requestSha256":"b".repeat(64),"generatedAt":"2026-10-21T12:00:00Z"})
         }).collect::<Vec<_>>();
         json!({"operationId":"simulated-teaching-operation","scope":"模拟用户显式授权教学整理","entries":entries})
+    }
+    #[test]
+    fn simulated_import_analysis_adoption_is_separate_atomic_version_bound_and_idempotent() {
+        let (_dir,bank,_)=fixture();
+        apply(&bank,&manifest(&bank)).unwrap();
+        let before=bank.questions().unwrap();let config=bank.config().unwrap();
+        let annotation=&config["assemblyIndex"]["entries"][0];let raw=bank.question(annotation["questionId"].as_str().unwrap()).unwrap();
+        let mut analysis=annotation["teachingAnalysis"].clone();analysis["solution"]=json!("模拟后续独立核对通过的课堂解析：1+1=2。");sign_analysis(&mut analysis);
+        let input=json!({"operationId":"sim-import-analysis-adoption","questionId":raw["questionId"],"contentVersion":raw["contentVersion"],"teacherVersion":raw["teacherVersion"],"expectedQuestionSha256":hash_json(&raw),"expectedAnnotationSha256":hash_json(annotation),"teachingAnalysis":analysis,"importTeachingReview":{"status":"ready"}});
+        for key in ["contentVersion","teacherVersion","expectedQuestionSha256","expectedAnnotationSha256"] {
+            let mut stale=input.clone();stale[key]=json!("0".repeat(64));assert!(apply_import_analysis(&bank,&stale).is_err());
+            assert_eq!(bank.config().unwrap(),config);
+        }
+        let receipt=apply_import_analysis(&bank,&input).unwrap();assert_eq!(receipt["originalQuestionsChanged"],0);assert_eq!(bank.questions().unwrap(),before);
+        let current=bank.config().unwrap();let next=&current["assemblyIndex"]["entries"][0];
+        let mut unchanged=next.clone();unchanged["teachingAnalysis"]=annotation["teachingAnalysis"].clone();unchanged.as_object_mut().unwrap().remove("importTeachingReview");assert_eq!(unchanged,*annotation);
+        assert_eq!(apply_import_analysis(&bank,&input).unwrap()["replayed"],true);
+        let mut collision=input.clone();collision["teachingAnalysis"]=annotation["teachingAnalysis"].clone();assert!(apply_import_analysis(&bank,&collision).is_err());
+        assert_eq!(bank.config().unwrap(),current);
     }
     fn mark_manifest(bank: &LocalQuestionBank) -> Value {
         let mut input = manifest(bank);

@@ -56,6 +56,7 @@ fn descriptor(record: &Value) -> Value {
     let status = s(&job, "status").to_owned();
     let annotation = job["mode"] == "annotation";
     let review = job["mode"] == "review";
+    let teaching_retry = job["mode"] == "teaching_retry";
     let stage = if status == "queued" {
         "queued"
     } else {
@@ -63,7 +64,9 @@ fn descriptor(record: &Value) -> Value {
     };
     let mut message = match status.as_str() {
         "queued" => {
-            if review {
+            if teaching_retry {
+                "排队等待重新生成本题解析，可继续查看其它题目。"
+            } else if review {
                 "排队等待模型检查，可继续其它操作。"
             } else if annotation {
                 "排队等待补充考查信息，可继续其它操作。"
@@ -73,16 +76,20 @@ fn descriptor(record: &Value) -> Value {
         }
         "running" => match stage {
             "recognizing" => "正在识别原卷，可继续其它操作。",
-            "structuring" => "正在整理题目与考查信息，可继续其它操作。",
+            "structuring" => "正在分批转录原题，可继续其它操作。",
             "source_indexing" => "正在关联跨页题目与原卷答案，识别材料已保存。",
+            "source_validating" => "正在校验整卷题号、图表与来源完整性。",
             "annotating" => "正在补充考查信息，可继续其它操作。",
             "reviewing" => "正在对照原卷逐题检查，可继续其它操作。",
             "teaching_review" => "正在复核命中问题的教学稿，可继续其它操作。",
             "teaching_generating" => "正在分批生成课堂教学稿，可继续其它操作。",
+            "teaching_checking" => "正在检查教学稿结构、显示及已知问题。",
             _ => "正在准备原卷，可继续其它操作。",
         },
         "completed" => {
-            if review {
+            if teaching_retry {
+                "本题解析生成已结束，请查看结果；不会自动追加复核。"
+            } else if review {
                 "模型检查完成，请查看意见后确认加入题库。"
             } else if annotation {
                 "考查信息已补充；不确定的标注仍保留未知，题目内容和审核状态不变。"
@@ -126,6 +133,19 @@ fn descriptor(record: &Value) -> Value {
         job["completedSourceBatches"] = json!(completed);
     }
     job["stage"] = json!(stage);
+    // Stage and error family are independent display metadata. This function
+    // is also called on the lightweight SQL projection: no provider/audit IO.
+    let process = diagnostics::process_metadata(record);
+    job["stageKey"] = process["stageKey"].clone();
+    job["stageLabel"] = process["stageLabel"].clone();
+    if status == "failed" {
+        for (target, source) in [
+            ("errorCategory", "category"), ("errorCategoryLabel", "categoryLabel"),
+            ("errorSubcategory", "subcategory"), ("errorSubcategoryLabel", "subcategoryLabel"),
+            ("errorServiceLabel", "serviceLabel"), ("errorOperationLabel", "operationLabel"),
+            ("errorCauseNote", "causeNote"), ("errorEvidenceBasis", "evidenceBasis"),
+        ] { job[target] = process[source].clone(); }
+    }
     job["message"] = json!(message);
     job["importId"] = record["importId"].clone();
     job["filename"] = record["filename"].clone();
@@ -139,6 +159,27 @@ fn descriptor(record: &Value) -> Value {
 fn response(store: &Store, record: &Value) -> Value {
     json!({"job":descriptor(record),"import":record,"diagnostic":diagnostics::for_record(store,record),"reviewRequirements":review_requirement_map(record),"reviewEligibility":review::eligibility(record)})
 }
+
+fn job_get(store: &Store, payload: &Value) -> AppResult<Value> {
+    // Recovery must run before comparing snapshots, including after a restart.
+    recover(store)?;
+    let id = s(payload, "importId");
+    let persisted = store.document_json("imports", id)?;
+    // Checkpoints can change without advancing the review revision or clock.
+    // This token only suppresses unchanged reads; it grants no review authority.
+    let version = sha(persisted.as_bytes());
+    if payload["knownDetailVersion"].as_str() == Some(version.as_str()) {
+        return Ok(json!({"importId":id,"detailVersion":version,"notModified":true}));
+    }
+    let record: Value = serde_json::from_str(&persisted)?;
+    let mut result = response(store, &record);
+    result["detailVersion"] = json!(version);
+    Ok(result)
+}
+
+#[cfg(test)]
+#[path = "background_snapshot_tests.rs"]
+mod snapshot_tests;
 
 fn terminal_failure(
     store: &Store,
@@ -156,6 +197,15 @@ fn terminal_failure(
     let mut record = saved.clone();
     let annotation = record["backgroundJob"]["mode"] == "annotation";
     let review = record["backgroundJob"]["mode"] == "review";
+    if record["backgroundJob"]["mode"] == "teaching_retry" {
+        let targets=ids(&record["backgroundJob"]["targetQuestionIds"]);
+        for q in record["questions"].as_array_mut().into_iter().flatten() {
+            if targets.contains(&s(q,"questionId").to_owned()) && q["teachingWorkflow"]["status"]=="generating" {
+                q["teachingWorkflow"]["status"]=json!("needs_review");
+                q["teachingWorkflow"]["findings"]=json!([{"type":"technical","code":"generation_interrupted","message":"本题生成中断，原尝试已保留；可显式重试。"}]);
+            }
+        }
+    }
     if !annotation && !review && rows(&record["questions"]).is_empty() {
         record["status"] = json!("failed");
         record["error"] = serde_json::to_value(&error)?;
@@ -263,6 +313,62 @@ fn needs_annotation(question: &Value) -> bool {
     s(question, "annotationStatus") == "failed"
         || !question["difficultyAssessment"]["level"].is_string()
         || rows(&question["primaryKnowledgeUids"]).is_empty()
+        || s(&question["task"], "label").trim().is_empty()
+        || (rows(&question["solutionPaths"]).is_empty()
+            && structured::ready_teaching_reference(question).is_some())
+}
+fn teaching_retry_start(store: &Store, model: &ModelClient, payload: &Value) -> AppResult<Value> {
+    let operation=operation(payload)?;let hash=hash_json(payload);
+    let root=directory(store)?;let id=s(payload,"importId");let key=(root,id.to_owned());
+    let mut active=registry().0.lock().map_err(|_|lock_error())?;
+    let mut record=store.document("imports",id)?;
+    if record["backgroundJob"]["payloadHash"]==hash && matches!(s(&record["backgroundJob"],"status"),"queued"|"running") { return Ok(response(store,&record)); }
+    if replay(&record,operation,&hash)? {return Ok(response(store,&record));}
+    revision(&record,payload)?;
+    if payload["acknowledgeModelCall"]!=true {return Err(err("review_required","请确认本次只重新生成当前题，可能产生模型费用。"));}
+    if matches!(s(&record["backgroundJob"],"status"),"queued"|"running")||record["pendingPublication"].is_object()||record["pendingTeachingPublication"].is_object(){return Err(err("import_running","请先完成当前后台任务或发布操作。"));}
+    let qid=s(payload,"questionId");
+    let q=rows(&record["questions"]).into_iter().find(|q|q["questionId"]==qid).ok_or_else(||err("invalid_teaching_retry_targets","请指定本次导入中的一道题。"))?;
+    if !teaching_actions::retry_eligible(&q)||!question_issues(&q,&record["sourceIssues"]).is_empty(){return Err(err("teaching_retry_ineligible","仅允许重新生成来源未变化、无有效候选稿的技术失败题。"));}
+    // Resolve configured role before accepting work, without provider discovery.
+    model.import_generator()?;
+    read_source(store,&record)?;paddle::verify_audit(store,&record)?;
+    let previous=record.clone();
+    record["backgroundJob"]=json!({"jobId":format!("import-job-{}",uuid::Uuid::new_v4()),"mode":"teaching_retry","status":"queued","createdAt":now(),"operationId":operation,"payloadHash":hash,"targetQuestionIds":[qid],"totalQuestions":1,"completedQuestions":0,"failedQuestions":0});
+    save_cas(store,Some(&previous),&record)?;
+    let cancel=Arc::new(AtomicBool::new(false));active.jobs.insert(key,cancel.clone());drop(active);
+    launch(store,model,record,operation.to_owned(),hash,cancel)
+}
+fn process_teaching_retry(store:&Store,model:&ModelClient,operation:&str,hash:&str,cancel:&AtomicBool,mut record:Value)->AppResult<()> {
+    let targets=ids(&record["backgroundJob"]["targetQuestionIds"]);
+    if targets.len()!=1{return Err(err("invalid_teaching_retry_targets","单题重试目标不完整。"));}
+    let index=rows(&record["questions"]).iter().position(|q|q["questionId"]==targets[0]).ok_or_else(||err("invalid_teaching_retry_targets","单题重试目标失效。"))?;
+    if !teaching_actions::retry_eligible(&record["questions"][index]){return Err(err("teaching_retry_ineligible","单题重试条件已变化。"));}
+    let before_questions=rows(&record["questions"]);let mut saved=record.clone();
+    let prior=record["questions"][index]["teachingWorkflow"].clone();
+    let mut history=rows(&record["questions"][index]["teachingRecoveryHistory"]);
+    history.push(json!({"operationId":operation,"recordedAt":now(),"previousWorkflow":prior,"task":"generation_only"}));
+    record["questions"][index]["teachingRecoveryHistory"]=json!(history);
+    let assets=if record["ocrSource"].is_object(){paddle::load_document(store,&record)?.assets}else{vec![]};
+    save_cas(store,Some(&saved),&record)?;saved=record.clone();
+    // One explicit generation, with no implicit review or reset of spent quota.
+    let outcome=teaching::generate(store,model,&mut record,&mut saved,&assets,cancel,Some(&[index]),Some(operation));
+    record["recognitionStage"]=json!("complete");
+    record["backgroundJob"]["status"]=json!(if outcome.is_ok(){"completed"}else{"failed"});
+    record["backgroundJob"]["finishedAt"]=json!(now());
+    let failed=outcome.is_err()||record["questions"][index]["teachingWorkflow"]["status"]=="generation_failed";
+    record["backgroundJob"]["completedQuestions"]=json!(1);
+    record["backgroundJob"]["failedQuestions"]=json!(usize::from(failed));
+    if let Err(error)=outcome {
+        if record["questions"][index]["teachingWorkflow"]["status"]=="generating" {
+            record["questions"][index]["teachingWorkflow"]["status"]=json!("needs_review");
+            record["questions"][index]["teachingWorkflow"]["findings"]=json!([{"type":"technical","code":"generation_interrupted","message":"本题生成中断，原尝试已保留；可显式重试。"}]);
+        }
+        record["backgroundJob"]["error"]=serde_json::to_value(error)?;
+    }
+    finish(&mut record,operation,hash,"teaching_retry_generation_only");
+    debug_assert!(before_questions.iter().enumerate().all(|(i,q)|i==index||q==&record["questions"][i]));
+    save_cas(store,Some(&saved),&record)
 }
 fn annotation_start(store: &Store, model: &ModelClient, payload: &Value) -> AppResult<Value> {
     if !model.configured() {
@@ -294,7 +400,7 @@ fn annotation_start(store: &Store, model: &ModelClient, payload: &Value) -> AppR
     if record["status"] == "processing" || rows(&record["questions"]).is_empty() {
         return Err(err("invalid_import", "请先完成原卷解析，再补充考查信息。"));
     }
-    if record["pendingPublication"].is_object() {
+    if record["pendingPublication"].is_object() || record["pendingTeachingPublication"].is_object() {
         return Err(err("publication_pending", "请先完成待确认的入库操作。"));
     }
     read_source(store, &record)?;
@@ -320,9 +426,11 @@ fn annotation_start(store: &Store, model: &ModelClient, payload: &Value) -> AppR
     launch(store, model, record, operation.to_owned(), hash, cancel)
 }
 fn review_start(store: &Store, model: &ModelClient, payload: &Value) -> AppResult<Value> {
-    if !model.configured() {
-        return Err(err("not_configured", "请先配置当前模型，再进行模型检查。"));
+    if !import_role_configured(model, "importSourceConfigured") {
+        return Err(err("not_configured", "请先配置拆题模型，再对照原卷检查。"));
     }
+    let source_model = model.import_source_model()?;
+    let model = &source_model;
     let operation = operation(payload)?;
     let hash = hash_json(payload);
     let id = s(payload, "importId");
@@ -347,7 +455,7 @@ fn review_start(store: &Store, model: &ModelClient, payload: &Value) -> AppResul
     if record["status"] == "processing" || rows(&record["questions"]).is_empty() {
         return Err(err("invalid_import", "请先完成原卷解析。"));
     }
-    if record["pendingPublication"].is_object() {
+    if record["pendingPublication"].is_object() || record["pendingTeachingPublication"].is_object() {
         return Err(err("publication_pending", "请先完成待确认入库操作。"));
     }
     read_source(store, &record)?;
@@ -479,6 +587,7 @@ fn launch(
                         record["backgroundJob"]["startedAt"] = json!(now());
                         let annotation = record["backgroundJob"]["mode"] == "annotation";
                         let review_job = record["backgroundJob"]["mode"] == "review";
+                        let teaching_retry = record["backgroundJob"]["mode"] == "teaching_retry";
                         record["recognitionStage"] = json!(if review_job {
                             "reviewing"
                         } else if annotation {
@@ -488,7 +597,9 @@ fn launch(
                         });
                         save_cas(&worker, Some(&saved), &record)?;
                         cancelled(&cancel)?;
-                        if review_job {
+                        if teaching_retry {
+                            process_teaching_retry(&worker,&model,&operation,&hash,&cancel,record)?;
+                        } else if review_job {
                             review::process(&worker, &model, &operation, &hash, &cancel, record)?;
                         } else if annotation {
                             process_annotation(
@@ -549,11 +660,11 @@ pub(super) fn dispatch(
 ) -> AppResult<Option<Value>> {
     let result = match action {
         "import_start" => start(store, model, payload)?,
+        "import_teaching_retry_start" => teaching_retry_start(store,model,payload)?,
         "import_annotation_start" => annotation_start(store, model, payload)?,
         "import_review_start" => review_start(store, model, payload)?,
         "import_job_get" => {
-            recover(store)?;
-            response(store, &store.document("imports", s(payload, "importId"))?)
+            job_get(store, payload)?
         }
         "import_job_cancel" => {
             let id = s(payload, "importId");
@@ -619,9 +730,22 @@ mod tests {
         let result = result.unwrap().unwrap();
         assert_eq!(result["jobs"][0]["sourceBatchCount"], 2);
         assert_eq!(result["jobs"][0]["completedSourceBatches"], 1);
+        assert_eq!(result["jobs"][0]["stageKey"], "source_transcription");
+        assert_eq!(result["jobs"][0]["stageLabel"], "分批转录原题");
         assert!(s(&result["jobs"][0], "message").contains("1/2"));
         assert!(!result.to_string().contains("checkpoint_question_must_stay_local"));
         assert_eq!(store.document("imports", id).unwrap(), record);
+    }
+
+    #[test]
+    fn failed_job_reports_actual_subtask_and_failure_family_without_mutation() {
+        let record=json!({"status":"pending_review","recognitionStage":"annotating","filename":"模拟.pdf",
+            "error":{"code":"model_output_invalid_json","message":"模拟旧失败"},
+            "backgroundJob":{"status":"failed","mode":"annotation","error":{"code":"model_catalog_error","message":"获取模型列表超时，请重试。"}}});
+        let before=record.clone();let job=descriptor(&record);
+        assert_eq!(job["stageKey"],"annotation");assert_eq!(job["errorCategory"],"infrastructure");
+        assert_eq!(job["errorSubcategory"],"network");assert_eq!(job["errorOperationLabel"],"获取服务商模型列表");
+        assert_eq!(record,before);
     }
 
     fn runtime() -> (tempfile::TempDir, Runtime) {
@@ -719,6 +843,44 @@ mod tests {
             );
             std::thread::sleep(Duration::from_millis(30));
         }
+    }
+    #[test]
+    fn simulated_worker_progress_is_observable_after_commit_without_detail_polling() {
+        let (directory, mut runtime) = runtime();
+        let (seen, release, server) = mock(&mut runtime, json!({"questions":[question()]}));
+        let database = directory.path().join("personal.sqlite");
+        let (send, receive) = mpsc::channel();
+        let _subscription = crate::import_events::subscribe(directory.path(), move |event| {
+            let connection = rusqlite::Connection::open(&database).unwrap();
+            let persisted: String = connection.query_row("SELECT payload FROM documents WHERE kind='imports' AND id=?1",
+                [s(&event,"importId")], |row|row.get(0)).unwrap();
+            let snapshot: Value = serde_json::from_str(&persisted).unwrap();
+            assert_eq!(snapshot["revision"],event["revision"]);
+            assert_eq!(snapshot["status"],event["status"]);
+            assert!(event.to_string().len()<350);
+            assert!(event.get("questions").is_none());
+            send.send((event,snapshot["backgroundJob"]["status"].clone())).unwrap();
+        }).unwrap();
+        let mut input = upload("simulated-progress-no-poll");
+        input["responseScope"] = json!("summary");
+        let accepted = call(&mut runtime,"import_start",input);
+        assert!(accepted["summary"].is_object());
+        assert!(accepted.get("import").is_none());
+        seen.recv_timeout(Duration::from_secs(15)).unwrap();
+        release.send(()).unwrap();
+        let mut events = vec![];
+        loop {
+            let (event,status) = receive.recv_timeout(Duration::from_secs(20)).unwrap();
+            events.push(event);
+            if status=="completed" { break; }
+            assert_ne!(status,"failed");
+        }
+        server.join().unwrap();
+        assert!(events.len()>=3);
+        assert!(events.iter().any(|event|event["stage"]=="structuring"));
+        let persisted = call(&mut runtime,"import_summary_get",json!({"importId":accepted["summary"]["importId"]}));
+        assert_eq!(persisted["summary"]["backgroundJob"]["status"],"completed");
+        assert_eq!(rows(&persisted["summary"]["questions"]).len(),1);
     }
     #[test]
     fn simulated_terminal_retry_replaces_stale_owner_and_late_cleanup_keeps_new_cancel_and_slot() {
@@ -978,6 +1140,29 @@ mod tests {
         assert_eq!(interrupted["import"]["status"], "pending_review");
         assert!(interrupted["import"]["error"].is_null());
         assert_eq!(accepted["job"]["mode"], "annotation");
+    }
+    #[test]
+    fn simulated_missing_paths_are_supplementable_only_with_current_ready_teaching_reference() {
+        let mut q = question();
+        q["questionId"] = json!("simulated-path-supplement-q1");
+        q["difficultyAssessment"] = json!({"level":"easy","basis":"模拟已有难度。"});
+        q["primaryKnowledgeUids"] = json!(["simulated-uid"]);
+        q["solutionPaths"] = json!([]);
+        q["annotationStatus"] = json!("succeeded");
+        q["task"] = json!({"id":"simulated-task","label":"整数加法"});
+        assert!(!needs_annotation(&q));
+        teaching::initialize(&mut q, &json!({"generatedTeaching":{"answer":"2",
+            "difficultyAssessment":{"level":"easy","basis":"已知明确运算，直接相加。"},
+            "teachingSolution":"由题意，$1+1=2$。","teachingFocusSchemaVersion":2,
+            "teachingFocus":{"examFocus":"整数加法。","studentRequirements":["写出正确的和。"]},"issues":[]}}));
+        assert!(needs_annotation(&q));
+        q["solutionPaths"] = json!([{"id":"existing-path"}]);
+        assert!(!needs_annotation(&q));
+        q["solutionPaths"] = json!([]);
+        q["stem"] = json!("模拟内容变化");
+        assert!(!needs_annotation(&q));
+        q["task"]["label"] = json!("");
+        assert!(needs_annotation(&q));
     }
     #[test]
     fn simulated_annotation_rechecks_unknown_succeeded_only_and_skips_complete_teacher_or_published()

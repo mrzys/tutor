@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { loadTeachingMethodReferences } from '../lib/teaching-method-reference.mjs';
 import { extractTeachingPrompt } from '../lib/teaching-term-maintenance.mjs';
 import { runTeachingQualityMaintenance, createTeachingMathDisplayValidator } from '../lib/teaching-quality-maintenance.mjs';
+import { teachingReviewModelContract } from '../lib/teaching-sentence-patch.mjs';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
 const draft = (questionId, teachingSolution = '模拟回归：由 $1+1=2$ 得答案。') => ({ questionId, answer: '2',
@@ -44,10 +45,13 @@ function fakeClient(handler, { models = ['deepseek-flash'], finishReason = 'stop
     } };
 }
 const json = async (options, name) => JSON.parse(await readFile(path.join(options.outputDirectory, name), 'utf8'));
-const boundedReply = (data, desired) => ({ questionId: data.patchContract.questionId,
-  candidateSha256: data.patchContract.candidateSha256, sourceContentSha256: data.patchContract.sourceContentSha256,
-  patches: data.patchContract.allowedFields.map(field => ({ fieldPath: field.fieldPath, oldText: field.expectedText,
-    newText: field.fieldPath === 'teachingSolution' ? desired.teachingSolution : field.expectedText })), unresolvedIssues: [] });
+const boundedReply = (data, desired) => {const c=teachingReviewModelContract(data.patchContract),compact=c.segmentPatchVersion===2;return {
+  ...(compact?{requestId:c.requestId}:{questionId:c.questionId,candidateSha256:c.candidateSha256,sourceContentSha256:c.sourceContentSha256}),
+  patches: c.allowedSegments ? c.allowedSegments.map(segment => ({ segmentId: segment.segmentId,
+    ...(!compact?{oldTextSha256:segment.expectedTextSha256}:{}), newText: segment.fieldPath === 'teachingSolution' ? desired.teachingSolution : segment.expectedText })) : c.allowedFields.map(field => ({ fieldPath: field.fieldPath, oldText: field.expectedText,
+    newText: field.fieldPath === 'teachingSolution' ? desired.teachingSolution : field.expectedText })), unresolvedIssues: [],
+  ...(c.termFindings ? { termResolutions: c.termFindings.map(f => ({ findingId: f.findingId,
+    status: 'repaired', basis: '模拟：已修改该字段对应句段，并保留相邻计算依据。' })) } : {}) };};
 
 test('simulated combined review audits exact requests before model access and does not write input/settings', async t => {
   const options = await setup(t);
@@ -65,7 +69,8 @@ test('simulated combined review audits exact requests before model access and do
     const prefix = index ? 'review-' : '';
     const written = await json(options, `${prefix}requests/sim-quality.json`);
     assert.equal(JSON.stringify(written), JSON.stringify(request));
-    assert.deepEqual(fake.events.slice(0, 2), ['models', 'request-written']);
+    assert.equal(fake.events[0], 'request-written');
+    assert(!fake.events.includes('models'));
   } });
   const { summary } = await runTeachingQualityMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake, onProgress: value => progress.push(value) });
   assert.equal(fake.calls.length, 2); assert.equal(summary.firstDraftStructureSucceeded, 1);
@@ -163,7 +168,7 @@ test('remaining material and text flags are retained with one review and no adop
 
 test('invalid review remains a separate schema failure, not a repeated call or successful review', async t => {
   const options = await setup(t);
-  const fake = fakeClient(data => Object.hasOwn(data, 'rawCandidate') ? '{still bad' : draft(data.questionId, '模拟目标式。'));
+  const fake = fakeClient(data => (Object.hasOwn(data, 'rawCandidate')||data.patchContract) ? '{still bad' : draft(data.questionId, '模拟目标式。'));
   const { summary } = await runTeachingQualityMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake });
   assert.equal(fake.calls.length, 2); assert.equal(summary.reviewTransportCompleted, 1);
   assert.equal(summary.reviewsCompleted, 0); assert.equal(summary.failedQuestions.length, 1);
@@ -179,13 +184,16 @@ test('existing output is refused before client or settings access and preserves 
   assert.deepEqual((await readdir(options.root)).sort(), ['inputs.json', 'unused-settings.json']);
 });
 
-test('provider model catalogue is checked first and cannot fall back to a static model', async t => {
+test('configured model executes directly without fetching or fabricating a catalogue', async t => {
   const options = await setup(t);
-  const fake = fakeClient(() => assert.fail('no model call'), { models: ['different-model'] });
-  await assert.rejects(runTeachingQualityMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake }), { code: 'requested_model_not_in_provider_catalogue' });
-  assert.deepEqual(fake.events, ['models']);
-  assert.deepEqual(await readdir(path.join(options.outputDirectory, 'requests')), []);
-  assert.equal((await json(options, 'failure.json')).code, 'requested_model_not_in_provider_catalogue');
+  const fake = fakeClient(data => draft(data.questionId), { models: ['different-model'] });
+  fake.getModels = () => assert.fail('execution must not fetch a model list');
+  const { summary } = await runTeachingQualityMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake });
+  assert.deepEqual(fake.events, ['request-written', 'model']);
+  assert.equal(fake.calls.length, 1); assert.equal(summary.modelListRequests, 0);
+  assert.equal(summary.providers.generation.modelListFetched, false);
+  assert.equal((await json(options, 'protocol.json')).modelSelectionSource, 'configured_model');
+  assert(!(await readdir(options.outputDirectory)).includes('models-public.json'));
 });
 
 test('request body, reported exact hash and mandatory pre-network callback cannot disagree', async t => {
@@ -224,7 +232,7 @@ test('invalid concurrency is rejected before creating an output or opening a cli
 test('explicit methods reach both final transport system messages and audit artifacts', async t => {
   const options = await setup(t);
   const refs = await loadTeachingMethodReferences(['algebra']);
-  const fake = fakeClient(data => Object.hasOwn(data, 'rawCandidate')
+  const fake = fakeClient(data => (Object.hasOwn(data, 'rawCandidate')||data.patchContract)
     ? boundedReply(data, draft(data.originalMaterial.questionId)) : draft(data.questionId, '模拟目标式。'), {
     beforeNetwork: async request => {
       assert(request.messages[0].content.includes(refs[0].text));
@@ -246,17 +254,17 @@ test('explicit methods reach both final transport system messages and audit arti
 
 test('empty methods retain only base plus same-generation quality contract; invalid ids fail before client access', async t => {
   const options = await setup(t);
-  const fake = fakeClient(data => Object.hasOwn(data, 'rawCandidate')
+  const fake = fakeClient(data => (Object.hasOwn(data, 'rawCandidate')||data.patchContract)
     ? boundedReply(data, draft(data.originalMaterial.questionId)) : draft(data.questionId, '模拟目标式。'));
   await runTeachingQualityMaintenance({ ...options, clientFactory: async () => fake, reviewClientFactory: async () => fake });
   const doc = await readFile(new URL('../../docs/design/math-teaching-analysis-prompt.md', import.meta.url), 'utf8');
   const qualityInstruction = await readFile(new URL('../resources/teaching-quality-signals-instruction.txt', import.meta.url), 'utf8');
   assert.equal(fake.calls[0][0].content, `${extractTeachingPrompt(doc, 'teaching-prompt')}\n\n${qualityInstruction}`);
   assert(!fake.calls[0][0].content.includes('【本次附加的方法参考】'));
-  const reviewInstruction = (await readFile(new URL('../resources/teaching-bounded-patch-instruction.txt', import.meta.url), 'utf8')).trim();
+  const reviewInstruction = (await readFile(new URL('../resources/teaching-sentence-review-instruction.txt', import.meta.url), 'utf8')).trim();
   assert.equal(fake.calls[1][0].content, reviewInstruction);
   const actualContext = JSON.parse(fake.calls[1][1].content);
-  assert.deepEqual(actualContext.patchContract.allowedFields.map(field => field.fieldPath), ['teachingSolution']);
+  assert.deepEqual(actualContext.patchContract.allowedSegments.map(field => field.fieldPath), ['teachingSolution']);
   assert.equal((await json(options, 'results/sim-quality.json')).reviewMode, 'bounded_patch');
   assert.deepEqual(await json(options, 'method-references.json'), []);
   assert.deepEqual((await json(options, 'protocol.json')).methodReferenceIds, []);

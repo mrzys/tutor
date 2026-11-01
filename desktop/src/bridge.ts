@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { PreparationProgressEvent } from "./preparation-progress";
 import type { BlueprintProgressEvent } from "./blueprint-progress";
 import type { SelectionProgressEvent } from "./selection-progress";
+import type { ImportProgressEvent } from "./import-progress";
 import { createAssemblyTraceTracker } from "./shared/assembly-log-trace.mjs";
 
 const assemblyTrace = createAssemblyTraceTracker();
@@ -20,6 +21,7 @@ declare global {
     __TUTOR_DESKTOP_LISTEN_PROGRESS__?: (handler: (event: PreparationProgressEvent) => void) => Promise<() => void>;
     __TUTOR_DESKTOP_LISTEN_BLUEPRINT_PROGRESS__?: (handler: (event: BlueprintProgressEvent) => void) => Promise<() => void>;
     __TUTOR_DESKTOP_LISTEN_SELECTION_PROGRESS__?: (handler: (event: SelectionProgressEvent) => void) => Promise<() => void>;
+    __TUTOR_DESKTOP_LISTEN_IMPORT_PROGRESS__?: (handler: (event: ImportProgressEvent) => void) => Promise<() => void>;
   }
 }
 
@@ -36,6 +38,11 @@ export async function listenBlueprintProgress(handler: (event: BlueprintProgress
 export async function listenSelectionProgress(handler: (event: SelectionProgressEvent) => void) {
   if (import.meta.env.DEV && window.__TUTOR_DESKTOP_LISTEN_SELECTION_PROGRESS__) return window.__TUTOR_DESKTOP_LISTEN_SELECTION_PROGRESS__(handler);
   return listen<SelectionProgressEvent>("selection-progress", event => handler(event.payload));
+}
+
+export async function listenImportProgress(handler: (event: ImportProgressEvent) => void) {
+  if (import.meta.env.DEV && window.__TUTOR_DESKTOP_LISTEN_IMPORT_PROGRESS__) return window.__TUTOR_DESKTOP_LISTEN_IMPORT_PROGRESS__(handler);
+  return listen<ImportProgressEvent>("import-progress", event => handler(event.payload));
 }
 
 export async function request(action: string, payload: any = {}): Promise<any> {

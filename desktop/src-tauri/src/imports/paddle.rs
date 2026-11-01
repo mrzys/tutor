@@ -53,6 +53,7 @@ pub(super) fn verify_audit(store: &Store, record: &Value) -> AppResult<()> {
             ));
         }
     }
+    source_batches::verify_material_review_inputs(store,record)?;
     Ok(())
 }
 pub(super) fn read_rendered_pdf(store: &Store, record: &Value) -> AppResult<Vec<u8>> {
@@ -326,6 +327,31 @@ fn number(label: &str) -> Option<String> {
         .and_then(|c| c[1].parse::<u32>().ok())
         .map(|n| n.to_string())
 }
+// Only an explicit whole-question identity may retain the parentheses printed
+// around its number. Keep `number` strict for OCR anchor and scored-title scans:
+// accepting these there would also promote parenthesized subparts to questions.
+fn source_label_number(label: &str) -> Option<String> {
+    number(label).or_else(|| {
+        let label = label.trim();
+        let inner = label
+            .strip_prefix('(')
+            .and_then(|v| v.strip_suffix(')'))
+            .or_else(|| {
+                label
+                    .strip_prefix('（')
+                    .and_then(|v| v.strip_suffix('）'))
+            })?
+            .trim();
+        if inner.is_empty()
+            || inner.len() > 3
+            || inner.starts_with('0')
+            || !inner.bytes().all(|b| b.is_ascii_digit())
+        {
+            return None;
+        }
+        Some(inner.to_owned())
+    })
+}
 fn expected_question_numbers(document: &crate::ocr::OcrDocument) -> HashSet<String> {
     let line_number = regex::Regex::new(
         r"(?m)^[ \t]*(?:#{1,6}[ \t]*)?(?:[（(][ \t]*([1-9]\d{0,2})[ \t]*[）)]|([1-9]\d{0,2})(?:\\?\.|、|．|[ \t]+[\p{Han}A-Za-z$（(]))",
@@ -336,7 +362,7 @@ fn expected_question_numbers(document: &crate::ocr::OcrDocument) -> HashSet<Stri
     // the explicit scored title here, not arbitrary numbers in a long block.
     // In particular, UTF-8 byte length is not a question-identity boundary.
     let scored_title = regex::Regex::new(
-        r"^[ \t]*(?:#{1,6}[ \t]*)?(?:第[ \t]*)?([1-9]\d{0,2})(?:[ \t]*题)?[.、．]?[ \t]*[（(][ \t]*(?:本(?:小)?题[ \t]*)?(?:满分[ \t]*)?[1-9]\d*(?:\.\d+)?[ \t]*分[ \t]*[）)][ \t]*$",
+        r"^[ \t]*(?:#{1,6}[ \t]*)?(?:第[ \t]*)?([1-9]\d{0,2})(?:[ \t]*题)?(?:\\?\.|、|．)?[ \t]*[（(][ \t]*(?:本(?:小)?题[ \t]*)?(?:满分[ \t]*)?[1-9]\d*(?:\.\d+)?[ \t]*分[ \t]*[）)][ \t]*$",
     )
     .unwrap();
     let merged_section = regex::Regex::new(
@@ -380,10 +406,16 @@ pub(super) fn coverage(
     questions: &mut [Value],
     document: &crate::ocr::OcrDocument,
 ) -> AppResult<()> {
+    coverage_with_source_reviews(questions,document,&[],&HashSet::new(),&[])
+}
+pub(super) fn coverage_with_source_reviews(
+    questions: &mut [Value], document: &crate::ocr::OcrDocument,
+    tables_reviewed: &[Value], document_assets: &HashSet<String>, contained_assets:&[Value],
+) -> AppResult<()> {
     let expected = expected_question_numbers(document);
     let mut actual = HashSet::new();
     for q in questions.iter() {
-        if let Some(n) = number(s(q, "sourceLabel")) {
+        if let Some(n) = source_label_number(s(q, "sourceLabel")) {
             if !actual.insert(n.clone()) {
                 return Err(err(
                     "ocr_question_coverage",
@@ -437,7 +469,7 @@ pub(super) fn coverage(
             ),
         ));
     }
-    material_coverage(questions, document)
+    material_coverage_with_source_reviews(questions, document, tables_reviewed, document_assets,contained_assets)
 }
 
 /// Material-only validation is also performed before a source batch is saved.
@@ -487,6 +519,16 @@ pub(super) fn exact_representation_offset(asset: &Value, representative: &Value)
     Ok(exact_pixels_with_budget(&small,&big,32*1024*1024,1_000_000))
 }
 
+/// Exact reviewed crop coordinates only; never search a page or infer a role.
+pub(super) fn exact_source_crop(asset:&Value,page:&Value,bbox:&Value)->AppResult<bool>{
+    let Some(v)=bbox.as_array().filter(|v|v.len()==4) else{return Ok(false);};
+    let Some(v)=v.iter().map(Value::as_u64).collect::<Option<Vec<_>>>() else{return Ok(false);};
+    if v[2]<=v[0] || v[3]<=v[1] || v.iter().any(|n|*n>8192){return Ok(false);}
+    let crop=bounded_representation_image(asset)?;let full=bounded_representation_image(page)?;
+    if v[2]>u64::from(full.width()) || v[3]>u64::from(full.height()) || crop.width()!= (v[2]-v[0]) as u32 || crop.height()!=(v[3]-v[1]) as u32{return Ok(false);}
+    Ok(image::imageops::crop_imm(&full,v[0] as u32,v[1] as u32,crop.width(),crop.height()).to_image()==crop)
+}
+
 #[cfg(test)]
 mod representation_resource_tests {
     use super::*;
@@ -524,6 +566,14 @@ pub(super) fn material_coverage(
     questions: &mut [Value],
     document: &crate::ocr::OcrDocument,
 ) -> AppResult<()> {
+    material_coverage_with_source_reviews(questions,document,&[],&HashSet::new(),&[])
+}
+/// Exceptions are supplied only by the source-review verifier, bound to exact
+/// source/candidate/image receipts. Unreviewed OCR/model fields cannot grant one.
+pub(super) fn material_coverage_with_source_reviews(
+    questions:&mut [Value], document:&crate::ocr::OcrDocument,
+    tables_reviewed:&[Value], document_assets:&HashSet<String>,contained_assets:&[Value],
+) -> AppResult<()> {
     // A real image or table cannot vanish because the model says it preserved it.
     for page in &document.pages {
         let page_questions = questions
@@ -539,6 +589,28 @@ pub(super) fn material_coverage(
         {
             let assignments: Vec<_> = page_questions.iter().flat_map(|i| rows(&questions[*i]["sourceMaterialRoles"]).into_iter().filter(move |assignment| assignment["assetId"] == asset["id"]).map(move |assignment| (*i,assignment))).collect();
             let roles: HashSet<_> = assignments.iter().map(|(_,assignment)| s(assignment,"role")).collect();
+            let contained=contained_assets.iter().filter(|r|r["assetId"]==asset["id"]).collect::<Vec<_>>();
+            if !contained.is_empty(){
+                let rendered=if contained.len()==1 {
+                    let r=contained[0];let owners=questions.iter().filter(|q|q["questionId"]==r["questionId"]).collect::<Vec<_>>();
+                    r["role"]=="student"&&owners.len()==1
+                        &&rows(&owners[0]["sourceMaterialRoles"]).iter().any(|role|role["assetId"]==r["representedByAssetId"]&&role["role"]=="student")
+                        &&rows(&owners[0]["student"]["assets"]).iter().any(|a|a["assetId"]==r["representedByAssetId"]&&a["sha256"]==r["representedByAssetSha256"])
+                }else{false};
+                if !rendered||!assignments.is_empty()||questions.iter().any(|q|references(&format!("{}\n{}",text(q,false),text(q,true))).iter().any(|id|id==s(asset,"id"))){
+                    return Err(err("source_material_review_stale","局部素材的明确呈现关系已变化，未忽略该素材。"));
+                }
+                // The local source-review verifier proved the exact provider
+                // crop path lies inside the presented original-page crop.
+                // It is not a claim that two independently encoded PNGs match.
+                continue;
+            }
+            if document_assets.contains(s(asset,"id")) {
+                if roles.iter().any(|role|*role!="document") || questions.iter().any(|q|references(&format!("{}\n{}",text(q,false),text(q,true))).iter().any(|id|id==s(asset,"id"))) {
+                    return Err(err("source_material_review_stale","已核对的非题素材与当前题目实际引用或角色冲突。"));
+                }
+                continue;
+            }
             if roles.len() != 1 {
                 return Err(err("ocr_material_role", "原卷素材缺少唯一的模型归属及原文依据，原件保留，请重新整理。"));
             }
@@ -565,9 +637,12 @@ pub(super) fn material_coverage(
                 .collect::<Vec<_>>();
             let table_present = is_table
                 && !source_tables.is_empty()
-                && source_tables
+                && (source_tables
                     .iter()
-                    .all(|t| !t.is_empty() && tables(&all).iter().any(|c| c == t));
+                    .all(|t| !t.is_empty() && tables(&all).iter().any(|c| c == t))
+                    || tables_reviewed.iter().any(|review| review["assetId"]==asset["id"] && review["role"]==role
+                        && assignments.iter().any(|(i,_)|questions[*i]["questionId"]==review["questionId"]
+                            && tables(&text(&questions[*i],role=="teacher")).iter().any(|t|json!(t)==review["approvedShape"]))));
             if !used && !table_present {
                 return Err(err(
                     "ocr_material_unassigned",
@@ -582,7 +657,7 @@ pub(super) fn material_coverage(
     }
     Ok(())
 }
-fn tables(body: &str) -> Vec<Vec<Vec<(usize, usize, String)>>> {
+pub(super) fn tables(body: &str) -> Vec<Vec<Vec<(usize, usize, String)>>> {
     let table = regex::Regex::new(r"(?is)<table\b[^>]*>.*?</table>").unwrap();
     let row = regex::Regex::new(r"(?is)<tr\b[^>]*>(.*?)</tr>").unwrap();
     let cell = regex::Regex::new(r"(?is)<t[dh]\b([^>]*)>(.*?)</t[dh]>").unwrap();
@@ -711,6 +786,74 @@ mod tests {
         }
     }
     #[test]
+    fn explicit_source_labels_accept_only_complete_matching_number_parentheses() {
+        for (label, expected) in [
+            ("1", "1"),
+            ("第 16 题", "16"),
+            ("3.", "3"),
+            ("(1)", "1"),
+            ("（16）", "16"),
+            ("  ( 20 )  ", "20"),
+            ("（ 999 ）", "999"),
+        ] {
+            assert_eq!(source_label_number(label), Some(expected.to_owned()), "{label}");
+        }
+        for label in [
+            "(1", "1)", "（1", "1）", "(1）", "（1)", "((1))", "（(1)）",
+            "(第1题)", "(1).", "(1)原题", "原题(1)", "(1)(2)", "(1)\n(2)",
+            "(0)", "(01)", "(1000)", "(-1)", "(1.0)", "(１)", "()", "未知",
+        ] {
+            assert_eq!(source_label_number(label), None, "{label}");
+        }
+        // The generic OCR/scored-title helper must retain its narrower contract.
+        assert_eq!(number("(1)"), None);
+        assert_eq!(number("（16）"), None);
+    }
+    #[test]
+    fn parenthesized_source_label_identity_preserves_labels_and_rejects_duplicate_or_missing() {
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":1,"text":"1. 模拟整题\n2. 模拟整题\n3. 模拟整题","blocks":[]})],
+            assets: vec![],
+            issues: vec![],
+        };
+        let questions = vec![
+            json!({"sourceLabel":"(1)"}),
+            json!({"sourceLabel":"（2）"}),
+            json!({"sourceLabel":"第3题"}),
+        ];
+        let mut accepted = questions.clone();
+        coverage(&mut accepted, &document).unwrap();
+        assert_eq!(accepted, questions);
+        for duplicate in ["1", "（1）", "(1)", "第1题"] {
+            let mut changed = questions.clone();
+            changed.push(json!({"sourceLabel":duplicate}));
+            assert_eq!(coverage(&mut changed, &document).unwrap_err().code, "ocr_question_coverage");
+        }
+        let mut missing = vec![questions[0].clone(), questions[2].clone()];
+        let error = coverage(&mut missing, &document).unwrap_err();
+        assert_eq!(error.code, "ocr_question_coverage");
+        assert!(error.message.contains("缺少第 2 题"));
+        let mut extra = questions.clone();
+        extra.push(json!({"sourceLabel":"(4)"}));
+        assert_eq!(coverage(&mut extra, &document).unwrap_err().code, "ocr_question_coverage");
+    }
+    #[test]
+    fn accepting_explicit_source_labels_does_not_expand_ocr_subpart_anchors() {
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":1,"text":"16. 模拟整题","blocks":[
+                {"id":1,"text":"（1）（本小题满分3分）"},
+                {"id":2,"text":"(2)（本题满分4分）"}
+            ]})],
+            assets: vec![],
+            issues: vec![],
+        };
+        assert_eq!(expected_question_numbers(&document), HashSet::from(["16".to_owned()]));
+        let mut questions = vec![json!({"sourceLabel":"（16）"})];
+        coverage(&mut questions, &document).unwrap();
+        questions.push(json!({"sourceLabel":"(1)"}));
+        assert_eq!(coverage(&mut questions, &document).unwrap_err().code, "ocr_question_coverage");
+    }
+    #[test]
     fn merged_scored_question_title_preserves_unicode_layout_evidence() {
         // Regression shape from the saved Guizhou OCR: 54 characters but 144
         // UTF-8 bytes. The question number is real text, not inferred from a gap.
@@ -783,6 +926,39 @@ mod tests {
         assert_eq!(coverage(&mut questions[..1].to_vec(), &document).unwrap_err().code, "ocr_question_coverage");
     }
     #[test]
+    fn escaped_scored_titles_in_layout_blocks_preserve_actual_question_anchors() {
+        // Actual saved OCR shape: page Markdown omits the last two headings,
+        // while their layout blocks retain one escaped literal period.
+        let document = crate::ocr::OcrDocument {
+            pages: vec![json!({"page":4,"text":"1. 模拟已知题号","blocks":[
+                {"id":0,"text":r"18\. (17分)"}, {"id":5,"text":r"19\. (17分)"}
+            ]})], assets: vec![], issues: vec![],
+        };
+        assert_eq!(expected_question_numbers(&document), HashSet::from(["1".to_owned(),"18".to_owned(),"19".to_owned()]));
+        let original = vec![json!({"sourceLabel":"1"}),json!({"sourceLabel":"18"}),json!({"sourceLabel":"19"})];
+        let mut accepted=original.clone();coverage(&mut accepted,&document).unwrap();assert_eq!(accepted,original);
+        for label in ["18","19"] {
+            let mut missing=original.iter().filter(|q|q["sourceLabel"]!=label).cloned().collect::<Vec<_>>();
+            assert_eq!(coverage(&mut missing,&document).unwrap_err().code,"ocr_question_coverage");
+            let mut duplicate=original.clone();duplicate.push(json!({"sourceLabel":label}));
+            assert_eq!(coverage(&mut duplicate,&document).unwrap_err().code,"ocr_question_coverage");
+        }
+    }
+    #[test]
+    fn escaped_scored_title_support_does_not_promote_subparts_formulas_or_malformed_numbers() {
+        let rejected = [
+            r"18\\. (17分)", r"18\. (x+17分)", r"18\. (17)", r"18\. (17分)后文",
+            r"0\. (17分)", r"018\. (17分)", r"1000\. (17分)", r"18.5\. (17分)",
+            r"(1)（本小题满分3分）", r"（2） (17分)", r"18\. 普通子步骤",
+            r"$18\. (17分)$", r"x=18\. (17分)", r"98\. 计算2x+3，单位为分",
+        ];
+        let document=crate::ocr::OcrDocument {
+            pages:vec![json!({"page":1,"text":"1. 模拟真实整题","blocks":rejected.iter().enumerate().map(|(id,text)|json!({"id":id,"text":text})).collect::<Vec<_>>()})],
+            assets:vec![],issues:vec![],
+        };
+        assert_eq!(expected_question_numbers(&document),HashSet::from(["1".to_owned()]));
+    }
+    #[test]
     #[ignore = "explicit offline saved OCR regression; paths must be supplied by maintenance"]
     fn saved_ocr_question_number_coverage_regression() {
         // Read-only number coverage check. Real assets are deliberately outside
@@ -802,11 +978,40 @@ mod tests {
         assert_eq!(questions.len(), 19);
         assert_eq!(expected_question_numbers(&document), (1..=19).map(|n| n.to_string()).collect());
         coverage(&mut questions, &document).unwrap();
+        for label in ["15","18","19"] {
+            let mut missing = questions.clone();
+            missing.retain(|q| q["sourceLabel"] != label);
+            assert_eq!(coverage(&mut missing, &document).unwrap_err().code, "ocr_question_coverage");
+            let duplicate = questions.iter().find(|q| q["sourceLabel"] == label).unwrap().clone();
+            let mut duplicated=questions.clone();duplicated.push(duplicate);
+            assert_eq!(coverage(&mut duplicated, &document).unwrap_err().code, "ocr_question_coverage");
+        }
+    }
+    #[test]
+    #[ignore = "explicit read-only replay of a saved 20-question source index; supply paths"]
+    fn saved_parenthesized_source_index_identity_regression() {
+        let manifest: Value = serde_json::from_slice(
+            &std::fs::read(std::env::var_os("TUTOR_COVERAGE_MANIFEST").expect("manifest path")).unwrap(),
+        ).unwrap();
+        let response: Value = serde_json::from_slice(
+            &std::fs::read(std::env::var_os("TUTOR_COVERAGE_RESPONSE").expect("response path")).unwrap(),
+        ).unwrap();
+        assert_eq!(response["httpStatus"], 200);
+        assert_eq!(response["choices"][0]["finish_reason"], "stop");
+        let proposed: Value = serde_json::from_str(s(&response["choices"][0]["message"], "content")).unwrap();
+        let mut questions = rows(&proposed["questions"]);
+        let original = questions.clone();
+        let document = crate::ocr::OcrDocument {
+            pages: rows(&manifest["pages"]), assets: vec![], issues: vec![],
+        };
+        assert_eq!(questions.len(), 20);
+        assert_eq!(expected_question_numbers(&document), (1..=20).map(|n| n.to_string()).collect());
+        coverage(&mut questions, &document).unwrap();
+        assert_eq!(questions, original);
         let mut missing = questions.clone();
-        missing.retain(|q| q["sourceLabel"] != "15");
+        missing.retain(|q| source_label_number(s(q, "sourceLabel")).as_deref() != Some("17"));
         assert_eq!(coverage(&mut missing, &document).unwrap_err().code, "ocr_question_coverage");
-        let duplicate = questions.iter().find(|q| q["sourceLabel"] == "15").unwrap().clone();
-        questions.push(duplicate);
+        questions.push(json!({"sourceLabel":"第1题"}));
         assert_eq!(coverage(&mut questions, &document).unwrap_err().code, "ocr_question_coverage");
     }
     #[test]

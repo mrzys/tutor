@@ -7,6 +7,8 @@ import { decryptWindows } from './deepseek-maintenance-client.mjs';
 
 const BASE_URL = 'https://maas.qianwenaiapi.com/compatible-mode/v1';
 const MODEL = 'qwen3.8-flash';
+const BAILIAN_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const BAILIAN_MODELS = new Set(['qwen3.7-flash', 'qwen3.7-flash-2026-07-15']);
 const SAFE_ERROR = Symbol('maintenanceSafeError');
 
 function failure(code, safeRecord = {}) {
@@ -43,9 +45,16 @@ function stripReasoning(value) {
 
 /** Independent, explicit offline review credentials. Never changes desktop settings. */
 export async function openQwenMaintenanceClient({ settingsFile, agentEnvFile = path.join(os.homedir(), '.agent.env'),
+  provider = 'qianwenai', model = provider === 'bailian' ? 'qwen3.7-flash' : MODEL, profileId,
   fetchImpl = globalThis.fetch, decryptImpl = decryptWindows, timeoutMs = 300_000 } = {}) {
   if (typeof settingsFile !== 'string' || typeof agentEnvFile !== 'string' || typeof fetchImpl !== 'function'
-    || typeof decryptImpl !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) throw failure('invalid_options');
+    || typeof decryptImpl !== 'function' || !Number.isSafeInteger(timeoutMs) || timeoutMs <= 0
+    || !['qianwenai', 'bailian'].includes(provider)
+    || (profileId !== undefined && (typeof profileId !== 'string' || !profileId || profileId.length > 120 || /[\x00-\x1f\x7f]/u.test(profileId)))) throw failure('invalid_options');
+  // This specialized review tool only forms thinking requests for known capabilities;
+  // this is not an assertion that a model exists in the provider's live catalogue.
+  if (provider === 'qianwenai' ? model !== MODEL : !BAILIAN_MODELS.has(model)) throw failure('unsupported_model_capability');
+  const baseUrl = provider === 'bailian' ? BAILIAN_BASE_URL : BASE_URL;
   let settings;
   try { settings = JSON.parse(await readFile(settingsFile, 'utf8')); }
   catch { throw failure('settings_unreadable'); }
@@ -53,10 +62,14 @@ export async function openQwenMaintenanceClient({ settingsFile, agentEnvFile = p
   const ids = settings.profiles.map(profile => profile?.id);
   if (ids.some(id => typeof id !== 'string' || !id) || new Set(ids).size !== ids.length) throw failure('settings_invalid');
   const matches = settings.profiles.filter(profile => typeof profile?.baseUrl === 'string'
-    && profile.baseUrl.replace(/\/$/, '') === BASE_URL && profile.model === MODEL && profile.reasoningEffort === 'on');
+    && profile.baseUrl.replace(/\/$/, '') === baseUrl && profile.model === model
+    && (provider === 'bailian' || profile.reasoningEffort === 'on'));
   const activeMatches = matches.filter(profile => profile.id === settings.activeProfileId);
-  if (activeMatches.length !== 1 && matches.length > 1) throw failure('profile_ambiguous');
-  const profile = activeMatches[0] ?? matches[0];
+  if (profileId === undefined && activeMatches.length !== 1 && matches.length > 1) throw failure('profile_ambiguous');
+  const profile = profileId === undefined ? activeMatches[0] ?? matches[0] : matches.find(profile => profile.id === profileId);
+  // A named configuration and the Bailian provider never borrow a key from the
+  // other provider or from the legacy QWEN_API_KEY environment fallback.
+  if (!profile && (provider === 'bailian' || profileId !== undefined)) throw failure('profile_not_found');
   let apiKey;
   if (profile) {
     if (typeof profile.protectedKey !== 'string' || !profile.protectedKey.length || profile.protectedKey.length > 32_768) throw failure('credential_unavailable');
@@ -78,13 +91,13 @@ export async function openQwenMaintenanceClient({ settingsFile, agentEnvFile = p
   }
   if (typeof apiKey !== 'string' || !apiKey.trim() || /[\r\n\x00-\x1f\x7f]/u.test(apiKey)) throw failure('credential_unavailable');
   apiKey = apiKey.trim();
-  const publicProfile = Object.freeze({ id: profile?.id ?? 'offline-qwen-agent-env', provider: 'qianwenai',
-    baseUrl: BASE_URL, model: MODEL, reasoningEffort: 'on', enableThinking: true,
+  const publicProfile = Object.freeze({ id: profile?.id ?? 'offline-qwen-agent-env', provider,
+    baseUrl, model, reasoningEffort: 'on', enableThinking: true,
     credentialSource: profile ? 'saved_matching_profile' : 'explicit_offline_agent_env',
     selectedProfileWasActive: Boolean(profile && profile.id === settings.activeProfileId) });
 
   async function invoke(path, request) {
-    const endpoint = BASE_URL + path;
+    const endpoint = baseUrl + path;
     const startedAt = new Date().toISOString();
     const started = performance.now();
     const controller = new AbortController();
@@ -125,14 +138,17 @@ export async function openQwenMaintenanceClient({ settingsFile, agentEnvFile = p
       if (!Array.isArray(data.data) || data.data.some(item => typeof item?.id !== 'string' || !item.id)) {
         throw failure('model_list_invalid', { endpoint });
       }
-      return { models: [...new Set(data.data.map(item => item.id))], endpoint, fetchedAt: new Date().toISOString() };
+      const models = [...new Set(data.data.map(item => item.id))];
+      return { models, endpoint, fetchedAt: new Date().toISOString() };
     },
     async complete(messages, { maxTokens = 32_768, onRequest } = {}) {
       if (!Array.isArray(messages) || !messages.length || !Number.isSafeInteger(maxTokens) || maxTokens <= 0
         || (onRequest !== undefined && typeof onRequest !== 'function')) {
         throw failure('invalid_request');
       }
-      const request = { model: MODEL, messages: structuredClone(messages), enable_thinking: true, response_format: { type: 'json_object' }, max_tokens: maxTokens, stream: false };
+      const request = { model, messages: structuredClone(messages), enable_thinking: true,
+        ...(provider === 'bailian' ? { thinking_budget: 8192 } : {}),
+        response_format: { type: 'json_object' }, max_tokens: maxTokens, stream: false };
       const requestSha256 = createHash('sha256').update(JSON.stringify(request)).digest('hex');
       if (onRequest) {
         try { await onRequest(structuredClone(request)); }

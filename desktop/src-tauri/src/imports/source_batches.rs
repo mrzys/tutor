@@ -4,12 +4,134 @@ use super::*;
 use crate::ocr::OcrDocument;
 use std::collections::{BTreeMap, BTreeSet};
 mod material_supplement;
+mod asset_bindings;
+mod material_reviews;
 mod production;
 pub(super) use production::process as process_indexed;
 
 const VERSION: &str = "source-structuring-v1";
 const BATCH_CHARS: usize = 12_000;
 const QUESTION_CHARS: usize = 40_000;
+
+#[cfg(all(debug_assertions, feature = "dev-tools"))]
+pub(super) fn save_asset_binding_review(store: &Store, payload: &Value) -> AppResult<Value> {
+    asset_bindings::save_review(store, payload)
+}
+#[cfg(all(debug_assertions, feature = "dev-tools"))]
+pub(super) fn save_material_review(store:&Store,payload:&Value)->AppResult<Value>{material_reviews::save_review(store,payload)}
+pub(super) fn verify_material_review_inputs(store:&Store,record:&Value)->AppResult<()>{material_reviews::verify_saved_inputs(store,record)}
+
+/// Read-only validation of paid source replies before an explicit continuation.
+/// It neither changes checkpoints nor creates a provider/model attempt.
+#[cfg(all(debug_assertions, feature = "dev-tools"))]
+pub(super) fn asset_binding_preflight(store: &Store, payload: &Value) -> AppResult<Value> {
+    let record=store.document("imports",s(payload,"importId"))?;
+    if record["revision"]!=payload["expectedRevision"] {return Err(changed());}
+    let document=paddle::load_document(store,&record)?;
+    verify_successes(store,&record,&document)?;
+    let plan=&record["sourceStructuring"]["plan"];
+    let mut results=vec![];
+    for batch in rows(&record["sourceStructuring"]["batches"]) {
+        if batch["status"]=="succeeded" {
+            results.push(json!({"index":batch["index"],"status":"already_succeeded","questionCount":rows(&batch["questions"]).len()}));
+            continue;
+        }
+        let Some(attempt)=production::cached_batch_attempt(store,&record,&batch,batch["index"].as_u64().ok_or_else(changed)? as usize)? else {
+            results.push(json!({"index":batch["index"],"status":"requires_new_request","reason":"No preserved complete provider response; OCR and successful batches remain reusable."}));
+            continue;
+        };
+        let outcome=(||->AppResult<Vec<Value>> {
+            let raw=canonical_source_contract(&actual_result(store,&attempt,"question_import",&record)?)?;
+            let sub=subset(plan,&batch,&document)?;
+            let raw=asset_bindings::apply(&raw,&record,&sub)?;
+            validate_result(&raw,plan,&batch,s(&record,"importId"),&document_material_blocks(plan,&document))?;
+            let mut source_record=record.clone();
+            if attempt["sourceOnly"]==true {source_record["sourceStructuring"]["sourceOnlyCurrent"]=json!(true);}
+            let mut questions=prepare_questions_batch(store,&raw,&source_record,document.pages.len(),Some(&sub),batch["start"].as_u64().ok_or_else(changed)? as usize,false)?;
+            retain_asset_binding_audits(&raw,&mut questions)?;
+            material_reviews::material_coverage(&mut questions,&sub,&record)?;
+            Ok(questions)
+        })();
+        results.push(match outcome {
+            Ok(q)=>json!({"index":batch["index"],"status":"locally_valid","questionCount":q.len(),"questionIds":q.iter().map(|q|q["questionId"].clone()).collect::<Vec<_>>()}),
+            Err(e)=>json!({"index":batch["index"],"status":"blocked","error":e}),
+        });
+    }
+    Ok(json!({"importId":record["importId"],"revision":record["revision"],"providerCalled":false,"checkpointChanged":false,"batches":results}))
+}
+
+fn retain_asset_binding_audits(raw: &Value, questions: &mut [Value]) -> AppResult<()> {
+    for original in rows(&raw["questions"]) {
+        if let Some(audit) = original.get("sourceAssetBindingAudit") {
+            let matches: Vec<_> = questions.iter_mut().filter(|q|q["questionId"]==original["questionId"]).collect();
+            if matches.len()!=1 {return Err(changed());}
+            matches.into_iter().next().unwrap()["sourceAssetBindingAudit"]=audit.clone();
+        }
+        if let Some(audit)=original.get("sourceMaterialReviewAudit"){
+            let matches:Vec<_>=questions.iter_mut().filter(|q|q["questionId"]==original["questionId"]).collect();
+            if matches.len()!=1{return Err(changed());}matches.into_iter().next().unwrap()["sourceMaterialReviewAudit"]=audit.clone();
+        }
+    }
+    Ok(())
+}
+
+/// Accept the historic prompt's explicit `key` alias without inferring labels.
+/// Only the derived clone is normalized; the provider receipt remains untouched.
+pub(super) fn canonical_source_contract(raw: &Value) -> AppResult<Value> {
+    let mut canonical = raw.clone();
+    for q in canonical["questions"].as_array_mut().ok_or_else(|| err("source_batch_incomplete", "来源响应缺少完整题目数组。"))? {
+        if !q.is_object() { return Err(err("invalid_import", "来源题目必须是对象。")); }
+        if q.get("options").is_none() { q["options"] = json!([]); }
+        let options = q["options"].as_array_mut().ok_or_else(|| err("invalid_import", "原卷选项必须是数组。"))?;
+        let mut seen = BTreeSet::new();
+        for option in options {
+            let object = option.as_object_mut().ok_or_else(|| err("invalid_import", "原卷选项格式无效。"))?;
+            let label = match (object.get("label"), object.get("key")) {
+                (Some(label), Some(key)) if label == key => label.as_str(),
+                (Some(_), Some(_)) => return Err(err("invalid_import", "原卷选项key与label标识不一致。")),
+                (Some(label), None) => label.as_str(),
+                (None, Some(key)) => key.as_str(),
+                (None, None) => None,
+            }.filter(|s| s.len() == 1 && s.as_bytes()[0].is_ascii_uppercase())
+             .ok_or_else(|| err("invalid_import", "原卷选项标识必须是明确的大写字母，不能为空或推测补全。"))?.to_owned();
+            if !seen.insert(label.clone()) {
+                return Err(err("invalid_import", "原卷选项标识重复。"));
+            }
+            object.insert("label".into(), json!(label));
+            object.remove("key");
+        }
+        if let Some(parts) = q.get_mut("parts") {
+            let parts = parts.as_array_mut().ok_or_else(|| err("invalid_import", "原卷小问必须是数组。"))?;
+            let mut ids = BTreeSet::new();
+            let mut label_counts = BTreeMap::new();
+            for part in parts.iter() {
+                if let Some(label) = part.get("label").and_then(Value::as_str) {
+                    *label_counts.entry(label.to_owned()).or_insert(0usize) += 1;
+                }
+            }
+            for part in parts.iter_mut() {
+                let part = part.as_object_mut().ok_or_else(|| err("invalid_import", "原卷小问格式无效。"))?;
+                let id = if let Some(existing) = part.get("partId") {
+                    existing.as_str()
+                } else {
+                    let label = part.get("label").and_then(Value::as_str)
+                        .filter(|v| !v.trim().is_empty() && !v.chars().any(char::is_control))
+                        .ok_or_else(|| err("invalid_import", "原卷小问缺少明确身份或原标签，未推测补号。"))?.to_owned();
+                    if label_counts.get(&label) != Some(&1) {
+                        return Err(err("invalid_import", "原卷小问标签重复，不能据此生成内部身份。"));
+                    }
+                    part.insert("partId".into(), json!(label));
+                    part.get("partId").and_then(Value::as_str)
+                }.filter(|v| !v.trim().is_empty() && v.chars().count() <= 40 && !v.chars().any(char::is_control))
+                 .ok_or_else(|| err("invalid_import", "原卷小问身份无效。"))?.to_owned();
+                if !ids.insert(id) { return Err(err("invalid_import", "原卷小问内部身份重复。")); }
+            }
+            // Parent references must still resolve exactly after compatibility normalization.
+            structured::validate_parts(parts)?;
+        }
+    }
+    Ok(canonical)
+}
 
 fn changed() -> AppError {
     err(
@@ -576,6 +698,8 @@ fn actual_result(store: &Store, attempt: &Value, task: &str, record: &Value) -> 
         || request["redacted"] != false
         || request["bodySha256"] != hash_json(&request["body"])
         || request["promptSha256"] != hash_json(&request["body"]["messages"][0]["content"])
+        || (request["sourceModelIdentity"].is_object()
+            && request["sourceModelIdentity"]["model"] != request["body"]["model"])
     {
         return Err(changed());
     }
@@ -645,8 +769,13 @@ fn verify_completed_with_document(store:&Store,record:&Value,document:&OcrDocume
         let cached:Vec<_>=batches.iter().flat_map(|b|rows(&b["questions"])).collect();
         let questions=rows(&record["questions"]);
         if cached.len()!=questions.len()||cached.iter().zip(questions.iter()).any(|(a,b)|a["questionId"]!=b["questionId"]||a["sourceLabel"]!=b["sourceLabel"]||a["pages"]!=b["pages"]||a["sourceBlockIds"]!=b["sourceBlockIds"]){return Err(changed());}
-        let mut supplemented=material_supplement::verify(store,record,document,&cached)?;
-        paddle::coverage(&mut supplemented,document)?;
+        let mut supplemented=if record["sourceMaterialSupplement"].is_null(){
+            if questions.iter().any(|q|rows(&q["sourceMaterialRoles"]).iter().any(|r|r.get("supplementInputSha256").is_some()||r.get("representedByAssetId").is_some())){return Err(changed());}
+            cached.clone()
+        }else if record["sourceMaterialSupplement"].is_object(){
+            material_supplement::verify(store,record,document,&cached)?
+        }else{return Err(changed());};
+        material_reviews::coverage(&mut supplemented,document,record)?;
         if record["sourceMaterialSupplement"].is_object() && supplemented.iter().zip(questions.iter()).any(|(a,b)| {
             a["sourceMaterialRoles"]!=b["sourceMaterialRoles"] || a["student"]["assets"]!=b["student"]["assets"]
                 || a["teacher"]["assets"]!=b["teacher"]["assets"] || a["assetPayloads"]!=b["assetPayloads"] || a["sourceIssues"]!=b["sourceIssues"]
@@ -818,7 +947,8 @@ fn verify_successes(store: &Store, record: &Value, document: &OcrDocument) -> Ap
         if attempt["status"] != "succeeded" {
             return Err(changed());
         }
-        let raw = actual_result(store, &attempt, "question_import", record)?;
+        let raw = canonical_source_contract(&actual_result(store, &attempt, "question_import", record)?)?;
+        let raw = asset_bindings::apply(&raw, record, document)?;
         validate_result(
             &raw,
             &plan,
@@ -838,7 +968,8 @@ fn verify_successes(store: &Store, record: &Value, document: &OcrDocument) -> Ap
             batch["start"].as_u64().unwrap() as usize,
             false,
         )?;
-        paddle::material_coverage(&mut fresh, &sub)?;
+        retain_asset_binding_audits(&raw, &mut fresh)?;
+        material_reviews::material_coverage(&mut fresh, &sub, record)?;
         if checkpoint["pipelineVersion"] != production::PIPELINE && checkpoint["parallelSourceResume"] != true {
             cumulative_material_check(record, &plan, batch, document, &fresh)?;
         }
@@ -870,7 +1001,7 @@ fn cumulative_material_check(
         .collect();
     all.extend_from_slice(next);
     let scope = subset(plan, &json!({"start":0,"end":batch["end"]}), document)?;
-    paddle::material_coverage(&mut all, &scope)
+    material_reviews::material_coverage(&mut all, &scope,record)
 }
 
 fn enforce_total_body_budget(record: &Value, next: &[Value]) -> AppResult<()> {
@@ -994,7 +1125,9 @@ pub(super) fn process(
         persist(store, record, saved)?;
         let outcome = model
             .propose_import_with_audit(&context, &sub.assets, cancel, Some(&path))
-            .and_then(|raw| {
+            .and_then(|provider_raw| {
+                let raw = canonical_source_contract(&provider_raw)?;
+                let raw = asset_bindings::apply(&raw, record, &sub)?;
                 validate_result(
                     &raw,
                     &plan,
@@ -1011,13 +1144,14 @@ pub(super) fn process(
                     batch["start"].as_u64().unwrap() as usize,
                     false,
                 )?;
+                retain_asset_binding_audits(&raw, &mut prepared)?;
                 cumulative_material_check(record, &plan, &batch, document, &prepared)?;
                 enforce_total_body_budget(record, &prepared)?;
                 review::attach_import_opinions(
                     store,
                     model,
                     record,
-                    &raw,
+                    &provider_raw,
                     &context,
                     &path,
                     &mut prepared,
@@ -1067,7 +1201,7 @@ pub(super) fn process(
     }
     all = material_supplement::process(store, model, record, saved, document, &all, cancel, op, payload_hash)?;
     if all.iter().map(structured::body_chars).sum::<usize>() > MAX_TEXT { return Err(changed()); }
-    paddle::coverage(&mut all, document)?;
+    material_reviews::coverage(&mut all, document,record)?;
     record["sourceStructuring"]["status"] = json!("completed");
     record["sourceStructuring"]["completedAt"] = json!(now());
     persist(store, record, saved)?;

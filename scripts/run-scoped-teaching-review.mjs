@@ -74,6 +74,7 @@ export async function runScopedTeachingReview({ manifestFile, outputDirectory, c
     reviewPromptSha256: sha(reviewPrompt), generationPromptSha256: sha(generationPrompt),
     maxTokens: 16384, timeoutMs: 300000, stream: false, enableThinking: true,
     maxAdditionalReviewCallsPerQuestion: 1, automaticRetries: 0, methodReferences: [],
+    modelListFetched: false, modelSelectionSource: 'configured_model',
     sourceHashDefinition: 'canonicalSha256(originalMaterial); sorted object keys, unchanged array order, compact UTF-8 JSON',
     priorReviewCallsReset: false, candidatePublication: false, databaseOpened: false, settingsWritten: false,
     independentAuditScopeIsNotRuleFinding: true });
@@ -85,9 +86,6 @@ export async function runScopedTeachingReview({ manifestFile, outputDirectory, c
         : await generationClientFactory({ settingsFile: manifest.settingsFile, timeoutMs: 300000 });
       if (kind === 'review' && client.publicProfile.credentialSource === 'explicit_offline_agent_env') throw fail('saved_profile_required');
       await save(`${kind}-profile-public.json`, client.publicProfile);
-      const catalogue = await client.getModels();
-      await save(`${kind}-models-public.json`, catalogue);
-      if (!Array.isArray(catalogue.models) || !catalogue.models.includes(client.publicProfile.model)) throw fail('requested_model_not_in_provider_catalogue');
       return client;
     };
     if (kind === 'review') return pendingReviewer ??= open();

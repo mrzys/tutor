@@ -71,10 +71,8 @@ export async function runTeachingTermMaintenance({ inputFile, outputDirectory, s
     const client = await clientFactory({ settingsFile });
     const generationProfile = { provider: 'deepseek', ...client.publicProfile };
     const reviewRouting = createMaintenanceReviewRouting({ settingsFile, agentEnvFile, reviewClientFactory, save });
-    const catalogue = await client.getModels();
-    await save('models-public.json', catalogue);
-    if (!catalogue.models.includes(client.publicProfile.model)) throw error('requested_model_not_in_provider_catalogue');
     await save('protocol.json', { pipelineVersion: 'teaching-term-pipeline-v1', startedAt, profile: generationProfile, generationProfile, reviewProfile: plannedReviewProfile,
+      modelListFetched: false, modelSelectionSource: 'configured_model',
       reviewProfileSelection: 'Lazy: matching saved thinking-on Qwen profile first; otherwise explicit offline agent env. Actual profile saved separately on trigger.',
       dictionaryVersion: dictionary.version, dictionarySha256: hash(JSON.stringify(dictionary)),
       methodReferenceIds: references.map(ref => ref.id), methodReferencesSha256: hash(JSON.stringify(references)),
@@ -163,7 +161,7 @@ export async function runTeachingTermMaintenance({ inputFile, outputDirectory, s
       formatReviewsCompleted: records.filter(r => r.stage === 'format-review' && r.ok).length,
       formatRecoveredNoKnownFlagsQuestions: results.filter(r => r.status === 'reviewed_no_known_flags').map(r => r.sampleNumber),
       needsReviewQuestions: results.filter(r => r.status === 'needs_review').map(r => ({ sampleNumber: r.sampleNumber, reasons: r.needsReviewReasons })),
-      chatRequests: records.filter(r => r.requestWritten).length, modelListRequests: 1 + reviewRouting.modelListRequests,
+      chatRequests: records.filter(r => r.requestWritten).length, modelListRequests: reviewRouting.modelListRequests,
       providers: maintenanceProviderSummary(records, generationProfile, reviewRouting),
       noTermHitQuestions: results.filter(r => r.status === 'no_term_hits').map(r => r.sampleNumber),
       rewrittenNoTermHitQuestions: results.filter(r => r.status === 'rewritten_no_term_hits').map(r => r.sampleNumber),

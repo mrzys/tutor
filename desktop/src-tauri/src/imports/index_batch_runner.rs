@@ -266,7 +266,6 @@ fn worker(
     directory: PathBuf,
     source_sha: String,
     manifest_sha: String,
-    proof: &Value,
     started: Instant,
     cancel: &AtomicBool,
 ) -> AppResult<Value> {
@@ -292,7 +291,6 @@ fn worker(
             cancel,
             DEADLINE,
             "question_import_batch_trial",
-            Some(proof),
         )?;
         save(&directory.join("candidate.json"), &raw)?;
         let mut validation = student_validation(&raw, &document)?;
@@ -388,7 +386,6 @@ pub(super) fn run(
             cancel,
             DEADLINE,
             "question_import_index_trial",
-            None,
         )?;
         save(&index_directory.join("candidate.json"), &plan)?;
         let validation = index_batch_trial::validate_plan(&plan, &document)?;
@@ -403,8 +400,6 @@ pub(super) fn run(
         plan_count = rows(&plan["questions"]).len();
         let specs = index_batch_trial::batch_spec(&plan, &document)?;
         save(&directory.join("batch-specs.json"), &json!(specs))?;
-        let proof: Value =
-            serde_json::from_slice(&std::fs::read(index_directory.join("catalog.json"))?)?;
         let batch_root = directory.join("batches");
         std::fs::create_dir(&batch_root)?;
         states = specs
@@ -430,7 +425,6 @@ pub(super) fn run(
                     batch_directory,
                     source_sha.clone(),
                     manifest_sha.clone(),
-                    &proof,
                     started,
                     cancel,
                 )

@@ -8,6 +8,7 @@ const MAX_BYTES: usize = 4 * 1024 * 1024;
 // magnitude. Bound each event/visible answer separately; the wall-clock limit
 // remains authoritative over total stream traffic.
 const MAX_WIRE_BYTES: usize = 64 * 1024 * 1024;
+const CONNECT_TIMEOUT_SECONDS: u64 = 10;
 
 async fn bounded<T>(
     operation: impl std::future::Future<Output = AppResult<T>>,
@@ -42,12 +43,13 @@ fn network_error(
     phase: &str,
     error: &reqwest::Error,
     deadline_seconds: u64,
+    started: Instant,
 ) -> AppError {
     let _ = save(
         &directory.join("network-failure.json"),
-        &json!({"phase":phase,"isConnect":error.is_connect(),"isTimeout":error.is_timeout(),"isBody":error.is_body(),"isRequest":error.is_request()}),
+        &json!({"phase":phase,"isConnect":error.is_connect(),"isTimeout":error.is_timeout(),"isBody":error.is_body(),"isRequest":error.is_request(),"connectTimeoutSeconds":CONNECT_TIMEOUT_SECONDS,"stageBudgetSeconds":deadline_seconds,"elapsedMs":started.elapsed().as_millis() as u64}),
     );
-    model_transport_error(
+    let mut mapped = model_transport_error(
         error,
         if phase.ends_with("body") {
             "response_body"
@@ -55,7 +57,27 @@ fn network_error(
             "response_headers"
         },
         deadline_seconds,
-    )
+    );
+    // Retain historical catalogue diagnostic mapping. New source execution
+    // never requests a catalogue or enters these catalogue phases.
+    if phase.starts_with("catalog_") {
+        mapped.message = if error.is_timeout() && error.is_connect() {
+            format!("获取模型列表时连接超时（连接上限 {CONNECT_TIMEOUT_SECONDS} 秒；来源阶段总预算 {deadline_seconds} 秒），尚未收到列表；请检查网络后显式重试。")
+        } else if error.is_timeout() && phase.ends_with("body") {
+            format!("读取模型列表超时（来源阶段总预算 {deadline_seconds} 秒），已有材料保留，请显式重试。")
+        } else if error.is_timeout() {
+            format!("等待模型列表响应超时（来源阶段总预算 {deadline_seconds} 秒），已有材料保留，请显式重试。")
+        } else if phase.ends_with("body") {
+            "模型列表读取中断，已有材料保留，请显式重试。".into()
+        } else {
+            "模型列表连接失败，请检查网络后显式重试；已有材料保留。".into()
+        };
+    } else if error.is_timeout() && error.is_connect() {
+        mapped.message = format!(
+            "连接模型服务超时（连接上限 {CONNECT_TIMEOUT_SECONDS} 秒；来源阶段总预算 {deadline_seconds} 秒），尚未收到响应；已完成批次保留，请显式继续。"
+        );
+    }
+    mapped
 }
 
 fn save(path: &Path, value: &Value) -> AppResult<()> {
@@ -78,6 +100,14 @@ fn trial_body(context: &Value, prompt: &str, content: Value, effort: &str) -> Ap
     // Equal cap for every arm: do not accidentally give off an 8K answer limit.
     body["max_tokens"] = json!(65536);
     let _ = context;
+    Ok(body)
+}
+
+fn configured_source_body(selected: &ModelClient, prompt: &str, content: Value, task: &str) -> AppResult<Value> {
+    let mut body = json!({"model":selected.model,"messages":[{"role":"system","content":prompt},{"role":"user","content":content}],"response_format":{"type":"json_object"},"stream":true,"stream_options":{"include_usage":true},"max_tokens":16000});
+    compatible_provider_request_options(&mut body, &selected.base_url, &selected.model);
+    selected_reasoning_request_options(&mut body, &selected.base_url, &selected.model, selected.reasoning_effort.as_deref())?;
+    import_thinking_output_budget(&mut body, task, &selected.base_url, &selected.model);
     Ok(body)
 }
 
@@ -212,51 +242,13 @@ impl ModelClient {
             cancel,
             deadline_seconds,
             TASK,
-            None,
         )
-    }
-    /// Refresh only the selected provider catalog for an explicit source resume.
-    /// It shares the source deadline; it never submits a completion request.
-    pub(crate) fn source_stage_catalog(&self,directory:&Path,started:Instant,cancel:&AtomicBool)->AppResult<Value> {
-        let selected=self.import_role("deepseek","deepseek-flash","low")?;
-        let base=valid_endpoint(&selected.base_url)?;
-        std::fs::create_dir(directory)?;
-        let runtime=tokio::runtime::Builder::new_current_thread().enable_all().build()
-            .map_err(|_|AppError::new("model_error","无法校验来源模型目录。"))?;
-        runtime.block_on(async {
-            let remaining=Duration::from_secs(120).checked_sub(started.elapsed())
-                .ok_or_else(||AppError::new("whole_trial_deadline","来源本轮120秒已截止。"))?;
-            let deadline=tokio::time::Instant::now()+remaining;
-            let op=async {
-                let http=reqwest::Client::builder().redirect(reqwest::redirect::Policy::none())
-                    .connect_timeout(Duration::from_secs(10)).timeout(remaining).build()
-                    .map_err(|_|AppError::new("model_error","无法初始化来源模型目录连接。"))?;
-                network_event(directory,"GET","/models","started",started.elapsed().as_millis()as u64)?;
-                let response=http.get(format!("{base}/models")).bearer_auth(&selected.api_key).send().await
-                    .map_err(|e|network_error(directory,"catalog_headers",&e,120))?;
-                if !response.status().is_success() {return Err(AppError::new("model_catalog_error","实际模型列表请求失败。"))}
-                let bytes=response.bytes().await.map_err(|e|network_error(directory,"catalog_body",&e,120))?;
-                if bytes.len()>MAX_BYTES {return Err(AppError::new("model_catalog_error","模型列表过长。"))}
-                let list:Value=serde_json::from_slice(&bytes)?;
-                let item=list["data"].as_array().and_then(|a|a.iter().find(|x|x["id"]==selected.model))
-                    .ok_or_else(||AppError::new("import_model_unavailable","实际列表没有来源整理模型。"))?;
-                if item["effort"]["supported_levels"].as_array().is_some_and(|a|!a.iter().any(|v|v=="low")) {
-                    return Err(AppError::new("unsupported_effort","实际模型目录不支持来源低思考。"))
-                }
-                let proof=json!({"verifiedAt":chrono::Utc::now().to_rfc3339(),"provider":"deepseek","selected":item,"credentialBinding":crate::bank::hash_json(&json!([base,selected.api_key]))});
-                save(&directory.join("catalog.json"),&proof)?;
-                network_event(directory,"GET","/models","completed",started.elapsed().as_millis()as u64)?;
-                Ok(proof)
-            };
-            bounded(op,deadline,cancel).await
-        })
     }
     /// Ordinary import source-only transport. Its 120s budget is shared by the
     /// index and every batch, independent of OCR and subsequent teaching work.
     pub(crate) fn propose_source_stage_request(
         &self, context: &Value, prompt: &str, assets: &[Value],
         task: &str, audit_path: &Path, started: Instant, cancel: &AtomicBool,
-        catalog_proof: Option<&Value>,
     ) -> AppResult<Value> {
         if !matches!(task, "question_import_plan" | "question_import") {
             return Err(input_error("来源整理阶段无效。"));
@@ -264,7 +256,7 @@ impl ModelClient {
         let directory = audit_path.with_extension("stream");
         std::fs::create_dir(&directory)?;
         let outcome = self.source_request_stream(context,prompt,assets,"low",&directory,
-            started,cancel,120,task,catalog_proof);
+            started,cancel,120,task);
         // Keep the established response/request receipt shape for publication
         // replay. Failed/truncated provider responses are preserved, not adopted.
         for (from,to) in [(directory.join("request.json"),audit_path.with_extension("request.json")),
@@ -285,17 +277,17 @@ impl ModelClient {
     pub(crate) fn index_batch_source_request(
         &self, context: &Value, prompt: &str, assets: &[Value], effort: &str,
         directory: &Path, started: Instant, cancel: &AtomicBool,
-        deadline_seconds: u64, task: &str, catalog_proof: Option<&Value>,
+        deadline_seconds: u64, task: &str,
     ) -> AppResult<Value> {
         if !matches!(task,"question_import_whole_trial"|"question_import_index_trial"|"question_import_batch_trial") {
             return Err(input_error("来源试验任务无效。"));
         }
-        self.source_request_stream(context,prompt,assets,effort,directory,started,cancel,deadline_seconds,task,catalog_proof)
+        self.source_request_stream(context,prompt,assets,effort,directory,started,cancel,deadline_seconds,task)
     }
     fn source_request_stream(
         &self, context: &Value, prompt: &str, assets: &[Value], effort: &str,
         directory: &Path, started: Instant, cancel: &AtomicBool,
-        deadline_seconds: u64, task: &str, catalog_proof: Option<&Value>,
+        deadline_seconds: u64, task: &str,
     ) -> AppResult<Value> {
         if !matches!(
             task,
@@ -309,11 +301,13 @@ impl ModelClient {
         if !matches!(deadline_seconds, 60 | 120) {
             return Err(input_error("整卷试验硬截止仅支持明确授权的60或120秒。"));
         }
-        let selected = self.import_role("deepseek", "deepseek-flash", effort)?;
+        let formal = matches!(task,"question_import_plan"|"question_import");
+        let selected = if formal { self.import_source_model()? } else { self.import_role("deepseek", "deepseek-flash", effort)? };
+        let saved_effort = selected.reasoning_effort.as_deref();
         #[cfg(not(test))]
-        validate_reasoning_effort(&selected.base_url, &selected.model, effort)?;
+        if let Some(effort)=saved_effort { validate_reasoning_effort(&selected.base_url, &selected.model, effort)?; }
         #[cfg(test)]
-        if !selected.model.starts_with("simulated") { validate_reasoning_effort(&selected.base_url,&selected.model,effort)?; }
+        if !selected.model.starts_with("simulated") { if let Some(effort)=saved_effort { validate_reasoning_effort(&selected.base_url,&selected.model,effort)?; } }
         let remaining = Duration::from_secs(deadline_seconds)
             .checked_sub(started.elapsed())
             .ok_or_else(|| {
@@ -323,12 +317,15 @@ impl ModelClient {
         // The existing image packer validates original PNGs and excludes paths/secrets.
         let mut context = context.clone();
         context["includeSourcePagesForReview"] = json!(true);
-        // The real import role is exactly registered DeepSeek Flash. The local
-        // HTTP fixture uses its same image packer capability while retaining a
-        // localhost network target; no image integrity check is bypassed.
+        // Use only verified image capabilities of the selected source model.
+        // The local HTTP fixture retains the same image validation while using
+        // a localhost transport destination.
         let (packing_base,packing_model)=(&base[..],&selected.model[..]);
         #[cfg(test)]
         let (packing_base,packing_model)=if selected.model.starts_with("simulated") {("https://api.deepseek.com","deepseek-flash")}else{(packing_base,packing_model)};
+        if !assets.is_empty() && !supports_import_images(packing_base,packing_model) {
+            return Err(AppError::new("source_image_unsupported","拆题用途所选模型尚未确认支持原页图片，请更换拆题配置；原件、OCR及成功结果已保留。"));
+        }
         let mut content =
             request_user_content("question_import", packing_base, packing_model, &context, assets)?;
         if let Some(blocks) = content.as_array_mut() {
@@ -341,7 +338,9 @@ impl ModelClient {
                 }
             }
         }
-        let mut body = trial_body(&context, prompt, content, effort)?;
+        let mut body = if formal && self.import_source_role_explicit() {
+            configured_source_body(&selected,prompt,content,task)?
+        } else { trial_body(&context, prompt, content, effort)? };
         body["model"]=json!(selected.model);
         let mut safe = serde_json::to_string(&body)?;
         for secret in selected.diagnostic_secrets() {
@@ -349,7 +348,7 @@ impl ModelClient {
         }
         save(
             &directory.join("request.json"),
-            &json!({"schemaVersion":1,"task":task,"redacted":false,"promptSha256":crate::bank::hash_json(&body["messages"][0]["content"]),"bodySha256":crate::bank::hash_json(&body),"body":serde_json::from_str::<Value>(&safe)?,"timeoutSeconds":deadline_seconds,"deadlineScope":"whole_source_action_including_catalog_and_local_preparation"}),
+            &json!({"schemaVersion":1,"task":task,"redacted":false,"sourceModelIdentity":{"profileId":selected.active_profile_id,"model":selected.model,"baseUrl":base,"reasoningEffort":selected.reasoning_effort,"selectionSource":"saved_configuration","catalogueCheckPerformed":false},"promptSha256":crate::bank::hash_json(&body["messages"][0]["content"]),"bodySha256":crate::bank::hash_json(&body),"body":serde_json::from_str::<Value>(&safe)?,"timeoutSeconds":deadline_seconds,"deadlineScope":"whole_source_action_including_local_preparation"}),
         )?;
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -362,44 +361,19 @@ impl ModelClient {
         let result = runtime.block_on(async {
             let deadline = tokio::time::Instant::now() + Duration::from_secs(deadline_seconds).saturating_sub(started.elapsed());
             let http = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none())
-                .connect_timeout(Duration::from_secs(10)).timeout(remaining)
+                .connect_timeout(Duration::from_secs(CONNECT_TIMEOUT_SECONDS)).timeout(remaining)
                 .build().map_err(|_| AppError::new("model_error","无法初始化试验请求。"))?;
             let operation = async {
-                let proof = if let Some(proof)=catalog_proof {
-                    if proof["provider"]!="deepseek" || proof["selected"]["id"]!=selected.model || proof["credentialBinding"]!=crate::bank::hash_json(&json!([base,selected.api_key])) {
-                        return Err(AppError::new("model_catalog_error","批次模型列表凭据不匹配。"));
-                    }
-                    save(&directory.join("catalog-reused.json"),&json!({"provider":"deepseek","selected":proof["selected"],"verifiedAt":proof["verifiedAt"],"sameAction":true}))?;
-                    proof.clone()
-                }else{
-                    stream.checkpoint(directory, started.elapsed().as_millis() as u64, "catalog", true)?;
-                    network_event(directory,"GET","/models","started",started.elapsed().as_millis() as u64)?;
-                    let response = http.get(format!("{base}/models")).bearer_auth(&selected.api_key).send().await
-                        .map_err(|e| network_error(directory,"catalog_headers",&e,deadline_seconds))?;
-                    network_event(directory,"GET","/models","headers",started.elapsed().as_millis() as u64)?;
-                    if !response.status().is_success() { return Err(AppError::new("model_catalog_error","实际模型列表请求失败。")); }
-                    let bytes = response.bytes().await.map_err(|e| network_error(directory,"catalog_body",&e,deadline_seconds))?;
-                    if bytes.len() > MAX_BYTES { return Err(AppError::new("model_catalog_error","模型列表过长。")); }
-                    let list: Value = serde_json::from_slice(&bytes).map_err(|_| AppError::new("model_catalog_error","模型列表格式错误。"))?;
-                    let item = list["data"].as_array().and_then(|rows|rows.iter().find(|r|r["id"]==selected.model))
-                        .ok_or_else(||AppError::new("import_model_unavailable","实际服务商列表未包含DeepSeek Flash。"))?;
-                    let proof=json!({"verifiedAt":chrono::Utc::now().to_rfc3339(),"provider":"deepseek","selected":item,"credentialBinding":crate::bank::hash_json(&json!([base,selected.api_key]))});
-                    save(&directory.join("catalog.json"),&proof)?;
-                    proof
-                };
-                let item=&proof["selected"];
-                if effort!="off" && item["effort"]["supported_levels"].is_array() && !item["effort"]["supported_levels"].as_array().unwrap().iter().any(|v|v==effort) {
-                    return Err(AppError::new("unsupported_effort","实际模型列表不支持本次思考档位。"));
-                }
+                // Execute the saved model directly; model-list availability does not gate work.
                 stream.checkpoint(directory, started.elapsed().as_millis() as u64, "response_headers", true)?;
                 network_event(directory,"POST","/chat/completions","started",started.elapsed().as_millis() as u64)?;
                 let mut response = model_http_request(&http,&base,&selected.api_key,&body).send().await
-                    .map_err(|e|network_error(directory,"response_headers",&e,deadline_seconds))?;
+                    .map_err(|e|network_error(directory,"response_headers",&e,deadline_seconds,started))?;
                 network_event(directory,"POST","/chat/completions","headers",started.elapsed().as_millis() as u64)?;
                 save(&directory.join("response-status.json"),&json!({"httpStatus":response.status().as_u16(),"headersMs":started.elapsed().as_millis() as u64}))?;
                 if !response.status().is_success() { return Err(AppError::new("model_error",format!("模型返回HTTP {}。",response.status().as_u16()))); }
                 let mut received = 0usize;
-                while let Some(bytes) = response.chunk().await.map_err(|e|network_error(directory,"response_body",&e,deadline_seconds))? {
+                while let Some(bytes) = response.chunk().await.map_err(|e|network_error(directory,"response_body",&e,deadline_seconds,started))? {
                     received += bytes.len();
                     if received > MAX_WIRE_BYTES {return Err(AppError::new("model_error","模型流超过试验字节预算。"));}
                     stream.feed(&bytes,started.elapsed().as_millis() as u64,&selected.api_key)?;
@@ -427,7 +401,7 @@ impl ModelClient {
         )?;
         save(
             &directory.join("transport.json"),
-            &json!({"schemaVersion":1,"task":task,"effort":effort,"stream":true,"maxTokens":65536,"maxStreamWireBytes":MAX_WIRE_BYTES,"maxRetainedVisibleBytes":MAX_BYTES,"timeoutSeconds":deadline_seconds,"elapsedMs":started.elapsed().as_millis() as u64,"status":if result.is_ok(){"completed"}else{"failed"},"errorCode":result.as_ref().err().map(|e|e.code.as_str()),"progress":stream.progress(started.elapsed().as_millis() as u64,"terminal")}),
+            &json!({"schemaVersion":1,"task":task,"effort":if formal {saved_effort}else{Some(effort)},"stream":true,"maxTokens":body.get("max_tokens").or_else(||body.get("max_completion_tokens")),"maxStreamWireBytes":MAX_WIRE_BYTES,"maxRetainedVisibleBytes":MAX_BYTES,"timeoutSeconds":deadline_seconds,"elapsedMs":started.elapsed().as_millis() as u64,"status":if result.is_ok(){"completed"}else{"failed"},"errorCode":result.as_ref().err().map(|e|e.code.as_str()),"progress":stream.progress(started.elapsed().as_millis() as u64,"terminal")}),
         )?;
         result
     }
@@ -436,6 +410,99 @@ impl ModelClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn source_catalog_actual_transport_errors_keep_codes_and_distinguish_connect_headers_body() {
+        use std::{io::Read, net::TcpListener, sync::mpsc};
+        for (tls_stall, send_headers, phase, expected_code, expected_connect, message) in [
+            (true, false, "catalog_headers", "model_request_timeout", true, "连接上限 10 秒"),
+            (false, false, "catalog_headers", "model_request_timeout", false, "等待模型列表响应超时"),
+            (false, true, "catalog_body", "model_response_timeout", false, "读取模型列表超时"),
+            (true, false, "response_headers", "model_request_timeout", true, "已完成批次保留"),
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            let address = listener.local_addr().unwrap();
+            let (stop, stopped) = mpsc::channel::<()>();
+            let server = std::thread::spawn(move || {
+                let (mut connection, _) = listener.accept().unwrap();
+                connection.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                let mut request = [0; 2048];
+                let _ = connection.read(&mut request);
+                if send_headers {
+                    connection.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 1024\r\nConnection: close\r\n\r\n{").unwrap();
+                }
+                // Hold the TLS handshake, response headers, or incomplete body
+                // until the actual client's corresponding timeout fires.
+                let _ = stopped.recv_timeout(Duration::from_secs(4));
+            });
+            let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+            let started = Instant::now();
+            let error = runtime.block_on(async {
+                let http = reqwest::Client::builder().no_proxy()
+                    .connect_timeout(if tls_stall {Duration::from_millis(150)} else {Duration::from_secs(10)})
+                    .timeout(if tls_stall {Duration::from_secs(3)} else {Duration::from_millis(150)})
+                    .build().unwrap();
+                let request = http.get(format!("{}://{address}/models?fixture-private=1", if tls_stall {"https"} else {"http"}));
+                if send_headers {
+                    request.send().await.unwrap().bytes().await.unwrap_err()
+                } else {
+                    request.send().await.unwrap_err()
+                }
+            });
+            let _ = stop.send(());
+            server.join().unwrap();
+            assert!(error.is_timeout());
+            assert_eq!(error.is_connect(), expected_connect, "{phase}");
+            let directory = tempfile::tempdir().unwrap();
+            let mapped = network_error(directory.path(), phase, &error, 120, started);
+            assert_eq!(mapped.code, expected_code);
+            assert_eq!(mapped.code, model_transport_error(&error, if send_headers {"response_body"} else {"response_headers"}, 120).code);
+            assert!(mapped.message.contains(message));
+            assert!(mapped.message.contains("来源阶段总预算 120 秒"));
+            assert!(!mapped.message.contains("fixture-private"));
+            let failure_text = std::fs::read_to_string(directory.path().join("network-failure.json")).unwrap();
+            let failure: Value = serde_json::from_str(&failure_text).unwrap();
+            assert_eq!(failure["phase"], phase);
+            assert_eq!(failure["isConnect"], expected_connect);
+            assert_eq!(failure["connectTimeoutSeconds"], 10);
+            assert_eq!(failure["stageBudgetSeconds"], 120);
+            assert!(failure["elapsedMs"].as_u64().unwrap() > 0);
+            assert!(!failure_text.contains("fixture-private"));
+        }
+    }
+    #[test]
+    fn configured_source_unknown_image_support_stops_before_any_request() {
+        let temp=tempfile::tempdir().unwrap();
+        let mut model=ModelClient::test_client(temp.path(),"http://127.0.0.1:1");
+        model.profiles=vec![ModelProfile{id:"source".into(),name:"模拟拆题".into(),base_url:"https://maas.qianwenaiapi.com/compatible-mode/v1".into(),model:"qwen3.8-flash".into(),reasoning_effort:Some("on".into()),api_key:"simulated-key".into(),protected_key:String::new(),warning:None}];
+        model.import_roles=model_roles::ImportRoles::parse(&json!({"sourceParsing":"source","teachingGeneration":null,"teachingReview":null}),&model.profiles).unwrap();
+        let path=temp.path().join("source");std::fs::create_dir(&path).unwrap();
+        let error=model.source_request_stream(&json!({}),"JSON",&[json!({"role":"source_page"})],"low",&path,Instant::now(),&AtomicBool::new(false),120,"question_import_plan").unwrap_err();
+        assert_eq!(error.code,"source_image_unsupported");
+        assert!(!path.join("network-events.json").exists());
+        assert!(!path.join("request.json").exists());
+    }
+    #[test]
+    fn configured_source_preserves_provider_and_saved_thinking_without_trial_override() {
+        let temp=tempfile::tempdir().unwrap();
+        let mut selected=ModelClient::test_client(temp.path(),"http://127.0.0.1:1");
+        selected.base_url="https://maas.qianwenaiapi.com/compatible-mode/v1".into();
+        selected.model="qwen3.8-flash".into();
+        selected.reasoning_effort=Some("off".into());
+        let body=configured_source_body(&selected,"JSON",json!("text"),"question_import").unwrap();
+        assert_eq!(body["model"],"qwen3.8-flash");
+        assert_eq!(body["enable_thinking"],false);
+        assert!(body.get("thinking").is_none());
+        assert!(body.get("reasoning_effort").is_none());
+        assert_eq!(body["max_tokens"],16000);
+        selected.reasoning_effort=Some("on".into());
+        assert_eq!(configured_source_body(&selected,"JSON",json!("text"),"question_import").unwrap()["enable_thinking"],true);
+        selected.reasoning_effort=None;
+        assert!(configured_source_body(&selected,"JSON",json!("text"),"question_import").unwrap().get("enable_thinking").is_none());
+        selected.base_url="https://api.deepseek.com".into();selected.model="deepseek-flash".into();
+        selected.reasoning_effort=Some("max".into());
+        let body=configured_source_body(&selected,"JSON",json!("text"),"question_import_plan").unwrap();
+        assert_eq!(body["reasoning_effort"],"max");assert_eq!(body["max_tokens"],65536);
+    }
     #[test]
     fn whole_trial_all_arms_equal_budget_with_actual_distinct_switches() {
         for effort in ["off", "low", "high", "max"] {

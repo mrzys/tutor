@@ -1,3 +1,5 @@
+import { teachingFindingMessage } from "./teaching-finding-display.ts";
+
 // Imported source fields stay distinct from model annotation and old references.
 // A missing answer/solution is not a review task and must never be filled in here.
 export function requiredReviewChecks(question: any): string[] {
@@ -56,7 +58,9 @@ export function briefReviewReasons(question: any, eligibilityReason = ""): strin
 export function importTeachingPresentation(question: any, controls?: TeachingReviewControls) {
   const workflow = question?.teachingWorkflow;
   if (!workflow || typeof workflow !== "object") return null;
-  const ready = workflow.status === "ready_candidate";
+  const ready = workflow.status === "ready_candidate" && workflow.reviewFailurePending !== true
+    && (!controls || (/^[a-f0-9]{64}$/.test(controls.candidateSha256 || "")
+      && workflow.sourceContentSha256 === controls.sourceContentSha256));
   const candidate = ready ? workflow.finalResult : workflow.candidateResult || workflow.reviewedCandidate || workflow.initialCandidate;
   const text = (value: unknown) => typeof value === "string" ? value : "";
   const findings = Array.isArray(workflow.findings) ? workflow.findings : [];
@@ -64,7 +68,7 @@ export function importTeachingPresentation(question: any, controls?: TeachingRev
   const rawIssues = Array.isArray(candidate?.issues) ? candidate.issues : [];
   const acknowledgedIndices = new Set(issueRows.filter(item => item.acknowledged && item.disposition === "informative").map(item => item.issueIndex));
   const acknowledged = new Set<string>(rawIssues.filter((issue: unknown) => typeof issue === "string" && rawIssues.every((other: unknown, index: number) => other !== issue || acknowledgedIndices.has(index))));
-  const activeIssues = [...new Set<string>([...findings.filter((finding: any) => finding?.type !== "model_issue" || !acknowledged.has(finding.issue)).map((finding: any) => finding?.type === "term" ? `仍含需复核术语“${text(finding.term)}”` : text(finding?.message || finding?.issue || finding?.code)), ...rawIssues.filter((issue: unknown, index: number) => typeof issue === "string" && !acknowledgedIndices.has(index))].filter(Boolean))];
+  const activeIssues = [...new Set<string>([...findings.filter((finding: any) => finding?.type !== "model_issue" || !acknowledged.has(finding.issue)).map(teachingFindingMessage), ...rawIssues.filter((issue: unknown, index: number) => typeof issue === "string" && !acknowledgedIndices.has(index))].filter(Boolean))];
   return {
     ready: ready && activeIssues.length === 0,
     answer: text(candidate?.answer),
@@ -75,6 +79,32 @@ export function importTeachingPresentation(question: any, controls?: TeachingRev
     studentRequirements: (Array.isArray(candidate?.teachingFocus?.studentRequirements) ? candidate.teachingFocus.studentRequirements : []).filter((value: unknown) => typeof value === "string"),
     issues: activeIssues,
     notices: issueRows.filter(item => item.acknowledged && item.disposition === "informative"),
+  };
+}
+
+/** Display the available assessment without promoting AI prose to formal
+ * knowledge IDs or solution paths. Persisted/manual annotation takes priority. */
+export function importAssessmentPresentation(question: any, controls?: TeachingReviewControls) {
+  const draft = importTeachingPresentation(question, controls);
+  const ready = draft?.ready === true;
+  const levels = ["easy", "easy_medium", "medium", "medium_hard", "hard"];
+  const annotated = levels.includes(question?.difficultyAssessment?.level);
+  const generated = ready && levels.includes(draft.level);
+  const paths = Array.isArray(question?.solutionPaths) ? question.solutionPaths : [];
+  return {
+    level: annotated ? question.difficultyAssessment.level : generated ? draft.level : null,
+    basis: annotated ? question.difficultyAssessment.basis || "" : generated ? draft.basis : "",
+    difficultyOrigin: annotated ? "已存标注" : generated ? "AI内容估计" : "",
+    examFocus: question?.knowledgeMappingSource === "teacher_edit" && question?.task?.label?.trim()
+      ? question.task.label : ready && draft.examFocus.trim() ? draft.examFocus : question?.task?.label || "",
+    hasTeachingSolution: Boolean((ready && draft?.solution.trim()) || question?.solution?.trim()
+      || question?.parts?.some((part: any) => part.solution?.trim())),
+    teachingSolutionPending: Boolean(draft && !ready && draft.solution.trim()),
+    paths,
+    needsSupplement: question?.annotationStatus === "failed" || !annotated
+      || !question?.primaryKnowledgeUids?.length || !question?.task?.label?.trim()
+      || (ready && (question?._detailLoaded === false ? question._needsSolutionPathSupplement === true
+        : Boolean(draft.solution.trim()) && !paths.length)),
   };
 }
 

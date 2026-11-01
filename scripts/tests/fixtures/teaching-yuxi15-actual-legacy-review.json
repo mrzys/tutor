@@ -1,0 +1,201 @@
+{
+  "kind": "actual_saved_provider_response_regression_not_teacher_validation",
+  "questionId": "import-834cb77ff5ccc294f5dad19e-q15",
+  "evidence": {
+    "requestRelativePath": "imports/import-834cb77ff5ccc294f5dad19e/teaching-review-a85301fc5bb22f32fb7fcdea.provider-response.request.json",
+    "requestFileSha256": "0ed69fb861d185281d155cd09047ab2a118f3831898253e0be0aa27b96b8b607",
+    "responseRelativePath": "imports/import-834cb77ff5ccc294f5dad19e/teaching-review-a85301fc5bb22f32fb7fcdea.provider-response.json",
+    "responseSha256": "e23c3a171924d8d92edcac24a945da52e591b02a7024d90d9086d848b8b2d213"
+  },
+  "context": {
+    "originalMaterial": {
+      "options": [],
+      "parts": [
+        {
+          "answer": "",
+          "label": "(1)",
+          "partId": "(1)",
+          "prompt": "求 $ f(x) $的单调递减区间；",
+          "solution": ""
+        },
+        {
+          "answer": "",
+          "label": "(2)",
+          "partId": "(2)",
+          "prompt": "在锐角$\\triangle ABC$中，角$A$，$B$，$C$所对的边分别为$a$，$b$，$c$，若$f(A)=1$，$a=2$，$\\sin B + \\sin C = \\frac{\\sqrt{6}}{2}$，求$\\triangle ABC$的面积。",
+          "solution": ""
+        }
+      ],
+      "questionId": "import-834cb77ff5ccc294f5dad19e-q15",
+      "questionType": "free_response",
+      "referenceAnswer": "",
+      "referenceSolution": "",
+      "sourceIdentity": {
+        "manifestSha256": "5c295a6e82fd1a8a9efa4a0ce2b1d425529a6369e6ba8c5d122bf6d4e5c3c6b0",
+        "sourceSha256": "918e7235e5b9172d2a950c79db73e99a2754c6a78a8ff2fd9e6e140be5b151d6",
+        "system": "paddleocr_upload"
+      },
+      "sourceIssues": null,
+      "stem": "设向量 $ \\vec{m}=\\left(\\sqrt{3}\\sin x,\\sin x+\\cos x\\right) $， $ \\vec{n}=(2\\cos x,\\sin x-\\cos x) $， $ f(x)=\\vec{m}\\cdot\\vec{n} $",
+      "visuals": []
+    },
+    "candidate": {
+      "answer": "(1) $\\left[\\frac{\\pi}{3}+k\\pi,\\frac{5\\pi}{6}+k\\pi\\right]\\ (k\\in\\mathbb Z)$。\n(2) 按题面“锐角”条件，不存在满足条件的三角形，故面积不存在；若去掉“锐角”条件，则面积为 $10-5\\sqrt3$。",
+      "difficultyAssessment": {
+        "basis": "第(1)问是向量数量积与辅助角公式的直接应用；第(2)问除正余弦定理外，还要由锐角条件推出 $B,C\\in(\\frac\\pi3,\\frac\\pi2)$ 并检验 $\\sin B+\\sin C$ 的下界，发现与给定值矛盾，关键在隐含条件边界，故为 medium_hard。",
+        "level": "medium_hard"
+      },
+      "issues": [
+        "题面：第(2)问的“锐角三角形”与条件 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$，锐角条件迫使 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，从而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$，故不存在这样的锐角三角形。"
+      ],
+      "questionId": "import-834cb77ff5ccc294f5dad19e-q15",
+      "teachingFocus": {
+        "examFocus": "考查平面向量数量积、三角恒等变换、正弦型函数单调区间，以及解三角形中正余弦定理与锐角条件的综合运用。",
+        "studentRequirements": [
+          "能由向量数量积化简 $f(x)$ 并求其单调递减区间；",
+          "能由 $f(A)=1$ 在锐角条件下确定 $A$，并检查 $\\sin B+\\sin C$ 的取值是否可能；",
+          "能说明题设矛盾时不存在满足条件的锐角三角形。"
+        ]
+      },
+      "teachingFocusSchemaVersion": 2,
+      "teachingSolution": "由数量积定义，\\[f(x)=(\\sqrt3\\sin x)(2\\cos x)+(\\sin x+\\cos x)(\\sin x-\\cos x)=\\sqrt3\\sin2x-\\cos2x=2\\sin\\left(2x-\\frac{\\pi}{6}\\right).\\]\n(1) 令 $t=2x-\\frac{\\pi}{6}$。因为 $y=2\\sin t$ 的单调递减区间为 $\\frac{\\pi}{2}+2k\\pi\\le t\\le\\frac{3\\pi}{2}+2k\\pi$，所以\\[\\frac{\\pi}{2}+2k\\pi\\le2x-\\frac{\\pi}{6}\\le\\frac{3\\pi}{2}+2k\\pi,\\]解得 $\\frac{\\pi}{3}+k\\pi\\le x\\le\\frac{5\\pi}{6}+k\\pi$。故 $f(x)$ 的单调递减区间为 $\\left[\\frac{\\pi}{3}+k\\pi,\\frac{5\\pi}{6}+k\\pi\\right]\\ (k\\in\\mathbb Z)$。\n(2) 因为 $\\triangle ABC$ 为锐角三角形，所以 $0<A<\\frac{\\pi}{2}$。由 $f(A)=1$ 得\\[2\\sin\\left(2A-\\frac{\\pi}{6}\\right)=1,\\quad \\sin\\left(2A-\\frac{\\pi}{6}\\right)=\\frac12.\\]又 $-\\frac{\\pi}{6}<2A-\\frac{\\pi}{6}<\\frac{5\\pi}{6}$，故只能 $2A-\\frac{\\pi}{6}=\\frac{\\pi}{6}$，即 $A=\\frac{\\pi}{6}$。于是 $B+C=\\frac{5\\pi}{6}$。\n因 $B,C$ 均为锐角，由 $B+C=\\frac{5\\pi}{6}$ 得 $B,C\\in\\left(\\frac{\\pi}{3},\\frac{\\pi}{2}\\right)$。此时\\[\\sin B+\\sin C=2\\sin\\frac{B+C}{2}\\cos\\frac{B-C}{2}=2\\sin\\frac{5\\pi}{12}\\cos\\frac{B-C}{2}.\\]由于 $|B-C|<\\frac{\\pi}{6}$，有 $\\cos\\frac{B-C}{2}>\\cos\\frac{\\pi}{12}$，所以\\[\\sin B+\\sin C>2\\sin\\frac{5\\pi}{12}\\cos\\frac{\\pi}{12}=\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}.\\]这与题设 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾，故不存在满足题意的锐角三角形，面积不存在。\n补充：若将“锐角三角形”改为一般三角形，则 $\\frac{a}{\\sin A}=4$，$b+c=4(\\sin B+\\sin C)=2\\sqrt6$。由余弦定理 $4=24-bc(2+\\sqrt3)$ 得 $bc=20(2-\\sqrt3)$，面积 $\\frac12bc\\sin A=5(2-\\sqrt3)=10-5\\sqrt3$，但该三角形不是锐角三角形。"
+    },
+    "reviewFindings": [
+      {
+        "category": "classroom",
+        "end": 99,
+        "excerpt": "ac\\pi3,\\frac\\pi2)$ 并检验 $\\sin B+\\sin C$ 的下界，发现与给定值矛盾，关键在隐含条件边界，故为 medium_hard。",
+        "fieldPath": "difficultyAssessment.basis",
+        "reviewGuidanceIndex": 0,
+        "ruleId": "optimization-language",
+        "start": 97,
+        "term": "下界",
+        "type": "term"
+      },
+      {
+        "issue": "题面：第(2)问的“锐角三角形”与条件 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$，锐角条件迫使 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，从而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$，故不存在这样的锐角三角形。",
+        "type": "model_issue"
+      },
+      {
+        "dimension": "material",
+        "fieldPath": "questions[0].issues[0]",
+        "id": "q15-acute-contradiction",
+        "message": "第(2)问锐角条件与 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$ 后，锐角三角形要求 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$。",
+        "origin": "generation_self_check",
+        "reason": "第(2)问锐角条件与 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$ 后，锐角三角形要求 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$。",
+        "type": "quality"
+      }
+    ],
+    "patchContract": {
+      "allowedIssues": [
+        {
+          "expectedText": "题面：第(2)问的“锐角三角形”与条件 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$，锐角条件迫使 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，从而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$，故不存在这样的锐角三角形。",
+          "expectedTextSha256": "e7a2b90efa8405686242c43774086f55a8793c4b6fb23743ba2648c72e772d63",
+          "issueIndex": 0
+        }
+      ],
+      "allowedSegments": [
+        {
+          "end": 134,
+          "expectedText": "第(2)问除正余弦定理外，还要由锐角条件推出 $B,C\\in(\\frac\\pi3,\\frac\\pi2)$ 并检验 $\\sin B+\\sin C$ 的下界，发现与给定值矛盾，关键在隐含条件边界，故为 medium_hard。",
+          "expectedTextSha256": "1178cf39d3a1f605f29b75caa5965a8ff44ad6b8ed085de9d54936a7c5ec76a5",
+          "fieldPath": "difficultyAssessment.basis",
+          "fieldTextSha256": "34ec3a78e00b08fbc183b553bdb833d36ecae59b7330ad1ac4da77b5405195f3",
+          "segmentId": "s0",
+          "start": 23
+        }
+      ],
+      "candidateSha256": "7aca6a3b9c106b498d529b25871240a819734b9b0c76b4d1449e2ffe6329f3a2",
+      "qualityFindings": [
+        {
+          "dimension": "material",
+          "fieldPath": "questions[0].issues[0]",
+          "id": "q15-acute-contradiction",
+          "message": "第(2)问锐角条件与 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$ 后，锐角三角形要求 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$。",
+          "origin": "generation_self_check",
+          "reason": "第(2)问锐角条件与 $\\sin B+\\sin C=\\frac{\\sqrt6}{2}$ 矛盾：由 $f(A)=1$ 得 $A=\\frac{\\pi}{6}$ 后，锐角三角形要求 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$，而 $\\sin B+\\sin C>\\frac{2+\\sqrt3}{2}>\\frac{\\sqrt6}{2}$。",
+          "type": "quality"
+        }
+      ],
+      "questionId": "import-834cb77ff5ccc294f5dad19e-q15",
+      "segmentPatchVersion": 1,
+      "sourceContentSha256": "ff33f4c36603f22dfcd00ed208b3a061d8e2845c76716c7e8ca33df045b80b7d"
+    }
+  },
+  "response": {
+    "questionId": "import-834cb77ff5ccc294f5dad19e-q15",
+    "candidateSha256": "7aca6a3b9c106b498d529b25871240a819734b9b0c76b4d1449e2ffe6329f3a2",
+    "sourceContentSha256": "ff33f4c36603f22dfcd00ed208b3a061d8e2845c76716c7e8ca33df045b80b7d",
+    "patches": [
+      {
+        "segmentId": "s0",
+        "oldTextSha256": "1178cf39d3a1f605f29b75caa5965a8ff44ad6b8ed085de9d54936a7c5ec76a5",
+        "newText": "第(2)问除正余弦定理外，还要由锐角条件推出 $B,C\\in(\\frac{\\pi}{3},\\frac{\\pi}{2})$ 并检验 $\\sin B+\\sin C$ 的范围，发现与给定值矛盾，关键在隐含条件边界，故为 medium_hard。"
+      }
+    ],
+    "unresolvedIssues": [],
+    "qualityResolutions": [
+      {
+        "id": "q15-acute-contradiction",
+        "status": "resolved",
+        "basis": "经核对原题材料，题面确实设定“锐角三角形”，而根据计算得出的A、B、C范围导致 $\\sin B+\\sin C$ 恒大于给定值 $\\frac{\\sqrt6}{2}$，二者逻辑互斥，题目本身存在内在矛盾，符合告警描述，故保留此问题标记作为待处理项的说明（此处撤销的是针对正文措辞的重复质疑，但质量缺陷本身客观存在）。"
+      }
+    ],
+    "issueResolutions": [
+      {
+        "issueIndex": 0,
+        "oldTextSha256": "e7a2b90efa8405686242c43774086f55a8793c4b6fb23743ba2648c72e772d63",
+        "status": "resolved",
+        "basis": "该意见已确认是题目本身的真实缺陷（自洽性错误），且不在允许修改的题目正文范围内，因此不修改正文，但确认了该Issue的有效性并标记为已处理（Resolved），以表明已审核过。"
+      }
+    ]
+  },
+  "sourceContent": {
+    "questionId": "import-834cb77ff5ccc294f5dad19e-q15",
+    "questionType": "free_response",
+    "stem": "设向量 $ \\vec{m}=\\left(\\sqrt{3}\\sin x,\\sin x+\\cos x\\right) $， $ \\vec{n}=(2\\cos x,\\sin x-\\cos x) $， $ f(x)=\\vec{m}\\cdot\\vec{n} $",
+    "options": [],
+    "parts": [
+      {
+        "answer": "",
+        "label": "(1)",
+        "partId": "(1)",
+        "prompt": "求 $ f(x) $的单调递减区间；",
+        "solution": ""
+      },
+      {
+        "answer": "",
+        "label": "(2)",
+        "partId": "(2)",
+        "prompt": "在锐角$\\triangle ABC$中，角$A$，$B$，$C$所对的边分别为$a$，$b$，$c$，若$f(A)=1$，$a=2$，$\\sin B + \\sin C = \\frac{\\sqrt{6}}{2}$，求$\\triangle ABC$的面积。",
+        "solution": ""
+      }
+    ],
+    "answer": "",
+    "solution": "",
+    "pages": [
+      3
+    ],
+    "sourceLabel": "15",
+    "sourceIdentity": {
+      "manifestSha256": "5c295a6e82fd1a8a9efa4a0ce2b1d425529a6369e6ba8c5d122bf6d4e5c3c6b0",
+      "sourceSha256": "918e7235e5b9172d2a950c79db73e99a2754c6a78a8ff2fd9e6e140be5b151d6",
+      "system": "paddleocr_upload"
+    },
+    "sourceBlockIds": [
+      "p3-b5",
+      "p3-b6",
+      "p3-b7",
+      "p3-b8"
+    ],
+    "student": {
+      "assets": []
+    },
+    "teacher": {
+      "assets": []
+    },
+    "assetPayloads": [],
+    "sourceIssues": null,
+    "sourceMaterialRoles": []
+  }
+}

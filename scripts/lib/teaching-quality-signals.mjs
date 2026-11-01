@@ -9,9 +9,10 @@ export function validateQualityFindings(value) {
   if (!Array.isArray(value) || value.length > 30) throw fail();
   const seen = new Set();
   for (const f of value) {
-    if (!exact(f, ['id', 'dimension', 'fieldPath', 'reason']) || !/^[A-Za-z0-9_-]{1,80}$/u.test(f.id) || seen.has(f.id)
+    if (!exact(f, ['id', 'dimension', 'fieldPath', 'reason', ...(Object.hasOwn(f ?? {}, 'quote') ? ['quote'] : [])]) || !/^[A-Za-z0-9_-]{1,80}$/u.test(f.id) || seen.has(f.id)
       || ![...qualityDimensions, 'material'].includes(f.dimension) || typeof f.fieldPath !== 'string' || f.fieldPath.length > 120
-      || typeof f.reason !== 'string' || !f.reason.trim() || [...f.reason].length > 4000) throw fail();
+      || typeof f.reason !== 'string' || !f.reason.trim() || [...f.reason].length > 4000
+      || (Object.hasOwn(f, 'quote') && (typeof f.quote !== 'string' || !f.quote.trim() || [...f.quote].length > 1600))) throw fail();
     seen.add(f.id);
   }
   return value.map(f => ({ type: 'quality', ...structuredClone(f), message: f.reason }));
@@ -34,13 +35,28 @@ export function externalQualityFindings(audit, original, candidate) {
 export function validateQualityResolutions(context, response, next) {
   const flags = (context.reviewFindings ?? []).filter(f => f.type === 'quality');
   if (!flags.length) return;
+  // A saved contract is the replay authority. Its missing version means the
+  // historical protocol; a new context flag must not upgrade old receipts.
+  const version = context.patchContract ? context.patchContract.resolutionVersion : context.reviewResolutionVersion;
+  const v2 = version === 2;
+  if (version !== undefined && !v2) throw Object.assign(Error('teaching_quality_unresolved'), { code: 'teaching_quality_unresolved' });
   const resolutions = response?.qualityResolutions;
-  if (!Array.isArray(resolutions) || resolutions.length !== flags.length || new Set(resolutions.map(r => r.id)).size !== flags.length
-    || resolutions.some(r => !exact(r, ['id', 'status', 'basis']) || !flags.some(f => f.id === r.id) || r.status !== 'resolved'
+  if (!Array.isArray(resolutions) || resolutions.length !== flags.length || new Set(resolutions.map(r => r?.id)).size !== flags.length
+    || resolutions.some(r => !exact(r, ['id', 'status', 'basis']) || !flags.some(f => f.id === r.id)
+      || !(v2 ? ['repaired', 'false_positive'] : ['resolved']).includes(r.status)
       || typeof r.basis !== 'string' || !r.basis.trim() || [...r.basis].length > 4000)) throw Object.assign(Error('teaching_quality_unresolved'), { code: 'teaching_quality_unresolved' });
   // A semantic repair cannot be cleared merely by deleting a label or returning
   // the same proof. The explanation remains model evidence, not independent truth.
-  if (flags.some(f => ['mathematics', 'proof', 'method'].includes(f.dimension)) && next.teachingSolution === context.candidate.teachingSolution)
+  const textAt = (value, path) => {
+    if (typeof path !== 'string' || !/^(answer|teachingSolution|difficultyAssessment(?:\.basis)?|teachingFocus(?:\.(?:examFocus|studentRequirements(?:\[[0-2]\])?))?)$/u.test(path)) return undefined;
+    return path.replace(/\[([0-2])\]/gu, '.$1').split('.').reduce((owner, key) => owner?.[key], value);
+  };
+  const changedText = (before, after) => typeof before === 'string' || typeof after === 'string' ? before !== after
+    : before && after && typeof before === 'object' && typeof after === 'object'
+      && [...new Set([...Object.keys(before), ...Object.keys(after)])].some(key => key !== 'level' && changedText(before[key], after[key]));
+  if (v2 ? flags.some(f => resolutions.find(r => r.id === f.id).status === 'repaired'
+      && !changedText(textAt(context.candidate, f.fieldPath), textAt(next, f.fieldPath)))
+    : flags.some(f => ['mathematics', 'proof', 'method'].includes(f.dimension)) && next.teachingSolution === context.candidate.teachingSolution)
     throw Object.assign(Error('teaching_quality_unchanged'), { code: 'teaching_quality_unchanged' });
   const allowed = new Set(['issues']);
   for (const f of context.reviewFindings ?? []) {

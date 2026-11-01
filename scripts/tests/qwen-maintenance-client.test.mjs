@@ -10,10 +10,13 @@ import { runTeachingQualityMaintenance } from '../lib/teaching-quality-maintenan
 import { runTeachingTermMaintenance } from '../lib/teaching-term-maintenance.mjs';
 
 const QWEN_BASE = 'https://maas.qianwenaiapi.com/compatible-mode/v1';
+const BAILIAN_BASE = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+const BAILIAN_SECRET = 'simulated-bailian-only-secret';
 const DS_BASE = 'https://api.deepseek.com';
 const QWEN_SECRET = 'simulated-review-secret';
 const DS_SECRET = 'simulated-generation-secret';
 const qwen = (id = 'qwen', patch = {}) => ({ id, baseUrl: QWEN_BASE, model: 'qwen3.8-flash', reasoningEffort: 'on', protectedKey: 'qwen-cipher', ...patch });
+const bailian = (id = 'bailian-review', patch = {}) => ({ id, baseUrl: BAILIAN_BASE, model: 'qwen3.7-flash', reasoningEffort: null, protectedKey: 'bailian-cipher', ...patch });
 const ds = { id: 'ds', baseUrl: DS_BASE, model: 'deepseek-flash', reasoningEffort: 'high', protectedKey: 'ds-cipher' };
 const ok = data => ({ ok: true, status: 200, json: async () => data });
 const draft = (id, text = '模拟：由题意计算得2。') => ({ questionId: id, answer: '2',
@@ -111,8 +114,108 @@ test('Qwen transport redacts arbitrary failures and provider error bodies, bound
   await assert.rejects(audit.complete([{ role: 'user', content: 'simulated' }], { onRequest: () => { throw Error(QWEN_SECRET); } }), safeError('audit_write_failed'));
 });
 
+test('explicit Bailian profile uses its independent credential, own catalogue and exact thinking request without changing saved defaults', async t => {
+  const f = await fixture(t, [ds, qwen(), qwen('other-provider-same-model', { model: 'qwen3.7-flash' }), bailian(), bailian('unselected-bailian', { protectedKey: 'must-not-decrypt' })]);
+  const before = await readFile(f.settingsFile, 'utf8'), calls = [];
+  const client = await openQwenMaintenanceClient({ ...f, provider: 'bailian', model: 'qwen3.7-flash', profileId: 'bailian-review',
+    decryptImpl: async cipher => { assert.equal(cipher, 'bailian-cipher'); return BAILIAN_SECRET; },
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      assert.equal(options.headers.Authorization, `Bearer ${BAILIAN_SECRET}`);
+      assert.equal(options.redirect, 'error');
+      if (url === BAILIAN_BASE + '/models') return ok({ data: [{ id: 'qwen3.7-flash' }] });
+      assert.equal(url, BAILIAN_BASE + '/chat/completions');
+      const body = JSON.parse(options.body);
+      assert.deepEqual(body, { model: 'qwen3.7-flash', messages: [{ role: 'user', content: 'simulated review only' }], enable_thinking: true,
+        thinking_budget: 8192, response_format: { type: 'json_object' }, max_tokens: 16384, stream: false });
+      assert(!Object.hasOwn(body, 'reasoning_effort')); assert(!Object.hasOwn(body, 'thinking'));
+      return ok({ choices: [{ finish_reason: 'stop', message: { content: '{}', reasoning_content: 'private simulated reasoning' } }], usage: { total_tokens: 5 } });
+    } });
+  assert.equal(calls.length, 0);
+  assert.equal(client.publicProfile.provider, 'bailian'); assert.equal(client.publicProfile.id, 'bailian-review');
+  assert.equal(client.publicProfile.baseUrl, BAILIAN_BASE); assert.equal(client.publicProfile.model, 'qwen3.7-flash');
+  assert.equal(client.publicProfile.reasoningEffort, 'on'); assert.equal(client.publicProfile.credentialSource, 'saved_matching_profile');
+  assert.equal(client.publicProfile.selectedProfileWasActive, false);
+  const list = await client.getModels(); assert.equal(list.endpoint, BAILIAN_BASE + '/models'); assert.deepEqual(list.models, ['qwen3.7-flash']);
+  let audited;
+  const result = await client.complete([{ role: 'user', content: 'simulated review only' }], { maxTokens: 16384, onRequest: request => { audited = request; } });
+  assert.equal(result.requestSha256, createHash('sha256').update(JSON.stringify(audited)).digest('hex'));
+  assert.equal(result.providerResponse.reasoningReported, true);
+  assert(!JSON.stringify(result).includes('private simulated reasoning')); assert(!JSON.stringify(result).includes(BAILIAN_SECRET));
+  assert.equal(calls.length, 2); assert.equal(await readFile(f.settingsFile, 'utf8'), before);
+});
+
+test('Bailian missing, mismatched or ambiguous profile cannot use Qwen env or another provider credential', async t => {
+  const f = await fixture(t, [ds, qwen(), qwen('same-model', { model: 'qwen3.7-flash' }), bailian('wrong-origin', { baseUrl: BAILIAN_BASE + '.evil' })]);
+  const options = { ...f, provider: 'bailian', model: 'qwen3.7-flash', decryptImpl: () => assert.fail('must not borrow another profile key'), fetchImpl: () => assert.fail('no external call') };
+  await assert.rejects(openQwenMaintenanceClient(options), safeError('profile_not_found'));
+  await assert.rejects(openQwenMaintenanceClient({ ...options, profileId: 'same-model' }), safeError('profile_not_found'));
+  const ambiguous = await fixture(t, [ds, bailian('one'), bailian('two')]);
+  await assert.rejects(openQwenMaintenanceClient({ ...ambiguous, provider: 'bailian' }), safeError('profile_ambiguous'));
+  await assert.rejects(openQwenMaintenanceClient({ ...ambiguous, provider: 'bailian', profileId: 'missing' }), safeError('profile_not_found'));
+  const broken = await fixture(t, [ds, bailian()]);
+  await assert.rejects(openQwenMaintenanceClient({ ...broken, provider: 'bailian', decryptImpl: async () => { throw Error(BAILIAN_SECRET); } }), error => {
+    assert.equal(error.code, 'credential_decryption_failed'); assert(!JSON.stringify(error).includes(BAILIAN_SECRET)); return true;
+  });
+});
+
+test('Bailian calls the exact configured model directly and explicit list results never authorize or revoke completion', async t => {
+  const f = await fixture(t, [ds, bailian()]); let catalogue = 'malformed', lists = 0, completions = 0, audits = 0;
+  const client = await openQwenMaintenanceClient({ ...f, provider: 'bailian', decryptImpl: async () => BAILIAN_SECRET,
+    fetchImpl: async (url, options) => {
+      if (url === BAILIAN_BASE + '/models') {
+        lists++;
+        return ok(catalogue === 'malformed' ? { data: [{}] } : { data: [{ id: catalogue === 'valid' ? 'qwen3.7-flash' : 'another-model' }] });
+      }
+      assert.equal(url, BAILIAN_BASE + '/chat/completions');
+      assert.equal(JSON.parse(options.body).model, 'qwen3.7-flash');
+      completions++; return ok({ choices: [{ message: { content: '{}' } }] });
+    } });
+  const complete = () => client.complete([{ role: 'user', content: 'simulated' }], { onRequest: () => { audits++; } });
+  await complete(); assert.equal(lists, 0); assert.equal(completions, 1);
+  await assert.rejects(client.getModels(), safeError('model_list_invalid'));
+  await complete();
+  catalogue = 'missing'; assert.deepEqual((await client.getModels()).models, ['another-model']);
+  await complete();
+  catalogue = 'valid'; await client.getModels(); await complete();
+  assert.equal(lists, 3); assert.equal(completions, 4); assert.equal(audits, 4);
+});
+
+test('Bailian direct model errors are safe and never fetch a list, retry, or fall back', async t => {
+  const f = await fixture(t, [ds, bailian()]); const calls = [];
+  const client = await openQwenMaintenanceClient({ ...f, provider: 'bailian', decryptImpl: async () => BAILIAN_SECRET,
+    fetchImpl: async (url, options) => {
+      calls.push({ url, body: JSON.parse(options.body) });
+      return { ok: false, status: 404, json() { assert.fail('provider error body must not be read'); } };
+    } });
+  await assert.rejects(client.complete([{ role: 'user', content: 'simulated' }]), error => {
+    assert.equal(error.code, 'http_error'); assert.equal(error.safeRecord.status, 404);
+    assert(!JSON.stringify(error).includes(BAILIAN_SECRET)); return true;
+  });
+  assert.equal(calls.length, 1); assert.equal(calls[0].url, BAILIAN_BASE + '/chat/completions');
+  assert.equal(calls[0].body.model, 'qwen3.7-flash');
+});
+
+test('Bailian preserves known thinking capabilities and the exact selected snapshot alias without a model-list request', async t => {
+  const alias = 'qwen3.7-flash-2026-07-15', f = await fixture(t, [bailian('snapshot', { model: alias })], 'snapshot');
+  const requests = [];
+  const client = await openQwenMaintenanceClient({ ...f, provider: 'bailian', model: alias, profileId: 'snapshot', decryptImpl: async () => BAILIAN_SECRET,
+    fetchImpl: async (url, options) => {
+      assert.equal(url, BAILIAN_BASE + '/chat/completions');
+      requests.push(JSON.parse(options.body)); return ok({ choices: [{ message: { content: '{}' } }] });
+    } });
+  await client.complete([{ role: 'user', content: 'simulated' }]);
+  assert.equal(requests[0].model, alias); assert.equal(requests[0].max_tokens, 32768);
+  for (const options of [{ provider: 'unknown' }, { provider: 'bailian', profileId: '' }]) {
+    await assert.rejects(openQwenMaintenanceClient({ ...f, ...options }), safeError('invalid_options'));
+  }
+  for (const options of [{ provider: 'bailian', model: 'qwen3.8-flash' }, { provider: 'qianwenai', model: alias }]) {
+    await assert.rejects(openQwenMaintenanceClient({ ...f, ...options }), safeError('unsupported_model_capability'));
+  }
+});
+
 for (const [name, run] of [['quality', runTeachingQualityMaintenance], ['term', runTeachingTermMaintenance]]) {
-  test(`${name} workflow uses actual client bodies with two separate provider lists/keys and at most one Qwen review (simulated fetch)`, async t => {
+  test(`${name} workflow calls configured models with independent keys and one Qwen review without model lists (simulated fetch)`, async t => {
     const f = await fixture(t);
     const inputs = ['sim-hit-a', 'sim-hit-b', 'sim-clean'];
     const inputFile = path.join(f.root, 'input.json'), outputDirectory = path.join(f.root, 'out');
@@ -123,12 +226,18 @@ for (const [name, run] of [['quality', runTeachingQualityMaintenance], ['term', 
       assert.equal(opts.headers.Authorization, `Bearer ${isQwen ? QWEN_SECRET : DS_SECRET}`);
       const body = opts.body ? JSON.parse(opts.body) : null;
       calls.push({ url, body });
-      if (url.endsWith('/models')) return ok({ data: [{ id: isQwen ? 'qwen3.8-flash' : 'deepseek-flash' }] });
+      assert(!url.endsWith('/models'), 'execution must not fetch model catalogues');
       assert.equal(body.model, isQwen ? 'qwen3.8-flash' : 'deepseek-flash');
       assert.equal(body.enable_thinking, isQwen ? true : undefined);
       assert.equal(body.reasoning_effort, isQwen ? undefined : 'high');
       assert.equal(body.max_tokens, isQwen ? 32768 : 16384);
       const data = JSON.parse(body.messages[1].content);
+      if(isQwen && data.patchContract?.segmentPatchVersion===2){
+        const response={requestId:data.patchContract.requestId,
+          patches:data.patchContract.allowedSegments.map(segment=>({segmentId:segment.segmentId,newText:'模拟：由 $1+1=2$ 得答案。'})),unresolvedIssues:[],
+          ...(data.patchContract.termFindings?{termResolutions:data.patchContract.termFindings.map(f=>({findingId:f.findingId,status:'repaired',basis:'模拟：对应句段改为明确计算。'}))}:{})};
+        return ok({model:body.model,choices:[{finish_reason:'stop',message:{content:JSON.stringify(response)}}],usage:{prompt_tokens:2,completion_tokens:3,total_tokens:5}});
+      }
       const id = isQwen ? data.originalMaterial.questionId : data.questionId;
       const result = draft(id, id.includes('hit') ? '模拟：目标式为2。' : undefined);
       return ok({ model: body.model, choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(result) } }],
@@ -137,11 +246,11 @@ for (const [name, run] of [['quality', runTeachingQualityMaintenance], ['term', 
     const result = await run({ inputFile, outputDirectory, settingsFile: f.settingsFile,
       concurrency: 3, clientFactory: opts => openDeepSeekMaintenanceClient({ ...opts, decryptImpl, fetchImpl }),
       reviewClientFactory: opts => openQwenMaintenanceClient({ ...opts, decryptImpl, fetchImpl }) });
-    assert.equal(calls.filter(call => call.url === DS_BASE + '/models').length, 1);
-    assert.equal(calls.filter(call => call.url === QWEN_BASE + '/models').length, 1);
+    assert.equal(calls.filter(call => call.url === DS_BASE + '/models').length, 0);
+    assert.equal(calls.filter(call => call.url === QWEN_BASE + '/models').length, 0);
     assert.equal(calls.filter(call => call.url === DS_BASE + '/chat/completions').length, 3);
     assert.equal(calls.filter(call => call.url === QWEN_BASE + '/chat/completions').length, 2);
-    assert.equal(result.summary.modelListRequests, 2);
+    assert.equal(result.summary.modelListRequests, 0);
     assert.equal(result.summary.providers.generation.chatRequests, 3);
     assert.equal(result.summary.providers.review.chatRequests, 2);
     assert.equal(result.summary.providers.review.reportedUsage.total_tokens, 10);
@@ -164,8 +273,8 @@ for (const [name, run] of [['quality', runTeachingQualityMaintenance], ['term', 
     await writeFile(inputFile, JSON.stringify([{ questionId: 'sim-clean', originalMaterial: { questionId: 'sim-clean' } }]));
     const fetchImpl = async (url, opts) => {
       assert(url.startsWith(DS_BASE));
-      return url.endsWith('/models') ? ok({ data: [{ id: 'deepseek-flash' }] })
-        : ok({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft('sim-clean')) } }] });
+      assert.equal(url, DS_BASE + '/chat/completions');
+      return ok({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft('sim-clean')) } }] });
     };
     const { summary } = await run({ inputFile, outputDirectory, settingsFile: f.settingsFile,
       clientFactory: opts => openDeepSeekMaintenanceClient({ ...opts, decryptImpl, fetchImpl }),
@@ -175,15 +284,18 @@ for (const [name, run] of [['quality', runTeachingQualityMaintenance], ['term', 
     assert(!(await readdir(outputDirectory)).includes('review-models-public.json'));
   });
 
-  for (const mode of ['catalogue', 'transport', 'credentials']) test(`${name} Qwen ${mode} failure keeps pending state without retry or DeepSeek fallback`, async t => {
+  for (const mode of ['model_unavailable', 'transport', 'credentials']) test(`${name} Qwen ${mode} failure keeps pending state without retry or DeepSeek fallback`, async t => {
     const f = await fixture(t);
     const inputFile = path.join(f.root, 'input.json'), outputDirectory = path.join(f.root, 'out');
     await writeFile(inputFile, JSON.stringify(['one','two'].map(id => ({ questionId: id, originalMaterial: { questionId: id } }))));
     let dsChats = 0, qwenChats = 0, lists = 0, factories = 0;
     const fetchImpl = async (url, opts) => {
-      if (url === DS_BASE + '/models') return ok({ data: [{ id: 'deepseek-flash' }] });
-      if (url === QWEN_BASE + '/models') { lists++; return ok({ data: [{ id: mode === 'catalogue' ? 'different' : 'qwen3.8-flash' }] }); }
-      if (url.startsWith(QWEN_BASE)) { qwenChats++; throw Error(QWEN_SECRET); }
+      if (url.endsWith('/models')) { lists++; assert.fail('execution must not fetch model lists'); }
+      if (url.startsWith(QWEN_BASE)) {
+        qwenChats++;
+        if (mode === 'model_unavailable') return { ok: false, status: 404, json() { assert.fail('no provider error body'); } };
+        throw Error(QWEN_SECRET);
+      }
       dsChats++;
       const id = JSON.parse(JSON.parse(opts.body).messages[1].content).questionId;
       return ok({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(draft(id, '模拟目标式。')) } }] });
@@ -196,8 +308,8 @@ for (const [name, run] of [['quality', runTeachingQualityMaintenance], ['term', 
         return openQwenMaintenanceClient({ ...opts, decryptImpl, fetchImpl });
       } });
     assert.equal(factories, 1); assert.equal(dsChats, 2);
-    assert.equal(lists, mode === 'credentials' ? 0 : 1);
-    assert.equal(qwenChats, mode === 'transport' ? 2 : 0);
+    assert.equal(lists, 0);
+    assert.equal(qwenChats, mode === 'credentials' ? 0 : 2);
     assert.equal(summary.failedQuestions.length, 2);
     const results = await json(outputDirectory, 'results.json');
     assert(results.every(result => result.status === 'review_failed' && result.initialResult && result.finalResult === null && result.reviewCalls === 1));

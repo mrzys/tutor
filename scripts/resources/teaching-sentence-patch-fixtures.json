@@ -1,0 +1,1767 @@
+{
+  "version": 1,
+  "purpose": "Simulated Rust/JS exact-segment conformance; not evidence of mathematical or classroom quality.",
+  "offsetUnit": "Unicode scalar value, end exclusive; scanner input offsets UTF16",
+  "cases": [
+    {
+      "name": "one_sentence_keeps_neighbors",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "先得 $x=1$。计算所求式子 $x+1=2$。最后取等。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "unicode_utf16_to_scalar",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "😀先计算目标式。再计算目标式。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式",
+            "start": 12,
+            "end": 15
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "02d955e147c753728247f2ab57eeff053388d87241cd95f002048c275c808559",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 8,
+            "end": 15,
+            "expectedText": "再计算目标式。",
+            "expectedTextSha256": "1df80cabdc32f88cb59d3b0df5708e0d85d2fce56bd993a47aeee07cf23b0c1d",
+            "fieldTextSha256": "27cf8727646aad99c2ab5dd46018d42e76396e484a509521fb1e2dcd1b81d615"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "02d955e147c753728247f2ab57eeff053388d87241cd95f002048c275c808559",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "1df80cabdc32f88cb59d3b0df5708e0d85d2fce56bd993a47aeee07cf23b0c1d",
+            "newText": "再计算所求式子。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "😀先计算目标式。再计算所求式子。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "q06_equation_neighbors_locked",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $F'(x)=e^x+1-m-1/x$。则 $F''(x)=e^x+1/x^2>0$，故导函数递增。最后由 $F'(1)=0$ 得最小值。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "F''"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "024c1eaafaf039249f1895dd8f2d8e62ae6cc1cabd435e70f0651361c7248d40",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 23,
+            "end": 53,
+            "expectedText": "则 $F''(x)=e^x+1/x^2>0$，故导函数递增。",
+            "expectedTextSha256": "dd74470c7ba2251522cc94e73b1d44138654f44571aba1bf011346b7fe0819d1",
+            "fieldTextSha256": "606f8c856b5ab7ceb268da26181284b83eb57cb872b8dbad141921b6efd5da86"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "024c1eaafaf039249f1895dd8f2d8e62ae6cc1cabd435e70f0651361c7248d40",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "dd74470c7ba2251522cc94e73b1d44138654f44571aba1bf011346b7fe0819d1",
+            "newText": "因为指数函数和负倒数函数均递增，所以导函数递增。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "先得 $F'(x)=e^x+1-m-1/x$。因为指数函数和负倒数函数均递增，所以导函数递增。最后由 $F'(1)=0$ 得最小值。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "math_delimiter_3",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "前句。计算$a。\nb=目标式$，再整理。后句。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "6f942157a5ad21886701f245049c68b12725db7fa195ea90614156a2f7f1dac9",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 3,
+            "end": 20,
+            "expectedText": "计算$a。\nb=目标式$，再整理。",
+            "expectedTextSha256": "e71b5b247e12641d753dd1d7d55061724cd13ce760ec7b8479ee67151a1b7850",
+            "fieldTextSha256": "ec40e8342e8108a0a19c3117e712c9cc796e6d13b8034ee2f74ab91fa8cfdf4f"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "6f942157a5ad21886701f245049c68b12725db7fa195ea90614156a2f7f1dac9",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "e71b5b247e12641d753dd1d7d55061724cd13ce760ec7b8479ee67151a1b7850",
+            "newText": "计算$a。\nb=所求式子$，再整理。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "前句。计算$a。\nb=所求式子$，再整理。后句。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "math_delimiter_4",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "前句。计算$$a。\nb=目标式$$，再整理。后句。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "a64ddc4f7b122e8301f102d537486a36d244bbe0b16833f1855d9aa4c3a9c799",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 3,
+            "end": 22,
+            "expectedText": "计算$$a。\nb=目标式$$，再整理。",
+            "expectedTextSha256": "99804b0ccd3a092a970bf10b68497f80f27e29cad6fce7f2aafa7b1bbabe0ea1",
+            "fieldTextSha256": "995484f2c1956622fd828f38d7d26d819c951a70fa267758eb45f4d2fa3c4ccd"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "a64ddc4f7b122e8301f102d537486a36d244bbe0b16833f1855d9aa4c3a9c799",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "99804b0ccd3a092a970bf10b68497f80f27e29cad6fce7f2aafa7b1bbabe0ea1",
+            "newText": "计算$$a。\nb=所求式子$$，再整理。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "前句。计算$$a。\nb=所求式子$$，再整理。后句。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "math_delimiter_5",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "前句。计算\\(a。\nb=目标式\\)，再整理。后句。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "2681e6c7b5b88a3c4852ae99576f46df8bfd635eb695a9835e08228017385b9a",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 3,
+            "end": 22,
+            "expectedText": "计算\\(a。\nb=目标式\\)，再整理。",
+            "expectedTextSha256": "5ad69bf1aeabadb5e80709d24d41b1cdfda3acb649a8ab48f4410ad0bf83406a",
+            "fieldTextSha256": "b50db24caf7bd4724ed3dae4c4b42d2211d4ff8b8a419bf174d8237b4727c093"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "2681e6c7b5b88a3c4852ae99576f46df8bfd635eb695a9835e08228017385b9a",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "5ad69bf1aeabadb5e80709d24d41b1cdfda3acb649a8ab48f4410ad0bf83406a",
+            "newText": "计算\\(a。\nb=所求式子\\)，再整理。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "前句。计算\\(a。\nb=所求式子\\)，再整理。后句。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "math_delimiter_6",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "前句。计算\\[a。\nb=目标式\\]，再整理。后句。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "dcba679c4c903451b85e3fa7809e0931fb32155fd0ac127318622da5575c1163",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 3,
+            "end": 22,
+            "expectedText": "计算\\[a。\nb=目标式\\]，再整理。",
+            "expectedTextSha256": "00b8257af1cd049a5a12dc43071094f4f3719a5cdef09d47b184f9dc1301515f",
+            "fieldTextSha256": "86963181a362eafc4258825c704e5a7e9af89d1cb322ff8190680ed92d0f3540"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "dcba679c4c903451b85e3fa7809e0931fb32155fd0ac127318622da5575c1163",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "00b8257af1cd049a5a12dc43071094f4f3719a5cdef09d47b184f9dc1301515f",
+            "newText": "计算\\[a。\nb=所求式子\\]，再整理。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "前句。计算\\[a。\nb=所求式子\\]，再整理。后句。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "ambiguous_without_offsets",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "目标式需调整。目标式仍需核对。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "11c6818045149faca511356d5b0cef844f141f1022da4a81d61f4f211d7e3fd2",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": []
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "11c6818045149faca511356d5b0cef844f141f1022da4a81d61f4f211d7e3fd2",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "目标式需调整。目标式仍需核对。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "unclosed_math_has_no_trailing_scope",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "前句。计算 $目标式。\n后句。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "d636b9f83f8340f27cbb54f0fe7a4a6e6ec410b7c1201d3779f928e6aefa1043",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": []
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "d636b9f83f8340f27cbb54f0fe7a4a6e6ec410b7c1201d3779f928e6aefa1043",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "前句。计算 $目标式。\n后句。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "noop",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "unknown_segment",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s99",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "accepted": false,
+      "errorCode": "invalid_teaching_patch"
+    },
+    {
+      "name": "duplicate_segment",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          },
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "accepted": false,
+      "errorCode": "invalid_teaching_patch"
+    },
+    {
+      "name": "wrong_segment_hash",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "accepted": false,
+      "errorCode": "revision_conflict"
+    },
+    {
+      "name": "forged_identity",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "wrong",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "accepted": false,
+      "errorCode": "invalid_teaching_patch"
+    },
+    {
+      "name": "overgrowth",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "accepted": false,
+      "errorCode": "teaching_patch_scope_exceeded"
+    },
+    {
+      "name": "legacy_whole_field_not_allowed",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "fieldPath": "teachingSolution",
+            "oldText": "a",
+            "newText": "b"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "accepted": false,
+      "errorCode": "invalid_teaching_patch"
+    },
+    {
+      "name": "unresolved_atomic",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": [
+          "模拟：需扩大核对。"
+        ]
+      },
+      "accepted": false,
+      "errorCode": "teaching_patch_unresolved"
+    },
+    {
+      "name": "multiple_nonoverlap_descending",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "目标式需调整。中间保留。目标函数需调整。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          },
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标函数"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "19a92a5aca428c580c27a099d6957354b7a0e56683caa3f9c29416a23f2337e1",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 0,
+            "end": 7,
+            "expectedText": "目标式需调整。",
+            "expectedTextSha256": "3313b1cc0358fd30b33971bd214d79fed9de7d33d1f29c5db6add803745014bf",
+            "fieldTextSha256": "b7a33ebaf75e4be0b4be7ba7639e411fc107505a4fe7159fb36f19727283bc0e"
+          },
+          {
+            "segmentId": "s1",
+            "fieldPath": "teachingSolution",
+            "start": 12,
+            "end": 20,
+            "expectedText": "目标函数需调整。",
+            "expectedTextSha256": "90ccbde17bb44b9b9234eda3ba4dc1d92cfc25fa899eab626fe99ca32bfe3db8",
+            "fieldTextSha256": "b7a33ebaf75e4be0b4be7ba7639e411fc107505a4fe7159fb36f19727283bc0e"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "19a92a5aca428c580c27a099d6957354b7a0e56683caa3f9c29416a23f2337e1",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "3313b1cc0358fd30b33971bd214d79fed9de7d33d1f29c5db6add803745014bf",
+            "newText": "所求式子需调整。"
+          },
+          {
+            "segmentId": "s1",
+            "oldTextSha256": "90ccbde17bb44b9b9234eda3ba4dc1d92cfc25fa899eab626fe99ca32bfe3db8",
+            "newText": "另一所求式需调整。"
+          }
+        ],
+        "unresolvedIssues": []
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "所求式子需调整。中间保留。另一所求式需调整。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "model_material_resolution",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "multiple_choice",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": [
+            "模拟：题型未给出。"
+          ]
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          },
+          {
+            "type": "model_issue",
+            "issue": "模拟：题型未给出。"
+          },
+          {
+            "type": "quality",
+            "id": "material-1",
+            "dimension": "material",
+            "fieldPath": "issues[0]",
+            "reason": "模拟：核对题型。"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "aa0666490543d207d278ecb7196261bc5b190aeef1d884a939e9ba588070d4c8",
+        "sourceContentSha256": "2a1b771d4a4737bea365b4efe45d688d059ba01678731b931937411a9deaf463",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ],
+        "qualityFindings": [
+          {
+            "type": "quality",
+            "id": "material-1",
+            "dimension": "material",
+            "fieldPath": "issues[0]",
+            "reason": "模拟：核对题型。"
+          }
+        ],
+        "allowedIssues": [
+          {
+            "issueIndex": 0,
+            "expectedText": "模拟：题型未给出。",
+            "expectedTextSha256": "4deb64920c707a5a4fd87fe62b5dd4cf9f82964a9a2d4d23e925ce9301affcf8"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "aa0666490543d207d278ecb7196261bc5b190aeef1d884a939e9ba588070d4c8",
+        "sourceContentSha256": "2a1b771d4a4737bea365b4efe45d688d059ba01678731b931937411a9deaf463",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": [],
+        "qualityResolutions": [
+          {
+            "id": "material-1",
+            "status": "resolved",
+            "basis": "模拟：已核对。"
+          }
+        ],
+        "issueResolutions": [
+          {
+            "issueIndex": 0,
+            "oldTextSha256": "4deb64920c707a5a4fd87fe62b5dd4cf9f82964a9a2d4d23e925ce9301affcf8",
+            "status": "resolved",
+            "basis": "模拟：题型资料已给出。"
+          }
+        ]
+      },
+      "expectedCandidate": {
+        "questionId": "sim-sentence-fixture",
+        "answer": "2",
+        "difficultyAssessment": {
+          "level": "easy",
+          "basis": "模拟：直接计算。"
+        },
+        "teachingSolution": "先得 $x=1$。计算所求式子 $x+1=2$。最后取等。",
+        "teachingFocusSchemaVersion": 2,
+        "teachingFocus": {
+          "examFocus": "模拟整数运算。",
+          "studentRequirements": [
+            "能计算。"
+          ]
+        },
+        "issues": []
+      },
+      "accepted": true
+    },
+    {
+      "name": "material_unresolved_keeps_initial",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "multiple_choice",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": [
+            "模拟：题型未给出。"
+          ]
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          },
+          {
+            "type": "model_issue",
+            "issue": "模拟：题型未给出。"
+          },
+          {
+            "type": "quality",
+            "id": "material-1",
+            "dimension": "material",
+            "fieldPath": "issues[0]",
+            "reason": "模拟：核对题型。"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "aa0666490543d207d278ecb7196261bc5b190aeef1d884a939e9ba588070d4c8",
+        "sourceContentSha256": "2a1b771d4a4737bea365b4efe45d688d059ba01678731b931937411a9deaf463",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ],
+        "qualityFindings": [
+          {
+            "type": "quality",
+            "id": "material-1",
+            "dimension": "material",
+            "fieldPath": "issues[0]",
+            "reason": "模拟：核对题型。"
+          }
+        ],
+        "allowedIssues": [
+          {
+            "issueIndex": 0,
+            "expectedText": "模拟：题型未给出。",
+            "expectedTextSha256": "4deb64920c707a5a4fd87fe62b5dd4cf9f82964a9a2d4d23e925ce9301affcf8"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "aa0666490543d207d278ecb7196261bc5b190aeef1d884a939e9ba588070d4c8",
+        "sourceContentSha256": "2a1b771d4a4737bea365b4efe45d688d059ba01678731b931937411a9deaf463",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": [],
+        "qualityResolutions": [
+          {
+            "id": "material-1",
+            "status": "resolved",
+            "basis": "模拟：已核对。"
+          }
+        ],
+        "issueResolutions": [
+          {
+            "issueIndex": 0,
+            "oldTextSha256": "4deb64920c707a5a4fd87fe62b5dd4cf9f82964a9a2d4d23e925ce9301affcf8",
+            "status": "unresolved",
+            "basis": "模拟：题型资料已给出。"
+          }
+        ]
+      },
+      "accepted": false,
+      "errorCode": "teaching_patch_unresolved"
+    },
+    {
+      "name": "material_missing_resolution",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "multiple_choice",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": [
+            "模拟：题型未给出。"
+          ]
+        },
+        "reviewFindings": [
+          {
+            "type": "term",
+            "fieldPath": "teachingSolution",
+            "term": "目标式"
+          },
+          {
+            "type": "model_issue",
+            "issue": "模拟：题型未给出。"
+          },
+          {
+            "type": "quality",
+            "id": "material-1",
+            "dimension": "material",
+            "fieldPath": "issues[0]",
+            "reason": "模拟：核对题型。"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "aa0666490543d207d278ecb7196261bc5b190aeef1d884a939e9ba588070d4c8",
+        "sourceContentSha256": "2a1b771d4a4737bea365b4efe45d688d059ba01678731b931937411a9deaf463",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [
+          {
+            "segmentId": "s0",
+            "fieldPath": "teachingSolution",
+            "start": 9,
+            "end": 23,
+            "expectedText": "计算目标式 $x+1=2$。",
+            "expectedTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "fieldTextSha256": "6b033f3767a7e7978aaf8c02ac78056af6e2d344c9f43086140f9b744abf0800"
+          }
+        ],
+        "qualityFindings": [
+          {
+            "type": "quality",
+            "id": "material-1",
+            "dimension": "material",
+            "fieldPath": "issues[0]",
+            "reason": "模拟：核对题型。"
+          }
+        ],
+        "allowedIssues": [
+          {
+            "issueIndex": 0,
+            "expectedText": "模拟：题型未给出。",
+            "expectedTextSha256": "4deb64920c707a5a4fd87fe62b5dd4cf9f82964a9a2d4d23e925ce9301affcf8"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "aa0666490543d207d278ecb7196261bc5b190aeef1d884a939e9ba588070d4c8",
+        "sourceContentSha256": "2a1b771d4a4737bea365b4efe45d688d059ba01678731b931937411a9deaf463",
+        "patches": [
+          {
+            "segmentId": "s0",
+            "oldTextSha256": "a4d4b3f3894deab7371f0403d850d1cc308c2bf9276979e850799459d98b86d9",
+            "newText": "计算所求式子 $x+1=2$。"
+          }
+        ],
+        "unresolvedIssues": [],
+        "qualityResolutions": [
+          {
+            "id": "material-1",
+            "status": "resolved",
+            "basis": "模拟：已核对。"
+          }
+        ]
+      },
+      "accepted": false,
+      "errorCode": "invalid_teaching_patch"
+    },
+    {
+      "name": "semantic_unlocated_no_widen",
+      "context": {
+        "originalMaterial": {
+          "questionId": "sim-sentence-fixture",
+          "questionType": "fill_blank",
+          "stem": "模拟原题：1+1？"
+        },
+        "candidate": {
+          "questionId": "sim-sentence-fixture",
+          "answer": "2",
+          "difficultyAssessment": {
+            "level": "easy",
+            "basis": "模拟：直接计算。"
+          },
+          "teachingSolution": "先得 $x=1$。计算目标式 $x+1=2$。最后取等。",
+          "teachingFocusSchemaVersion": 2,
+          "teachingFocus": {
+            "examFocus": "模拟整数运算。",
+            "studentRequirements": [
+              "能计算。"
+            ]
+          },
+          "issues": []
+        },
+        "reviewFindings": [
+          {
+            "type": "quality",
+            "id": "proof-1",
+            "dimension": "proof",
+            "fieldPath": "teachingSolution",
+            "reason": "模拟：需补充理由。"
+          }
+        ]
+      },
+      "contract": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "segmentPatchVersion": 1,
+        "allowedSegments": [],
+        "qualityFindings": [
+          {
+            "type": "quality",
+            "id": "proof-1",
+            "dimension": "proof",
+            "fieldPath": "teachingSolution",
+            "reason": "模拟：需补充理由。"
+          }
+        ]
+      },
+      "response": {
+        "questionId": "sim-sentence-fixture",
+        "candidateSha256": "18c4ad828ca0059c6bdb52a63be98d2d7149ba2f16a3c1cdba10b34e24611663",
+        "sourceContentSha256": "9dab246c5aaf088028bad03df489be82c42e9de8069feff212e7539233ae80b8",
+        "patches": [],
+        "unresolvedIssues": [],
+        "qualityResolutions": [
+          {
+            "id": "proof-1",
+            "status": "resolved",
+            "basis": "模拟：已核对。"
+          }
+        ]
+      },
+      "accepted": false,
+      "errorCode": "teaching_quality_unchanged"
+    }
+  ]
+}

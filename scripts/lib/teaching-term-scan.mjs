@@ -1,5 +1,19 @@
 import { readFileSync } from 'node:fs';
 
+// Fixed notation grammar, not dictionary-supplied regex. Only third/higher
+// derivatives trigger by notation; differentiating a derivative is allowed.
+// A power on its own is ordinary algebra; require complete differential operands.
+const differential = String.raw`(?:d|\\mathrm\s*\{\s*d\s*\}|\\mathrm\s+d)`;
+const derivativeOrder = String.raw`(?:\{\s*(?:[3-9]|[1-9][0-9]+)\s*\}|[3-9]|[1-9][0-9]+)`;
+const dependentFunction = String.raw`(?:[A-Za-z]|\\[A-Za-z]+)(?:\s*_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?(?:\s*\([^{}()\r\n]{0,80}\))?`;
+const latexDerivativeFraction = String.raw`\\(?:frac|dfrac|tfrac)\s*\{\s*${differential}\s*\^\s*${derivativeOrder}\s*(?:${dependentFunction})?\s*\}\s*\{\s*${differential}\s*(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*${derivativeOrder}\s*\}`;
+const unicodeDerivativeFraction = String.raw`${differential}[³⁴⁵⁶⁷⁸⁹]\s*(?:${dependentFunction})?\s*/\s*${differential}\s*(?:[A-Za-z]|\\[A-Za-z]+)[³⁴⁵⁶⁷⁸⁹]`;
+const derivativeFraction = new RegExp(`${latexDerivativeFraction}|${unicodeDerivativeFraction}`, 'gu');
+// Both operands must explicitly be vectors; ordinary scalar multiplication
+// and dot products do not grant a special-method finding.
+const vectorOperand = String.raw`\\(?:overrightarrow|vec)\s*\{\s*[A-Za-z][A-Za-z0-9]{0,11}\s*\}`;
+const vectorCrossProduct = new RegExp(`${vectorOperand}\\s*\\\\times\\s*${vectorOperand}`, 'gu');
+
 // The dictionary is data only: literal terms and names from this fixed matcher
 // allowlist. Never evaluate dictionary strings or compile them as regex/code.
 const MATCHERS = Object.freeze({
@@ -8,11 +22,13 @@ const MATCHERS = Object.freeze({
   'operation-closure': /(?:对|关于)\s*(?:加法|乘法|加、乘法|加法和乘法|加法与乘法|加法、乘法)\s*(?:运算)?\s*封闭/gu,
   'phi-notation': /\\Phi(?![A-Za-z])|(?<![A-Za-z\\])Phi(?![A-Za-z])|Φ/gu,
   'limit-notation': /\\lim(?![A-Za-z])|(?<![A-Za-z\\])lim(?![A-Za-z])/gu,
+  'epsilon-delta-argument': /(?:取|任意|给定|设)[^。；\r\n]{0,160}(?:\\(?:varepsilon|epsilon)(?:[^A-Za-z]|$)|[εϵ])[^。；\r\n]{0,240}(?:存在|取)[^。；\r\n]{0,80}(?:\\delta(?:[^A-Za-z]|$)|δ)/gu,
   'integral-notation': /\\(?:int|iint|iiint|oint)(?![A-Za-z])|[∫∮]/gu,
   'english-classroom-method': /(?<![A-Za-z])(?:telescoping|geometric\s+series|infinite\s+series|integration\s+constant)(?![A-Za-z])/giu,
-  'higher-derivative-primes': /(?<![A-Za-z\\])(?:[A-Za-z]|\\[A-Za-z]+)(?:_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?\s*(?:'{2,}|′{2,}|[″‴]|\^\s*\{\s*\\prime\s*\\prime(?:\s*\\prime)*\s*\})/gu,
-  'higher-derivative-order': /(?<![A-Za-z\\])(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*\{\s*\(\s*(?:[2-9]|[1-9]\d+)\s*\)\s*\}/gu,
-  'higher-derivative-fraction': /\\(?:frac|dfrac|tfrac)\s*\{\s*(?:d|\\mathrm\s*\{d\})\s*\^\s*\{?\s*(?:[2-9]|[1-9]\d+)\s*\}?/gu,
+  'higher-derivative-primes': /(?<![A-Za-z\\])(?:[A-Za-z]|\\[A-Za-z]+)(?:_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?\s*(?:(?:['′]{3}|['′]{1,2}″|″['′″‴⁗]|['′]{0,2}[‴⁗])['′″‴⁗]*|\^\s*\{\s*\\prime\s*\\prime\s*\\prime(?:\s*\\prime)*\s*\})/gu,
+  'higher-derivative-order': /(?<![A-Za-z\\])(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*\{\s*\(\s*(?:[3-9]|[1-9]\d+)\s*\)\s*\}/gu,
+  'higher-derivative-fraction': derivativeFraction,
+  'vector-cross-product': vectorCrossProduct,
   'infinite-sum-notation': /(?:\\sum(?![A-Za-z])|[∑Σ])\s*(?:\\limits\s*)?(?:_\s*(?:\{[^{}\r\n]{1,80}\}|[A-Za-z0-9=]+)\s*)?(?:\^\s*\{?\s*\+?\s*(?:\\infty(?![A-Za-z])|∞)|∞)/gu,
   'endpoint-limit-shorthand': /(?<![A-Za-z\\])(?:[A-Za-z]|\\[A-Za-z]+)\s*(?:\\left\s*)?\(\s*(?:(?:[+-]?\d+(?:\.\d+)?|[a-zA-Z])\s*(?:[+-]|\^\s*(?:\{\s*[+-]\s*\}|[+-]))|[+-]?\s*(?:\\infty(?![A-Za-z])|∞))\s*(?:\\right\s*)?\)/gu,
 });

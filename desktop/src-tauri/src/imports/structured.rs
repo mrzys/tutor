@@ -212,10 +212,14 @@ pub(super) fn validate_parts(parts: &[Value]) -> AppResult<()> {
     Ok(())
 }
 pub(super) fn body_chars(q: &Value) -> usize {
-    let mut body = q.clone();
-    if let Some(object) = body.as_object_mut() {
-        object.remove("assetPayloads");
-    }
+    // The source review budget covers question/reference text and metadata,
+    // not embedded bytes or the separately preserved teaching audit trail.
+    // Filter before cloning so large request/response histories are not copied
+    // merely to measure a short source question.
+    let body = q.as_object().map(|object|Value::Object(object.iter()
+        .filter(|(key,_)|!matches!(key.as_str(),"assetPayloads"|"teachingWorkflow"))
+        .map(|(key,value)|(key.clone(),value.clone())).collect()))
+        .unwrap_or_else(||q.clone());
     body.to_string().chars().count()
 }
 fn safe_audit(value: &Value) -> Value {
@@ -403,8 +407,30 @@ fn prepare(
     save_cas(store, None, &record)?;
     Ok(json!({"import":record}))
 }
+/// A usable generated draft is an explicitly labelled annotation reference,
+/// never an original answer or evidence of independent mathematical review.
+/// Failed, pending, source-stale or malformed candidates are not transmitted.
+pub(super) fn ready_teaching_reference(q: &Value) -> Option<Value> {
+    let workflow = &q["teachingWorkflow"];
+    let candidate = &workflow["finalResult"];
+    if !teaching::ready(q)
+        || teaching::validate(candidate, s(q, "questionId")).is_err()
+        || s(candidate, "teachingSolution").trim().is_empty()
+    {
+        return None;
+    }
+    Some(json!({"provenance":"llm_generated","originalPaperReference":false,
+        "independentlyVerified":false,"sourceContentSha256":workflow["sourceContentSha256"],
+        "candidateSha256":hash_json(candidate),"answer":candidate["answer"],
+        "solution":candidate["teachingSolution"],"difficultyAssessment":candidate["difficultyAssessment"],
+        "teachingFocus":candidate["teachingFocus"]}))
+}
 fn annotation_input(q: &Value) -> Value {
-    json!({"questionId":q["questionId"],"questionType":q["questionType"],"stem":q["stem"],"options":q["options"],"parts":q["parts"],"answer":q["answer"],"solution":q["solution"],"legacyReferences":q["legacyReferences"],"sourceIdentity":q["sourceIdentity"],"pages":q["pages"],"student":{"assets":q["student"]["assets"]},"sourceIssues":q["sourceIssues"],"existingMetadata":{"task":q["task"],"difficultyAssessment":q["difficultyAssessment"],"primaryKnowledgeUids":q["primaryKnowledgeUids"],"solutionPaths":q["solutionPaths"]}})
+    let mut input = json!({"questionId":q["questionId"],"questionType":q["questionType"],"stem":q["stem"],"options":q["options"],"parts":q["parts"],"answer":q["answer"],"solution":q["solution"],"legacyReferences":q["legacyReferences"],"sourceIdentity":q["sourceIdentity"],"pages":q["pages"],"student":{"assets":q["student"]["assets"]},"sourceIssues":q["sourceIssues"],"existingMetadata":{"task":q["task"],"difficultyAssessment":q["difficultyAssessment"],"primaryKnowledgeUids":q["primaryKnowledgeUids"],"solutionPaths":q["solutionPaths"]}});
+    if let Some(reference) = ready_teaching_reference(q) {
+        input["teachingReference"] = reference;
+    }
+    input
 }
 fn strict_metadata_paths(value: &Value) -> AppResult<()> {
     let paths = value["solutionPaths"]
@@ -536,7 +562,7 @@ pub(super) fn step(
         return Ok(json!({"import":record}));
     }
     cancelled(cancel)?;
-    let model_context = json!({"questions":targets.iter().map(|i|annotation_input(&questions[*i])).collect::<Vec<_>>(),"trustedCatalogue":trusted_catalog(store)?,"legacyReferencePolicy":"旧库参考非原卷答案；generated为旧模型生成、manual为旧库人工记录、unknown来源未知。只能参考并注明不确定性，不得改写原题或采纳为官方证据。"});
+    let model_context = json!({"questions":targets.iter().map(|i|annotation_input(&questions[*i])).collect::<Vec<_>>(),"trustedCatalogue":trusted_catalog(store)?,"legacyReferencePolicy":"旧库参考非原卷答案；generated为旧模型生成、manual为旧库人工记录、unknown来源未知。只能参考并注明不确定性，不得改写原题或采纳为官方证据。","teachingReferencePolicy":"teachingReference仅为与本题当前来源哈希匹配的AI生成课堂稿，非原卷答案、非独立数学核验。只可核对其实际完整推导后用作知识点与解法依赖标注参考，basis注明“AI教学参考，非原卷解析”；仍有关键缺证或不能覆盖全部小问时solutionPaths=[]。不能改写原卷或重做教学稿。"});
     let proposed = model.propose_with_audit(
         "question_import_annotation",
         &model_context,
@@ -1159,6 +1185,34 @@ mod tests {
     }
     #[test]
     #[cfg(windows)]
+    fn source_review_budget_excludes_preserved_teaching_history_but_retains_actual_source_limits() {
+        let (_dir,store,mut model)=fixture();configured(&mut model);
+        let mut record=prepare(&store,&model,&payload(bundle(10),"sim-large-teaching-history"),&AtomicBool::new(false)).unwrap()["import"].clone();
+        teaching::initialize_pending(&mut record["questions"][0]);
+        record["questions"][0]["teachingWorkflow"]["preservedAuditHistory"]=json!([{"request":"模拟教学请求".repeat(50_000),"response":"模拟历史响应".repeat(50_000)}]);
+        let workflow=record["questions"][0]["teachingWorkflow"].clone();
+        assert!(workflow.to_string().chars().count()>MAX_TEXT);
+        let mut without=record["questions"][0].clone();without.as_object_mut().unwrap().remove("teachingWorkflow");
+        assert_eq!(body_chars(&record["questions"][0]),body_chars(&without));
+        store.put_document("imports",s(&record,"importId"),&record).unwrap();
+        let saved=review_save(&store,&json!({"importId":record["importId"],"expectedRevision":record["revision"],"operationId":"sim-save-short-source-large-history","questions":record["questions"]})).unwrap()["import"].clone();
+        assert_eq!(saved["questions"][0]["teachingWorkflow"],workflow);
+        // Long real source fields still fail the whole-review limit, even
+        // though each individual field remains inside its normalizer bound.
+        for field in ["stem","answer","solution"] {
+            let mut questions=saved["questions"].clone();
+            for q in questions.as_array_mut().unwrap(){q[field]=json!("文".repeat(25_000));}
+            let error=review_save(&store,&json!({"importId":saved["importId"],"expectedRevision":saved["revision"],"operationId":format!("sim-over-budget-{field}"),"questions":questions})).unwrap_err();
+            assert_eq!(error.code,"invalid_import");assert!(error.message.contains("总长度"),"{field}: {}",error.message);
+            assert_eq!(store.document("imports",s(&saved,"importId")).unwrap(),saved);
+        }
+        let mut real=saved["questions"][0].clone();
+        for (field,value) in [("options",json!([{"label":"A","text":"文".repeat(MAX_TEXT)}])),("parts",json!([{"partId":"p","prompt":"文".repeat(MAX_TEXT),"answer":"","solution":""}]))] {
+            real[field]=value;assert!(body_chars(&real)>MAX_TEXT,"{field} still counts as source body");real[field]=json!([]);
+        }
+    }
+    #[test]
+    #[cfg(windows)]
     fn binary_payloads_do_not_count_as_prose_and_audit_tampering_blocks_publication() {
         let (dir, store, mut model) = fixture();
         configured(&mut model);
@@ -1236,6 +1290,100 @@ mod tests {
     }
     fn proposal(context: Value) -> Value {
         json!({"questions":rows(&context["questions"]).iter().map(|q|json!({"questionId":q["questionId"],"task":{"label":"模拟内容考查"},"difficultyAssessment":{"level":"easy_medium","basis":"模拟依据：常规方法上增加一次等价表示转换。","rubricVersion":"content-demand-v1"},"knowledgeSchemaVersion":2,"primaryKnowledgeUids":[],"solutionPaths":[]})).collect::<Vec<_>>()})
+    }
+    fn with_ready_teaching(q: &mut Value) {
+        teaching::initialize(q, &json!({"generatedTeaching":{"answer":"17",
+            "difficultyAssessment":{"level":"easy","basis":"题面明确要求整数相加，直接运算即可。"},
+            "teachingSolution":"由题意，$7+10=17$。",
+            "teachingFocusSchemaVersion":2,"teachingFocus":{"examFocus":"整数相加。",
+                "studentRequirements":["写出正确的和。"]},"issues":[]}}));
+        assert!(teaching::ready(q));
+    }
+    #[test]
+    fn annotation_reference_is_source_bound_and_never_promotes_pending_or_failed_drafts() {
+        let mut q = bundle(1)["questions"][0].clone();
+        q["questionId"] = json!("simulated-teaching-reference-q1");
+        with_ready_teaching(&mut q);
+        let before = q.clone();
+        let input = annotation_input(&q);
+        let reference = &input["teachingReference"];
+        assert_eq!(reference["provenance"], "llm_generated");
+        assert_eq!(reference["originalPaperReference"], false);
+        assert_eq!(reference["independentlyVerified"], false);
+        assert_eq!(reference["sourceContentSha256"], teaching::source_hash(&q));
+        assert_eq!(reference["candidateSha256"], hash_json(&q["teachingWorkflow"]["finalResult"]));
+        assert_eq!(reference["solution"], q["teachingWorkflow"]["finalResult"]["teachingSolution"]);
+        assert_eq!(input["answer"], "");
+        assert_eq!(input["solution"], "");
+        assert!(input.get("teachingWorkflow").is_none());
+        assert_eq!(q, before);
+        for status in ["generation_pending", "generation_failed", "needs_review", "review_failed"] {
+            let mut held = q.clone();
+            held["teachingWorkflow"]["status"] = json!(status);
+            assert!(annotation_input(&held).get("teachingReference").is_none(), "{status}");
+        }
+        let mut stale = q.clone();
+        stale["stem"] = json!("模拟题面已修改");
+        assert!(annotation_input(&stale).get("teachingReference").is_none());
+        let mut failed = q.clone();
+        failed["teachingWorkflow"]["reviewFailurePending"] = json!(true);
+        assert!(annotation_input(&failed).get("teachingReference").is_none());
+        let mut malformed = q.clone();
+        malformed["teachingWorkflow"]["finalResult"]["questionId"] = json!("other-q");
+        assert!(annotation_input(&malformed).get("teachingReference").is_none());
+    }
+    #[test]
+    #[cfg(windows)]
+    fn explicit_metadata_supplement_uses_ready_ai_reference_without_rewriting_source_or_review() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut seed = crate::bank::tests::seed();
+        seed["config"]["knowledgeCatalogue"] = json!({"points":[{
+            "uid":"simulated-addition-leaf","name":"模拟整数加法","isLeaf":true,
+            "parentUid":null,"sectionIds":[]}]});
+        let store = Store::open(dir.path(), &seed).unwrap();
+        std::fs::write(dir.path().join("model-settings.json"), b"{}").unwrap();
+        let mut model = ModelClient::open(dir.path()).unwrap();
+        configured(&mut model);
+        let mut record = prepare(&store, &model,
+            &payload(bundle(1), "simulated-teaching-metadata-prepare"),
+            &AtomicBool::new(false)).unwrap()["import"].clone();
+        let uid = rows(&trusted_catalog(&store).unwrap()["knowledgePoints"]).iter()
+            .find(|point| point["isLeaf"] == true).unwrap()["uid"].clone();
+        let q = &mut record["questions"][0];
+        with_ready_teaching(q);
+        q["difficultyAssessment"] = json!({"level":"medium","basis":"模拟教师已有难度说明。","rubricVersion":"content-demand-v1"});
+        q["primaryKnowledgeUids"] = json!([uid]);
+        q["reviewDecision"] = json!("approve");
+        q["reviewBasis"] = json!("模拟教师已有核对依据。 ");
+        let original = q.clone();
+        store.put_document("imports", s(&record, "importId"), &record).unwrap();
+        let response_uid = uid.clone();
+        let mock = server(&mut model, move |context| {
+            assert_eq!(context["questions"][0]["answer"], "");
+            assert_eq!(context["questions"][0]["solution"], "");
+            assert_eq!(context["questions"][0]["teachingReference"]["provenance"], "llm_generated");
+            assert!(s(&context, "teachingReferencePolicy").contains("非独立数学核验"));
+            let mut result = proposal(context);
+            result["questions"][0]["primaryKnowledgeUids"] = json!([response_uid]);
+            result["questions"][0]["solutionPaths"] = json!([{"id":"path-1",
+                "requiredKnowledgeUids":[response_uid],"requiredPremises":[],
+                "basis":"AI教学参考，非原卷解析：由原条件完成整数相加，依赖所标运算知识。"}]);
+            result
+        });
+        let updated = step(&store, &model, &json!({"importId":record["importId"],
+            "operationId":"simulated-teaching-metadata-step","expectedRevision":record["revision"],
+            "supplementOnly":true,"questionIds":[original["questionId"]]}),
+            &AtomicBool::new(false)).unwrap()["import"].clone();
+        mock.join().unwrap();
+        let q = &updated["questions"][0];
+        assert_eq!(q["annotationStatus"], "succeeded");
+        assert_eq!(q["solutionPaths"][0]["id"], "path-1");
+        for field in ["stem", "options", "parts", "answer", "solution", "sourceIdentity",
+            "student", "teacher", "assetPayloads", "legacyReferences", "sourceIssues",
+            "reviewDecision", "reviewBasis", "reviewChecks", "teachingWorkflow", "difficultyAssessment",
+            "primaryKnowledgeUids"] {
+            assert_eq!(q[field], original[field], "{field}");
+        }
     }
     #[test]
     #[cfg(windows)]

@@ -122,7 +122,6 @@ fn request_batch(
     directory: &Path,
     source: &str,
     manifest: &str,
-    proof: Option<&Value>,
     start: Instant,
     cancel: &AtomicBool,
 ) -> AppResult<Value> {
@@ -142,7 +141,6 @@ fn request_batch(
         cancel,
         120,
         "question_import_batch_trial",
-        proof,
     )?;
     save(&directory.join("candidate.json"), &raw)?;
     let mut validation = index_batch_runner::student_validation(&raw, &d)?;
@@ -214,7 +212,6 @@ pub(super) fn run(
         let manifest = s(&record["ocrSource"], "manifestSha256");
         let index = root.join("index");
         let context = index_batch_trial::index_context(&d, source, manifest)?;
-        let mut proof = None;
         let plan = if let Some(plan) = cached(&index, &context, "question_import_index_trial")? {
             fingerprints(&index, &mut unchanged)?;
             plan
@@ -235,10 +232,8 @@ pub(super) fn run(
                 cancel,
                 120,
                 "question_import_index_trial",
-                None,
             )?;
             save(&index.join("candidate.json"), &plan)?;
-            proof = Some(read(&index.join("catalog.json"))?);
             plan
         };
         let validation = index_batch_trial::validate_plan(&plan, &d)?;
@@ -277,35 +272,9 @@ pub(super) fn run(
             }
         }
         let mut first_failure = None;
-        // A cached old catalog is never called a new provider check. The first
-        // retry batch performs a real GET unless a fresh index just did so.
-        if proof.is_none() && !pending.is_empty() {
-            let i = pending.remove(0);
-            let dir = root.join("batches").join(format!("batch-{i:03}"));
-            archive(&dir, &history, &format!("batch-{i:03}"))?;
-            save(&dir.join("spec.json"), &specs[i])?;
-            dispatched.push(json!({"kind":"batch","index":i}));
-            let sub = index_batch_trial::subset_document(&d, &specs[i])?;
-            match request_batch(
-                model, sub, &specs[i], &dir, source, manifest, None, start, cancel,
-            ) {
-                Ok(raw) => {
-                    results[i] = Some(raw);
-                    states[i] = json!({"index":i,"status":"succeeded_retry"});
-                }
-                Err(e) => {
-                    states[i] = json!({"index":i,"status":"failed_retry","error":{"code":e.code,"message":e.message}});
-                    first_failure = Some(e);
-                }
-            }
-            if dir.join("catalog.json").exists() {
-                proof = Some(read(&dir.join("catalog.json"))?);
-            }
-        }
+        // Preserved index and successful batches stay unchanged. Every pending
+        // request uses its saved model directly, without a catalogue preflight.
         if !pending.is_empty() {
-            let proof = proof
-                .as_ref()
-                .ok_or_else(|| invalid("本次没有新的有效provider列表，不派发后续批次。"))?;
             let mut directories = vec![];
             for i in &pending {
                 let dir = root.join("batches").join(format!("batch-{i:03}"));
@@ -326,7 +295,6 @@ pub(super) fn run(
                         &directories[j],
                         source,
                         manifest,
-                        Some(proof),
                         start,
                         cancel,
                     )

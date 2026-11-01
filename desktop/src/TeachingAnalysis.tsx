@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createMemo, createSignal, type JSX } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onCleanup, type JSX } from "solid-js";
 import { teachingAnalysisPresentation, teachingFocusPresentation } from "./shared/teaching-analysis.mjs";
 import { teachingIssueRows, teachingPatchFieldLabel, type TeachingIssueRow, type TeachingReviewControls } from "./import-review";
 
@@ -64,6 +64,9 @@ type TeachingReviewActionsProps = {
   renderText: (text: string) => JSX.Element;
   onAcknowledge: (issue: TeachingIssueRow, kind: string, basis: string, checks: Record<string, boolean>) => Promise<void>;
   onPatch: (fieldPath: string, oldText: string, newText: string, basis: string) => Promise<void>;
+  editRequest?: number;
+  editFieldPath?: string;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 const teachingChecks = [
@@ -78,6 +81,8 @@ function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: Teachi
   const [basis, setBasis] = createSignal("");
   const [checks, setChecks] = createSignal<Record<string, boolean>>({});
   const [failure, setFailure] = createSignal("");
+  createEffect(() => props.onDirtyChange?.(Boolean(kind() || basis().trim() || Object.values(checks()).some(Boolean))));
+  onCleanup(() => props.onDirtyChange?.(false));
   const canSubmit = () => Boolean(kind() && basis().trim() && teachingChecks.every(([key]) => checks()[key] === true));
   async function acknowledge(event: SubmitEvent) {
     event.preventDefault();
@@ -104,11 +109,19 @@ function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: Teachi
             <div class="import-check-grid"><For each={teachingChecks}>{([key, label]) =>
               <label class="check-row"><input type="checkbox" checked={checks()[key] === true} onChange={event => setChecks({ ...checks(), [key]: event.currentTarget.checked })} /><span>{label}</span></label>
             }</For></div>
+            <div class="import-check-helpers">
+              <button type="button" class="text-button" onClick={() => setChecks({ sourceMatched: true, answerChecked: true, solutionChecked: true, formulaChecked: true })}>一键勾选4项</button>
+              <button type="button" class="text-button" onClick={() => {
+                if (!kind()) setKind("nonblocking_observation");
+                setChecks({ sourceMatched: true, answerChecked: true, solutionChecked: true, formulaChecked: true });
+                setBasis("已对照原题与推导步骤，本条意见属于参考说明/非阻断提示，不影响教学稿使用。");
+              }}>填入常规核查依据</button>
+            </div>
             <label class="field-label">本条核对依据
               <textarea rows={3} maxLength={5000} aria-label="教学稿告警核对依据" placeholder="说明对照了哪些原文、图片或计算，为什么这条意见不影响教学稿使用。" value={basis()} onInput={event => setBasis(event.currentTarget.value)} />
             </label>
             <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
-            <div class="import-teaching-actions"><button type="submit" class="secondary" disabled={!canSubmit()}>保存本条核对</button></div>
+            <div class="import-teaching-actions"><button type="button" class="text-button" onClick={() => { setKind(""); setBasis(""); setChecks({}); setFailure(""); }}>撤销本条填写</button><button type="submit" class="secondary" disabled={!canSubmit()}>保存本条核对</button></div>
           </fieldset>
         </form>
       </details>
@@ -126,7 +139,10 @@ export function TeachingReviewActions(props: TeachingReviewActionsProps) {
   const [basis, setBasis] = createSignal("");
   const [confirmed, setConfirmed] = createSignal(false);
   const [failure, setFailure] = createSignal("");
+  const [issueDrafts, setIssueDrafts] = createSignal<Record<string, boolean>>({});
   let identity = "";
+  let editorDetails: HTMLDetailsElement | undefined;
+  let replacementInput: HTMLTextAreaElement | undefined;
   createEffect(() => {
     const next = `${props.question?.questionId}|${props.controls?.candidateSha256 || ""}|${props.controls?.sourceContentSha256 || ""}`;
     if (next !== identity) {
@@ -134,45 +150,68 @@ export function TeachingReviewActions(props: TeachingReviewActionsProps) {
       setPath(""); setOldText(""); setReplacement(""); setBasis(""); setConfirmed(false); setFailure("");
     }
   });
+  let previousEditRequest = 0;
+  createEffect(() => {
+    const request = props.editRequest || 0;
+    if (!request || request === previousEditRequest) { previousEditRequest = request; return; }
+    previousEditRequest = request;
+    const field = props.controls?.editableFields?.find(field => field.path === props.editFieldPath)
+      || props.controls?.editableFields?.find(field => field.path === "teachingSolution") || props.controls?.editableFields?.[0];
+    if (field && (!path() || Boolean(props.editFieldPath) && field.path !== path())) selectField(field.path);
+    if (editorDetails) editorDetails.open = true;
+    requestAnimationFrame(() => replacementInput?.focus());
+  });
+  createEffect(() => props.onDirtyChange?.(Boolean(replacement() !== oldText() || basis().trim() || Object.values(issueDrafts()).some(Boolean))));
+  onCleanup(() => props.onDirtyChange?.(false));
   function selectField(fieldPath: string) {
+    if (path() && fieldPath !== path() && (replacement() !== oldText() || basis().trim())) {
+      setFailure("当前字段有未保存修改，请先保存或撤销本次编辑，再切换字段。");
+      return;
+    }
     const value = props.controls?.editableFields?.find(field => field.path === fieldPath)?.value || "";
-    setPath(fieldPath); setOldText(value); setReplacement(value); setConfirmed(false); setFailure("");
+    setPath(fieldPath); setOldText(value); setReplacement(value); setBasis(""); setConfirmed(false); setFailure("");
   }
   const changed = () => Boolean(path() && replacement().trim() && replacement() !== oldText());
   async function patch(event: SubmitEvent) {
     event.preventDefault();
     if (props.disabled || !changed() || !basis().trim() || !confirmed()) return;
     setFailure("");
-    try { await props.onPatch(path(), oldText(), replacement(), basis()); }
+    try {
+      await props.onPatch(path(), oldText(), replacement(), basis());
+      if (editorDetails) editorDetails.open = false;
+    }
     catch (error: any) { setFailure(error.message || "局部修订未保存，请重试。"); }
   }
   return <Show when={props.controls}>
     <section class="import-teaching-controls" aria-label="教学稿核对与局部修订">
       <Show when={issues().length}>
-        <details open={issues().some(issue => !issue.acknowledged)}><summary>教学稿意见与已核对提醒（{issues().length}）</summary>
-          <For each={issues()}>{issue => <TeachingIssueAction {...props} issue={issue} />}</For>
+        <details><summary>核对记录与提醒（{issues().length}）</summary>
+          <For each={issues()}>{issue => {
+            const id = `${issue.issueIndex}:${issue.issueSha256}`;
+            return <TeachingIssueAction {...props} issue={issue}
+              disabled={props.disabled || replacement() !== oldText() || Boolean(basis().trim()) || Object.entries(issueDrafts()).some(([key, dirty]) => key !== id && dirty)}
+              onDirtyChange={value => setIssueDrafts(items => ({ ...items, [id]: value }))} />;
+          }}</For>
         </details>
       </Show>
       <Show when={props.controls?.canPatch}>
-        <details><summary>局部修订教学稿</summary>
-          <p class="muted">仅保存所选教学字段的修改，原题和原卷参考保持不变。请核对修改涉及的推导与结论。</p>
+        <details ref={editorDetails} class="import-teaching-editor"><summary>修改AI解析</summary>
           <Show when={props.disabledReason}><p class="muted">{props.disabledReason}</p></Show>
           <form onSubmit={patch} data-testid="teaching-patch-form">
-            <fieldset class="import-manual-fields" disabled={props.disabled}>
-              <label class="field-label">需要修订的内容
-                <select aria-label="教学稿修订字段" value={path()} onChange={event => selectField(event.currentTarget.value)}>
+            <fieldset class="import-manual-fields" disabled={props.disabled || Object.values(issueDrafts()).some(Boolean)}>
+              <label class="field-label">修改内容
+                <select aria-label="教学稿修订字段" value={path()} onChange={event => { selectField(event.currentTarget.value); event.currentTarget.value = path(); }}>
                   <option value="">请选择一个字段</option>
                   <For each={props.controls?.editableFields || []}>{field => <option value={field.path}>{teachingPatchFieldLabel(field.path)}</option>}</For>
                 </select>
               </label>
               <Show when={path()}>
-                <label class="field-label">修改前<textarea rows={path() === "teachingSolution" ? 4 : 2} readOnly aria-label="教学稿修改前内容" value={oldText()} /></label>
-                <label class="field-label">修改后<textarea rows={path() === "teachingSolution" ? 6 : 3} aria-label="教学稿修改后内容" value={replacement()} onInput={event => { setReplacement(event.currentTarget.value); setConfirmed(false); }} /></label>
-                <Show when={changed()}><details open><summary>核对修改前后</summary><p><strong>修改前</strong></p>{props.renderText(oldText())}<p><strong>修改后</strong></p>{props.renderText(replacement())}</details></Show>
-                <label class="field-label">修订依据<textarea rows={2} maxLength={5000} aria-label="教学稿局部修订依据" value={basis()} placeholder="说明改了什么，以及核对了哪些相关推导或结论。" onInput={event => setBasis(event.currentTarget.value)} /></label>
+                <label class="field-label">内容<textarea ref={replacementInput} rows={path() === "teachingSolution" ? 9 : 3} aria-label="教学稿修改后内容" value={replacement()} onInput={event => { setReplacement(event.currentTarget.value); setConfirmed(false); }} /></label>
+                <details class="import-edit-comparison"><summary>查看原文与排版对照</summary><p><strong>修改前</strong></p>{props.renderText(oldText())}<Show when={changed()}><p><strong>修改后</strong></p>{props.renderText(replacement())}</Show></details>
+                <label class="field-label">修改依据<textarea rows={2} maxLength={5000} aria-label="教学稿局部修订依据" value={basis()} placeholder="简述修改及核对依据" onInput={event => setBasis(event.currentTarget.value)} /></label>
                 <label class="check-row"><input type="checkbox" checked={confirmed()} onChange={event => setConfirmed(event.currentTarget.checked)} />已核对修改前后内容及受影响的结论</label>
                 <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
-                <div class="import-teaching-actions"><button type="submit" class="secondary" disabled={!changed() || !basis().trim() || !confirmed()}>保存此处修订</button></div>
+                <div class="import-teaching-actions"><button type="button" class="text-button" onClick={() => { setReplacement(oldText()); setBasis(""); setConfirmed(false); setFailure(""); if (editorDetails) editorDetails.open = false; }}>取消</button><button type="submit" class="primary" disabled={!changed() || !basis().trim() || !confirmed()}>保存解析修改</button></div>
               </Show>
             </fieldset>
           </form>

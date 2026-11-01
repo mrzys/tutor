@@ -4,6 +4,7 @@ import { request } from "./bridge";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import { BankAnnotation } from "./BankAnnotation";
 import { blankModelProfile, changeModelProvider, changeProfileModel, createModelCatalogGuard, llmProviders, modelProfileError, modelProfilePayload, modelProvider, modelReasoningOptions, modelTitle, parseModelCatalog, providerPreset, reasoningLabel, type ModelCatalog } from "./model-presets";
+import { assignImportRole, emptyImportRoles, importRoleChoices, importRoleDefinitions, profileImportRoles, readImportRoles, assignImportRoleThinking, importRoleThinkingChoices, pruneImportRoleThinking, readImportRoleThinking, type ImportRole, type ImportRoles, type ImportRoleThinking } from "./model-purpose";
 import deepseekIcon from "@lobehub/icons-static-svg/icons/deepseek-color.svg";
 import bailianIcon from "@lobehub/icons-static-svg/icons/alibabacloud-color.svg";
 import xiaomiIcon from "@lobehub/icons-static-svg/icons/xiaomimimo.svg";
@@ -20,7 +21,7 @@ function ModelIcon(props: { provider: string | null }) {
 }
 
 type SettingChoice = { id: string; label: string; detail?: string; provider?: string; disabled?: boolean };
-function SettingsSelect(props: { label: string; choices: SettingChoice[]; value: string; ownerId: string; placeholder?: string; disabled?: boolean; onChange: (value: string) => void }) {
+function SettingsSelect(props: { label: string; choices: SettingChoice[]; value: string; ownerId: string; placeholder?: string; disabled?: boolean; showDetail?: boolean; onChange: (value: string) => void }) {
   const id = createUniqueId();
   const [open, setOpen] = createSignal(false);
   const [focused, setFocused] = createSignal(0);
@@ -49,7 +50,7 @@ function SettingsSelect(props: { label: string; choices: SettingChoice[]; value:
     setPosition({ above, offset: above ? container.bottom - bounds.top + 6 : bounds.bottom - container.top + 6, available: Math.min(256, above ? aboveSpace : below) });
   }
   const show = () => { if (props.disabled || !choices().length) return; const index = choices().findIndex(model => model.id === props.value && !model.disabled); setFocused(index >= 0 ? index : Math.max(0, choices().findIndex(model => !model.disabled))); reposition(); setOpen(true); };
-  const choose = (value: string) => { if (choices().find(choice => choice.id === value)?.disabled) return; props.onChange(value); setOpen(false); root.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus(); };
+  const choose = (value: string) => { if (choices().find(choice => choice.id === value)?.disabled) return; props.onChange(value); setOpen(false); root.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus({ preventScroll: true }); };
   onMount(() => {
     const outside = (event: PointerEvent) => { if (!root.contains(event.target as Node)) setOpen(false); };
     document.addEventListener("pointerdown", outside);
@@ -83,7 +84,7 @@ function SettingsSelect(props: { label: string; choices: SettingChoice[]; value:
       else if (bounds.bottom > visible.bottom) list.scrollTop += bounds.bottom - visible.bottom;
     });
   });
-  return <div class="settings-model-select" ref={root} onFocusOut={event => { if (!root.contains(event.relatedTarget as Node)) setOpen(false); }}>
+  return <div class="settings-model-select" classList={{ "has-detail": props.showDetail }} ref={root} onFocusOut={event => { if (!root.contains(event.relatedTarget as Node)) setOpen(false); }}>
     <span id={`${id}-label`} class="settings-field-title">{props.label}</span>
     <button ref={trigger} type="button" role="combobox" disabled={props.disabled} aria-labelledby={`${id}-label`} aria-describedby={`${id}-value`} aria-expanded={open()} aria-controls={`${id}-options`} aria-haspopup="listbox"
       aria-activedescendant={open() ? `${id}-option-${focused()}` : undefined}
@@ -101,7 +102,7 @@ function SettingsSelect(props: { label: string; choices: SettingChoice[]; value:
             return available[(current + (event.key === "ArrowDown" ? 1 : -1) + available.length) % available.length];
           });
         } else if ((event.key === "Enter" || event.key === " ") && open()) { event.preventDefault(); choose(choices()[focused()].id); }
-      }}><span id={`${id}-value`} class="settings-select-value" classList={{ "is-placeholder": !selected() && !props.value }}><ProviderIcon provider={selected()?.provider || null} />{selected()?.label || props.value || props.placeholder || "请选择"}</span><ChevronDown size={16} classList={{ "is-open": open() }} /></button>
+      }}><span id={`${id}-value`} class="settings-select-value" classList={{ "is-placeholder": !selected() && !props.value }}><ProviderIcon provider={selected()?.provider || null} /><span class="settings-select-copy" title={[selected()?.label || props.value || props.placeholder || "请选择", props.showDetail ? selected()?.detail : ""].filter(Boolean).join(" · ")}><span>{selected()?.label || props.value || props.placeholder || "请选择"}</span><Show when={props.showDetail && selected()?.detail}><small>{selected()?.detail}</small></Show></span></span><ChevronDown size={16} classList={{ "is-open": open() }} /></button>
     <Show when={open()}><div id={`${id}-options`} role="listbox" aria-label={props.label} class="settings-select-options"
       style={{ top: position().above ? "auto" : `${position().offset}px`, bottom: position().above ? `${position().offset}px` : "auto", "max-height": `${position().available}px` }}>
       <For each={choices()}>{(model, index) => <button type="button" role="option" tabIndex={-1} id={`${id}-option-${index()}`} aria-selected={props.value === model.id} disabled={model.disabled}
@@ -150,6 +151,14 @@ export function Settings(props: {
   const [savedProfiles, setSavedProfiles] = createSignal<ModelDraft[]>([]);
   const [savedActiveId, setSavedActiveId] = createSignal<string | null>(null);
   const [activeId, setActiveId] = createSignal<string | null>(null);
+  const [importRoles, setImportRoles] = createSignal<ImportRoles>(null);
+  const [savedImportRoles, setSavedImportRoles] = createSignal<ImportRoles>(null);
+  const [importThinking, setImportThinking] = createSignal<ImportRoleThinking>(null);
+  const [savedImportThinking, setSavedImportThinking] = createSignal<ImportRoleThinking>(null);
+  const [modelPane, setModelPane] = createSignal<"purposes" | "profiles">("purposes");
+  let assignedRoleDraft: ImportRoles = null;
+  let assignedThinkingDraft: ImportRoleThinking = null;
+  const [effectiveImportRoles, setEffectiveImportRoles] = createSignal<any>(null);
   const [editorDraft, setEditorDraft] = createSignal<ModelDraft | null>(null);
   const [editorBaseline, setEditorBaseline] = createSignal("");
   const [editorError, setEditorError] = createSignal("");
@@ -184,19 +193,20 @@ export function Settings(props: {
   const developerSource = () => developerSources[developerMode()?.source || ""] || "";
   const editing = editorDraft;
   const deleting = () => profiles().find((item) => item.id === deletingId());
-  const active = () => profiles().find((item) => item.id === activeId());
-  const savedActive = () => savedProfiles().find((item) => item.id === savedActiveId());
+  const deletionRoles = () => profileImportRoles(importRoles(), deletingId());
+  const rolesDirty = () => JSON.stringify([importRoles(), importThinking()]) !== JSON.stringify([savedImportRoles(), savedImportThinking()]);
+  const roleProfile = (role: ImportRole) => profiles().find(profile => profile.id === importRoles()?.[role]);
+  const generalProfile = () => profiles().find(profile => profile.id === activeId());
   const isNew = (id: string) => !savedProfiles().some(item => item.id === id);
   const profileDirty = (item: ModelDraft) => item.requiresApiKey === true || JSON.stringify(modelProfilePayload(item, false)) !== JSON.stringify(modelProfilePayload(savedProfiles().find(saved => saved.id === item.id) || item, false)) || isNew(item.id);
   const label = (item: ModelDraft) => item.name.trim() || "未命名配置";
-  const configurationDescription = (item: ModelDraft) => label(item) === modelTitle(item.provider, item.model) ? reasoningLabel(item) : `${label(item)} · ${reasoningLabel(item)}`;
   const providerGroups = () => [
     ...llmProviders.map(provider => ({ id: provider.id, label: provider.label, profiles: profiles().filter(item => item.provider === provider.id) })),
     { id: "legacy", label: "原有服务商", profiles: profiles().filter(item => !providerPreset(item.provider)) },
   ].filter(group => group.profiles.length);
 
   function modelState() {
-    return JSON.stringify({ activeProfileId: activeId(), profiles: profiles().map((item) => ({
+    return JSON.stringify({ activeProfileId: activeId(), importRoles: importRoles(), importRoleThinking: importThinking(), profiles: profiles().map((item) => ({
       ...modelProfilePayload(item, false),
       requiresApiKey: item.requiresApiKey === true,
     })) });
@@ -214,6 +224,35 @@ export function Settings(props: {
   }
   function navigate(next: Section) {
     if (!busy()) { setSection(next); setSavedMessage(""); }
+  }
+  function changeRoleMode(mode: string) {
+    if ((mode === "assigned") === (importRoles() !== null)) return;
+    if (mode === "assigned") {
+      const roles = assignedRoleDraft ? Object.fromEntries(importRoleDefinitions.map(role => [role.id, profiles().some(p => p.id === assignedRoleDraft?.[role.id]) ? assignedRoleDraft![role.id] : null])) as NonNullable<ImportRoles> : emptyImportRoles();
+      setImportRoles(roles);
+      setImportThinking(pruneImportRoleThinking(assignedThinkingDraft, roles, profiles()));
+    } else {
+      assignedRoleDraft = importRoles();
+      assignedThinkingDraft = importThinking();
+      setImportRoles(null);
+      setImportThinking(null);
+    }
+    setSavedMessage("");
+    setError("");
+  }
+  function changeRole(role: ImportRole, profileId: string) {
+    if (importRoles()?.[role] === (profileId || null)) return;
+    const roles = assignImportRole(importRoles(), role, profileId || null, profiles());
+    setImportRoles(roles);
+    setImportThinking(current => pruneImportRoleThinking(current, roles, profiles()));
+    setSavedMessage("");
+    setError("");
+  }
+  function changeRoleThinking(role: ImportRole, effort: string) {
+    if ((importThinking()?.[role]?.reasoningEffort || "") === effort) return;
+    setImportThinking(current => assignImportRoleThinking(current, role, effort, importRoles(), profiles()));
+    setSavedMessage("");
+    setError("");
   }
   function applySettings(result: any) {
     if (!Array.isArray(result.profiles) || !Number.isSafeInteger(result.revision)) {
@@ -239,10 +278,19 @@ export function Settings(props: {
     if (result.activeProfileId != null && !items.some((item) => item.id === result.activeProfileId)) {
       throw new Error("当前模型配置读取不完整，请重试后再保存。");
     }
+    const roles = readImportRoles(result.importRoles, items);
+    const thinking = readImportRoleThinking(result.importRoleThinking, roles, items);
     setProfiles(items);
     setSavedProfiles(items.map(item => ({ ...item })));
     setSavedActiveId(result.activeProfileId || null);
     setActiveId(result.activeProfileId || null);
+    setImportRoles(roles);
+    setSavedImportRoles(roles ? { ...roles } : null);
+    setImportThinking(thinking);
+    setSavedImportThinking(thinking ? structuredClone(thinking) : null);
+    assignedRoleDraft = roles;
+    assignedThinkingDraft = thinking;
+    setEffectiveImportRoles(result.effectiveImportRoles || null);
     setRevision(result.revision);
     setModelWarning(typeof result.warning === "string" ? result.warning : "");
     clearCatalog();
@@ -439,12 +487,16 @@ export function Settings(props: {
     if (validation) { setEditorError(validation); return; }
     const completed = { ...item, name: item.name.trim() || modelTitle(item.provider, item.model) };
     setProfiles(items => original ? items.map(profile => profile.id === item.id ? completed : profile) : [...items, completed]);
+    const retainedThinking = pruneImportRoleThinking(importThinking(), importRoles(), profiles());
+    const thinkingCleared = JSON.stringify(retainedThinking) !== JSON.stringify(importThinking());
+    setImportThinking(retainedThinking);
     closeEditor();
-    setSavedMessage("编辑已完成，点击保存后生效");
+    setSavedMessage(thinkingCleared ? "模型已更换，相关用途的思考设置已恢复为跟随配置；保存后生效" : "编辑已完成，点击保存后生效");
   }
   function remove() {
     setSavedMessage("");
     const id = deletingId();
+    if (profileImportRoles(importRoles(), id).length) { setError("此配置仍用于导入流程，请先调整模型用途，再删除并保存。"); return; }
     setProfiles((items) => items.filter((item) => item.id !== id));
     if (activeId() === id) setActiveId(null);
     setDeletingId(null);
@@ -475,9 +527,13 @@ export function Settings(props: {
     setError("");
     setSavedMessage("");
     try {
+      const roles = readImportRoles(importRoles(), profiles());
+      const thinking = readImportRoleThinking(importThinking(), roles, profiles());
       const result = await request("model_save", {
         expectedRevision: revision(),
         activeProfileId: activeId(),
+        importRoles: roles,
+        importRoleThinking: thinking,
         profiles: profiles().map(item => modelProfilePayload(item)),
       });
       applySettings(result);
@@ -491,7 +547,7 @@ export function Settings(props: {
     }
   }
   return (
-    <div class="settings-page">
+    <div class="settings-page" classList={{ "is-model-settings": section() === "models" }}>
       <aside class="settings-sidebar" aria-label="设置导航">
         <button type="button" class="settings-back" onClick={back} disabled={busy()}><ArrowLeft size={18} />返回组卷</button>
         <nav class="settings-nav" aria-label="配置项">
@@ -533,6 +589,7 @@ export function Settings(props: {
               <Show when={!editing()} fallback={
                 <Show when={editing()}>{item => <section class="model-config-editor" role="region" aria-label={profiles().some(profile => profile.id === item().id) ? "编辑模型配置" : "新增模型配置"} tabIndex={-1}>
                   <header class="model-editor-heading"><h2>{profiles().some(profile => profile.id === item().id) ? "编辑配置" : "新增配置"}</h2></header>
+                  <label class="field-label">配置名称（可选）<input aria-label="配置名称" maxLength={60} value={item().name} onInput={event => update("name", event.currentTarget.value)} placeholder="例如：课堂解析；留空使用模型名称" /></label>
                   <Show when={providerPreset(item().provider) || !item().baseUrl} fallback={
                     <div class="model-provider-field"><span class="settings-field-title">服务商</span><span>原有服务商配置</span><small class="muted">{item().baseUrl}</small><span class="settings-field-title">模型</span><span>{item().model}</span></div>
                   }>
@@ -553,42 +610,76 @@ export function Settings(props: {
                       <SettingsSelect label="模型" choices={modelChoices(item())} value={item().model} disabled={!modelCatalog() || catalogLoading()} placeholder="请先获取模型列表" ownerId={`${item().id}:${item().provider}:${modelCatalog()?.catalogToken || ""}`} onChange={value => update("model", value)} />
                       <Show when={modelCatalog()} fallback={<p class="muted model-catalog-help">填写密钥后获取此服务商的模型列表；原配置的模型可以保留。</p>}><p class="muted model-catalog-help">列表由服务商返回，请选择支持对话的模型用于组卷。</p><Show when={!modelChoices(item()).some(model => !model.disabled)}><p class="muted" role="status">没有匹配的模型，请调整搜索内容。</p></Show></Show>
                       <Show when={reasoningOptions(item()).length} fallback={<Show when={item().model}><p class="muted settings-reasoning-help" role="status">尚未确认此型号的思考设置能力，沿用原请求设置。</p></Show>}>
-                        <SettingsSelect label="思考设置" choices={reasoningChoices(item())} value={item().reasoningEffort || ""} ownerId={`${item().id}:${item().provider}:${item().model}`} onChange={updateReasoning} />
+                        <SettingsSelect label="默认思考设置" choices={reasoningChoices(item())} value={item().reasoningEffort || ""} ownerId={`${item().id}:${item().provider}:${item().model}`} onChange={updateReasoning} />
                         <Show when={reasoningOptions(item()).find(option => option.id === item().reasoningEffort)?.description}>{description => <p class="muted settings-reasoning-help">{description()}</p>}</Show>
+                        <p class="muted settings-reasoning-help">用途页可以单独设置思考；选择“跟随配置”的用途才会使用此默认值。</p>
                       </Show>
                     </div>
                   </Show>
-                  <details class="model-profile-name"><summary>配置名称{item().name ? `：${item().name}` : "（可选）"}</summary><label class="field-label">配置名称
-                    <input aria-label="配置名称" maxLength={80} value={item().name} onInput={event => update("name", event.currentTarget.value)} placeholder="默认使用模型名称" />
-                  </label></details>
                   <Show when={item().warning}><p class="warning-text" role="alert">{item().warning}</p></Show>
                   <ErrorBanner message={editorError()} />
                   <p class="muted model-editor-save-note">完成编辑后，点击保存生效。</p>
                   <footer class="model-editor-actions"><button type="button" class="secondary" onClick={closeEditor}>取消</button><button type="submit" class="primary">完成编辑</button></footer>
                 </section>}</Show>
               }>
-                <div class="model-active-summary" aria-label="已保存的当前模型">
-                  <div class="model-active-heading"><span><Show when={savedActive()}><Check size={16} /></Show>{savedActive() ? "正在使用" : "当前模型"}</span></div>
-                  <Show when={savedActive()} fallback={<strong>暂未启用模型</strong>}>{item => <>
-                    <span class="model-active-provider"><ProviderIcon provider={item().provider} />{providerPreset(item().provider)?.label || "原有服务商"}</span>
-                    <strong>{modelTitle(item().provider, item().model)}</strong>
-                    <span class="muted">{configurationDescription(item())}</span>
-                  </>}</Show>
+                <div class="model-workspace-toolbar">
+                  <div class="model-workspace-tabs" role="tablist" aria-label="模型配置内容" onKeyDown={event => {
+                    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                    event.preventDefault();
+                    const pane = event.key === "Home" ? "purposes" : event.key === "End" ? "profiles" : modelPane() === "purposes" ? "profiles" : "purposes";
+                    setModelPane(pane);
+                    document.getElementById(pane === "purposes" ? "model-purpose-tab" : "model-profiles-tab")?.focus();
+                  }}>
+                    <button type="button" role="tab" id="model-purpose-tab" tabIndex={modelPane() === "purposes" ? 0 : -1} aria-selected={modelPane() === "purposes"} aria-controls="model-purpose-panel" onClick={() => setModelPane("purposes")}>用途分配</button>
+                    <button type="button" role="tab" id="model-profiles-tab" tabIndex={modelPane() === "profiles" ? 0 : -1} aria-selected={modelPane() === "profiles"} aria-controls="model-profiles-panel" onClick={() => setModelPane("profiles")}>模型与密钥<span>{profiles().length}</span></button>
+                  </div>
+                  <button type="button" class="secondary model-config-add" onClick={add} disabled={profiles().length >= 20}><Plus size={16} />添加模型</button>
                 </div>
-                <div class="model-list-heading"><h2>我的配置</h2><button type="button" class="secondary model-config-add" onClick={add} disabled={profiles().length >= 20} title={profiles().length >= 20 ? "最多保存 20 套配置" : undefined}><Plus size={16} />新增配置</button></div>
+                <Show when={modelPane() === "purposes"}>
+                <div id="model-purpose-panel" role="tabpanel" aria-labelledby="model-purpose-tab">
+                <section class="model-purpose-settings" aria-labelledby="model-purpose-heading">
+                  <div class="model-purpose-topline"><div class="model-purpose-heading"><div><h2 id="model-purpose-heading">试卷导入</h2><p class="muted">各用途可独立选择模型和思考设置。</p></div><Show when={rolesDirty()}><span class="model-state-label">未保存</span></Show></div>
+                  <div class="model-mode-switch" role="group" aria-label="用途设置方式">
+                    <button type="button" aria-pressed={importRoles() !== null} onClick={() => changeRoleMode("assigned")}>按用途指定</button>
+                    <button type="button" aria-pressed={importRoles() === null} onClick={() => changeRoleMode("legacy")}>沿用原策略</button>
+                  </div>
+                  </div>
+                  <Show when={importRoles() !== null} fallback={<div class="model-purpose-legacy">
+                    <p class="muted">沿用原策略：DeepSeek Flash低思考拆题；DeepSeek Flash高思考生成解析；千问AI平台Qwen3.8 Flash开启思考复核。</p>
+                    <Show when={savedImportRoles() === null}><For each={importRoleDefinitions.filter(role => effectiveImportRoles()?.[role.id]?.strategy === "legacy" && effectiveImportRoles()?.[role.id]?.configured === false)}>{role => <p class="warning-text" role="status">{role.label}：{effectiveImportRoles()?.[role.id]?.error?.message || "缺少所需配置，请补充对应模型配置或按用途指定。"}</p>}</For></Show>
+                    <p class="muted model-purpose-note">需要自行选择模型或思考设置时，切换为“按用途指定”。保存后生效。</p>
+                  </div>}>
+                    <div class="model-purpose-grid"><For each={importRoleDefinitions}>{role => <section class="model-purpose-item" aria-label={role.label}>
+                      <header class="model-purpose-card-heading"><h3>{role.label}</h3><p class="muted">{role.description}</p></header>
+                      <div class="model-purpose-controls">
+                        <SettingsSelect label="模型配置" ownerId={`purpose-${role.id}`} value={importRoles()?.[role.id] || ""} choices={importRoleChoices(profiles())} showDetail onChange={value => changeRole(role.id, value)} />
+                        <SettingsSelect label="思考设置" ownerId={`thinking-${role.id}-${roleProfile(role.id)?.id}-${roleProfile(role.id)?.model}`} value={importThinking()?.[role.id]?.reasoningEffort || ""} choices={roleProfile(role.id) ? importRoleThinkingChoices(roleProfile(role.id)) : [{id:"",label:"先选择模型"}]} disabled={!roleProfile(role.id) || importRoleThinkingChoices(roleProfile(role.id)).length < 2} placeholder="先选择模型" onChange={value => changeRoleThinking(role.id, value)} />
+                      </div>
+                      <div class="model-purpose-card-note"><span>{role.recommendation}</span><Show when={roleProfile(role.id) && importRoleThinkingChoices(roleProfile(role.id)).length < 2}><span>暂未确认思考能力，保持原设置</span></Show></div>
+                    </section>}</For></div>
+                    <p class="muted model-purpose-note">思考设置仅对当前用途生效。同一个模型配置，可以在拆题时用低思考、生成解析时用高思考。</p>
+                  </Show>
+                  <details class="model-purpose-help"><summary>推荐依据与使用说明</summary><For each={importRoleDefinitions}>{role => <p><strong>{role.label}：</strong>{role.reason}</p>}</For><p>建议依据本项目已有试跑，可自行调整。PDF/DOCX拆题需支持原页图片；未确认支持时会保留原件和OCR并提示更换配置。</p><p>未配置的用途不会自动使用其他模型。未配置复核时，命中问题的题目保留待复核，不影响无命中题。</p></details>
+                </section>
+                <section class="model-general-settings" aria-labelledby="model-general-heading"><div><h2 id="model-general-heading">组卷与其他功能</h2><p class="muted">使用所选配置的默认思考设置。</p><Show when={generalProfile()}>{profile => <p class="model-general-thinking">默认思考：{reasoningLabel(profile())}<button type="button" onClick={() => openEditor(profile())}>编辑默认设置</button></p>}</Show></div><SettingsSelect label="通用模型" ownerId="general-model" value={activeId() || ""} choices={[{id:"",label:"暂不使用通用模型"},...importRoleChoices(profiles()).filter(choice => choice.id)]} showDetail onChange={value => {setActiveId(value || null);setSavedMessage("");}} /></section>
+                </div>
+                </Show>
+                <Show when={modelPane() === "profiles"}>
+                <div id="model-profiles-panel" role="tabpanel" aria-labelledby="model-profiles-tab">
+                <div class="model-list-heading"><div><h2>我的模型</h2><p class="muted">管理服务商、密钥和默认思考设置，再到用途页分配。</p></div></div>
                 <Show when={modelWarning()}><p class="warning-text" role="alert">{modelWarning()}</p></Show>
                 <div class="model-config-list" aria-label="模型配置列表">
                   <Show when={profiles().length} fallback={<p class="muted model-list-empty">还没有模型配置</p>}>
                     <For each={providerGroups()}>{group => <section class="model-provider-group" aria-labelledby={`model-provider-group-${group.id}`}>
                       <h3 id={`model-provider-group-${group.id}`}><ProviderIcon provider={group.id} />{group.label}</h3>
                       <div class="model-provider-children"><For each={group.profiles}>{item => <div class="model-config-row" data-model-profile={item.id} classList={{ "is-new": isNew(item.id) }}>
-                        <div class="model-config-info"><ModelIcon provider={item.provider} /><span class="model-config-description"><strong>{modelTitle(item.provider, item.model)}</strong><small>{configurationDescription(item)}</small></span>
+                        <div class="model-config-info"><ModelIcon provider={item.provider} /><span class="model-config-description"><strong>{label(item)}</strong><small>{modelTitle(item.provider, item.model)} · 默认{reasoningLabel(item)}</small><Show when={profileImportRoles(importRoles(), item.id).length}><small class="model-purpose-badges">{rolesDirty() ? "保存后用途：" : "用途："}{profileImportRoles(importRoles(), item.id).join("、")}</small></Show></span>
                           <Show when={isNew(item.id)}><span class="model-state-label">新增 · 未保存</span></Show>
                           <Show when={!isNew(item.id) && profileDirty(item)}><span class="model-state-label">已修改 · 未保存</span></Show>
-                          <Show when={savedActiveId() === item.id && !profileDirty(item)}><span class="model-state-label"><Check size={14} />正在使用</span></Show>
+                          <Show when={savedActiveId() === item.id && !profileDirty(item)}><span class="model-state-label"><Check size={14} />通用模型</span></Show>
                         </div>
                         <div class="model-row-actions">
-                          <button type="button" class="model-use-button" disabled={activeId() === item.id} aria-label={`使用配置 ${label(item)}`} onClick={() => { setActiveId(item.id); setSavedMessage(""); }}>{activeId() === item.id ? savedActiveId() === item.id ? "已选用" : "保存后使用" : "设为使用"}</button>
+                          <button type="button" class="model-use-button" disabled={activeId() === item.id} aria-label={`使用配置 ${label(item)} 作为通用模型`} onClick={() => { setActiveId(item.id); setSavedMessage(""); }}>{activeId() === item.id ? savedActiveId() === item.id ? "已选通用" : "保存后通用" : "设为通用"}</button>
                           <button type="button" class="model-config-edit" aria-label={`编辑配置 ${label(item)}`} onClick={() => openEditor(item)}>编辑</button>
                           <button type="button" class="model-config-delete" aria-label={`删除配置 ${label(item)}`} onClick={() => setDeletingId(item.id)}><Trash2 size={16} />删除</button>
                         </div>
@@ -596,7 +687,9 @@ export function Settings(props: {
                     </section>}</For>
                   </Show>
                 </div>
-                <div class="model-selection-note"><span class="muted">{activeId() !== savedActiveId() ? active() ? `保存后将使用：${label(active()!)}` : "保存后将停用模型" : ""}</span><Show when={activeId()}><button type="button" onClick={() => { setActiveId(null); setSavedMessage(""); }}>暂不使用模型</button></Show></div>
+                <p class="muted model-credentials-note">密钥独立加密保存在本机，不会回显。添加、编辑、删除和用途调整统一保存后生效。</p>
+                </div>
+                </Show>
               </Show>
             </Show>
           </Show>
@@ -607,12 +700,12 @@ export function Settings(props: {
         <p class="muted">修改仍保留在此处。重新读取将放弃本次模型配置修改。</p>
         <button type="button" class="secondary" disabled={busy() || loading()} onClick={() => load(true)}>重新读取（放弃本次修改）</button>
       </Show>
-              <Show when={!editing()}><footer class="settings-footer"><span role="status" class="muted">{savedMessage() || (modelDirty() ? "有未保存的修改" : "")}</span><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存"}</button></footer></Show>
+              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><span role="status" class="muted">{savedMessage() || (modelDirty() ? "有未保存的修改，保存后生效" : "设置已保存")}</span><div><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
             </form>
           </Show>
           <Show when={section() === "ocr"}>
             <form onSubmit={(event) => { event.preventDefault(); void saveOcr(); }}>
-              <p class="muted">PaddleOCR 用于识别 PDF、Word 中的文字、公式、表格和图片，再由当前模型整理为题目。开始解析后，试卷内容会发送至配置的识别服务；Word 先在本机转为 PDF。</p>
+              <p class="muted">PaddleOCR 用于识别 PDF、Word 中的文字、公式、表格和图片，再由拆题用途配置的模型整理为题目。开始解析后，试卷内容会发送至配置的识别服务；Word 先在本机转为 PDF。</p>
               <Show when={!ocrLoading()} fallback={<Busy label="读取识别设置…" />}>
                 <Show when={ocrLoaded()} fallback={<button type="button" class="secondary" onClick={() => loadOcr()}>重新读取识别设置</button>}>
                   <fieldset class="settings-fields" disabled={busy()}>
@@ -662,8 +755,8 @@ export function Settings(props: {
           </Show>
         </div>
       </main>
-      <Show when={deleting()}>{item => <Modal title="删除模型配置" onClose={() => setDeletingId(null)} footer={<><button type="button" class="secondary" onClick={() => setDeletingId(null)}>保留配置</button><button type="button" class="primary" onClick={remove}>确认删除</button></>}>
-        <p>保存后将删除“{label(item())}”{activeId() === item().id ? "并停用此配置" : ""}。</p>
+      <Show when={deleting()}>{item => <Modal title="删除模型配置" onClose={() => setDeletingId(null)} footer={<><button type="button" class="secondary" onClick={() => setDeletingId(null)}>保留配置</button><Show when={!deletionRoles().length} fallback={<button type="button" class="primary" onClick={() => { setDeletingId(null); queueMicrotask(() => document.querySelector<HTMLElement>(".model-purpose-settings")?.scrollIntoView({ block: "center" })); }}>调整模型用途</button>}><button type="button" class="primary" onClick={remove}>确认删除</button></Show></>}>
+        <Show when={deletionRoles().length} fallback={<p>保存后将删除“{label(item())}”{activeId() === item().id ? "并停用此通用配置" : ""}。</p>}><p>“{label(item())}”仍用于{deletionRoles().join("、")}。请先调整这些用途，再删除配置；所有修改点击保存后才生效。</p></Show>
       </Modal>}</Show>
       <Show when={discarding()}>
         <Modal title="有未保存的修改" onClose={() => setDiscarding(false)} footer={<><button type="button" class="secondary" onClick={() => setDiscarding(false)}>继续编辑</button><button type="button" class="primary" onClick={props.onClose}>放弃并返回</button></>}>

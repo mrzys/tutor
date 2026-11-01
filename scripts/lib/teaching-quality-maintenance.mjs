@@ -91,6 +91,7 @@ export async function runTeachingQualityMaintenance({ inputFile, outputDirectory
   const prompt = appendTeachingMethodReferences(`${extractTeachingPrompt(document, 'teaching-prompt')}\n\n${await readFile(path.join(repoRoot, 'scripts/resources/teaching-quality-signals-instruction.txt'), 'utf8')}`, references);
   const reviewPrompt = appendTeachingMethodReferences(`${extractTeachingPrompt(document, 'teaching-review')}\n\n${(await readFile(path.join(repoRoot, 'scripts/resources/teaching-quality-review-instruction.txt'), 'utf8')).trim()}`, references);
   const boundedReviewPrompt = appendTeachingMethodReferences((await readFile(path.join(repoRoot, 'scripts/resources/teaching-bounded-patch-instruction.txt'), 'utf8')).trim(), references);
+  const sentenceReviewPrompt = appendTeachingMethodReferences((await readFile(path.join(repoRoot, 'scripts/resources/teaching-sentence-review-instruction.txt'), 'utf8')).trim(), references);
   const dictionary = teachingTermDictionarySnapshot();
   const out = path.resolve(outputDirectory);
   try { await mkdir(out); } catch { throw fail('output_directory_must_be_new'); }
@@ -104,20 +105,19 @@ export async function runTeachingQualityMaintenance({ inputFile, outputDirectory
     await writeFile(path.join(out, 'prompt.txt'), prompt, { flag: 'wx' });
     await writeFile(path.join(out, 'review-prompt.txt'), reviewPrompt, { flag: 'wx' });
     await writeFile(path.join(out, 'bounded-review-prompt.txt'), boundedReviewPrompt, { flag: 'wx' });
+    await writeFile(path.join(out, 'sentence-review-prompt.txt'), sentenceReviewPrompt, { flag: 'wx' });
     await save('term-dictionary.json', dictionary);
     const modules = ['teaching-method-reference.mjs', 'teaching-quality-maintenance.mjs', 'teaching-quality-pipeline.mjs', 'teaching-term-maintenance.mjs',
-      'teaching-term-pipeline.mjs', 'teaching-term-scan.mjs', 'teaching-format-recovery.mjs', 'deepseek-maintenance-client.mjs', 'qwen-maintenance-client.mjs', 'teaching-review-routing.mjs', 'teaching-review-context.mjs', 'teaching-bounded-patch.mjs', 'teaching-quality-signals.mjs'];
+      'teaching-term-pipeline.mjs', 'teaching-term-scan.mjs', 'teaching-format-recovery.mjs', 'deepseek-maintenance-client.mjs', 'qwen-maintenance-client.mjs', 'teaching-review-routing.mjs', 'teaching-review-context.mjs', 'teaching-bounded-patch.mjs', 'teaching-sentence-patch.mjs', 'teaching-quality-signals.mjs'];
     await save('source-hashes.json', await Promise.all(modules.map(async name => ({ file: `scripts/lib/${name}`, sha256: sha(await readFile(new URL(name, import.meta.url))) }))));
     const client = await clientFactory({ settingsFile });
     const generationProfile = { provider: 'deepseek', ...client.publicProfile };
     const reviewRouting = createMaintenanceReviewRouting({ settingsFile, agentEnvFile, reviewClientFactory, save });
-    const catalogue = await client.getModels();
-    await save('models-public.json', catalogue);
-    if (!Array.isArray(catalogue?.models) || !catalogue.models.includes(client.publicProfile?.model)) throw fail('requested_model_not_in_provider_catalogue');
     await save('protocol.json', { pipelineVersion: 'teaching-quality-pipeline-v1', startedAt, profile: generationProfile, generationProfile, reviewProfile: plannedReviewProfile,
+      modelListFetched: false, modelSelectionSource: 'configured_model',
       reviewProfileSelection: 'Lazy: matching saved thinking-on Qwen profile first; otherwise explicit offline agent env. Actual profile saved separately on trigger.',
       methodReferenceIds: references.map(ref => ref.id), methodReferencesSha256: sha(JSON.stringify(references)),
-      promptSha256: sha(prompt), reviewPromptSha256: sha(reviewPrompt), boundedReviewPromptSha256: sha(boundedReviewPrompt), dictionaryVersion: dictionary.version,
+      promptSha256: sha(prompt), reviewPromptSha256: sha(reviewPrompt), boundedReviewPromptSha256: sha(boundedReviewPrompt), sentenceReviewPromptSha256: sha(sentenceReviewPrompt), dictionaryVersion: dictionary.version,
       dictionarySha256: sha(JSON.stringify(dictionary)), concurrency, maxReviewCallsPerQuestion: 1, technicalRetries: 0,
       displayValidation: 'Shared display scanner plus KaTeX rendering; never mathematical verification.',
       reviewTrigger: 'One combined review of complete raw content with schema, incomplete text, term, display or model-reported findings.',
@@ -130,7 +130,7 @@ export async function runTeachingQualityMaintenance({ inputFile, outputDirectory
         const call = async (stage, data) => {
           const prefix = stage === 'generation' ? '' : 'review-';
           const reviewMode = data?.patchContract ? 'bounded_patch' : 'full_review';
-          const messages = [{ role: 'system', content: stage === 'generation' ? prompt : reviewMode === 'bounded_patch' ? boundedReviewPrompt : reviewPrompt },
+          const messages = [{ role: 'system', content: stage === 'generation' ? prompt : [1,2].includes(data?.patchContract?.segmentPatchVersion) ? sentenceReviewPrompt : reviewMode === 'bounded_patch' ? boundedReviewPrompt : reviewPrompt },
             { role: 'user', content: JSON.stringify(stage === 'generation' ? data : compactTeachingReviewContext(data)) }];
           const record = { sampleNumber: item.sampleNumber, questionId: item.questionId, stage, ...(stage === 'review' ? { reviewMode } : {}),
             provider: stage === 'generation' ? 'deepseek' : 'qianwenai',
@@ -204,7 +204,7 @@ export async function runTeachingQualityMaintenance({ inputFile, outputDirectory
       needsReviewQuestions: results.filter(result => result.status === 'needs_review').map(result => ({ sampleNumber: result.sampleNumber, reasons: result.needsReviewReasons })),
       failedQuestions: results.filter(result => result.error).map(result => ({ sampleNumber: result.sampleNumber, status: result.status, error: result.error })),
       technicalFailures: records.filter(record => !record.ok).map(record => ({ sampleNumber: record.sampleNumber, stage: record.stage, error: record.error })),
-      chatRequests: records.filter(record => record.requestWritten).length, modelListRequests: 1 + reviewRouting.modelListRequests,
+      chatRequests: records.filter(record => record.requestWritten).length, modelListRequests: reviewRouting.modelListRequests,
       providers: maintenanceProviderSummary(records, generationProfile, reviewRouting),
       reportedUsage: usage(), generationUsage: usage('generation'), reviewUsage: usage('review'),
       usageUnknownRequests: records.filter(record => record.requestWritten && !record.providerResponse?.usage).length,

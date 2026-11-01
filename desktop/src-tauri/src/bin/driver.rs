@@ -23,6 +23,13 @@ fn main() {
         let _ = writeln!(stdout, "{response}");
         let _ = stdout.flush();
     }
+    let _import_subscription = match tutor_desktop::import_events::subscribe(
+        std::path::Path::new(&path),
+        |payload| output(&json!({"event":"import_progress","payload":payload})),
+    ) {
+        Ok(subscription) => subscription,
+        Err(error) => { eprintln!("{error}"); std::process::exit(1) }
+    };
     let (sender, receiver) = std::sync::mpsc::channel::<Value>();
     let worker_cancel = cancel.clone();
     let worker = std::thread::spawn(move || {
@@ -72,10 +79,7 @@ fn main() {
                 cancel.store(true, std::sync::atomic::Ordering::Relaxed);
                 output(&json!({"id":input["id"],"result":{}}));
             } else {
-                if matches!(
-                    input["action"].as_str(),
-                    Some("intake_prepare" | "blueprint_plan" | "draft_create" | "draft_candidates" | "draft_operation" | "manual_draft_create")
-                ) {
+                if tutor_desktop::resets_workflow_cancel(input["action"].as_str().unwrap_or_default()) {
                     cancel.store(false, std::sync::atomic::Ordering::Relaxed);
                 }
                 if sender.send(input).is_err() {

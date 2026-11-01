@@ -1,6 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compactSourceLabel, embeddedExamSource, questionSource, questionSourcePresentation, sourceCaption } from '../src/shared/source-label.mjs';
+import { compactSourceLabel, embeddedExamSource, questionSource, questionSourcePresentation, sourceCaption, importPreviewStem } from '../src/shared/source-label.mjs';
+
+test('import preview hides only the exact duplicated original decimal heading', () => {
+  const original='17.（12分）如图，已知三棱台。\n\n![原图](asset:original-figure)';
+  assert.equal(importPreviewStem(original,'17'),'（12分）如图，已知三棱台。\n\n![原图](asset:original-figure)');
+  assert.equal(importPreviewStem('18．已知函数。','（18）'),'已知函数。');
+  assert.ok(original.startsWith('17.（12分）'));
+});
+
+test('import preview preserves decimal values, subpart numbers and unmatched source labels', () => {
+  for (const [stem,label] of [['17.5是已知长度。','17'],['（1）证明命题。','1'],['(1) 求值。','(1)'],['18.已知函数。','17'],['17.已知函数。','未知'],['$17.5x$为所求值。','17']]) {
+    assert.equal(importPreviewStem(stem,label),stem);
+  }
+});
 
 const question = () => ({ questionId: 'q1', student: { stem: '判断充分必要条件', options: [] }, teacher: { answers: ['C'] },
   contentVersion: 'c1', teacherVersion: 't1', sourceRefs: [{ sourceId: 'import1', pages: [1], locator: '第2题（旧题 ID 6447；原卷题号：3）' }],

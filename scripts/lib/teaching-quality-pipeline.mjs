@@ -1,7 +1,9 @@
 import { validateTeachingResult } from './teaching-term-pipeline.mjs';
 import { scanTeachingTerms } from './teaching-term-scan.mjs';
 import { scanTeachingDisplay } from './teaching-format-recovery.mjs';
-import { createTeachingPatchContract, mergeTeachingBoundedPatch } from './teaching-bounded-patch.mjs';
+import { mergeTeachingBoundedPatch } from './teaching-bounded-patch.mjs';
+import { createTeachingSentencePatchContract, teachingReviewResponseContract, filterReviewedTermFindings } from './teaching-sentence-patch.mjs';
+import { teachingMethodScopePreferences } from './teaching-review-context.mjs';
 import { readQualitySignals, externalQualityFindings, validateQualityResolutions, qualityHash } from './teaching-quality-signals.mjs';
 
 const invalid = code => Object.assign(new Error(code), { code });
@@ -65,6 +67,7 @@ export async function runTeachingQualityPipeline({ originalMaterial, generate, r
     pipelineVersion: 'teaching-quality-pipeline-v1', questionId: original.questionId,
     initialCandidate: null, initialResult: null, initialFindings: [],
     reviewedCandidate: null, reviewedResult: null, candidateResult: null, finalResult: null,
+    retainedInitialCandidate: null, retainedInitialReason: null,
     reviewTriggered: false, reviewCalls: 0, termScan: null, displayScan: null,
     needsReviewReasons: [], error: null, textComplete: false,
   };
@@ -93,6 +96,8 @@ export async function runTeachingQualityPipeline({ originalMaterial, generate, r
     phase = 'review';
     out.reviewTriggered = true;
     out.reviewCalls = 1;
+    out.retainedInitialCandidate = structuredClone(initial.candidateResult);
+    out.retainedInitialReason = 'review_pending';
     // Clear adoption fields before the external call. A failed review never
     // silently falls back to the initial draft, even if that draft was valid.
     out.candidateResult = null;
@@ -102,15 +107,25 @@ export async function runTeachingQualityPipeline({ originalMaterial, generate, r
     const reviewContext = {
       originalMaterial: structuredClone(original), candidate: structuredClone(initial.candidateResult),
       rawCandidate: structuredClone(out.initialCandidate), reviewFindings: structuredClone(initial.findings),
+      verifiedInputFacts: { questionId: original.questionId, questionType: original.questionType ?? null },
+      scopePolicy: 'sentence_only',
+      reviewResolutionVersion: 2,
     };
-    const contract = createTeachingPatchContract(reviewContext);
+    out.reviewResolutionVersion = reviewContext.reviewResolutionVersion;
+    Object.assign(reviewContext,teachingMethodScopePreferences(reviewContext));
+    const contract = createTeachingSentencePatchContract(reviewContext);
     if (contract) reviewContext.patchContract = contract;
+    if (contract) reviewContext.reviewResponseContract = teachingReviewResponseContract(contract);
     out.reviewMode = contract ? 'bounded_patch' : 'full_review';
+    out.reviewScope = contract ? (contract.segmentPatchVersion===2?'explicit_segments_or_method_parts_v2':'sentence_segments_v1') : 'structural_recovery';
+    out.reviewPatchContract = structuredClone(contract);
     out.reviewedCandidate = structuredClone(await review(structuredClone(reviewContext)));
     phase = 'review_validation';
     let revised = out.reviewedCandidate;
+    let validatedReviewResponse = null;
     if (contract) {
       if (typeof revised === 'string') { try { revised = JSON.parse(revised); } catch { throw invalid('invalid_candidate_json'); } }
+      validatedReviewResponse = revised;
       revised = mergeTeachingBoundedPatch(reviewContext, revised);
     } else if (initial.findings.some(f => f.type === 'quality')) {
       if (typeof revised === 'string') { try { revised = JSON.parse(revised); } catch { throw invalid('invalid_candidate_json'); } }
@@ -119,15 +134,20 @@ export async function runTeachingQualityPipeline({ originalMaterial, generate, r
       revised = revised.candidate;
     }
     const checked = await assessTeachingCandidate(revised, original.questionId, validateDisplay);
+    if (contract?.resolutionVersion === 2) {
+      checked.findings = filterReviewedTermFindings(checked.findings, reviewContext, validatedReviewResponse, revised);
+      if (checked.termScan) checked.termScan.findings = filterReviewedTermFindings(checked.termScan.findings, reviewContext, validatedReviewResponse, revised);
+    }
     Object.assign(out, { reviewedResult: structuredClone(checked.candidateResult), candidateResult: structuredClone(checked.candidateResult),
       termScan: checked.termScan, displayScan: checked.displayScan, textComplete: checked.textComplete,
       needsReviewReasons: structuredClone(checked.findings) });
-    if (checked.error) return { ...out, status: 'review_failed', error: { phase, code: checked.error.code } };
-    if (checked.findings.length) return { ...out, status: 'needs_review' };
-    return { ...out, status: 'ready_candidate', finalResult: structuredClone(checked.candidateResult) };
+    if (checked.error) return { ...out, retainedInitialReason: checked.error.code, status: 'review_failed', error: { phase, code: checked.error.code } };
+    if (checked.findings.length) return { ...out, retainedInitialReason: 'review_findings_remain', status: 'needs_review' };
+    return { ...out, retainedInitialReason: 'review_candidate_available', status: 'ready_candidate', finalResult: structuredClone(checked.candidateResult) };
   } catch (error) {
     const code = safeCode(error);
     return { ...out, candidateResult: null, finalResult: null, status: phase === 'generation' ? 'generation_failed' : 'review_failed',
+      retainedInitialReason: phase === 'generation' ? null : code,
       error: { phase, code }, needsReviewReasons: [...out.needsReviewReasons, { type: 'technical', code }] };
   }
 }

@@ -358,6 +358,12 @@ impl Store {
     }
 
     pub fn document(&self, kind: &str, id: &str) -> AppResult<Value> {
+        Ok(serde_json::from_str(&self.document_json(kind, id)?)?)
+    }
+
+    /// Read the exact persisted snapshot without expanding its JSON. Conditional
+    /// reads share document identity and history-deletion checks with full reads.
+    pub(crate) fn document_json(&self, kind: &str, id: &str) -> AppResult<String> {
         identity(kind, id)?;
         let payload: Option<String> = self
             .user
@@ -367,9 +373,9 @@ impl Store {
                 |row| row.get(0),
             )
             .optional()?;
-        Ok(serde_json::from_str(&payload.ok_or_else(|| {
+        payload.ok_or_else(|| {
             AppError::new("not_found", "没有找到该记录。")
-        })?)?)
+        })
     }
 
     pub fn put_document(&self, kind: &str, id: &str, value: &Value) -> AppResult<()> {

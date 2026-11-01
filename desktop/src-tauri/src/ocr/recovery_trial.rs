@@ -68,7 +68,7 @@ pub(crate) fn recover_existing(
         scope.spawn(|| runtime.block_on(async {
             let mut run = Run { endpoint:endpoint.clone(),key:settings.api_key(),audit:new_audit,
                 cancel,start:Instant::now(),sequence:0,total:0,
-                docx:filename.to_ascii_lowercase().ends_with(".docx") };
+                docx:filename.to_ascii_lowercase().ends_with(".docx"),cached_images:HashMap::new() };
             let result = async {
                 let client = safe_client(&endpoint,&endpoint)?;
                 let mut poll = endpoint.clone();

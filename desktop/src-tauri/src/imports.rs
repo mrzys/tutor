@@ -24,6 +24,7 @@ mod duplicates;
 mod listing;
 mod review;
 mod source_compare;
+mod source_display;
 mod source_batches;
 mod source_recovery;
 #[cfg(debug_assertions)]
@@ -43,6 +44,8 @@ mod source_display_adapter;
 #[cfg(debug_assertions)]
 mod index_batch_retry;
 pub(crate) mod teaching;
+mod teaching_actions;
+mod views;
 pub fn recover_background_jobs(store: &Store) -> AppResult<()> {
     background::recover(store)
 }
@@ -52,6 +55,7 @@ pub mod agent_review;
 pub mod teaching_adoption;
 mod docx_pdf;
 mod pdf_inspection;
+mod ocr_resume;
 mod paddle;
 #[cfg(test)]
 mod paddle_tests;
@@ -151,6 +155,7 @@ fn save_cas(store: &Store, expected: Option<&Value>, next: &Value) -> AppResult<
     }
     store.put_document("imports", s(next, "importId"), next)?;
     transaction.commit()?;
+    crate::import_events::committed(&store.data_dir, next);
     Ok(())
 }
 fn filename(value: &str) -> AppResult<(String, String)> {
@@ -900,9 +905,49 @@ fn prepare_attempt_path(store: &Store, record: &Value, op: &str) -> AppResult<st
     )))
 }
 fn audit_relative_path(store: &Store, path: &Path) -> AppResult<String> {
-    Ok(path
-        .strip_prefix(store.data_dir.canonicalize()?)
+    audit_relative_path_in(&store.data_dir, path)
+}
+fn audit_relative_path_in(data_dir: &Path, path: &Path) -> AppResult<String> {
+    // Office returns ordinary Win32 paths; canonicalize both sides before
+    // comparing their components, and resolve links before checking ownership.
+    let target = path.canonicalize()
+        .map_err(|_| err("invalid_source", "模型尝试审计路径无效。"))?;
+    Ok(target
+        .strip_prefix(data_dir.canonicalize()?)
         .map_err(|_| err("invalid_source", "模型尝试审计路径无效。"))?
+        .to_string_lossy()
+        .replace('\\', "/"))
+}
+/// A few attempt receipts precede creation of their final file or directory.
+/// Only that one normal entry may be missing; its real parent must exist and
+/// remain inside this runtime. Existing targets always use the strict check.
+fn planned_audit_relative_path(store: &Store, path: &Path) -> AppResult<String> {
+    planned_audit_relative_path_in(&store.data_dir, path)
+}
+fn planned_audit_relative_path_in(data_dir: &Path, path: &Path) -> AppResult<String> {
+    let invalid = || err("invalid_source", "模型尝试审计路径无效。");
+    if path.components().any(|part| matches!(part, std::path::Component::ParentDir)) {
+        return Err(invalid());
+    }
+    let name = path.file_name().and_then(|v| v.to_str()).ok_or_else(invalid)?;
+    let mut components = Path::new(name).components();
+    if !matches!(components.next(), Some(std::path::Component::Normal(_)))
+        || components.next().is_some() || name.chars().count() > 255
+        || name.chars().any(|c| c.is_control() || "<>:\"/\\|?*".contains(c))
+        || name.ends_with('.') || name.ends_with(' ')
+    {
+        return Err(invalid());
+    }
+    match std::fs::symlink_metadata(path) {
+        Ok(_) => return audit_relative_path_in(data_dir, path),
+        Err(cause) if cause.kind() == std::io::ErrorKind::NotFound => {},
+        Err(_) => return Err(invalid()),
+    }
+    let parent = path.parent().ok_or_else(invalid)?.canonicalize().map_err(|_| invalid())?;
+    if !parent.is_dir() { return Err(invalid()); }
+    Ok(parent.join(name)
+        .strip_prefix(data_dir.canonicalize()?)
+        .map_err(|_| invalid())?
         .to_string_lossy()
         .replace('\\', "/"))
 }
@@ -1033,17 +1078,26 @@ enum StagedImport {
     Existing(Value),
     Ready(Value, Vec<u8>),
 }
+fn import_role_configured(model: &ModelClient, field: &str) -> bool {
+    model.public_settings()[field].as_bool().unwrap_or_else(|| model.configured())
+}
+
 fn stage_import(
     store: &mut Store,
     model: &ModelClient,
     payload: &Value,
     cancel: &AtomicBool,
 ) -> AppResult<StagedImport> {
-    // This check intentionally precedes even operation validation or DB reads.
-    if !model.configured() {
-        return Err(err("not_configured", "请先在设置中配置模型，再导入试卷。"));
+    // Role readiness is local: importing must not require an unrelated active
+    // assembly model, and a teaching-only resume need not select a source model.
+    if !import_role_configured(model, "importTeachingConfigured") {
+        return Err(err("not_configured", "请先在设置中配置解析生成模型，再导入试卷。"));
     }
     model.import_generator()?;
+    let retry = !s(payload, "importId").is_empty();
+    if !retry {
+        model.import_source_model()?;
+    }
     let ocr = crate::ocr_settings::OcrSettings::open(&store.data_dir)?;
     if !s(payload, "filename").is_empty()
         && paddle::document_extension(
@@ -1064,7 +1118,6 @@ fn stage_import(
     cancelled(cancel)?;
     let op = operation(payload)?;
     let hash = hash_json(payload);
-    let retry = !s(payload, "importId").is_empty();
     let (record, bytes) = if retry {
         let record = store.document("imports", s(payload, "importId"))?;
         if replay(&record, op, &hash)? {
@@ -1075,12 +1128,6 @@ fn stage_import(
             return Err(err(
                 "import_running",
                 "此试卷正在后台解析，请等待完成或先停止当前任务。",
-            ));
-        }
-        if paddle::document_extension(s(&record["source"], "extension")) && !ocr.configured() {
-            return Err(err(
-                "ocr_not_configured",
-                "请先在设置的“试卷识别”中配置 PaddleOCR，再重新识别。",
             ));
         }
         let resume_teaching = !rows(&record["questions"]).is_empty()
@@ -1094,6 +1141,14 @@ fn stage_import(
                 "review_exists",
                 "已有审核题目，请继续审核；重新解析需另建导入，避免覆盖修改。",
             ));
+        }
+        if !resume_teaching {
+            model.import_source_model()?;
+        }
+        if !resume_teaching && !record["ocrSource"].is_object()
+            && paddle::document_extension(s(&record["source"], "extension")) && !ocr.configured()
+        {
+            return Err(err("ocr_not_configured", "请先在设置的“试卷识别”中配置 PaddleOCR，再重新识别。"));
         }
         let bytes = read_source(store, &record)?;
         (record, bytes)
@@ -1184,8 +1239,7 @@ fn process_import_scoped(
     store: &mut Store, model: &ModelClient, op: &str, hash: &str,
     cancel: &AtomicBool, mut record: Value, bytes: Vec<u8>, scope: ImportScope,
 ) -> AppResult<Value> {
-    let generator = model.import_generator()?;
-    let model = &generator;
+    let workflow_model = model;
     let ocr = crate::ocr_settings::OcrSettings::open(&store.data_dir)?;
     let mut saved = record.clone();
     record["status"] = json!("processing");
@@ -1196,10 +1250,12 @@ fn process_import_scoped(
         if !rows(&record["questions"]).is_empty() {
             if scope.source_only() { return Err(err("source_trial_completed", "拆题试验不覆盖已有题目。")); }
             let assets = if record["ocrSource"].is_object() { paddle::load_document(store,&record)?.assets } else {vec![]};
-            teaching::process(store,model,&mut record,&mut saved,&assets,cancel)?;
+            teaching::process(store,workflow_model,&mut record,&mut saved,&assets,cancel)?;
             record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
             return Ok(());
         }
+        let source_model = workflow_model.import_source_model()?;
+        let model = &source_model;
         let attempt_path = prepare_attempt_path(store, &record, op)?;
         let provider_path = attempt_path.with_extension("provider-response.json");
         if attempt_path.exists() || provider_path.exists() {
@@ -1213,21 +1269,27 @@ fn process_import_scoped(
             if record["ocrSource"].is_object() {
                 ocr_document = Some(paddle::load_document(store, &record)?);
             } else {
+                let prior_ocr = ocr_resume::accepted_attempt(store, &record, &ocr)?;
                 let ocr_directory = attempt_path.with_extension("ocr");
-                std::fs::create_dir(&ocr_directory)?;
+                if prior_ocr.is_none() { std::fs::create_dir(&ocr_directory)?; }
                 record["recognitionStage"] = json!("recognizing");
-                record["ocrAttempt"] = json!({"relativePath":audit_relative_path(store,&ocr_directory)?,"provider":ocr.descriptor(),"startedAt":now()});
+                let prior_attempt = record["ocrAttempt"].clone();
                 save_cas(store, Some(&saved), &record)?;
                 saved = record.clone();
                 let extension = s(&record["source"], "extension").to_owned();
                 let pdf_bytes = if extension == "docx" {
-                    let source_path = store.data_dir.join(s(&record["source"], "relativePath"));
-                    let converted = docx_pdf::convert(&source_path, &ocr_directory, cancel)?;
-                    let pdf_bytes = std::fs::read(&converted)?;
-                    record["renderedPdf"] = json!({"relativePath":audit_relative_path(store,&converted)?,"sha256":sha(&pdf_bytes),"sourceSha256":record["source"]["sha256"]});
-                    save_cas(store, Some(&saved), &record)?;
-                    saved = record.clone();
-                    pdf_bytes
+                    if record["renderedPdf"].is_object() {
+                        paddle::read_rendered_pdf(store, &record)?
+                    } else {
+                        if prior_ocr.is_some() { return Err(err("source_changed", "旧识别任务缺少已校验的转换PDF，未重复转换或上传。")); }
+                        let source_path = store.data_dir.join(s(&record["source"], "relativePath"));
+                        let converted = docx_pdf::convert(&source_path, &ocr_directory, cancel)?;
+                        let pdf_bytes = std::fs::read(&converted)?;
+                        record["renderedPdf"] = json!({"relativePath":audit_relative_path(store,&converted)?,"sha256":sha(&pdf_bytes),"sourceSha256":record["source"]["sha256"]});
+                        save_cas(store, Some(&saved), &record)?;
+                        saved = record.clone();
+                        pdf_bytes
+                    }
                 } else {
                     bytes.clone()
                 };
@@ -1255,14 +1317,36 @@ fn process_import_scoped(
                 } else {
                     s(&record, "filename").to_owned()
                 };
-                let document = crate::ocr::recognize(
-                    &ocr,
-                    &pdf_bytes,
-                    &upload_name,
-                    "application/pdf",
-                    &ocr_directory,
-                    cancel,
-                )?;
+                // Complete every PDF/source preflight before replacing the
+                // prior accepted job pointer with a new recovery directory.
+                record["ocrAttempt"] = json!({"relativePath":planned_audit_relative_path(store,&ocr_directory)?,"provider":ocr.descriptor(),"sourceSha256":record["source"]["sha256"],"startedAt":now()});
+                if prior_ocr.is_some() {
+                    record["ocrAttempt"]["resumeFrom"] = prior_attempt.clone();
+                    record["ocrAttempt"]["newOcrSubmission"] = json!(false);
+                }
+                save_cas(store, Some(&saved), &record)?;
+                saved = record.clone();
+                let document_result = if let Some(old_audit) = prior_ocr.as_ref() {
+                    crate::ocr::resume_existing(&ocr, &pdf_bytes, &upload_name, old_audit, &ocr_directory, None, cancel)
+                } else {
+                    crate::ocr::recognize(&ocr, &pdf_bytes, &upload_name, "application/pdf", &ocr_directory, cancel)
+                };
+                let document = match document_result {
+                    Ok(document) => document,
+                    Err(error) => {
+                        // Validation can reject a resume before its new task
+                        // receipt exists. Keep the prior resumable identity;
+                        // retain the failed target separately as audit only.
+                        if prior_ocr.is_some() && !ocr_directory.join("accepted-job.json").is_file() {
+                            let mut failures=rows(&record["ocrResumeFailures"]);
+                            failures.push(json!({"attempt":record["ocrAttempt"],"errorCode":error.code,"failedAt":now()}));
+                            if failures.len()>30 { failures.drain(..failures.len()-30); }
+                            record["ocrResumeFailures"]=json!(failures);
+                            record["ocrAttempt"]=prior_attempt;
+                        }
+                        return Err(error);
+                    }
+                };
                 if document.pages.len() != physical_pages {
                     return Err(err(
                         "ocr_page_mismatch",
@@ -1319,8 +1403,8 @@ fn process_import_scoped(
             record["recognitionStage"]=json!("ocr_ready");
             return Ok(());
         }
-        // The formal OCR source stage owns its catalog GET and shared 120s
-        // budget. Cached source replay must not make a redundant preflight call.
+        // The formal OCR source stage owns its shared 120s budget. Both new
+        // work and cached source replay use saved models without catalogue GETs.
         if matches!(scope,ImportScope::Full) {
             if let Some(document)=ocr_document.as_ref() {
                 let replayed=if record["sourceStructuring"].is_null() {
@@ -1331,15 +1415,14 @@ fn process_import_scoped(
                 };
                 cancelled(cancel)?;duplicates::annotate(&store.bank,&mut pending)?;
                 record["questions"]=json!(pending);save_cas(store,Some(&saved),&record)?;saved=record.clone();
-                teaching::process(store,model,&mut record,&mut saved,&document.assets,cancel)?;
+                teaching::process(store,workflow_model,&mut record,&mut saved,&document.assets,cancel)?;
                 record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
                 return Ok(());
             }
         }
-        // Configuration is already checked before import. A temporary model
-        // catalogue outage must not discard or prevent preserving valid OCR.
-        // Still verify the actual provider catalogue before any new LLM work.
-        record["teachingGenerationModel"] = model.verify_import_role_catalog()?;
+        // Configuration is already checked before import. Record the local
+        // selection; the completion API determines model availability.
+        record["sourceParsingModel"] = model.import_execution_identity()?;
         save_cas(store,Some(&saved),&record)?;saved=record.clone();
         #[cfg(debug_assertions)]
         if let ImportScope::SourceTrial { layout: true, .. } = scope {
@@ -1385,7 +1468,7 @@ fn process_import_scoped(
             record["questions"] = json!(pending);
             save_cas(store, Some(&saved), &record)?;
             saved = record.clone();
-            if !scope.source_only() { teaching::process(store, model, &mut record, &mut saved, &document.assets, cancel)?; }
+            if !scope.source_only() { teaching::process(store, workflow_model, &mut record, &mut saved, &document.assets, cancel)?; }
             record["status"] = json!("pending_review");
             record["recognitionStage"] = json!("complete");
             return Ok(());
@@ -1396,7 +1479,7 @@ fn process_import_scoped(
                 duplicates::annotate(&store.bank,&mut pending)?;
                 record["questions"]=json!(pending);
                 save_cas(store,Some(&saved),&record)?;saved=record.clone();
-                if !scope.source_only() { teaching::process(store,model,&mut record,&mut saved,&document.assets,cancel)?; }
+                if !scope.source_only() { teaching::process(store,workflow_model,&mut record,&mut saved,&document.assets,cancel)?; }
                 record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
                 return Ok(());
             }
@@ -1528,7 +1611,7 @@ fn process_import_scoped(
         // conditional reviewer call. Cancellation never discards source work.
         save_cas(store,Some(&saved),&record)?;saved=record.clone();
         let source_assets=ocr_document.as_ref().map(|d|d.assets.as_slice()).unwrap_or(&[]);
-        if !scope.source_only() { teaching::process(store,model,&mut record,&mut saved,source_assets,cancel)?; }
+        if !scope.source_only() { teaching::process(store,workflow_model,&mut record,&mut saved,source_assets,cancel)?; }
         record["status"] = json!("pending_review");
         record["recognitionStage"] = json!("complete");
         Ok(())
@@ -1584,6 +1667,7 @@ fn check_approved(q: &Value, record: &Value) -> AppResult<()> {
     if s(q, "reviewDecision") != "approve" {
         return Ok(());
     }
+    teaching::verify_source_material(q)?;
     if paddle::uses(q)
         && (q["sourceIdentity"]["sourceSha256"] != record["source"]["sha256"]
             || q["sourceIdentity"]["manifestSha256"] != record["ocrSource"]["manifestSha256"])
@@ -1618,6 +1702,9 @@ fn check_approved(q: &Value, record: &Value) -> AppResult<()> {
     Ok(())
 }
 fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
+    review_save_with_scope(store, payload, false)
+}
+fn review_save_with_scope(store: &Store, payload: &Value, single: bool) -> AppResult<Value> {
     let op = operation(payload)?;
     let hash = hash_json(payload);
     let mut record = store.document("imports", s(payload, "importId"))?;
@@ -1632,17 +1719,25 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
         return Ok(json!({"reviewEligibility":review::eligibility(&record),"import":record}));
     }
     revision(&record, payload)?;
-    if record["pendingPublication"].is_object() {
+    if record["pendingPublication"].is_object() || record["pendingTeachingPublication"].is_object() {
         return Err(err(
             "publication_pending",
             "请先重试完成上一次发布，再修改审核。",
         ));
     }
     let saved = record.clone();
-    let questions = payload["questions"]
-        .as_array()
-        .ok_or_else(|| err("invalid_import", "缺少完整审核题目。"))?;
     let previous = rows(&record["questions"]);
+    let questions = if single {
+        let id = s(payload, "questionId");
+        if id.is_empty() || payload["question"]["questionId"] != id
+            || !previous.iter().any(|q| q["questionId"] == id) {
+            return Err(err("invalid_import", "题目不属于本次导入或身份不一致。"));
+        }
+        previous.iter().map(|q| if q["questionId"] == id { payload["question"].clone() } else { q.clone() }).collect::<Vec<_>>()
+    } else {
+        payload["questions"].as_array().cloned()
+            .ok_or_else(|| err("invalid_import", "缺少完整审核题目。"))?
+    };
     if questions.len() != previous.len() || questions.is_empty() || questions.len() > MAX_QUESTIONS
     {
         return Err(err(
@@ -1654,7 +1749,7 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
     let page_count = record["source"]["physicalPages"].as_u64().unwrap_or(1) as usize;
     let mut normalized = vec![];
     let mut seen = HashSet::new();
-    for q in questions {
+    for q in &questions {
         let id = s(q, "questionId");
         let old = previous
             .iter()
@@ -1662,6 +1757,13 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
             .ok_or_else(|| err("invalid_import", "审核题目身份不匹配。"))?;
         if !seen.insert(id) {
             return Err(err("invalid_import", "审核题目身份重复。"));
+        }
+        if single && id != s(payload, "questionId") {
+            normalized.push(old.clone());
+            continue;
+        }
+        if q["_detailLoaded"] == false {
+            return Err(err("invalid_import", "请先读取完整题目，再保存审核修改。"));
         }
         if published.iter().any(|p| p == id) {
             if old != q {
@@ -1682,6 +1784,18 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
         } else {
             normalize_question(q, id, page_count)?
         };
+        // Asset placement evidence is generated by the source pipeline, not an
+        // editable question field. The shared normalizer intentionally does not
+        // trust model-supplied audits, so restore only the persisted evidence.
+        // Older clients may omit it, but cannot add or rewrite it on save.
+        if q.get("sourceAssetBindingAudit")
+            .is_some_and(|audit| old.get("sourceAssetBindingAudit") != Some(audit))
+        {
+            return Err(err("immutable_source", "题图绑定审计不能通过原题审核新增或改写。"));
+        }
+        if let Some(audit) = old.get("sourceAssetBindingAudit") {
+            next["sourceAssetBindingAudit"] = audit.clone();
+        }
         if new_knowledge_annotation(&next) {
             knowledge_annotation(&next, &store.bank.config()?, &trusted_catalog(store)?)?;
             if next["primaryKnowledgeUids"] != old["primaryKnowledgeUids"]
@@ -1723,6 +1837,13 @@ fn review_save(store: &Store, payload: &Value) -> AppResult<Value> {
         return Err(err("invalid_import", "审核内容总长度超过限制。"));
     }
     duplicates::annotate(&store.bank, &mut normalized)?;
+    if single {
+        for q in &mut normalized {
+            if q["questionId"] != payload["questionId"] {
+                *q = previous.iter().find(|old| old["questionId"] == q["questionId"]).unwrap().clone();
+            }
+        }
+    }
     record["questions"] = json!(normalized);
     record["status"] = json!(if published.is_empty() {
         "pending_review"
@@ -2074,6 +2195,7 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
         );
     }
     revision(&record, payload)?;
+    if record["pendingTeachingPublication"].is_object() { return Err(err("publication_pending","请先完成待确认的解析更新。")); }
     if payload["acknowledgeReview"] != true {
         return Err(err("review_required", "请显式确认发布已审核题目。"));
     }
@@ -2100,10 +2222,17 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
         let manifest = build_manifest(store, &record)?;
         let saved = record.clone();
         record["pendingPublication"] =
-            json!({"operationId":op,"payloadHash":hash,"manifest":manifest});
+            json!({"operationId":op,"payloadHash":hash,"manifest":manifest,"payload":payload});
         save_cas(store, Some(&saved), &record)?;
         manifest
     };
+    // Source-only frozen manifests retain the same material gate as new
+    // publications; a previous bank-write failure is not an exemption.
+    for entry in rows(&manifest["questions"]) {
+        let question = rows(&record["questions"]).into_iter().find(|q|q["questionId"] == entry["questionId"])
+            .ok_or_else(||err("source_content_unresolved", "冻结发布清单的原题身份已失效。"))?;
+        teaching::verify_source_material(&question)?;
+    }
     // Revalidate the actual classroom request/response even when reusing a
     // frozen manifest after a failed bank write. Freezing is not permission to
     // publish a draft whose supporting files disappeared or were modified.
@@ -2170,6 +2299,7 @@ pub fn retry_failed_teaching(store: &Store, model: &ModelClient, payload: &Value
 pub fn review_saved_teaching_candidates(model: &ModelClient, manifest: &Value, output: &Path, cancel: &AtomicBool) -> AppResult<Value> {
     teaching::explicit_review_candidates(model, manifest, output, cancel)
 }
+pub(crate) fn teaching_review_model_context(context:&Value)->Value {teaching::model_context(context)}
 #[cfg(debug_assertions)]
 pub fn acknowledge_teaching_by_agent(store:&Store,payload:&Value,cancel:&AtomicBool)->AppResult<Value>{
     teaching::controls::agent_action(store,payload,false,cancel)
@@ -2186,18 +2316,22 @@ pub fn dispatch(
     payload: &Value,
     cancel: &AtomicBool,
 ) -> AppResult<Option<Value>> {
+    views::validate_scope(store, payload)?;
     if let Some(result) = background::dispatch(store, model, action, payload)? {
-        return Ok(Some(with_teaching_controls(result)));
+        return Ok(Some(views::finish(store,result,payload)?));
     }
     if let Some(result) = structured::dispatch(store, model, action, payload, cancel)? {
-        return Ok(Some(with_teaching_controls(result)));
+        return Ok(Some(views::finish(store,result,payload)?));
     }
     let result = match action {
         "imports_list" => listing::list(store, payload)?,
         "import_source_page" => source_compare::read(store, payload)?,
+        "import_summary_get" => return Ok(Some(views::read(store, payload, false)?)),
+        "import_question_get" => return Ok(Some(views::read(store, payload, true)?)),
         "import_get" => {
-            let record = store.document("imports", s(payload, "importId"))?;
-            json!({"diagnostic":diagnostics::for_record(store,&record),"reviewRequirements":review_requirement_map(&record),"reviewEligibility":review::eligibility(&record),"teachingControls":teaching::controls::projection(&record),"import":record})
+            let persisted = store.document_json("imports", s(payload, "importId"))?;
+            let record: Value = serde_json::from_str(&persisted)?;
+            json!({"detailVersion":sha(persisted.as_bytes()),"diagnostic":diagnostics::for_record(store,&record),"reviewRequirements":review_requirement_map(&record),"reviewEligibility":review::eligibility(&record),"import":record})
         }
         "import_teaching_quality_review" => teaching::record_quality_review(store,payload,cancel)?,
         "import_teaching_controls" => {
@@ -2206,7 +2340,14 @@ pub fn dispatch(
         }
         "import_teaching_acknowledge" => teaching::controls::action(store,payload,false,cancel)?,
         "import_teaching_patch" => teaching::controls::action(store,payload,true,cancel)?,
+        "import_teaching_publish" => teaching_actions::publish(store,payload,cancel)?,
         "import_prepare" => prepare(store, model, payload, cancel)?,
+        #[cfg(all(debug_assertions, feature = "dev-tools"))]
+        "import_source_asset_binding_review" => source_batches::save_asset_binding_review(store,payload)?,
+        #[cfg(all(debug_assertions, feature = "dev-tools"))]
+        "import_source_asset_binding_preflight" => source_batches::asset_binding_preflight(store,payload)?,
+        #[cfg(all(debug_assertions, feature = "dev-tools"))]
+        "import_source_material_review" => source_batches::save_material_review(store,payload)?,
         #[cfg(debug_assertions)]
         "import_source_trial_seed" => source_trial::seed(store,payload)?,
         #[cfg(debug_assertions)]
@@ -2227,13 +2368,24 @@ pub fn dispatch(
             cancelled(cancel)?;
             review_save(store, payload)?
         }
+        "import_question_review_save" => {
+            cancelled(cancel)?;
+            review_save_with_scope(store, payload, true)?
+        }
         "import_publish" => publish(store, payload, cancel)?,
         _ => return Ok(None),
     };
-    Ok(Some(with_teaching_controls(result)))
+    Ok(Some(views::finish(store,result,payload)?))
 }
-fn with_teaching_controls(mut result:Value)->Value{
-    if result["import"].is_object(){result["teachingControls"]=teaching::controls::projection(&result["import"]);}
+fn with_teaching_controls(store:&Store,mut result:Value)->Value{
+    if result["import"].is_object(){
+        if !result["detailVersion"].is_string() {
+            result["detailVersion"]=json!(sha(result["import"].to_string().as_bytes()));
+        }
+        result["teachingControls"]=teaching::controls::projection(&result["import"]);
+        result["teachingActions"]=teaching_actions::projection(store,&result["import"]);
+        result["sourceCorrectionDisplays"]=source_display::projection(store,&result["import"]);
+    }
     result
 }
 
@@ -2241,6 +2393,84 @@ fn with_teaching_controls(mut result:Value)->Value{
 mod tests {
     use super::*;
     use std::net::TcpListener;
+
+    #[test]
+    fn audit_path_existing_targets_are_canonical_and_missing_targets_fail() {
+        let runtime = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let directory = runtime.path().join("imports/docx-render-simulated");
+        std::fs::create_dir_all(&directory).unwrap();
+        let output = directory.join("document.pdf");
+        std::fs::write(&output, b"simulated preserved PDF path only").unwrap();
+        let expected = "imports/docx-render-simulated/document.pdf";
+        assert_eq!(audit_relative_path_in(runtime.path(), &output).unwrap(), expected);
+        assert_eq!(audit_relative_path_in(runtime.path(), &output.canonicalize().unwrap()).unwrap(), expected);
+        assert_eq!(audit_relative_path_in(runtime.path(), &directory).unwrap(), "imports/docx-render-simulated");
+        let missing = directory.join("missing.pdf");
+        assert_eq!(audit_relative_path_in(runtime.path(), &missing).unwrap_err().code, "invalid_source");
+        let escaped = outside.path().join("outside.pdf");
+        std::fs::write(&escaped, b"simulated outside runtime").unwrap();
+        assert_eq!(audit_relative_path_in(runtime.path(), &escaped).unwrap_err().code, "invalid_source");
+        assert_eq!(planned_audit_relative_path_in(runtime.path(), &escaped).unwrap_err().code, "invalid_source");
+    }
+
+    #[test]
+    fn audit_path_planned_entry_requires_a_real_owned_parent_and_one_bounded_name() {
+        let runtime = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let parent = runtime.path().join("imports/source-batches");
+        std::fs::create_dir_all(&parent).unwrap();
+        let planned = parent.join("simulated-catalog.response.stream");
+        assert_eq!(planned_audit_relative_path_in(runtime.path(), &planned).unwrap(), "imports/source-batches/simulated-catalog.response.stream");
+        assert!(!planned.exists());
+        std::fs::create_dir(&planned).unwrap();
+        assert_eq!(planned_audit_relative_path_in(runtime.path(), &planned).unwrap(), audit_relative_path_in(runtime.path(), &planned).unwrap());
+        for invalid in [
+            parent.join("missing-parent/future.stream"), outside.path().join("future.stream"),
+            parent.join("../future.stream"), parent.join("stream:alternate"),
+            parent.join("trailing."), parent.join("trailing "), parent.join("x".repeat(256)),
+        ] {
+            assert_eq!(planned_audit_relative_path_in(runtime.path(), &invalid).unwrap_err().code, "invalid_source", "{}", invalid.display());
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn audit_path_windows_office_plain_path_matches_verbatim_canonical_path() {
+        let runtime = tempfile::tempdir().unwrap();
+        let output = runtime.path().join("imports/docx-render-模拟 case/document.pdf");
+        std::fs::create_dir_all(output.parent().unwrap()).unwrap();
+        std::fs::write(&output, b"simulated Office output path").unwrap();
+        // This is an actual ordinary Windows path, like the Office converter's
+        // return value, compared with the actual canonical verbatim root.
+        assert!(!output.to_string_lossy().starts_with(r"\\?\"));
+        assert!(runtime.path().canonicalize().unwrap().to_string_lossy().starts_with(r"\\?\"));
+        assert_eq!(audit_relative_path_in(runtime.path(), &output).unwrap(), "imports/docx-render-模拟 case/document.pdf");
+        assert_eq!(audit_relative_path_in(runtime.path(), &output.canonicalize().unwrap()).unwrap(), "imports/docx-render-模拟 case/document.pdf");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn audit_path_windows_junction_escape_is_rejected_for_existing_and_planned_targets() {
+        use std::os::windows::process::CommandExt;
+        let runtime = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let parent = runtime.path().join("imports");
+        std::fs::create_dir(&parent).unwrap();
+        std::fs::write(outside.path().join("existing.json"), b"simulated outside evidence").unwrap();
+        let junction = parent.join("escaped-junction");
+        let result = std::process::Command::new("cmd.exe")
+            .args(["/d", "/c", "mklink", "/J"])
+            .arg(&junction).arg(outside.path()).creation_flags(0x08000000).output().unwrap();
+        assert!(result.status.success(), "{}", String::from_utf8_lossy(&result.stderr));
+        for target in [&junction, &junction.join("existing.json"), &junction.join("future.stream")] {
+            assert_eq!(audit_relative_path_in(runtime.path(), target).unwrap_err().code, "invalid_source");
+            assert_eq!(planned_audit_relative_path_in(runtime.path(), target).unwrap_err().code, "invalid_source");
+        }
+        // Remove only this test's junction, leaving its external target intact.
+        std::fs::remove_dir(&junction).unwrap();
+        assert!(outside.path().join("existing.json").is_file());
+    }
 
     #[test]
     fn import_catalogue_excludes_old_paper_provenance_but_keeps_every_task_identity() {
@@ -2935,6 +3165,72 @@ mod tests {
         record["source"]["physicalPages"] = json!(1);
         save_cas(store, None, &record).unwrap();
         record
+    }
+    fn simulated_source_audit_record(store: &Store) -> Value {
+        let initial = staged(store);
+        let saved = review_save(store, &json!({"importId":initial["importId"],"expectedRevision":initial["revision"],"operationId":"simulated-audit-baseline","questions":initial["questions"]})).unwrap()["import"].clone();
+        let mut record = saved.clone();
+        let mut second = record["questions"][0].clone();
+        second["questionId"] = json!("simulated-staged-q2");
+        second["sourceLabel"] = json!("模拟原题2");
+        second["stem"] = json!("模拟另一题：计算 $2+2=$____。");
+        second["sourceAssetBindingAudit"] = json!({"version":1,"questionId":"simulated-staged-q2","bindings":[],"futureEvidence":{"opaque":"模拟保留未知审计内容"}});
+        record["questions"].as_array_mut().unwrap().push(second);
+        for question in record["questions"].as_array_mut().unwrap() {
+            question["reviewDecision"] = json!("pending");
+            question["reviewBasis"] = json!("");
+            question["reviewChecks"] = json!({"sourceMatched":false,"answerChecked":false,"solutionChecked":false,"formulaChecked":false});
+            question["modelReview"] = json!({"status":"needs_review","summary":"模拟原卷核对意见，必须原样保留"});
+            question["teachingWorkflow"] = json!({"sourceContentSha256":teaching::source_hash(question),"status":"ready_candidate","generationCalls":1,"reviewCalls":0,"candidateResult":{"answer":"模拟候选答案"},"finalResult":{"answer":"模拟终稿答案"}});
+        }
+        save_cas(store, Some(&saved), &record).unwrap();
+        record
+    }
+    #[test]
+    fn simulated_source_confirmation_preserves_other_question_asset_audit_and_ai_state() {
+        for omitted_by_client in [false, true] {
+            let (_dir, store, _model) = store();
+            let record = simulated_source_audit_record(&store);
+            let mut questions = rows(&record["questions"]);
+            questions[0]["reviewDecision"] = json!("approve");
+            questions[0]["reviewBasis"] = json!("模拟用户明确确认已对照原卷核对当前原题。");
+            questions[0]["reviewChecks"]["sourceMatched"] = json!(true);
+            questions[0]["reviewChecks"]["formulaChecked"] = json!(true);
+            if omitted_by_client {
+                questions[1].as_object_mut().unwrap().remove("sourceAssetBindingAudit");
+            }
+            let payload = json!({"importId":record["importId"],"expectedRevision":record["revision"],"operationId":"simulated-source-confirmation","questions":questions});
+            let result = review_save(&store, &payload).unwrap()["import"].clone();
+            assert_eq!(result["questions"][1], record["questions"][1], "confirming q1 must not normalize away q2's server audit");
+            for field in ["stem", "options", "parts", "answer", "solution", "modelReview", "teachingWorkflow"] {
+                assert_eq!(result["questions"][0][field], record["questions"][0][field], "{field}");
+            }
+            for field in ["publishedQuestionIds", "publicationHistory"] {
+                assert_eq!(result[field], record[field]);
+            }
+            assert_eq!(result["questions"][0]["reviewChecks"]["answerChecked"], false);
+            assert_eq!(result["questions"][0]["reviewChecks"]["solutionChecked"], false);
+            assert_eq!(store.document("imports", s(&record, "importId")).unwrap(), result);
+            assert_eq!(review_save(&store, &payload).unwrap()["import"], result, "idempotent replay must preserve audits");
+        }
+    }
+    #[test]
+    fn simulated_source_confirmation_rejects_forged_or_rewritten_asset_audits_atomically() {
+        let (_dir, store, _model) = store();
+        let record = simulated_source_audit_record(&store);
+        let bank_before = store.bank.questions().unwrap();
+        for add_new in [false, true] {
+            let mut questions = rows(&record["questions"]);
+            if add_new {
+                questions[0]["sourceAssetBindingAudit"] = json!({"version":1,"bindings":[]});
+            } else {
+                questions[1]["sourceAssetBindingAudit"]["futureEvidence"]["opaque"] = json!("模拟伪造审计");
+            }
+            let payload = json!({"importId":record["importId"],"expectedRevision":record["revision"],"operationId":format!("simulated-forged-audit-{add_new}"),"questions":questions});
+            assert_eq!(review_save(&store, &payload).unwrap_err().code, "immutable_source");
+            assert_eq!(store.document("imports", s(&record, "importId")).unwrap(), record);
+            assert_eq!(store.bank.questions().unwrap(), bank_before);
+        }
     }
     fn knowledge_seed() -> Value {
         let mut seed = crate::bank::tests::seed();
