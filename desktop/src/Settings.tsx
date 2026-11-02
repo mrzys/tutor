@@ -4,7 +4,8 @@ import { request } from "./bridge";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import { BankAnnotation } from "./BankAnnotation";
 import { blankModelProfile, changeModelProvider, changeProfileModel, createModelCatalogGuard, llmProviders, modelProfileError, modelProfilePayload, modelProvider, modelReasoningOptions, modelTitle, parseModelCatalog, providerPreset, reasoningLabel, type ModelCatalog } from "./model-presets";
-import { assignImportRole, emptyImportRoles, importRoleChoices, importRoleDefinitions, profileImportRoles, readImportRoles, assignImportRoleThinking, importRoleThinkingChoices, pruneImportRoleThinking, readImportRoleThinking, type ImportRole, type ImportRoles, type ImportRoleThinking } from "./model-purpose";
+import { assignImportRole, assignRequiredImportRoles, emptyImportRoles, importRoleChoices, importRoleDefinitions, profileImportRoles, readImportRoles, requiredImportRoles, assignImportRoleThinking, importRoleThinkingChoices, pruneImportRoleThinking, readImportRoleThinking, type ImportConfigurationContext, type ImportRole, type ImportRoles, type ImportRoleThinking } from "./model-purpose";
+import { accuracyModelReadiness } from "./import-accuracy";
 import deepseekIcon from "@lobehub/icons-static-svg/icons/deepseek-color.svg";
 import bailianIcon from "@lobehub/icons-static-svg/icons/alibabacloud-color.svg";
 import xiaomiIcon from "@lobehub/icons-static-svg/icons/xiaomimimo.svg";
@@ -133,6 +134,7 @@ export function Settings(props: {
   dataDirectory: string;
   showModel?: boolean;
   showOcr?: boolean;
+  importContext?: ImportConfigurationContext | null;
   onSaved: (profile: any) => void | Promise<void>;
   onBankChanged?: () => void | Promise<void>;
   onDeveloperModeChange?: (enabled: boolean) => void;
@@ -159,6 +161,7 @@ export function Settings(props: {
   let assignedRoleDraft: ImportRoles = null;
   let assignedThinkingDraft: ImportRoleThinking = null;
   const [effectiveImportRoles, setEffectiveImportRoles] = createSignal<any>(null);
+  const [bulkProfileId, setBulkProfileId] = createSignal("");
   const [editorDraft, setEditorDraft] = createSignal<ModelDraft | null>(null);
   const [editorBaseline, setEditorBaseline] = createSignal("");
   const [editorError, setEditorError] = createSignal("");
@@ -199,6 +202,10 @@ export function Settings(props: {
   const generalProfile = () => profiles().find(profile => profile.id === activeId());
   const isNew = (id: string) => !savedProfiles().some(item => item.id === id);
   const profileDirty = (item: ModelDraft) => item.requiresApiKey === true || JSON.stringify(modelProfilePayload(item, false)) !== JSON.stringify(modelProfilePayload(savedProfiles().find(saved => saved.id === item.id) || item, false)) || isNew(item.id);
+  const bulkProfiles = () => profiles().filter(item => !profileDirty(item) && savedProfiles().some(saved => saved.id === item.id && saved.configured));
+  const selectedBulkProfile = () => bulkProfiles().find(item => item.id === bulkProfileId());
+  const savedImportReadiness = () => accuracyModelReadiness({ importRoles: savedImportRoles(), profiles: savedProfiles(), effectiveImportRoles: effectiveImportRoles() });
+  const selectedRequiredCount = () => requiredImportRoles.filter(role => profiles().some(profile => profile.id === importRoles()?.[role.id])).length;
   const label = (item: ModelDraft) => item.name.trim() || "未命名配置";
   const providerGroups = () => [
     ...llmProviders.map(provider => ({ id: provider.id, label: provider.label, profiles: profiles().filter(item => item.provider === provider.id) })),
@@ -253,6 +260,18 @@ export function Settings(props: {
     setImportThinking(current => assignImportRoleThinking(current, role, effort, importRoles(), profiles()));
     setSavedMessage("");
     setError("");
+  }
+  function assignRequiredPurposes() {
+    if (!selectedBulkProfile() || busy()) return;
+    try {
+      const priorRoles = importRoles() || (assignedRoleDraft ? Object.fromEntries(importRoleDefinitions.map(role => [role.id, profiles().some(profile => profile.id === assignedRoleDraft?.[role.id]) ? assignedRoleDraft![role.id] : null])) as NonNullable<ImportRoles> : null);
+      const priorThinking = importRoles() !== null ? importThinking() : assignedThinkingDraft;
+      const roles = assignRequiredImportRoles(priorRoles, bulkProfileId(), profiles(), savedProfiles());
+      setImportRoles(roles);
+      setImportThinking(pruneImportRoleThinking(priorThinking, roles, profiles()));
+      setSavedMessage("六项必需用途已选择此配置，保存后生效；仍可逐项调整。");
+      setError("");
+    } catch (failure: any) { setError(failure.message); }
   }
   function applySettings(result: any) {
     if (!Array.isArray(result.profiles) || !Number.isSafeInteger(result.revision)) {
@@ -549,7 +568,7 @@ export function Settings(props: {
   return (
     <div class="settings-page" classList={{ "is-model-settings": section() === "models" }}>
       <aside class="settings-sidebar" aria-label="设置导航">
-        <button type="button" class="settings-back" onClick={back} disabled={busy()}><ArrowLeft size={18} />返回组卷</button>
+        <button type="button" class="settings-back" onClick={back} disabled={busy()}><ArrowLeft size={18} />{props.importContext ? "返回导入试卷" : "返回组卷"}</button>
         <nav class="settings-nav" aria-label="配置项">
           <button type="button" aria-current={section() === "personal" ? "page" : undefined} onClick={() => navigate("personal")} disabled={busy()}><UserRound size={18} />个人设置</button>
           <button type="button" aria-current={section() === "models" ? "page" : undefined} onClick={() => navigate("models")} disabled={busy()}><SlidersHorizontal size={18} />模型配置</button>
@@ -560,6 +579,10 @@ export function Settings(props: {
       <main class="settings-main">
         <div class="settings-content">
           <header class="settings-heading"><h1>{section() === "personal" ? "个人设置" : section() === "models" ? "模型配置" : section() === "ocr" ? "试卷识别" : "本地数据"}</h1></header>
+          <Show when={props.importContext}><section class="settings-import-context" aria-label="本次导入配置">
+            <p>{props.importContext?.materialKind === "text" ? "本次为文本导入，不需要 PaddleOCR。" : props.importContext?.materialKind === "document" ? "本次 PDF / DOCX 导入需要六项模型用途和独立的 PaddleOCR 配置。" : "新试卷导入需要六项模型用途；PDF / DOCX 还需独立配置 PaddleOCR。"}修改须分别保存，返回后继续导入。</p>
+            <Show when={section() !== "models"}><button type="button" class="text-button" disabled={busy()} onClick={() => { navigate("models"); setModelPane("purposes"); }}>检查必需模型用途</button></Show>
+          </section></Show>
           <Show when={section() === "personal"}>
             <form onSubmit={(event) => { event.preventDefault(); void savePersonal(); }}>
               <fieldset class="settings-fields" disabled={busy()}>
@@ -638,7 +661,19 @@ export function Settings(props: {
                 <Show when={modelPane() === "purposes"}>
                 <div id="model-purpose-panel" role="tabpanel" aria-labelledby="model-purpose-tab">
                 <section class="model-purpose-settings" aria-labelledby="model-purpose-heading">
-                  <div class="model-purpose-topline"><div class="model-purpose-heading"><div><h2 id="model-purpose-heading">试卷导入</h2><p class="muted">各用途可独立选择模型和思考设置。</p></div><Show when={rolesDirty()}><span class="model-state-label">未保存</span></Show></div>
+                  <section class="model-import-readiness" aria-labelledby="model-import-readiness-heading">
+                    <div><strong id="model-import-readiness-heading">新试卷导入准备度</strong><span role="status">已保存必需用途 {requiredImportRoles.length - savedImportReadiness().missing.length}/{requiredImportRoles.length}</span></div>
+                    <Show when={savedImportReadiness().missing.length} fallback={<p>六项必需用途已配置；解析复核仅在发起修订时需要。</p>}><p>待配置：{savedImportReadiness().missing.join("、")}。</p></Show>
+                    <Show when={modelDirty()}><p role="status">当前已选择 {selectedRequiredCount()}/{requiredImportRoles.length} 项必需用途，保存后生效。</p></Show>
+                    <Show when={props.importContext?.materialKind === "text"} fallback={<p>PaddleOCR：{!ocrLoaded() ? "配置尚未读取" : ocrConfigured() ? "已保存配置" : "尚未配置"}，PDF / DOCX 必需。<Show when={ocrDirty()}>有未保存的识别设置。</Show><button type="button" class="text-button" disabled={busy()} onClick={() => navigate("ocr")}>配置试卷识别</button></p>}><p>PaddleOCR：本次文本导入不适用。</p></Show>
+                    <p class="muted">用途齐全不代表所有材料均可处理；PDF / DOCX 的拆题与来源核验还需已确认的原页图片能力，执行时按实际材料检查，不自动换模型。</p>
+                  </section>
+                  <div class="model-purpose-bulk">
+                    <SettingsSelect label="六项用途共用的已保存配置" ownerId="required-import-profile" value={selectedBulkProfile()?.id || ""} choices={importRoleChoices(bulkProfiles()).map(choice => choice.id ? choice : { ...choice, label: "请选择已保存配置" })} placeholder="请选择已保存配置" onChange={setBulkProfileId} />
+                    <button type="button" class="secondary" disabled={!selectedBulkProfile() || busy()} onClick={assignRequiredPurposes}>六项必需用途使用此配置</button>
+                    <p class="muted">这是一次明确的用途选择，点击保存后生效。保留仍适用的用途思考设置；解析复核与通用模型单独设置。新建或修改的配置请先保存。</p>
+                  </div>
+                  <div class="model-purpose-topline"><div class="model-purpose-heading"><div><h2 id="model-purpose-heading">试卷导入</h2><p class="muted">拆题、生成、修订与各项核验分别选择模型和思考设置。</p></div><Show when={rolesDirty()}><span class="model-state-label">未保存</span></Show></div>
                   <div class="model-mode-switch" role="group" aria-label="用途设置方式">
                     <button type="button" aria-pressed={importRoles() !== null} onClick={() => changeRoleMode("assigned")}>按用途指定</button>
                     <button type="button" aria-pressed={importRoles() === null} onClick={() => changeRoleMode("legacy")}>沿用原策略</button>
@@ -647,10 +682,10 @@ export function Settings(props: {
                   <Show when={importRoles() !== null} fallback={<div class="model-purpose-legacy">
                     <p class="muted">沿用原策略：DeepSeek Flash低思考拆题；DeepSeek Flash高思考生成解析；千问AI平台Qwen3.8 Flash开启思考复核。</p>
                     <Show when={savedImportRoles() === null}><For each={importRoleDefinitions.filter(role => effectiveImportRoles()?.[role.id]?.strategy === "legacy" && effectiveImportRoles()?.[role.id]?.configured === false)}>{role => <p class="warning-text" role="status">{role.label}：{effectiveImportRoles()?.[role.id]?.error?.message || "缺少所需配置，请补充对应模型配置或按用途指定。"}</p>}</For></Show>
-                    <p class="muted model-purpose-note">需要自行选择模型或思考设置时，切换为“按用途指定”。保存后生效。</p>
+                    <p class="muted model-purpose-note">原策略只用于旧导入任务。新上传须切换为“按用途指定”，明确配置拆题、解析生成及四项核验用途；保存后生效。</p>
                   </div>}>
                     <div class="model-purpose-grid"><For each={importRoleDefinitions}>{role => <section class="model-purpose-item" aria-label={role.label}>
-                      <header class="model-purpose-card-heading"><h3>{role.label}</h3><p class="muted">{role.description}</p></header>
+                      <header class="model-purpose-card-heading"><h3>{role.label}<span class="model-purpose-required">{role.id === "teachingReview" ? "修订时使用" : "必需"}</span></h3><p class="muted">{role.description}</p></header>
                       <div class="model-purpose-controls">
                         <SettingsSelect label="模型配置" ownerId={`purpose-${role.id}`} value={importRoles()?.[role.id] || ""} choices={importRoleChoices(profiles())} showDetail onChange={value => changeRole(role.id, value)} />
                         <SettingsSelect label="思考设置" ownerId={`thinking-${role.id}-${roleProfile(role.id)?.id}-${roleProfile(role.id)?.model}`} value={importThinking()?.[role.id]?.reasoningEffort || ""} choices={roleProfile(role.id) ? importRoleThinkingChoices(roleProfile(role.id)) : [{id:"",label:"先选择模型"}]} disabled={!roleProfile(role.id) || importRoleThinkingChoices(roleProfile(role.id)).length < 2} placeholder="先选择模型" onChange={value => changeRoleThinking(role.id, value)} />
@@ -659,7 +694,7 @@ export function Settings(props: {
                     </section>}</For></div>
                     <p class="muted model-purpose-note">思考设置仅对当前用途生效。同一个模型配置，可以在拆题时用低思考、生成解析时用高思考。</p>
                   </Show>
-                  <details class="model-purpose-help"><summary>推荐依据与使用说明</summary><For each={importRoleDefinitions}>{role => <p><strong>{role.label}：</strong>{role.reason}</p>}</For><p>建议依据本项目已有试跑，可自行调整。PDF/DOCX拆题需支持原页图片；未确认支持时会保留原件和OCR并提示更换配置。</p><p>未配置的用途不会自动使用其他模型。未配置复核时，命中问题的题目保留待复核，不影响无命中题。</p></details>
+                  <details class="model-purpose-help"><summary>用途与使用说明</summary><For each={importRoleDefinitions}>{role => <p><strong>{role.label}：</strong>{role.reason}</p>}</For><p>PDF/DOCX拆题与来源核验需要已确认的原页图片能力；未确认时保留原件和OCR并提示检查配置。</p><p>四项核验用途须明确配置，不会回退通用模型或旧策略。解析复核仅在显式修订时使用；旧任务继续保留命中后复核的原规则。</p></details>
                 </section>
                 <section class="model-general-settings" aria-labelledby="model-general-heading"><div><h2 id="model-general-heading">组卷与其他功能</h2><p class="muted">使用所选配置的默认思考设置。</p><Show when={generalProfile()}>{profile => <p class="model-general-thinking">默认思考：{reasoningLabel(profile())}<button type="button" onClick={() => openEditor(profile())}>编辑默认设置</button></p>}</Show></div><SettingsSelect label="通用模型" ownerId="general-model" value={activeId() || ""} choices={[{id:"",label:"暂不使用通用模型"},...importRoleChoices(profiles()).filter(choice => choice.id)]} showDetail onChange={value => {setActiveId(value || null);setSavedMessage("");}} /></section>
                 </div>
@@ -700,7 +735,7 @@ export function Settings(props: {
         <p class="muted">修改仍保留在此处。重新读取将放弃本次模型配置修改。</p>
         <button type="button" class="secondary" disabled={busy() || loading()} onClick={() => load(true)}>重新读取（放弃本次修改）</button>
       </Show>
-              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><span role="status" class="muted">{savedMessage() || (modelDirty() ? "有未保存的修改，保存后生效" : "设置已保存")}</span><div><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
+              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><span role="status" class="muted">{savedMessage() || (modelDirty() ? "有未保存的修改，保存后生效" : "设置已保存")}</span><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
             </form>
           </Show>
           <Show when={section() === "ocr"}>
@@ -739,7 +774,7 @@ export function Settings(props: {
                 <p class="muted">设置已在其他窗口更新，当前输入仍保留。重新读取将放弃本次识别配置修改。</p>
                 <button type="button" class="secondary" disabled={busy() || ocrLoading()} onClick={() => loadOcr(true)}>重新读取（放弃本次修改）</button>
               </Show>
-              <footer class="settings-footer"><span role="status" class="muted">{savedMessage()}</span><button type="submit" class="primary" disabled={busy() || ocrLoading() || !ocrLoaded() || ocrConflict() || !ocrDirty()}>{busy() ? "保存中…" : "保存"}</button></footer>
+              <footer class="settings-footer"><span role="status" class="muted">{savedMessage()}</span><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><button type="submit" class="primary" disabled={busy() || ocrLoading() || !ocrLoaded() || ocrConflict() || !ocrDirty()}>{busy() ? "保存中…" : "保存"}</button></div></footer>
             </form>
           </Show>
           <Show when={section() === "data"}>

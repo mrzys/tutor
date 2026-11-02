@@ -7,6 +7,8 @@ mod model_transport;
 mod model_roles;
 #[path = "model_whole_trial.rs"]
 mod model_whole_trial;
+#[path = "model_accuracy.rs"]
+mod model_accuracy;
 use base64::Engine;
 use serde_json::{Value, json};
 use std::{
@@ -567,6 +569,7 @@ pub struct ModelClient {
     active_profile_id: Option<String>,
     revision: u64,
     loaded_bytes: Option<Vec<u8>>,
+    accuracy_binding: Option<Value>,
 }
 
 fn input_error(message: &str) -> AppError {
@@ -840,6 +843,7 @@ impl ModelClient {
             active_profile_id: None,
             revision: 0,
             loaded_bytes: None,
+            accuracy_binding: None,
         }
     }
     pub fn open(data_dir: &Path) -> AppResult<Self> {
@@ -860,6 +864,7 @@ impl ModelClient {
             active_profile_id: None,
             revision: 0,
             loaded_bytes: None,
+            accuracy_binding: None,
         };
         if client.path.exists() {
             let bytes = std::fs::read(&client.path)?;
@@ -1204,14 +1209,14 @@ impl ModelClient {
             ));
         }
         let import_roles=if let Some(value)=input.get("importRoles") {
-            model_roles::ImportRoles::parse(value,&profiles)?
+            model_roles::ImportRoles::parse_updated(value,self.import_roles.as_ref(),&profiles)?
         } else {
             let preserved=serde_json::to_value(&self.import_roles)?;
             model_roles::ImportRoles::parse(&preserved,&profiles)?
         };
         let import_roles_present=self.import_roles_present||input.get("importRoles").is_some();
         let import_role_thinking=if let Some(value)=input.get("importRoleThinking") {
-            model_roles::ImportRoleThinking::parse(value,import_roles.as_ref(),&profiles)?
+            model_roles::ImportRoleThinking::parse_updated(value,self.import_role_thinking.as_ref(),import_roles.as_ref(),&profiles)?
         } else {
             self.import_role_thinking.as_ref().and_then(|thinking|thinking.retain_matching(import_roles.as_ref(),&profiles))
         };
@@ -1596,6 +1601,9 @@ impl ModelClient {
         if task == "student_work_grading" {
             prompt.push_str("材料限制按contentLimitations中的真实fileId/page/slotId逐题处理；只对受影响且缺少可靠依据的题返回unable，不能因另一题缺图或另一页识别问题把证据完整的文字题一律判为无法判断。冻结题位visualReviewAvailable=false表示该题必要素材未交付，不得冒称已看图或作完整判断。");
         }
+        if task == "question_import" && self.accuracy_binding.is_some() {
+            prompt = model_accuracy::source_transcription_instruction(context);
+        }
         let timeout_seconds = configured_request_timeout_seconds(task, context, &base, &self.model);
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
@@ -1655,6 +1663,13 @@ impl ModelClient {
         let transport_audit = audit_path
             .map(|path| model_transport::TransportAudit::start(path, task, &body, timeout_seconds))
             .transpose()?.flatten();
+        let mut accuracy_source = match audit_path {
+            Some(path) => model_accuracy::SourceBudgetGuard::begin(self, task, &body, timeout_seconds, path)?,
+            None if self.accuracy_binding.is_some() && matches!(task, "question_import" | "question_import_plan" | "question_import_materials") => {
+                return Err(AppError::new("accuracy_source_audit_required", "准确性来源请求必须保存真实审计，未发起请求。"));
+            }
+            None => None,
+        };
         let result = runtime.block_on(async {
             let request=async {
                 let (status,bytes)=model_transport::send_and_read(
@@ -1684,6 +1699,7 @@ impl ModelClient {
             diagnostics.finish(&result);
         }
         if let Some(audit) = transport_audit.as_ref() { audit.finish(&result)?; }
+        if let Some(guard) = accuracy_source.as_mut() { guard.finish(&result)?; }
         result
     }
 }

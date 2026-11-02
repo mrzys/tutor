@@ -12,12 +12,12 @@ const assemblySteps: GuideStep[] = [
   { title: "确认成卷与导出", teacher: "核对题目与名称，确认成卷，再生成所需版本的 PDF。", system: "固定本次题目内容。以后继续编辑会创建新草稿，原卷与已有 PDF 保留。", caption: "确认后的试卷保留原样，方便再次使用。" },
 ];
 const importSteps: GuideStep[] = [
-  { title: "先完成配置", teacher: "在设置中保存当前模型，以及独立的 PaddleOCR 接口和 API Key。", system: "上传 PDF / DOCX 前检查两项配置。TXT / Markdown 导入只需要模型配置。", caption: "模型负责整理，PaddleOCR 负责识别原卷。" },
-  { title: "上传原卷", teacher: "选择 PDF 或 DOCX 原件后，可以继续其它操作，在导入记录查看进展。", system: "保存原件并在后台解析。DOCX 通过本机 Word 或 LibreOffice 转成 PDF；缺少工具时提示先导出 PDF。", caption: "上传后在后台处理，不必停留在本页。" },
-  { title: "识别文字与图表", teacher: "打开原文对照，将识别后的文字与原页图像并排核查；失败时查看具体原因和重试建议。", system: "PaddleOCR 读取逐页文字、公式和布局，并保留原页与实际图表素材。", caption: "原文是识别后的内容，原图保留原卷排版。" },
-  { title: "整理并检查题目", teacher: "处理完成后直接查看题面、标注与检查意见，无需再启动一次模型初审。", system: "模型在整理题目的同一次响应中给出检查意见与置信档，不再对每题额外请求。难度和主考知识点可按题面估计；缺完整解法依据时依赖保持未知，不补编原卷缺失的答案解析。", caption: "导入时一并检查，完成后直接显示结果。" },
-  { title: "按需处理疑点", teacher: "重点处理有疑点的题；需要时打开原文与原图对照。检查失败或修改题目后，可点击“重新检查”。", system: "高置信且通过完整性校验的题可统一确认入库，无需逐题勾选；缺图、选项不完整等问题仍会阻止入库。原卷没有答案解析时保持空白。", caption: "模型置信档不是实测正确率；可以随时返回组卷，稍后继续。" },
-  { title: "确认加入题库", teacher: "点击右上角“加入题库”，统一提交符合条件的题目；有疑点的题可留待之后处理。", system: "分别保存模型意见和人工复核依据。旧记录缺少意见时，可按需重新检查；查看历史不会自动调用识别或模型。", caption: "不必处理完整份试卷才能离开或使用已合格的题目。" },
+  { title: "完成用途配置", teacher: "在设置中明确分配拆题、解析生成、来源核验、独立求解、数学核验和教学核验六项用途，并保存。PDF / DOCX 还需独立配置 PaddleOCR。", system: "按各用途已保存的模型和思考设置执行；解析复核仅在显式修订时使用。TXT / Markdown 无需 OCR，仍需六项模型用途。", caption: "同一模型配置可以用于多个用途，分配后显式保存。" },
+  { title: "确认发送原卷", teacher: "选择原件，核对文件及将使用的识别、模型服务，再点击开始。之后可以离开页面，在导入记录查看进展。", system: "接受后先将原件保存在本机，再后台处理。DOCX 通过本机 Word 或 LibreOffice 转为 PDF；缺少工具时提示先导出 PDF。", caption: "确认开始后才发送材料，后台处理不占用组卷。" },
+  { title: "识别与转录", teacher: "查看来源整理进展；需要核对时，将转录结果与原页并排阅读。", system: "PaddleOCR 保留逐页文字、公式、布局及实际图表素材；模型按来源转录题目和原卷参考。失败保留原件及成功断点，继续处理由你发起。", caption: "原卷参考按实际来源保留，原卷没有的内容不补成原参考。" },
+  { title: "求解与分域核验", teacher: "查看原题、AI 答案解析和考查信息，以及来源、答案与证明、教学信息的具体核对结果。", system: "独立求解与生成稿分开处理，再核对来源、数学及教学字段。报告缺失、判断依据不足或仍有问题时保留待处理；模型核对未发现问题不等于教师已审核或实测正确。", caption: "每个域显示实际核对状态，不用高置信代替核验。" },
+  { title: "处理未决事项", teacher: "按当前事项对照原页、核算证明或检查考查信息，填写实际核对依据；需要模型修订时，明确问题后发起一次修订。", system: "已有有效核验的域无需重复人工确认。修改内容后，受影响的核对需要重新完成；技术失败、缺材料与内容疑点分别保留原因。", caption: "教师实质核对可以处理模型未判；只点确认不能忽略已知错误。" },
+  { title: "确认加入题库", teacher: "点击“加入题库”，核对本次各题的交付范围，再统一确认符合条件的题目。", system: "分别保存模型核验与教师核对依据。选择“仅原题及组卷信息”时，仍核对原题、原参考及实际交付的主考、解法依赖和难度；不发布 AI 答案解析。查看历史不外呼，旧记录沿原流程。", caption: "未解决的题继续保留，不必处理完整份试卷才能离开。" },
 ];
 
 function DemoSheet(props: { heading?: string; review?: boolean; final?: boolean; intersection?: boolean }) {
@@ -91,19 +91,19 @@ function Demonstration(props: { topic: Topic; step: number; elapsed: number | nu
           <Show when={props.step === 2} fallback={
             <Show when={props.step === 3} fallback={
               <Show when={props.step === 4} fallback={<div class="usage-demo-publish"><div class="usage-demo-publish-actions"><span>2 题可入库</span><span class="usage-assembly-action"><Check size={13} />加入题库</span></div><CircleCheck size={34} /><strong>确认合格题加入题库</strong><span>疑点题留待处理，原卷与导入记录保留</span></div>}>
-                <div class="usage-demo-check-content"><DemoSheet heading="导入检查意见" /><div class="usage-demo-tags"><span>模型自评置信 · 高</span><span>未发现疑点 · 可确认入库</span></div><small>演示意见，不是实测正确率；缺图、内容损坏仍需处理</small></div>
+                <div class="usage-demo-check-content"><DemoSheet heading="核对当前事项" review /><div class="usage-demo-tags"><span>来源 · 教师已核对</span><span>答案与证明 · 待处理</span></div><small>填写具体依据或按问题修订；已有有效核验的域不必重复人工确认</small></div>
               </Show>
             }>
-              <div class="usage-demo-annotations"><DemoSheet heading="整理后的题目" /><div class="usage-demo-tags"><span>难度估计 · 基础</span><span>主考 · 元素与集合</span><span>解法依赖 · 依据不足，未知</span></div><small>本示例原卷没有解析 → 保持空缺</small></div>
+              <div class="usage-demo-annotations"><DemoSheet heading="分域核对结果" /><div class="usage-demo-tags"><span>来源 · 模型核对未发现问题</span><span>答案与证明 · 有疑点</span><span>教学信息 · 尚未完成核对</span></div><small>原卷参考与 AI 答案解析分别保存；示例状态不代表实际准确率</small></div>
             </Show>
           }>
             <div class="usage-demo-recognition"><div class="usage-demo-page"><FileText size={28} /><span>原图 · 第 1 页</span><div class="usage-demo-recognition-box">保留原卷排版</div><div class="usage-demo-diagram"><span>A</span><i>1　2</i></div></div><ArrowRight size={20} /><div class="usage-demo-extracted"><strong>原文 · 识别结果</strong><span><Check size={14} /> 题面与公式</span><span><Check size={14} /> 页码与布局对应</span><span><Check size={14} /> 实际配图素材</span><small>原文、原图并排对照</small></div></div>
           </Show>
         }>
-          <div class="usage-demo-upload"><Upload size={30} /><strong>阶段练习原卷.pdf</strong><span>已提交 · 后台处理中</span><small>可继续其它操作，在导入记录查看进展</small></div>
+          <div class="usage-demo-upload"><Upload size={30} /><strong>阶段练习原卷.pdf</strong><span>核对文件和接收服务 → 明确点击开始</span><small>接受后保存在本机并后台处理，可继续其它操作</small></div>
         </Show>
       }>
-        <div class="usage-demo-config"><div><Settings2 size={20} /><span><strong>当前模型</strong><small>整理题目与标注</small></span><Check size={18} /></div><div><ScanLine size={20} /><span><strong>PaddleOCR</strong><small>独立接口与密钥</small></span><Check size={18} /></div></div>
+        <div class="usage-demo-config"><div><Settings2 size={20} /><span><strong>六项模型用途</strong><small>拆题、解析生成、来源核验</small><small>独立求解、数学核验、教学核验</small></span><Check size={18} /></div><div><ScanLine size={20} /><span><strong>PaddleOCR</strong><small>PDF / DOCX 需要独立接口与密钥</small></span><Check size={18} /></div><p>解析复核：按具体问题显式修订时使用</p></div>
       </Show>
     }>
       <AssemblyDemonstration step={props.step} elapsed={props.elapsed} playing={props.playing} />
@@ -177,7 +177,7 @@ export function UsageGuide(props: { initialTopic?: Topic }) {
       <For each={[["assembly", "组卷", BookOpen], ["import", "导入试卷", Upload]] as const}>{([key, label, Icon], index) => <button type="button" role="tab" aria-selected={topic() === key} aria-controls={`${uid}-topic-panel`} id={`${uid}-topic-${key}`} tabindex={topic() === key ? 0 : -1} onClick={() => selectTopic(key)} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); const next: Topic = event.key === "Home" ? "assembly" : event.key === "End" ? "import" : index() === 0 ? "import" : "assembly"; selectTopic(next); document.getElementById(`${uid}-topic-${next}`)?.focus(); } }}><Icon size={17} />{label}</button>}</For>
     </div>
     <div id={`${uid}-topic-panel`} role="tabpanel" aria-labelledby={`${uid}-topic-${topic()}`} class="usage-guide-topic-panel">
-      <p class="usage-guide-intro">{topic() === "assembly" ? "你确定要求与安排，系统从题库找题；检查满意后再确认成卷。" : "后台识别、整理时一并检查，重点处理疑点；统一确认合格题加入本地题库。"}</p>
+      <p class="usage-guide-intro">{topic() === "assembly" ? "你确定要求与安排，系统从题库找题；检查满意后再确认成卷。" : "确认发送原卷后，后台识别、转录、独立求解与分域核验；处理未决事项，再确认符合条件的题目入库。"}</p>
       <div class="usage-guide-steps" role="tablist" aria-label={topic() === "assembly" ? "组卷步骤" : "导入步骤"}>
         <For each={steps()}>{(item, index) => <button type="button" id={tabId(index())} role="tab" aria-selected={step() === index()} aria-controls={panelId} tabindex={step() === index() ? 0 : -1} onClick={() => selectStep(index())} onKeyDown={(event) => keyStep(event, index())}><span class="usage-guide-step-number">{index() + 1}</span><span>{item.title}</span></button>}</For>
       </div>
@@ -198,7 +198,7 @@ export function UsageGuide(props: { initialTopic?: Topic }) {
         <div class="usage-guide-navigation"><button type="button" onClick={() => selectStep(step() - 1)} disabled={step() === 0} aria-label="上一步"><ArrowLeft size={16} /><span>上一步</span></button><button type="button" onClick={() => selectStep(step() + 1)} disabled={step() === steps().length - 1} aria-label="下一步"><span>下一步</span><ArrowRight size={16} /></button></div>
       </div>
       <div class="usage-guide-extra">
-        <Show when={topic() === "assembly"} fallback={<p><strong>文件与数据</strong>　原件、导入记录与题库保存在本机；识别时文件会发送给你配置的 PaddleOCR，整理材料会发送给当前模型服务。并非全程离线处理。</p>}>
+        <Show when={topic() === "assembly"} fallback={<><p><strong>文件与数据</strong>　原件、导入记录与题库保存在本机。识别时文件会发送至已配置的 PaddleOCR；各模型用途会向对应服务发送处理所需的题目、参考或图像材料，按用途限制范围。模型处理会产生调用和用量，不是全程离线。</p><details><summary>原题、原卷参考与 AI 内容</summary><p>原题是题干、选项、小问和配图；原卷参考是原卷实际提供的答案与解析；AI 答案解析是生成的解答，和原参考分开保存；考查信息包括主考知识、解法依赖与内容难度估计。它们各自的来源及核对状态保持可见。</p></details></>}>
           <details><summary>也可以手动选题</summary><p>到题库浏览题目，加入组卷篮，确认题目、顺序与基本设置后创建草稿。这个过程不调用模型；创建后仍可预览、调整并确认成卷。</p></details>
         </Show>
       </div>

@@ -106,6 +106,7 @@ impl Store {
             CREATE TABLE IF NOT EXISTS history_deletions(kind TEXT NOT NULL CHECK(kind IN ('drafts','papers')),id TEXT NOT NULL,operation_id TEXT NOT NULL UNIQUE,request_hash TEXT NOT NULL,deleted_at TEXT NOT NULL,PRIMARY KEY(kind,id),FOREIGN KEY(kind,id) REFERENCES documents(kind,id));
             CREATE UNIQUE INDEX IF NOT EXISTS one_paper_per_draft ON documents(json_extract(payload,'$.sourceDraftId')) WHERE kind='papers';
             CREATE INDEX IF NOT EXISTS imports_created_history ON documents(kind,COALESCE(CAST(json_extract(payload,'$.createdAt') AS TEXT), '') DESC,id DESC) WHERE kind='imports';
+            CREATE INDEX IF NOT EXISTS imports_background_status ON documents(kind,json_extract(payload,'$.backgroundJob.status')) WHERE kind='imports';
             CREATE TRIGGER IF NOT EXISTS frozen_paper_update BEFORE UPDATE ON documents WHEN OLD.kind='papers' BEGIN SELECT RAISE(ABORT,'immutable_paper'); END;
             CREATE TRIGGER IF NOT EXISTS frozen_paper_delete BEFORE DELETE ON documents WHEN OLD.kind='papers' BEGIN SELECT RAISE(ABORT,'immutable_paper'); END;")?;
         let student_migration =
@@ -355,6 +356,27 @@ impl Store {
         let mut statement = self.user.prepare("SELECT d.payload FROM documents d WHERE d.kind=?1 AND NOT EXISTS(SELECT 1 FROM history_deletions h WHERE h.kind=d.kind AND h.id=d.id) ORDER BY coalesce(json_extract(d.payload,'$.createdAt'),'') DESC,d.rowid DESC")?;
         let rows = statement.query_map([kind], |row| row.get::<_, String>(0))?;
         rows.map(|row| Ok(serde_json::from_str(&row?)?)).collect()
+    }
+
+    /// Project history inside SQLite; opening the shell does not deserialize
+    /// frozen question bodies, assets, or model/source audits.
+    pub(crate) fn history_summaries(&self) -> AppResult<Value> {
+        let transaction = rusqlite::Transaction::new_unchecked(&self.user, TransactionBehavior::Deferred)?;
+        let mut history = json!({});
+        for (kind, fields) in [
+            ("drafts", "'draftId',json_extract(d.payload,'$.draftId'),'title',json_extract(d.payload,'$.title'),'revision',json_extract(d.payload,'$.revision'),'createdAt',json_extract(d.payload,'$.createdAt'),'confirmedPaperId',json_extract(d.payload,'$.confirmedPaperId'),'student',json_extract(d.payload,'$.student'),'students',json_extract(d.payload,'$.students'),'stats',json_extract(d.payload,'$.stats'),'scoringMode',json_extract(d.payload,'$.baseline.requirements.scoringMode')"),
+            ("papers", "'paperId',json_extract(d.payload,'$.paperId'),'title',json_extract(d.payload,'$.title'),'createdAt',json_extract(d.payload,'$.createdAt'),'sourceDraftId',json_extract(d.payload,'$.sourceDraftId'),'summary',json_extract(d.payload,'$.summary'),'student',json_extract(d.payload,'$.student'),'students',json_extract(d.payload,'$.students')"),
+        ] {
+            // `fields` is one of the fixed projections above, never user input.
+            let sql = format!("SELECT json_object({fields}) FROM documents d WHERE d.kind=?1 AND NOT EXISTS(SELECT 1 FROM history_deletions h WHERE h.kind=d.kind AND h.id=d.id) ORDER BY coalesce(json_extract(d.payload,'$.createdAt'),'') DESC,d.rowid DESC");
+            let mut statement = transaction.prepare(&sql)?;
+            let summaries = statement.query_map([kind], |row| row.get::<_, String>(0))?
+                .map(|row| Ok(serde_json::from_str::<Value>(&row?)?))
+                .collect::<AppResult<Vec<_>>>()?;
+            history[kind] = json!(summaries);
+        }
+        transaction.commit()?;
+        Ok(history)
     }
 
     pub fn document(&self, kind: &str, id: &str) -> AppResult<Value> {

@@ -19,6 +19,7 @@ mod pdf;
 mod request_diagnostics;
 mod requirements_summary;
 pub mod storage;
+mod startup;
 pub mod student_work;
 pub mod workflow_progress;
 
@@ -324,6 +325,7 @@ impl Runtime {
                 config["bankWarning"] = json!(self.store.bank_warning);
                 Ok(json!({"config":config}))
             }
+            "workspace_config_get" => startup::workspace_config(self),
             "students_list" => Ok(
                 json!({"students":self.store.students(payload["query"].as_str().unwrap_or_default())?}),
             ),
@@ -333,9 +335,7 @@ impl Runtime {
             ),
             "students_update" => Ok(json!({"student":self.store.update_student(payload)?})),
             "history_list" => {
-                let drafts=self.store.list_documents("drafts")?.into_iter().map(|d|json!({"draftId":d["draftId"],"title":d["title"],"revision":d["revision"],"createdAt":d["createdAt"],"confirmedPaperId":d["confirmedPaperId"],"student":d["student"],"students":d["students"],"stats":d["stats"],"scoringMode":d["baseline"]["requirements"]["scoringMode"]})).collect::<Vec<_>>();
-                let papers=self.store.list_documents("papers")?.into_iter().map(|p|json!({"paperId":p["paperId"],"title":p["title"],"createdAt":p["createdAt"],"sourceDraftId":p["sourceDraftId"],"summary":p["summary"],"student":p["student"],"students":p["students"]})).collect::<Vec<_>>();
-                Ok(json!({"drafts":drafts,"papers":papers}))
+                self.store.history_summaries()
             }
             "bank_search" => self.bank_search(payload),
             "bank_catalog" => self.store.bank.catalog(),

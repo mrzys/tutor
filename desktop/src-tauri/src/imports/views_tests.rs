@@ -66,6 +66,40 @@ fn assert_no_shared_body(value: &Value) {
 }
 
 #[test]
+fn simulated_annotation_target_summary_is_identical_before_and_after_question_reads_without_body_leaks() {
+    let (_dir,mut store,mut record) = fixture();
+    for q in record["questions"].as_array_mut().unwrap() {
+        q["difficultyAssessment"] = json!({"level":"easy","basis":"模拟已有难度。"});
+        q["primaryKnowledgeUids"] = json!(["sim-point"]);
+        q["task"] = json!({"label":"模拟已存考点"});
+        q["annotationStatus"] = json!("succeeded");
+    }
+    record["questions"][0]["solutionPaths"] = json!([{"id":"sim-complete-path","basis":"模拟已存解法。"}]);
+    record["questions"][1]["solutionPaths"] = json!([]);
+    assert!(teaching::ready(&record["questions"][1]));
+    let mut published = record["questions"][1].clone();
+    published["questionId"] = json!("sim-published-missing-annotation");
+    published["primaryKnowledgeUids"] = json!([]);
+    record["questions"].as_array_mut().unwrap().push(published);
+    record["publishedQuestionIds"] = json!(["sim-published-missing-annotation"]);
+    store.put_document("imports","sim-views",&record).unwrap();
+    let first = call(&mut store,"import_summary_get",&json!({"importId":"sim-views"})).unwrap();
+    assert_eq!(first["summary"]["annotationQuestionIds"],json!(["sim-view-q2"]));
+    assert_no_shared_body(&first);
+    for id in ["sim-view-q1","sim-view-q2"] {
+        let detail = call(&mut store,"import_question_get",&json!({"importId":"sim-views","questionId":id,"expectedDetailVersion":first["detailVersion"]})).unwrap();
+        assert_eq!(detail["summary"]["annotationQuestionIds"],first["summary"]["annotationQuestionIds"]);
+        assert_eq!(detail["detailVersion"],first["detailVersion"]);
+        assert_eq!(detail["summary"],first["summary"]);
+        let summary_body = detail["summary"].to_string();
+        for marker in ["SIM_Q1_SOURCE_BODY","SIM_Q1_TEACHING_BODY","SIM_Q2_SOURCE_BODY","SIM_Q2_TEACHING_BODY","SIM_OCR_FULL_TEXT"] {
+            assert!(!summary_body.contains(marker),"annotation target summary leaked {marker}");
+        }
+    }
+    assert_eq!(store.document("imports","sim-views").unwrap(),record);
+}
+
+#[test]
 fn simulated_summary_omits_bodies_and_preserves_navigation_structure_and_eligibility() {
     let (_dir,mut store,mut record) = fixture();
     record["questions"][1]["parts"] = json!([{"partId":"sim-part","prompt":"SIM_Q2_PART_BODY","answer":"SIM_Q2_PART_ANSWER","solution":"SIM_Q2_PART_SOLUTION"}]);

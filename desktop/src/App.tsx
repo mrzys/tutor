@@ -56,6 +56,7 @@ import { createSelectionPresenter, type SelectionStepId } from "./selection-prog
 import { DeveloperAssemblyLog } from "./DeveloperAssemblyLog";
 import "./DeveloperLogEntry.css";
 import { Settings } from "./Settings";
+import type { ImportConfigurationContext } from "./model-purpose";
 import { DraftView } from "./Draft";
 import { BlueprintView } from "./Blueprint";
 import { Bank } from "./Bank";
@@ -63,6 +64,7 @@ import { ImportPaper } from "./ImportPaper";
 import { StudentWork } from "./StudentWork";
 import { UsageGuide } from "./UsageGuide";
 import "./GuideEntry.css";
+import "./AppStartup.css";
 import { PaperSheet, RichText } from "./Paper";
 import { waitForPaperAssets } from "./rich-content";
 import { resizeQuestionCounts, slotDifficulty } from "./assembly-details";
@@ -173,6 +175,28 @@ function summaryMessages(summary: any): string[] {
     )
     .filter(Boolean);
 }
+function StartupFrame(props: { error?: string; onRetry: () => void }) {
+  return <div class="desktop-app startup-shell" aria-busy={!props.error}>
+    <aside class="sidebar" aria-label="试卷导航">
+      <div class="sidebar-brand"><BookOpen size={26} /><strong>智教</strong></div>
+      <nav class="sidebar-nav" aria-label="正在准备工作区">
+        <button class="current" disabled><Plus size={20} />新建组卷</button>
+        <button disabled><BookOpen size={19} />题库</button>
+        <button disabled><Upload size={19} />导入试卷</button>
+        <button disabled><UsersRound size={19} />学生管理</button>
+      </nav>
+      <p class="startup-sidebar-note">正在读取本机资料</p>
+    </aside>
+    <main class="main-panel"><div class="main-content new-content">
+      <div class="new-heading"><h1>新建组卷</h1></div>
+      <section class="startup-reader" aria-label="读取本机资料">
+        <Show when={props.error} fallback={<Busy label="正在读取本机资料…" />}>
+          <ErrorBanner message={props.error || ""} retry={props.onRetry} />
+        </Show>
+      </section>
+    </div></main>
+  </div>;
+}
 export default function App() {
   const query = new URLSearchParams(location.search);
   if (query.has("exportTask"))
@@ -217,6 +241,15 @@ export default function App() {
   const [directory, setDirectory] = createSignal("");
   const [config, setConfig] = createSignal<any>(null);
   const [configured, setConfigured] = createSignal(false);
+  const [configurationLoading, setConfigurationLoading] = createSignal(false);
+  const [configurationError, setConfigurationError] = createSignal("");
+  const [modelLoading, setModelLoading] = createSignal(false);
+  const [modelError, setModelError] = createSignal("");
+  const [historyLoading, setHistoryLoading] = createSignal(false);
+  const [historyError, setHistoryError] = createSignal("");
+  let appAlive = true, startupReadVersion = 0, configurationReadVersion = 0, modelReadVersion = 0, historyReadVersion = 0;
+  onCleanup(() => { appAlive = false; ++startupReadVersion; ++configurationReadVersion; ++modelReadVersion; ++historyReadVersion; });
+  const assemblyStartupPending = () => configurationLoading() || modelLoading() || Boolean(configurationError() || modelError()) || !config();
   const [historyState, setHistoryState] = createStore<{drafts: any[]; papers: any[]}>({ drafts: [], papers: [] });
   const history = () => historyState;
   const [openingHistory, setOpeningHistory] = createSignal("");
@@ -260,6 +293,7 @@ export default function App() {
   const [guideTopic, setGuideTopic] = createSignal<"assembly" | "import" | null>(null);
   const [settingsModel, setSettingsModel] = createSignal(false);
   const [settingsOcr, setSettingsOcr] = createSignal(false);
+  const [settingsImportContext, setSettingsImportContext] = createSignal<ImportConfigurationContext | null>(null);
   const [modelRevision, setModelRevision] = createSignal(0);
   const [bankState, setBankState] = createSignal<any>(null);
   const [sidebar, setSidebar] = createSignal(innerWidth > 760);
@@ -317,33 +351,61 @@ export default function App() {
   }
   onCleanup(() => clearTimeout(toastTimer));
   async function refreshHistory() {
-    const result = await request("history_list");
-    batch(() => {
-      setHistoryState("drafts", reconcile((result.drafts || []).filter((item: any) => !item.confirmedPaperId), {key: "draftId"}));
-      setHistoryState("papers", reconcile(result.papers || [], {key: "paperId"}));
-    });
+    const own = ++historyReadVersion;
+    setHistoryLoading(true); setHistoryError("");
+    try {
+      const result = await request("history_list");
+      if (appAlive && own === historyReadVersion) batch(() => {
+        setHistoryState("drafts", reconcile((result.drafts || []).filter((item: any) => !item.confirmedPaperId), {key: "draftId"}));
+        setHistoryState("papers", reconcile(result.papers || [], {key: "paperId"}));
+      });
+    } catch (failure: any) {
+      if (appAlive && own === historyReadVersion) setHistoryError(failure.message || "试卷记录读取失败，请重试。");
+      throw failure;
+    } finally { if (appAlive && own === historyReadVersion) setHistoryLoading(false); }
+  }
+  async function refreshWorkspaceConfiguration() {
+    const own = ++configurationReadVersion;
+    setConfigurationLoading(true); setConfigurationError("");
+    try {
+      const result = await request("workspace_config_get");
+      if (appAlive && own === configurationReadVersion) setConfig(result.config);
+    } catch (failure: any) {
+      if (appAlive && own === configurationReadVersion) setConfigurationError(failure.message || "题库目录读取失败，请重试。");
+      throw failure;
+    } finally { if (appAlive && own === configurationReadVersion) setConfigurationLoading(false); }
+  }
+  async function refreshAssemblyModel() {
+    const own = ++modelReadVersion;
+    setModelLoading(true); setModelError("");
+    try {
+      const model = await request("model_get");
+      if (appAlive && own === modelReadVersion) setConfigured(model.configured === true);
+    } catch (failure: any) {
+      if (appAlive && own === modelReadVersion) { setConfigured(false); setModelError(failure.message || "模型设置读取失败，请重试。"); }
+      throw failure;
+    } finally { if (appAlive && own === modelReadVersion) setModelLoading(false); }
   }
   async function load() {
+    const own = ++startupReadVersion;
     setLoading(true);
     setFatal("");
-    void refreshDeveloperCapabilities();
     try {
       const user = await request("profile_get");
-      setProfile(user.profile);
-      setDirectory(user.dataDirectory || "");
+      if (!appAlive || own !== startupReadVersion) return;
+      batch(() => { setProfile(user.profile); setDirectory(user.dataDirectory || ""); setLoading(false); });
       if (user.profile) {
-        const [boot, model] = await Promise.all([
-          request("bootstrap"),
-          request("model_get"),
-        ]);
-        setConfig(boot.config);
-        setConfigured(model.configured === true);
-        await refreshHistory();
+        // The shell and independent sections are usable once the real local
+        // profile is known. Directory/model/history failures retry separately.
+        void refreshWorkspaceConfiguration().catch(() => {});
+        void refreshAssemblyModel().catch(() => {});
+        void refreshHistory().catch(() => {});
+        void refreshDeveloperCapabilities();
       }
     } catch (error: any) {
-      setFatal(error.message);
+      if (appAlive && own === startupReadVersion) setFatal(error.message);
     } finally {
-      setLoading(false);
+      if (appAlive && own === startupReadVersion) setLoading(false);
     }
   }
   onMount(load);
@@ -439,12 +501,13 @@ export default function App() {
     if (deleted && current) newPaper();
   }
   function configureAssemblyModel() {
+    setSettingsImportContext(null);
     setSettingsModel(true);
     setSettingsOcr(false);
     setSettings(true);
   }
   async function prepare(requirements: any, message: string, _mode: string, studentOffset?: number) {
-    if (busy()) return;
+    if (busy() || assemblyStartupPending()) return;
     if (!configured()) { configureAssemblyModel(); return; }
     const mode = "llm";
     const runId = operationId();
@@ -817,19 +880,11 @@ export default function App() {
   return (
     <Show
       when={!loading()}
-      fallback={
-        <div class="startup">
-          <Busy label="正在打开智教…" />
-        </div>
-      }
+      fallback={<StartupFrame onRetry={load} />}
     >
       <Show
         when={!fatal()}
-        fallback={
-          <div class="startup">
-            <ErrorBanner message={fatal()} retry={load} />
-          </div>
-        }
+        fallback={<StartupFrame error={fatal()} onRetry={load} />}
       >
         <Show when={profile()} fallback={<FirstRun onDone={() => load()} />}>
           <div class={`desktop-app ${sidebar() ? "" : "sidebar-collapsed"}`} style={{ display: settings() ? "none" : undefined }}>
@@ -880,12 +935,14 @@ export default function App() {
                 </button>
                 <button aria-label="学生管理" class={view() === "students" ? "current" : ""} disabled={Boolean(busy())} onClick={() => { setView("students"); setSidebar(innerWidth > 760); }}><UsersRound size={19} />学生管理<Show when={studentJobs()}><small class="import-nav-count" aria-label="后台批改中">{studentJobs()}</small></Show></button>
               </nav>
-              <div class="history-scroll">
+              <div class="history-scroll" aria-busy={historyLoading()}>
+                <Show when={historyLoading()}><p class="history-loading" role="status">正在读取试卷记录…</p></Show>
+                <Show when={historyError()}><div class="history-read-error"><ErrorBanner message={historyError()} retry={() => void refreshHistory().catch(() => {})} /></div></Show>
                 <section>
                   <div class="history-label">
-                    草稿 <span>{history().drafts.length}</span>
+                    草稿 <span>{historyLoading() ? "…" : historyError() && !history().drafts.length ? "—" : history().drafts.length}</span>
                   </div>
-                  <Show when={!history().drafts.length}>
+                  <Show when={!historyLoading() && !historyError() && !history().drafts.length}>
                     <p class="history-empty">还没有草稿</p>
                   </Show>
                   <For each={history().drafts}>
@@ -923,9 +980,9 @@ export default function App() {
                 </section>
                 <section>
                   <div class="history-label">
-                    试卷 <span>{history().papers.length}</span>
+                    试卷 <span>{historyLoading() ? "…" : historyError() && !history().papers.length ? "—" : history().papers.length}</span>
                   </div>
-                  <Show when={!history().papers.length}>
+                  <Show when={!historyLoading() && !historyError() && !history().papers.length}>
                     <p class="history-empty">还没有确认的试卷</p>
                   </Show>
                   <For each={history().papers}>
@@ -970,6 +1027,7 @@ export default function App() {
                 class="profile-button"
                 disabled={Boolean(busy())}
                 onClick={() => {
+                  setSettingsImportContext(view() === "import" ? { from: "import" } : null);
                   setSettingsModel(false);
                       setSettingsOcr(false);
                   setSettings(true);
@@ -999,6 +1057,14 @@ export default function App() {
                     {config().bankWarning}
                   </p>
                 </Show>
+                <Show when={!config() && ["bank", "import", "workbench"].includes(view())}>
+                  <section class="workspace-loading" aria-label="读取题库目录">
+                    <Show when={configurationError()} fallback={<Busy label="正在读取题库目录…" />}>
+                      <ErrorBanner message={configurationError()} retry={() => void refreshWorkspaceConfiguration().catch(() => {})} />
+                    </Show>
+                  </section>
+                </Show>
+                <Show when={config() && configurationError()}><ErrorBanner message={configurationError()} retry={() => void refreshWorkspaceConfiguration().catch(() => {})} /></Show>
                 <Show when={view() === "preparing" && preparation()}>{run => <PreparationConversation run={run()} config={config()} onStop={() => void stopPreparation()} onRetry={retryPreparation} onEdit={() => { setPreparation(null); setView("new"); }} onReview={() => { if (!busy() && run().result) acceptPreparedResult(run().result); }} />}</Show>
                 <Show when={view() === "planning" && planning()}>{run => <BlueprintProgress run={run()} onStop={() => void stopPlanning()} onRetry={retryPlanning} onBack={() => { if (!busy()) { setView("workbench"); setStage("review"); } }} onReview={() => { if (!busy() && run().result) acceptPlannedResult(run().result); }} />}</Show>
                 <Show when={view() === "selecting" && selection()}>{run => <SelectionProgress run={run()} onStop={() => void stopSelection()} onRetry={retrySelection} onBack={() => { if (!busy()) { setView("workbench"); setStage("blueprint"); } }} onReview={() => { if (!busy() && run().result) acceptSelectedResult(run().result); }} />}</Show>
@@ -1007,6 +1073,15 @@ export default function App() {
                     <h1>新建组卷</h1>
                     <button class="guide-entry guide-context-entry" onClick={() => setGuideTopic("assembly")}><CircleHelp size={16} />了解如何组卷</button>
                   </div>
+                  <Show when={!config()}>
+                    <section class="workspace-loading" aria-label="读取题库目录">
+                      <Show when={configurationError()} fallback={<Busy label="正在读取题库目录…" />}>
+                        <ErrorBanner message={configurationError()} retry={() => void refreshWorkspaceConfiguration().catch(() => {})} />
+                      </Show>
+                    </section>
+                  </Show>
+                  <Show when={modelLoading()}><p class="assembly-model-loading" role="status">正在读取模型设置…</p></Show>
+                  <Show when={modelError()}><ErrorBanner message={modelError()} retry={() => void refreshAssemblyModel().catch(() => {})} /></Show>
                   <Show when={config()}>
                     <Show keyed when={composerKey() + 1}>
                       {(_key: number) => (
@@ -1014,7 +1089,7 @@ export default function App() {
                           config={config()}
                           initial={req()}
                           initialStudentOffset={composerStudentOffset()}
-                          busy={Boolean(busy())}
+                          busy={Boolean(busy()) || assemblyStartupPending()}
                           configured={configured()}
                           onSubmit={prepare}
                           onConfigure={configureAssemblyModel}
@@ -1023,7 +1098,7 @@ export default function App() {
                     </Show>
                   </Show>
                 </div>
-                <Show when={view() === "bank"}>
+                <Show when={view() === "bank" && config()}>
                   <Bank
                     config={config()}
                     initial={bankState()}
@@ -1053,7 +1128,7 @@ export default function App() {
                     }}
                   />
                 </Show>
-                <Show when={importMounted()}>
+                <Show when={importMounted() && config()}>
                   <div hidden={view() !== "import"}>
                   <ImportPaper
                     visible={view() === "import"}
@@ -1063,28 +1138,25 @@ export default function App() {
                     onGuide={() => setGuideTopic("import")}
                     onAssembly={() => setView("new")}
                     modelRevision={modelRevision()}
-                    onConfigure={(section) => {
+                    onConfigure={(section?: "models" | "ocr", context?: ImportConfigurationContext) => {
+                      setSettingsImportContext(context || { from: "import" });
                       setSettingsModel(section !== "ocr");
                       setSettingsOcr(section === "ocr");
                       setSettings(true);
                     }}
                     onBank={async () => {
-                      const boot = await request("bootstrap");
-                      setConfig(boot.config);
+                      await refreshWorkspaceConfiguration();
                       setView("bank");
                     }}
-                    onPublished={async () => {
-                      const boot = await request("bootstrap");
-                      setConfig(boot.config);
-                    }}
+                    onPublished={refreshWorkspaceConfiguration}
                     onBusy={(value) => setBusy(value ? "import" : "")}
                     onJobsChange={setImportJobs}
                     onNotice={notify}
                   />
                   </div>
                 </Show>
-                <Show when={studentsMounted()}><div hidden={view() !== "students"}><StudentWork active={view() === "students"} onJobs={setStudentJobs} onConfigure={() => { setSettingsModel(true); setSettingsOcr(true); setSettings(true); }} /></div></Show>
-                <Show when={view() === "workbench"}>
+                <Show when={studentsMounted()}><div hidden={view() !== "students"}><StudentWork active={view() === "students"} onJobs={setStudentJobs} onConfigure={() => { setSettingsImportContext(null); setSettingsModel(true); setSettingsOcr(true); setSettings(true); }} /></div></Show>
+                <Show when={view() === "workbench" && config()}>
                   <Show when={stage() === "review" && preparation()?.status === "succeeded"}><PreparationConversation run={preparation()!} config={config()} compact /></Show>
                   <header class="page-heading">
                     <div class="heading-main">
@@ -1430,17 +1502,18 @@ export default function App() {
               dataDirectory={directory()}
               showModel={settingsModel()}
               showOcr={settingsOcr()}
-              onBankChanged={async()=>setConfig((await request("bootstrap")).config)}
+              importContext={settingsImportContext()}
+              onBankChanged={refreshWorkspaceConfiguration}
               onDeveloperModeChange={enabled => { setDeveloperEnabled(enabled); if (!enabled) setDeveloperLogOpen(false); }}
               onClose={() => {
                 setSettings(false);
+                setSettingsImportContext(null);
                 if (innerWidth <= 760) setSidebar(false);
               }}
               onSaved={async (value) => {
                 setProfile(value);
                 try {
-                  const model = await request("model_get");
-                  setConfigured(model.configured === true);
+                  await refreshAssemblyModel();
                 } catch {
                   setConfigured(false);
                 }

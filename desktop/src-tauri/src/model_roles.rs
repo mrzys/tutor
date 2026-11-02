@@ -1,11 +1,70 @@
-//! Three explicitly selected import purposes, independent of the general model.
+//! Explicit import purposes. New verification roles never use a legacy fallback.
 use super::*;
+const LEGACY_ROLE_KEYS: [&str; 3] = ["sourceParsing", "teachingGeneration", "teachingReview"];
+const ACCURACY_ROLE_KEYS: [&str; 4] = [
+    "sourceVerification",
+    "independentSolve",
+    "mathVerification",
+    "teachingVerification",
+];
+const ROLE_KEYS: [&str; 7] = [
+    "sourceParsing",
+    "teachingGeneration",
+    "teachingReview",
+    "sourceVerification",
+    "independentSolve",
+    "mathVerification",
+    "teachingVerification",
+];
+
+fn valid_role_shape(value: &Value) -> bool {
+    value.as_object().is_some_and(|o| {
+        LEGACY_ROLE_KEYS.iter().all(|k| o.contains_key(*k))
+            && o.keys().all(|k| ROLE_KEYS.contains(&k.as_str()))
+    })
+}
+fn preserve_missing_accuracy_fields(value: &Value, previous: Option<Value>) -> Value {
+    let mut next = value.clone();
+    if let (Some(input), Some(old)) = (
+        next.as_object_mut(),
+        previous.as_ref().and_then(Value::as_object),
+    ) {
+        for key in ACCURACY_ROLE_KEYS {
+            if !input.contains_key(key) {
+                if let Some(saved) = old.get(key) {
+                    input.insert(key.into(), saved.clone());
+                }
+            }
+        }
+    }
+    next
+}
+fn role_label(role: &str) -> AppResult<&'static str> {
+    match role {
+        "sourceParsing" => Ok("拆题"),
+        "teachingGeneration" => Ok("解析生成"),
+        "teachingReview" => Ok("解析复核"),
+        "sourceVerification" => Ok("来源核验"),
+        "independentSolve" => Ok("独立求解"),
+        "mathVerification" => Ok("数学核验"),
+        "teachingVerification" => Ok("教学核验"),
+        _ => Err(input_error("导入模型用途无效。")),
+    }
+}
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ImportRoles {
     pub source_parsing: Option<String>,
     pub teaching_generation: Option<String>,
     pub teaching_review: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_verification: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub independent_solve: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub math_verification: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub teaching_verification: Option<String>,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
@@ -23,6 +82,14 @@ pub(super) struct ImportRoleThinking {
     pub source_parsing: Option<RoleThinkingOverride>,
     pub teaching_generation: Option<RoleThinkingOverride>,
     pub teaching_review: Option<RoleThinkingOverride>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_verification: Option<RoleThinkingOverride>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub independent_solve: Option<RoleThinkingOverride>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub math_verification: Option<RoleThinkingOverride>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub teaching_verification: Option<RoleThinkingOverride>,
 }
 
 impl ImportRoleThinking {
@@ -34,18 +101,14 @@ impl ImportRoleThinking {
         if value.is_null() {
             return Ok(None);
         }
-        const KEYS: [&str; 3] = ["sourceParsing", "teachingGeneration", "teachingReview"];
-        if !value
-            .as_object()
-            .is_some_and(|o| o.len() == 3 && KEYS.iter().all(|k| o.contains_key(*k)))
-        {
+        if !valid_role_shape(value) {
             return Err(input_error(
                 "用途思考设置须包含拆题、解析生成和解析复核三项。",
             ));
         }
         let thinking: Self = serde_json::from_value(value.clone())
             .map_err(|_| input_error("用途思考设置格式无效。"))?;
-        for role in KEYS {
+        for role in ROLE_KEYS {
             if let Some(setting) = thinking.setting(role) {
                 setting.validate(role, roles, profiles)?;
             }
@@ -53,11 +116,33 @@ impl ImportRoleThinking {
         Ok(Some(thinking))
     }
 
+    /// Clients which only know the original purposes cannot erase newer bindings.
+    pub(super) fn parse_updated(
+        value: &Value,
+        previous: Option<&Self>,
+        roles: Option<&ImportRoles>,
+        profiles: &[ModelProfile],
+    ) -> AppResult<Option<Self>> {
+        let previous = previous
+            .and_then(|p| p.retain_matching(roles, profiles))
+            .map(|p| serde_json::to_value(p))
+            .transpose()?;
+        Self::parse(
+            &preserve_missing_accuracy_fields(value, previous),
+            roles,
+            profiles,
+        )
+    }
+
     fn setting(&self, role: &str) -> Option<&RoleThinkingOverride> {
         match role {
             "sourceParsing" => self.source_parsing.as_ref(),
             "teachingGeneration" => self.teaching_generation.as_ref(),
             "teachingReview" => self.teaching_review.as_ref(),
+            "sourceVerification" => self.source_verification.as_ref(),
+            "independentSolve" => self.independent_solve.as_ref(),
+            "mathVerification" => self.math_verification.as_ref(),
+            "teachingVerification" => self.teaching_verification.as_ref(),
             _ => None,
         }
     }
@@ -80,6 +165,10 @@ impl ImportRoleThinking {
             source_parsing: valid("sourceParsing", &self.source_parsing),
             teaching_generation: valid("teachingGeneration", &self.teaching_generation),
             teaching_review: valid("teachingReview", &self.teaching_review),
+            source_verification: valid("sourceVerification", &self.source_verification),
+            independent_solve: valid("independentSolve", &self.independent_solve),
+            math_verification: valid("mathVerification", &self.math_verification),
+            teaching_verification: valid("teachingVerification", &self.teaching_verification),
         })
     }
 }
@@ -111,30 +200,22 @@ impl ImportRoles {
         if value.is_null() {
             return Ok(None);
         }
-        const KEYS: [&str; 3] = ["sourceParsing", "teachingGeneration", "teachingReview"];
-        if !value
-            .as_object()
-            .is_some_and(|o| o.len() == 3 && KEYS.iter().all(|k| o.contains_key(*k)))
-        {
+        if !valid_role_shape(value) {
             return Err(input_error(
                 "导入模型用途须同时包含拆题、教学解析和复核三项，值为配置标识或空。",
             ));
         }
         let roles: Self = serde_json::from_value(value.clone())
             .map_err(|_| input_error("导入模型用途格式无效。"))?;
-        for id in [
-            &roles.source_parsing,
-            &roles.teaching_generation,
-            &roles.teaching_review,
-        ]
-        .into_iter()
-        .flatten()
+        for id in ROLE_KEYS
+            .into_iter()
+            .filter_map(|role| roles.id(role).ok().flatten())
         {
             if id.is_empty()
                 || id.len() > 120
                 || id != id.trim()
                 || id.chars().any(char::is_control)
-                || !profiles.iter().any(|p| p.id == *id)
+                || !profiles.iter().any(|p| p.id == id)
             {
                 return Err(input_error(
                     "导入模型用途引用了不存在的配置；删除前请同时清空或改选相关用途。",
@@ -143,25 +224,32 @@ impl ImportRoles {
         }
         Ok(Some(roles))
     }
+    pub(super) fn parse_updated(
+        value: &Value,
+        previous: Option<&Self>,
+        profiles: &[ModelProfile],
+    ) -> AppResult<Option<Self>> {
+        let previous = previous.map(serde_json::to_value).transpose()?;
+        Self::parse(&preserve_missing_accuracy_fields(value, previous), profiles)
+    }
     fn id(&self, role: &str) -> AppResult<Option<&str>> {
         match role {
             "sourceParsing" => Ok(self.source_parsing.as_deref()),
             "teachingGeneration" => Ok(self.teaching_generation.as_deref()),
             "teachingReview" => Ok(self.teaching_review.as_deref()),
+            "sourceVerification" => Ok(self.source_verification.as_deref()),
+            "independentSolve" => Ok(self.independent_solve.as_deref()),
+            "mathVerification" => Ok(self.math_verification.as_deref()),
+            "teachingVerification" => Ok(self.teaching_verification.as_deref()),
             _ => Err(input_error("导入模型用途无效。")),
         }
     }
 }
 impl ModelClient {
     pub(super) fn explicit_import_model(&self, role: &str) -> AppResult<Option<Self>> {
+        let label = role_label(role)?;
         let Some(roles) = &self.import_roles else {
             return Ok(None);
-        };
-        let label = match role {
-            "sourceParsing" => "拆题",
-            "teachingGeneration" => "解析生成",
-            "teachingReview" => "解析复核",
-            _ => return Err(input_error("导入模型用途无效。")),
         };
         let id = roles.id(role)?.ok_or_else(|| {
             AppError::new(
@@ -203,21 +291,43 @@ impl ModelClient {
     pub(crate) fn import_source_role_explicit(&self) -> bool {
         self.import_roles.is_some()
     }
+    /// New stages require their own saved purpose, even for legacy-mode profiles.
+    pub(crate) fn import_accuracy_model(&self, role: &str) -> AppResult<Self> {
+        if !ACCURACY_ROLE_KEYS.contains(&role) {
+            return Err(input_error("准确性核验模型用途无效。"));
+        }
+        self.explicit_import_model(role)?.ok_or_else(|| {
+            AppError::new(
+                "import_model_not_configured",
+                format!(
+                    "请为{}明确选择一套模型配置。",
+                    role_label(role).unwrap_or("核验")
+                ),
+            )
+        })
+    }
     pub(super) fn effective_import_roles(&self) -> Value {
-        let summarize = |role: &str, result: AppResult<Self>| match result {
-            Ok(client) => {
-                let overridden = self
-                    .import_role_thinking
-                    .as_ref()
-                    .and_then(|thinking| thinking.setting(role))
-                    .is_some();
-                json!({"strategy":if self.import_roles.is_some(){"explicit"}else{"legacy"},"profileId":client.active_profile_id,"provider":model_provider(&client.base_url),"model":client.model,"reasoningEffort":client.reasoning_effort,"reasoningSource":if self.import_roles.is_none(){"legacy"}else if overridden{"purpose"}else{"profile"},"configured":client.configured()})
-            }
-            Err(error) => {
-                json!({"strategy":if self.import_roles.is_some(){"explicit"}else{"legacy"},"profileId":null,"configured":false,"error":error})
+        let summarize = |role: &str, result: AppResult<Self>| {
+            let explicit = self.import_roles.is_some() || ACCURACY_ROLE_KEYS.contains(&role);
+            match result {
+                Ok(client) => {
+                    let overridden = self
+                        .import_role_thinking
+                        .as_ref()
+                        .and_then(|thinking| thinking.setting(role))
+                        .is_some();
+                    json!({"strategy":if explicit{"explicit"}else{"legacy"},"profileId":client.active_profile_id,"provider":model_provider(&client.base_url),"model":client.model,"reasoningEffort":client.reasoning_effort,"reasoningSource":if !explicit{"legacy"}else if overridden{"purpose"}else{"profile"},"configured":client.configured()})
+                }
+                Err(error) => {
+                    json!({"strategy":if explicit{"explicit"}else{"legacy"},"profileId":null,"configured":false,"error":error})
+                }
             }
         };
-        json!({"sourceParsing":summarize("sourceParsing",self.import_source_model()),"teachingGeneration":summarize("teachingGeneration",self.import_generator()),"teachingReview":summarize("teachingReview",self.import_teaching_reviewer())})
+        let mut result = json!({"sourceParsing":summarize("sourceParsing",self.import_source_model()),"teachingGeneration":summarize("teachingGeneration",self.import_generator()),"teachingReview":summarize("teachingReview",self.import_teaching_reviewer())});
+        for role in ACCURACY_ROLE_KEYS {
+            result[role] = summarize(role, self.import_accuracy_model(role));
+        }
+        result
     }
 }
 #[cfg(test)]

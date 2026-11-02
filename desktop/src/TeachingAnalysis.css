@@ -1,0 +1,64 @@
+.teaching-edit-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.teaching-edit-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  padding: 14px 16px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: var(--surface);
+}
+
+.teaching-edit-field:hover:not(:disabled) { background: var(--surface-hover); }
+.teaching-edit-field > span { min-width: 0; }
+.teaching-edit-field strong { display: block; color: var(--accent); }
+.teaching-edit-field small { display: block; margin-top: 4px; color: var(--muted); line-height: 1.6; }
+.teaching-edit-dialog .modal:has(.teaching-edit-form) { width: min(960px,100%); max-height: calc(100dvh - 48px); }
+.teaching-edit-dialog .modal:has(.teaching-edit-form) .modal-header { padding-top:12px; padding-bottom:4px; }
+.teaching-edit-dialog .modal:has(.teaching-edit-form) .modal-footer { padding-top:12px; padding-bottom:12px; }
+.teaching-edit-dialog .modal-footer button { min-height:44px; }
+.teaching-review-options { min-height:44px; font-size:14px; }
+.teaching-review-options-content { min-width:0; }
+.teaching-review-options-content .import-teaching-issue:first-child { margin-top:0; }
+.teaching-review-options-content .import-teaching-issue > p { overflow-wrap:anywhere; }
+.teaching-review-options-content .import-manual-fields { min-width:0; }
+.teaching-review-options-content textarea { width:100%; }
+.teaching-edit-context { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; margin:0 0 8px; color:var(--muted); font-size:14px; }
+.teaching-edit-context button { min-height:44px; }
+.teaching-edit-comparison { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-bottom: 8px; }
+.teaching-edit-original, .teaching-edit-replacement { min-width: 0; }
+.teaching-edit-original h3, .teaching-edit-replacement h3 { margin: 0 0 8px; font-size:14px; color: var(--accent); }
+.teaching-edit-original-content { max-height:132px; overflow:auto; padding:10px 12px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: var(--control-radius); line-height: 1.75; overflow-wrap: anywhere; }
+.teaching-edit-original-content img { max-width: 100%; height: auto; }
+.teaching-edit-replacement textarea { display:block; width:100%; min-height:104px; resize:vertical; line-height:1.75; }
+.teaching-edit-dialog[data-long=true] .teaching-edit-original-content { max-height:min(34dvh,300px); }
+.teaching-edit-dialog[data-long=true] .teaching-edit-replacement textarea { min-height:224px; }
+.teaching-edit-replacement .import-math-toolbar { flex-wrap:nowrap; overflow-x:auto; padding:2px 6px; margin-top:0; }
+.teaching-edit-replacement .import-math-token { flex-shrink:0; min-width:44px; min-height:44px; }
+.teaching-edit-replacement .import-math-toolbar-label { display:none; }
+.teaching-edit-preview { margin:0; }
+.teaching-edit-preview > summary { min-height:44px; align-content:center; cursor:pointer; color:var(--muted); font-size:14px; }
+.teaching-edit-preview > div { margin:8px 0 12px; line-height:1.75; overflow-wrap:anywhere; }
+.teaching-edit-form .import-manual-fields { min-width:0; padding:0; }
+.teaching-edit-form .check-row { min-height:44px; align-items:center; margin-top:6px; line-height:1.7; font-size:14px; }
+.teaching-edit-form .check-row input { flex-shrink: 0; margin-top: 5px; }
+.teaching-edit-form .field-label > textarea { width: 100%; }
+.teaching-edit-form .teaching-edit-basis { margin:0; gap:6px; font-size:14px; }
+.teaching-edit-form .teaching-edit-basis textarea { min-height:68px; }
+.teaching-edit-form .warning-text { margin-top: 14px; }
+
+@media (max-width: 760px) {
+  .teaching-edit-dialog .modal:has(.teaching-edit-form) { max-height:calc(100dvh - 24px); }
+  .teaching-edit-comparison { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .teaching-edit-original-content,.teaching-edit-dialog[data-long=true] .teaching-edit-original-content { max-height:140px; }
+  .teaching-edit-replacement textarea { min-height:104px; }
+  .teaching-edit-dialog[data-long=true] .teaching-edit-replacement textarea { min-height:200px; }
+  .teaching-edit-field { padding: 12px; }
+}

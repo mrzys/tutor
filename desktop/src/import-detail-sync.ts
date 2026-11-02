@@ -24,6 +24,44 @@ export function mergeImportView(previous: any, edited: any[], previousVersion: s
   };
 }
 
+/** Enrich this exact snapshot without applying another summary, changing the
+ * selection, or replacing local edits. Late reads are useful even after the
+ * user moves on, but never belong to a newer snapshot or a reopened import. */
+export function mergeImportQuestionDetail(previous: any, edited: any[], version: string | undefined,
+  result: any, questionId: string) {
+  if (!version || previous?.importId !== result.summary?.importId || version !== result.detailVersion) return null;
+  if (result.question?.questionId !== questionId || !hasImportQuestionDetail(result.question)) {
+    throw new Error("本题详情与请求不一致，请重新读取。");
+  }
+  const baseline = previous.questions?.find((question: any) => question.questionId === questionId);
+  if (!baseline || hasImportQuestionDetail(baseline)) return null;
+  return {
+    record: { ...previous, questions: previous.questions.map((question: any) =>
+      question.questionId === questionId ? result.question : question) },
+    questions: edited.map(question => question.questionId === questionId && !hasImportQuestionDetail(question)
+      ? structuredClone(result.question) : question),
+  };
+}
+
+/** Foreground navigation and prefetch share one read for the same persisted
+ * snapshot. Failed reads are removed so an explicit retry can really retry. */
+export function createImportQuestionRequests(read: (payload: any) => Promise<any>) {
+  const pending = new Map<string, Promise<any>>();
+  return {
+    get(importId: string, version: string, questionId: string) {
+      const key = JSON.stringify([importId, version, questionId]);
+      const existing = pending.get(key);
+      if (existing) return existing;
+      const task = Promise.resolve().then(() => read({ importId, questionId, expectedDetailVersion: version }));
+      pending.set(key, task);
+      const done = () => { if (pending.get(key) === task) pending.delete(key); };
+      void task.then(done, done);
+      return task;
+    },
+    clear() { pending.clear(); },
+  };
+}
+
 /** Coalesce bursts, serialize reads, and remember invalidations received during
  * a read. No periodic timer: every run follows an event or explicit resync. */
 export function createImportRefreshQueue(read: () => Promise<void>, delay = 40) {

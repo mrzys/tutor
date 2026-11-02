@@ -11,6 +11,40 @@ fn positive(input: &Value, key: &str, default: u64) -> AppResult<u64> {
             .ok_or_else(|| err("invalid_input", "页码和每页条数必须为正整数。")),
     }
 }
+
+/// History deliberately does not replay source files or process evidence. A
+/// saved question awaiting publication is a prompt to open the exact detail,
+/// not proof that it needs another human check or is currently publishable.
+fn action_summary(record: &Value, process: &Value) -> Value {
+    let saved = &record["actionSummary"];
+    let count = |key| saved[key].as_u64().unwrap_or(0);
+    let failed = record["status"] == "failed" || record["backgroundJob"]["status"] == "failed";
+    let (next_action, next_label) = if matches!(s(&record["backgroundJob"], "status"), "queued" | "running") {
+        ("processing", "查看进度")
+    } else if failed {
+        ("view_error", "查看原因")
+    } else if matches!(s(record, "status"), "prepared" | "processing" | "cancelled" | "interrupted" | "budget_paused")
+        || matches!(s(&record["backgroundJob"], "status"), "cancelled" | "interrupted") {
+        ("continue_processing", "继续处理")
+    } else if count("pendingCount") > 0 {
+        ("review", "打开核对")
+    } else {
+        ("open", "查看记录")
+    };
+    let mut labels = vec![];
+    for (key, label) in [("pendingCount", "待打开核对"), ("duplicateCount", "已识别重复"),
+        ("publishedCount", "已入库"), ("rejectedCount", "未采用")] {
+        let n = count(key);
+        if n > 0 { labels.push(format!("{n} 题{label}")); }
+    }
+    json!({"schemaVersion":1,"pipeline":saved["pipeline"],"qualification":"open_to_verify","readyCount":null,
+        "pendingCount":count("pendingCount"),"duplicateCount":count("duplicateCount"),
+        "publishedCount":count("publishedCount"),"rejectedCount":count("rejectedCount"),
+        "hasFailure":failed,"technicalFailure":failed && matches!(s(process,"category"),"infrastructure"|"model_output"),
+        "failureCategory":if failed {process["category"].clone()} else {Value::Null},
+        "label":if labels.is_empty(){"尚未整理出题目".to_owned()}else{labels.join(" · ")},
+        "nextAction":next_action,"nextActionLabel":next_label})
+}
 pub(super) fn list(store: &Store, payload: &Value) -> AppResult<Value> {
     if !payload.is_object() {
         return Err(err("invalid_input", "分页参数必须为对象。"));
@@ -36,6 +70,20 @@ pub(super) fn list(store: &Store, payload: &Value) -> AppResult<Value> {
         SELECT id,payload FROM documents WHERE kind='imports'
         ORDER BY COALESCE(CAST(json_extract(payload,'$.createdAt') AS TEXT),'') DESC,id DESC
         LIMIT ?1 OFFSET ?2
+    ), saved_states AS MATERIALIZED (
+        SELECT paged.id,CASE
+            WHEN json_extract(CASE WHEN question.type='object' THEN question.value ELSE '{}' END,'$.status')='published' OR EXISTS (
+                SELECT 1 FROM json_each(CASE WHEN json_type(payload,'$.publishedQuestionIds')='array' THEN json_extract(payload,'$.publishedQuestionIds') ELSE '[]' END) published
+                WHERE published.value=json_extract(CASE WHEN question.type='object' THEN question.value ELSE '{}' END,'$.questionId') AND trim(COALESCE(published.value,''))!=''
+            ) THEN 'published'
+            WHEN EXISTS (
+                SELECT 1 FROM json_each(CASE WHEN json_type(CASE WHEN question.type='object' THEN question.value ELSE '{}' END,'$.duplicateCandidates')='array'
+                    THEN json_extract(question.value,'$.duplicateCandidates') ELSE '[]' END) candidate
+                WHERE json_type(CASE WHEN candidate.type='object' THEN candidate.value ELSE '{}' END,'$.exact')='true'
+            ) THEN 'duplicate'
+            WHEN json_extract(CASE WHEN question.type='object' THEN question.value ELSE '{}' END,'$.reviewDecision')='reject' THEN 'rejected'
+            ELSE 'pending' END AS state
+        FROM paged,json_each(CASE WHEN json_type(payload,'$.questions')='array' THEN json_extract(payload,'$.questions') ELSE '[]' END) question
     ) SELECT json_object(
         'importId',id,
         'filename',json_extract(payload,'$.filename'),
@@ -51,7 +99,14 @@ pub(super) fn list(store: &Store, payload: &Value) -> AppResult<Value> {
         ) ELSE NULL END,
         'error',CASE WHEN json_type(payload,'$.error')='object' THEN json_object('code',substr(COALESCE(json_extract(payload,'$.error.code'),''),1,120),'message',substr(COALESCE(json_extract(payload,'$.error.message'),''),1,600)) ELSE NULL END,
         'questionCount',CASE WHEN json_type(payload,'$.questions')='array' THEN json_array_length(payload,'$.questions') ELSE 0 END,
-        'publishedCount',CASE WHEN json_type(payload,'$.publishedQuestionIds')='array' THEN json_array_length(payload,'$.publishedQuestionIds') ELSE 0 END
+        'publishedCount',CASE WHEN json_type(payload,'$.publishedQuestionIds')='array' THEN json_array_length(payload,'$.publishedQuestionIds') ELSE 0 END,
+        'actionSummary',json_object(
+            'pipeline',CASE WHEN trim(COALESCE(json_extract(payload,'$.accuracyRunId'),''))!='' THEN 'accuracy' ELSE 'legacy' END,
+            'pendingCount',(SELECT count(*) FROM saved_states WHERE saved_states.id=paged.id AND state='pending'),
+            'duplicateCount',(SELECT count(*) FROM saved_states WHERE saved_states.id=paged.id AND state='duplicate'),
+            'publishedCount',(SELECT count(*) FROM saved_states WHERE saved_states.id=paged.id AND state='published'),
+            'rejectedCount',(SELECT count(*) FROM saved_states WHERE saved_states.id=paged.id AND state='rejected')
+        )
     ) FROM paged")?;
     // COUNT is an SQLite i64; clamping bounds offset to that same range.
     let summaries = statement
@@ -63,6 +118,7 @@ pub(super) fn list(store: &Store, payload: &Value) -> AppResult<Value> {
         .collect::<AppResult<Vec<_>>>()?;
     for record in &mut imports {
         let process = diagnostics::process_metadata(record);
+        record["actionSummary"] = action_summary(record, &process);
         record["stageKey"] = process["stageKey"].clone();
         record["stageLabel"] = process["stageLabel"].clone();
         if record["status"] == "failed" || record["backgroundJob"]["status"] == "failed" {
@@ -129,6 +185,86 @@ mod tests {
             .query_row("SELECT total_changes()", [], |r| r.get(0))
             .unwrap()
     }
+    #[test]
+    fn simulated_history_counts_saved_dispositions_without_promoting_model_status_or_reading_evidence() {
+        let (_dir, mut store, model) = fixture();
+        let private = "SIMULATED_HISTORY_PRIVATE_BODY".repeat(1000);
+        for (id, accuracy) in [("sim-legacy", false), ("sim-accuracy", true)] {
+            let mut record = json!({"importId":id,"filename":"模拟列表.pdf","status":"pending_review",
+                "createdAt":"2026-11-03T00:00:00Z","source":{"relativePath":"missing-original.pdf"},
+                "publishedQuestionIds":["published"],"questions":[
+                    {"questionId":"published","reviewDecision":"reject","duplicateCandidates":[{"exact":true}],"stem":private},
+                    {"questionId":"duplicate","reviewDecision":"reject","duplicateCandidates":[{"exact":true}]},
+                    {"questionId":"rejected","reviewDecision":"reject"},
+                    {"questionId":"self-reviewed","modelReview":{"status":"ready","confidence":"high","issues":[]}},
+                    {"questionId":"unverified-projection","accuracy":{"status":"ready"}},
+                    {"questionId":"near-duplicate","duplicateCandidates":[{"exact":false}]}
+                ],"ocrSource":{"pages":[private]},"assets":[{"contentBase64":private}]});
+            if accuracy { record["accuracyRunId"] = json!("missing-process-evidence"); }
+            store.put_document("imports", id, &record).unwrap();
+        }
+        let writes = changes(&store);
+        let result = call(&mut store, &model, json!({}));
+        for row in rows(&result["imports"]) {
+            let summary = &row["actionSummary"];
+            assert_eq!(summary["pipeline"], if row["importId"] == "sim-accuracy" { "accuracy" } else { "legacy" });
+            assert_eq!(summary["qualification"], "open_to_verify");
+            assert_eq!(summary["readyCount"], Value::Null);
+            assert_eq!(summary["pendingCount"], 3);
+            assert_eq!(summary["duplicateCount"], 1);
+            assert_eq!(summary["publishedCount"], 1);
+            assert_eq!(summary["rejectedCount"], 1);
+            assert_eq!(summary["nextAction"], "review");
+            assert_eq!(summary["label"], "3 题待打开核对 · 1 题已识别重复 · 1 题已入库 · 1 题未采用");
+        }
+        assert!(!result.to_string().contains("SIMULATED_HISTORY_PRIVATE_BODY"));
+        assert!(!result.to_string().contains("missing-original.pdf"));
+        assert!(!result.to_string().contains("missing-process-evidence"));
+        assert_eq!(changes(&store), writes);
+    }
+
+    #[test]
+    fn simulated_history_next_steps_distinguish_active_interrupted_failure_and_review_without_starting_work() {
+        let (_dir, mut store, model) = fixture();
+        for (id, status, background, expected) in [
+            ("sim-active", "processing", json!({"status":"running"}), "processing"),
+            ("sim-queued", "processing", json!({"status":"queued"}), "processing"),
+            ("sim-prepared", "prepared", Value::Null, "continue_processing"),
+            ("sim-interrupted", "interrupted", Value::Null, "continue_processing"),
+            ("sim-paused", "budget_paused", Value::Null, "continue_processing"),
+            ("sim-detached", "processing", Value::Null, "continue_processing"),
+            ("sim-job-cancelled", "pending_review", json!({"status":"cancelled"}), "continue_processing"),
+            ("sim-failed", "failed", Value::Null, "view_error"),
+            ("sim-job-failed", "pending_review", json!({"status":"failed","error":{"code":"model_request_timeout"}}), "view_error"),
+            ("sim-review", "pending_review", Value::Null, "review"),
+        ] {
+            let record = json!({"importId":id,"filename":"模拟状态.pdf","status":status,"createdAt":"2026-11-03T00:00:00Z",
+                "backgroundJob":background,"error":if status=="failed"{json!({"code":"model_request_timeout"})}else{Value::Null},
+                "questions":[{"questionId":"sim-q","stem":"模拟待核对题"}],"publishedQuestionIds":[],"expected":expected});
+            store.put_document("imports", id, &record).unwrap();
+        }
+        store.put_document("imports", "sim-published", &json!({"importId":"sim-published","status":"published",
+            "createdAt":"2026-11-03T00:00:00Z","questions":[{"questionId":"sim-published-q","status":"published"}]})).unwrap();
+        let writes = changes(&store);
+        let result = call(&mut store, &model, json!({"pageSize":20}));
+        for row in rows(&result["imports"]) {
+            let original = store.document("imports", s(&row,"importId")).unwrap();
+            let summary = &row["actionSummary"];
+            if row["importId"] == "sim-published" {
+                assert_eq!(summary["nextAction"], "open");
+                assert_eq!(summary["publishedCount"], 1);
+                assert_eq!(summary["pendingCount"], 0);
+            } else {
+                assert_eq!(summary["nextAction"], original["expected"], "{}", row["importId"]);
+            }
+            let failed = original["expected"] == "view_error";
+            assert_eq!(summary["hasFailure"], failed);
+            assert_eq!(summary["technicalFailure"], failed);
+            assert_eq!(summary["readyCount"], Value::Null);
+        }
+        assert_eq!(changes(&store), writes);
+    }
+
     #[test]
     fn history_exposes_bounded_stage_and_current_failure_without_deserializing_material() {
         let (_dir,mut store,model)=fixture();

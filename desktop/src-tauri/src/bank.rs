@@ -25,6 +25,7 @@ pub struct LocalQuestionBank {
 enum PublicationAuthority {
     Teacher,
     ModelReview,
+    AccuracyProcess,
     #[cfg(debug_assertions)]
     AgentReview {
         report_sha256: String,
@@ -874,6 +875,31 @@ impl LocalQuestionBank {
         &self.connection
     }
 
+    /// UI directory/defaults only. Question annotations are read by the actual
+    /// selection and frozen-paper paths, never needed to open the workspace.
+    pub(crate) fn workspace_config(&self) -> AppResult<Value> {
+        self.read_config(true)
+    }
+
+    fn read_config(&self, workspace_only: bool) -> AppResult<Value> {
+        let query = if workspace_only {
+            "SELECT json_remove(value,'$.assemblyIndex.entries') FROM bank_metadata WHERE key='config'"
+        } else {
+            "SELECT value FROM bank_metadata WHERE key='config'"
+        };
+        let payload: String = self.connection.query_row(query, [], |row| row.get(0))?;
+        let mut config: Value = serde_json::from_str(&payload)?;
+        if !config.is_object() {
+            return Err(integrity("本地题库配置损坏。"));
+        }
+        let points = self.rows("knowledge_points")?;
+        if !points.is_empty() {
+            config["knowledgeCatalogue"] =
+                crate::knowledge::catalogue(&points, &self.rows("section_knowledge_mappings")?);
+        }
+        Ok(config)
+    }
+
     pub fn open(path: &Path, seed: &Value) -> AppResult<Self> {
         let mut connection = Connection::open(path)?;
         connection.busy_timeout(Duration::from_secs(5))?;
@@ -1372,6 +1398,15 @@ impl LocalQuestionBank {
     ) -> AppResult<Value> {
         self.publish_import_authorized(operation_id, manifest, PublicationAuthority::ModelReview)
     }
+    /// The caller replays the personal-domain finalization evidence. This
+    /// authority never treats a model confidence score as release permission.
+    pub(crate) fn publish_accuracy_import(&self, operation_id: &str, manifest: &Value) -> AppResult<Value> {
+        self.publish_import_authorized(operation_id, manifest, PublicationAuthority::AccuracyProcess)
+    }
+    pub(crate) fn publication_matches(&self,operation_id:&str,manifest:&Value)->AppResult<bool>{
+        let digest:Option<String>=self.connection.query_row("SELECT manifest_sha256 FROM bank_publications WHERE operation_id=?1",[operation_id],|r|r.get(0)).optional()?;
+        Ok(digest.is_some_and(|digest|digest==hash_json(manifest)))
+    }
     #[cfg(debug_assertions)]
     pub(crate) fn publication_snapshot_sha256(&self) -> AppResult<String> {
         publication_snapshot(&self.connection)
@@ -1436,9 +1471,14 @@ impl LocalQuestionBank {
             transaction.commit()?;
             return Ok(receipt);
         }
-        let model_authority = matches!(authority, PublicationAuthority::ModelReview);
+        let accuracy_authority = matches!(authority, PublicationAuthority::AccuracyProcess);
+        let model_authority = matches!(authority, PublicationAuthority::ModelReview | PublicationAuthority::AccuracyProcess);
         let agent_authority = match &authority {
             PublicationAuthority::Teacher => false,
+            PublicationAuthority::AccuracyProcess => {
+                if manifest["teacherConfirmed"]!=true && (manifest["userConfirmedPublication"]!=true || manifest["teacherConfirmed"]!=false){return Err(AppError::new("review_required","请显式确认实际核对通过的题目。"));}
+                false
+            }
             PublicationAuthority::ModelReview => {
                 if manifest["userConfirmedPublication"] != true
                     || manifest["teacherConfirmed"] != false
@@ -1554,7 +1594,7 @@ impl LocalQuestionBank {
                 if method == "model_review" {
                     let opinion = &verification["modelReview"];
                     if opinion["status"] != "ready"
-                        || opinion["confidence"] != "high"
+                        || (!accuracy_authority && opinion["confidence"] != "high")
                         || opinion["issues"].as_array().is_none_or(|v| !v.is_empty())
                         || verification["userConfirmedPublication"] != true
                         || opinion["audit"]["sha256"]
@@ -1792,21 +1832,7 @@ impl LocalQuestionBank {
 
 impl BankRepository for LocalQuestionBank {
     fn config(&self) -> AppResult<Value> {
-        let payload: String = self.connection.query_row(
-            "SELECT value FROM bank_metadata WHERE key='config'",
-            [],
-            |row| row.get(0),
-        )?;
-        let mut config: Value = serde_json::from_str(&payload)?;
-        if !config.is_object() {
-            return Err(integrity("本地题库配置损坏。"));
-        }
-        let points = self.rows("knowledge_points")?;
-        if !points.is_empty() {
-            config["knowledgeCatalogue"] =
-                crate::knowledge::catalogue(&points, &self.rows("section_knowledge_mappings")?);
-        }
-        Ok(config)
+        self.read_config(false)
     }
 
     fn questions(&self) -> AppResult<Vec<Value>> {

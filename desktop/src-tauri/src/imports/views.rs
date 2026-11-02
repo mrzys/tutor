@@ -29,6 +29,11 @@ fn question_summary(q: &Value) -> Value {
     let mut result = pick(q, &["questionId","sourceLabel","questionType","pages","reviewDecision","status","primaryKnowledgeUids","knowledgeUids","knowledgeSchemaVersion","annotationStatus","knowledgeMappingSource"]);
     if q["annotationError"].is_object() { result["annotationError"] = error_summary(&q["annotationError"]); }
     result["_detailLoaded"] = json!(false);
+    if q["accuracy"].is_object() {
+        result["accuracy"]=q["accuracy"].clone();
+        result["accuracy"].as_object_mut().unwrap().remove("candidate");
+        if q["accuracy"]["findings"].is_array() {result["accuracy"]["findings"]=findings(&q["accuracy"]["findings"]);}
+    }
     // Structural presence only. The frontend still requires its existing ready
     // state before offering annotation; no generated proof text leaves here.
     result["_needsSolutionPathSupplement"] = json!(
@@ -101,10 +106,11 @@ fn pending(value: &Value, record: &Value, source_publication: bool) -> Value {
 }
 
 fn summary(record: &Value) -> Value {
-    let mut result = pick(record,&["importId","filename","revision","status","createdAt","updatedAt","recognitionStage","publishedQuestionIds"]);
+    let mut result = pick(record,&["importId","filename","revision","status","createdAt","updatedAt","recognitionStage","publishedQuestionIds","accuracyRunId","accuracyStrategy"]);
     if record["error"].is_object() { result["error"] = error_summary(&record["error"]); }
     result["_detailLoaded"] = json!(false);
     result["questions"] = json!(rows(&record["questions"]).iter().map(question_summary).collect::<Vec<_>>());
+    result["annotationQuestionIds"] = json!(background::annotation_target_ids(record));
     result["sourceIssues"] = findings(&record["sourceIssues"]);
     for key in ["source","renderedPdf"] {
         if record[key].is_object() { result[key] = pick(&record[key],&["extension","sha256","byteLength","physicalPages"]); }
@@ -149,7 +155,9 @@ fn compact(store: &Store, record: &Value, id: Option<&str>, version: Value, exis
     let selected = id.map(|id| question(record,id)).transpose()?;
     let controls = id.map_or_else(||teaching::controls::summary_projection(record),|id|teaching::controls::question_projection(record,id));
     let actions = id.map_or_else(||teaching_actions::summary_projection(store,record),|id|teaching_actions::question_projection(store,record,id));
-    let eligibility = existing.and_then(|v|v.get("reviewEligibility")).filter(|v|v.is_object()).cloned().unwrap_or_else(||review::eligibility(record));
+    let eligibility = if !s(record,"accuracyRunId").is_empty() {review_eligibility(store,record)?} else {
+        existing.and_then(|v|v.get("reviewEligibility")).filter(|v|v.is_object()).cloned().unwrap_or_else(||review::eligibility(record))
+    };
     let requirements = existing.and_then(|v|v.get("reviewRequirements")).filter(|v|v.is_object()).cloned().unwrap_or_else(||review_requirement_map(record));
     let mut result = json!({"summary":summary(record),"detailVersion":version,
         "reviewEligibility":eligibility,"reviewRequirements":requirements,
@@ -165,7 +173,8 @@ fn compact(store: &Store, record: &Value, id: Option<&str>, version: Value, exis
 pub(super) fn read(store: &Store, payload: &Value, one_question: bool) -> AppResult<Value> {
     background::recover(store)?;
     let persisted = store.document_json("imports",s(payload,"importId"))?;
-    let version = sha(persisted.as_bytes());
+    let record: Value = serde_json::from_str(&persisted)?;
+    let version = accuracy::detail_version(store,&record,&sha(persisted.as_bytes()))?;
     if !one_question && payload["knownDetailVersion"].as_str() == Some(version.as_str()) {
         return Ok(json!({"importId":payload["importId"],"detailVersion":version,"notModified":true}));
     }
@@ -173,11 +182,29 @@ pub(super) fn read(store: &Store, payload: &Value, one_question: bool) -> AppRes
         && payload["expectedDetailVersion"].as_str() != Some(version.as_str()) {
         return Err(err("revision_conflict","导入记录已更新，请保留当前修改并重新读取题目。"));
     }
-    let record: Value = serde_json::from_str(&persisted)?;
+    let record=accuracy::project_record(store,&record)?;
     compact(store,&record,one_question.then(||s(payload,"questionId")),json!(version),None)
 }
 
 pub(super) fn finish(store: &Store, mut result: Value, payload: &Value) -> AppResult<Value> {
+    if result["import"].is_object() {
+        let original=result["import"].clone();
+        if !s(&original,"accuracyRunId").is_empty() {
+            // Action handlers may already return a projected question. Tokens
+            // must use the same persisted bytes and run revision as read().
+            // Reproject that saved record so a delayed action cannot attach a
+            // current token to an earlier projected body.
+            let persisted=store.document_json("imports",s(&original,"importId"))?;
+            let current:Value=serde_json::from_str(&persisted)?;
+            result["detailVersion"]=json!(accuracy::detail_version(store,&current,&sha(persisted.as_bytes()))?);
+            result["import"]=accuracy::project_record(store,&current)?;
+            result["reviewEligibility"]=review_eligibility(store,&result["import"])?;
+            result["reviewRequirements"]=review_requirement_map(&result["import"]);
+            result["diagnostic"]=diagnostics::for_record(store,&current);
+        } else {
+            result["import"]=accuracy::project_record(store,&original)?;
+        }
+    }
     if !matches!(payload["responseScope"].as_str(),Some("summary"|"question")) || !result["import"].is_object() {
         return Ok(with_teaching_controls(store,result));
     }
@@ -199,3 +226,71 @@ pub(super) fn finish(store: &Store, mut result: Value, payload: &Value) -> AppRe
 #[cfg(test)]
 #[path = "views_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod accuracy_tests {
+    use super::*;
+
+    fn fixture()->(tempfile::TempDir,Store,Value){
+        let dir=tempfile::tempdir().unwrap();
+        let store=Store::open(dir.path(),&crate::bank::tests::seed()).unwrap();
+        let source=save_source(&store,"simulated-accuracy-views","txt",b"simulated accuracy source").unwrap();
+        let q=normalize_question(&json!({"questionType":"fill_blank","sourceLabel":"1","pages":[1],
+            "stem":"SIMULATED_ACCURACY_BODY: compute 921+72.","answer":"","solution":"","options":[],"parts":[],
+            "sectionIds":[],"knowledgeUids":[],"knowledgeTopics":[],"task":{"label":"模拟计算"}}),"simulated-accuracy-q1",1).unwrap();
+        let mut record=json!({"importId":"simulated-accuracy-views","filename":"模拟准确性读取.txt","revision":0,
+            "status":"pending_review","source":source,"sourceIssues":[],"questions":[q],"publishedQuestionIds":[],"operations":[],"createdAt":now(),"updatedAt":now()});
+        let identity=json!({"sha256":record["source"]["sha256"],"relativePath":record["source"]["relativePath"],"extension":record["source"]["extension"],"byteLength":record["source"]["byteLength"]});
+        let run=accuracy::store::create_run(&store,s(&record,"importId"),&json!({"strategyVersion":"simulated-view-strategy"}),&identity,&json!({})).unwrap();
+        record["accuracyRunId"]=run["id"].clone();record["accuracyStrategy"]=json!("simulated-view-strategy");
+        store.put_document("imports",s(&record,"importId"),&record).unwrap();
+        (dir,store,record)
+    }
+
+    #[test]
+    fn process_only_revision_refreshes_summary_without_exposing_body_or_legacy_workflow(){
+        let (_dir,store,record)=fixture();
+        let payload=json!({"importId":record["importId"]});
+        let first=read(&store,&payload,false).unwrap();
+        assert_eq!(first["summary"]["accuracyRunId"],record["accuracyRunId"]);
+        assert_eq!(first["summary"]["questions"][0]["accuracy"]["status"],"needs_review");
+        assert!(first["summary"]["questions"][0]["accuracy"].get("candidate").is_none());
+        assert!(!first.to_string().contains("SIMULATED_ACCURACY_BODY"));
+        let mut run=accuracy::store::load_run(&store,s(&record,"accuracyRunId")).unwrap();
+        run["progress"]["stage"]=json!("source");
+        accuracy::store::save_run(&store,run["revision"].as_u64().unwrap(),&run).unwrap();
+        let second=read(&store,&json!({"importId":record["importId"],"knownDetailVersion":first["detailVersion"]}),false).unwrap();
+        assert_ne!(first["detailVersion"],second["detailVersion"]);
+        assert_ne!(second["notModified"],true);
+        assert_eq!(store.document("imports",s(&record,"importId")).unwrap(),record);
+        assert_eq!(read(&store,&json!({"importId":record["importId"],"questionId":"simulated-accuracy-q1","expectedDetailVersion":first["detailVersion"]}),true).unwrap_err().code,"revision_conflict");
+        let question=read(&store,&json!({"importId":record["importId"],"questionId":"simulated-accuracy-q1"}),true).unwrap();
+        assert!(question["question"].get("teachingWorkflow").is_none());
+    }
+
+    #[test]
+    fn old_editor_keeps_source_edits_but_rejects_new_teaching_metadata_changes(){
+        let (_dir,store,record)=fixture();
+        let projected=accuracy::project_record(&store,&record).unwrap();
+        let mut q=projected["questions"][0].clone();
+        q["difficultyAssessment"]=json!({"level":"hard","basis":"模拟教师修改的难度依据。"});
+        let mut payload=json!({"importId":record["importId"],"questionId":q["questionId"],"question":q,"expectedRevision":record["revision"],"operationId":"simulated-meta-edit"});
+        assert_eq!(review_save_with_scope(&store,&payload,true).unwrap_err().code,"accuracy_action_required");
+        assert_eq!(store.document("imports",s(&record,"importId")).unwrap(),record);
+        payload["question"]=projected["questions"][0].clone();
+        payload["question"]["stem"]=json!("模拟核对原题后的题干更正：921+73。");
+        payload["operationId"]=json!("simulated-source-edit");
+        let result=review_save_with_scope(&store,&payload,true).unwrap();
+        assert_eq!(result["import"]["questions"][0]["stem"],payload["question"]["stem"]);
+        assert_eq!(result["import"]["questions"][0]["difficultyAssessment"],record["questions"][0]["difficultyAssessment"]);
+    }
+
+    #[test]
+    fn old_approve_flag_does_not_grant_new_pipeline_publication(){
+        let (_dir,store,mut record)=fixture();
+        record["questions"][0]["reviewDecision"]=json!("approve");
+        record["questions"][0]["reviewBasis"]=json!("模拟旧按钮核对记录，未完成新增数学与教学核验。");
+        record["questions"][0]["reviewChecks"]=json!({"stem":true,"options":true,"formulasAndAssets":true,"answer":true,"solution":true});
+        assert_eq!(build_manifest(&store,&record).unwrap_err().code,"review_required");
+    }
+}

@@ -57,6 +57,7 @@ fn descriptor(record: &Value) -> Value {
     let annotation = job["mode"] == "annotation";
     let review = job["mode"] == "review";
     let teaching_retry = job["mode"] == "teaching_retry";
+    let accuracy_repair = job["mode"] == "accuracy_repair";
     let stage = if status == "queued" {
         "queued"
     } else {
@@ -64,7 +65,9 @@ fn descriptor(record: &Value) -> Value {
     };
     let mut message = match status.as_str() {
         "queued" => {
-            if teaching_retry {
+            if accuracy_repair {
+                "排队等待本题修订及核验，可继续其它操作。"
+            } else if teaching_retry {
                 "排队等待重新生成本题解析，可继续查看其它题目。"
             } else if review {
                 "排队等待模型检查，可继续其它操作。"
@@ -84,10 +87,13 @@ fn descriptor(record: &Value) -> Value {
             "teaching_review" => "正在复核命中问题的教学稿，可继续其它操作。",
             "teaching_generating" => "正在分批生成课堂教学稿，可继续其它操作。",
             "teaching_checking" => "正在检查教学稿结构、显示及已知问题。",
+            "accuracy_processing" => "正在核对来源、解答和教学信息，已有结果持续保存。",
             _ => "正在准备原卷，可继续其它操作。",
         },
         "completed" => {
-            if teaching_retry {
+            if accuracy_repair {
+                "本题修订与核验已结束，请查看具体结果后确认入库。"
+            } else if teaching_retry {
                 "本题解析生成已结束，请查看结果；不会自动追加复核。"
             } else if review {
                 "模型检查完成，请查看意见后确认加入题库。"
@@ -154,6 +160,8 @@ fn descriptor(record: &Value) -> Value {
     job.as_object_mut().unwrap().remove("payloadHash");
     job.as_object_mut().unwrap().remove("operationId");
     job.as_object_mut().unwrap().remove("targetQuestionIds");
+    job.as_object_mut().unwrap().remove("payload");
+    job.as_object_mut().unwrap().remove("basis");
     job
 }
 fn response(store: &Store, record: &Value) -> Value {
@@ -167,12 +175,14 @@ fn job_get(store: &Store, payload: &Value) -> AppResult<Value> {
     let persisted = store.document_json("imports", id)?;
     // Checkpoints can change without advancing the review revision or clock.
     // This token only suppresses unchanged reads; it grants no review authority.
-    let version = sha(persisted.as_bytes());
+    let record: Value = serde_json::from_str(&persisted)?;
+    let version = accuracy::detail_version(store,&record,&sha(persisted.as_bytes()))?;
     if payload["knownDetailVersion"].as_str() == Some(version.as_str()) {
         return Ok(json!({"importId":id,"detailVersion":version,"notModified":true}));
     }
-    let record: Value = serde_json::from_str(&persisted)?;
-    let mut result = response(store, &record);
+    let projected=accuracy::project_record(store,&record)?;
+    let mut result = response(store, &projected);
+    result["reviewEligibility"]=review_eligibility(store,&projected)?;
     result["detailVersion"] = json!(version);
     Ok(result)
 }
@@ -194,6 +204,7 @@ fn terminal_failure(
     if !matches!(s(&saved["backgroundJob"], "status"), "queued" | "running") {
         return Ok(());
     }
+    if !s(&saved,"accuracyRunId").is_empty() {accuracy::pause(store,&saved)?;}
     let mut record = saved.clone();
     let annotation = record["backgroundJob"]["mode"] == "annotation";
     let review = record["backgroundJob"]["mode"] == "review";
@@ -317,6 +328,89 @@ fn needs_annotation(question: &Value) -> bool {
         || (rows(&question["solutionPaths"]).is_empty()
             && structured::ready_teaching_reference(question).is_some())
 }
+/// Stage a new strategy against saved source material. No model is called here.
+/// The bool distinguishes a newly queued operation from an exact replay.
+pub(super) fn stage_strategy_continue(store:&Store,model:&ModelClient,payload:&Value)->AppResult<(Value,bool)>{
+    let operation=operation(payload)?;let hash=hash_json(payload);
+    let mut record=store.document("imports",s(payload,"importId"))?;
+    let history=rows(&record["accuracyStrategyHistory"]);
+    if let Some(previous)=history.iter().find(|entry|entry["operationId"]==operation) {
+        if previous["payloadHash"]!=hash {return Err(err("operation_conflict","此策略修订操作身份已用于不同请求。"));}
+        return Ok((record,false));
+    }
+    if replay(&record,operation,&hash)? {return Err(err("operation_conflict","此操作身份已用于其它导入操作，未再次切换策略。"));}
+    revision(&record,payload)?;
+    if s(&record,"accuracyRunId").is_empty(){return Err(err("invalid_operation","旧导入保留原策略，不能通过策略继续入口自动升级。"));}
+    if matches!(s(&record["backgroundJob"],"status"),"queued"|"running") {return Err(err("import_running","此试卷仍在后台处理，请完成或停止后再切换策略。"));}
+    if payload["acknowledge"]!=true {return Err(err("review_required","请明确确认使用新版处理策略，并沿用原预算继续核验。"));}
+    if record["pendingPublication"].is_object()||record["pendingTeachingPublication"].is_object(){return Err(err("publication_pending","请先完成待确认的发布操作，再切换处理策略。"));}
+    let questions=rows(&record["questions"]);
+    if questions.is_empty(){return Err(err("accuracy_source_required","请先完成原卷来源整理；策略继续仅处理已保存原题，不重新发起来源请求。"));}
+    let published=ids(&record["publishedQuestionIds"]);
+    if questions.iter().all(|question|published.iter().any(|id|id==s(question,"questionId"))) {return Err(err("immutable_question","本卷题目已全部入库，不能通过策略继续重跑已发布题目。"));}
+    accuracy::validate_configuration(model)?;
+    read_source(store,&record)?;paddle::verify_audit(store,&record)?;
+    verify_recovered_source_for_publication(store,&record)?;
+    let prior=s(&record,"accuracyRunId").to_owned();
+    let old_run=accuracy::store::load_run(store,&prior)?;
+    let identity=json!({"sha256":record["source"]["sha256"],"relativePath":record["source"]["relativePath"],"extension":record["source"]["extension"],"byteLength":record["source"]["byteLength"]});
+    if old_run["importId"]!=record["importId"]||old_run["source"]!=identity {return Err(err("accuracy_integrity","原件身份与冻结策略不一致，未切换策略。"));}
+    accuracy::store::check_strategy_continuation_budget(store,&prior)?;
+    let saved=record.clone();
+    accuracy::revise_run(store,model,&mut record)?;
+    let next=accuracy::store::load_run(store,s(&record,"accuracyRunId"))?;
+    if next["id"]==old_run["id"]||next["operationBudget"]["parentBudgetId"]!=old_run["id"]||next["source"]!=old_run["source"] {return Err(err("accuracy_integrity","策略修订没有继承原件和原预算，未启动任务。"));}
+    let mut history=history;
+    history.push(json!({"priorRunId":prior,"newRunId":record["accuracyRunId"],"operationId":operation,"payloadHash":hash,"createdAt":now()}));
+    record["accuracyStrategyHistory"]=json!(history);
+    record["status"]=json!("processing");record["error"]=Value::Null;record["recognitionStage"]=json!("queued");
+    record["backgroundJob"]=json!({"jobId":format!("import-job-{}",uuid::Uuid::new_v4()),"mode":"import","status":"queued","createdAt":now(),"operationId":operation,"payloadHash":hash,"payload":payload,"strategyContinuation":true});
+    save_cas(store,Some(&saved),&record)?;
+    if next["strategy"]["unknownUsagePolicy"]=="retain-reservation-continue-other-questions-v1" {
+        accuracy::store::resume_unknown_strategy_chain(store,s(&next,"id"),&record)?;
+    }
+    Ok((record,true))
+}
+fn strategy_continue(store:&Store,model:&ModelClient,payload:&Value)->AppResult<Value>{
+    let root=directory(store)?;let key=(root,s(payload,"importId").to_owned());
+    let mut active=registry().0.lock().map_err(|_|lock_error())?;
+    let (record,queued)=stage_strategy_continue(store,model,payload)?;
+    if !queued {return Ok(response(store,&record));}
+    let cancel=Arc::new(AtomicBool::new(false));active.jobs.insert(key,cancel.clone());drop(active);
+    launch(store,model,record,operation(payload)?.to_owned(),hash_json(payload),cancel)
+}
+fn accuracy_repair_start(store:&Store,model:&ModelClient,payload:&Value)->AppResult<Value>{
+    let operation=operation(payload)?;let hash=hash_json(payload);
+    let root=directory(store)?;let id=s(payload,"importId");let key=(root,id.to_owned());
+    let mut active=registry().0.lock().map_err(|_|lock_error())?;
+    let mut record=store.document("imports",id)?;
+    if matches!(s(&record["backgroundJob"],"status"),"queued"|"running") {
+        if record["backgroundJob"]["payloadHash"]==hash {return Ok(response(store,&record));}
+        return Err(err("import_running","此试卷正在后台处理，请等待完成或先停止。"));
+    }
+    if replay(&record,operation,&hash)? {return Ok(response(store,&record));}
+    revision(&record,payload)?;
+    if record["pendingPublication"].is_object()||record["pendingTeachingPublication"].is_object(){return Err(err("publication_pending","请先完成待确认的发布操作。"));}
+    accuracy::validate_action(store,&record,payload)?;
+    model.import_teaching_reviewer()?;
+    read_source(store,&record)?;paddle::verify_audit(store,&record)?;
+    let saved=record.clone();
+    record["recognitionStage"]=json!("queued");
+    record["backgroundJob"]=json!({"jobId":format!("import-job-{}",uuid::Uuid::new_v4()),"mode":"accuracy_repair","status":"queued","createdAt":now(),"operationId":operation,"payloadHash":hash,"targetQuestionIds":[payload["questionId"]],"totalQuestions":1,"completedQuestions":0,"failedQuestions":0,"payload":payload,"basis":payload["basis"]});
+    save_cas(store,Some(&saved),&record)?;
+    let cancel=Arc::new(AtomicBool::new(false));active.jobs.insert(key,cancel.clone());drop(active);
+    launch(store,model,record,operation.to_owned(),hash,cancel)
+}
+pub(super) fn annotation_target_ids(record: &Value) -> Vec<Value> {
+    let published = ids(&record["publishedQuestionIds"]);
+    rows(&record["questions"])
+        .iter()
+        .filter(|question| {
+            !published.contains(&s(question, "questionId").to_owned()) && needs_annotation(question)
+        })
+        .map(|q| q["questionId"].clone())
+        .collect()
+}
 fn teaching_retry_start(store: &Store, model: &ModelClient, payload: &Value) -> AppResult<Value> {
     let operation=operation(payload)?;let hash=hash_json(payload);
     let root=directory(store)?;let id=s(payload,"importId");let key=(root,id.to_owned());
@@ -405,14 +499,7 @@ fn annotation_start(store: &Store, model: &ModelClient, payload: &Value) -> AppR
     }
     read_source(store, &record)?;
     paddle::verify_audit(store, &record)?;
-    let published = ids(&record["publishedQuestionIds"]);
-    let targets = rows(&record["questions"])
-        .iter()
-        .filter(|question| {
-            !published.contains(&s(question, "questionId").to_owned()) && needs_annotation(question)
-        })
-        .map(|q| q["questionId"].clone())
-        .collect::<Vec<_>>();
+    let targets = annotation_target_ids(&record);
     if targets.is_empty() {
         return Ok(response(store, &record));
     }
@@ -588,7 +675,10 @@ fn launch(
                         let annotation = record["backgroundJob"]["mode"] == "annotation";
                         let review_job = record["backgroundJob"]["mode"] == "review";
                         let teaching_retry = record["backgroundJob"]["mode"] == "teaching_retry";
-                        record["recognitionStage"] = json!(if review_job {
+                        let accuracy_repair = record["backgroundJob"]["mode"] == "accuracy_repair";
+                        record["recognitionStage"] = json!(if accuracy_repair {
+                            "accuracy_processing"
+                        } else if review_job {
                             "reviewing"
                         } else if annotation {
                             "annotating"
@@ -597,7 +687,9 @@ fn launch(
                         });
                         save_cas(&worker, Some(&saved), &record)?;
                         cancelled(&cancel)?;
-                        if teaching_retry {
+                        if accuracy_repair {
+                            accuracy::repair_job(&mut worker,&model,record,&cancel)?;
+                        } else if teaching_retry {
                             process_teaching_retry(&worker,&model,&operation,&hash,&cancel,record)?;
                         } else if review_job {
                             review::process(&worker, &model, &operation, &hash, &cancel, record)?;
@@ -659,10 +751,31 @@ pub(super) fn dispatch(
     payload: &Value,
 ) -> AppResult<Option<Value>> {
     let result = match action {
+        "import_accuracy_start" => {
+            if !s(payload,"importId").is_empty() {
+                let record=store.document("imports",s(payload,"importId"))?;
+                if s(&record,"accuracyRunId").is_empty() {
+                    return Err(err("accuracy_new_import_required","既有导入保留原处理策略；请新建导入使用准确性核验流程。"));
+                }
+            }
+            let mut input=payload.clone();
+            input["accuracyStrategy"]=json!(accuracy::current_strategy_version());
+            start(store,model,&input)?
+        }
+        "import_accuracy_strategy_continue"=>strategy_continue(store,model,payload)?,
         "import_start" => start(store, model, payload)?,
-        "import_teaching_retry_start" => teaching_retry_start(store,model,payload)?,
-        "import_annotation_start" => annotation_start(store, model, payload)?,
-        "import_review_start" => review_start(store, model, payload)?,
+        "import_accuracy_repair_start" => accuracy_repair_start(store,model,payload)?,
+        "import_teaching_retry_start"|"import_annotation_start"|"import_review_start" => {
+            let record=store.document("imports",s(payload,"importId"))?;
+            if !s(&record,"accuracyRunId").is_empty() {
+                return Err(err("accuracy_action_required","本次导入使用准确性核验流程，请继续该流程或显式修订；旧检查与教学稿入口不适用。"));
+            }
+            match action {
+                "import_teaching_retry_start"=>teaching_retry_start(store,model,payload)?,
+                "import_annotation_start"=>annotation_start(store,model,payload)?,
+                _=>review_start(store,model,payload)?,
+            }
+        }
         "import_job_get" => {
             job_get(store, payload)?
         }
@@ -702,6 +815,41 @@ pub(super) fn dispatch(
         _ => return Ok(None),
     };
     Ok(Some(result))
+}
+
+#[cfg(test)]
+mod accuracy_entry_tests {
+    use super::*;
+
+    #[test]
+    fn new_entry_requires_explicit_roles_before_decoding_or_preserving_upload(){
+        let dir=tempfile::tempdir().unwrap();
+        let mut store=Store::open(dir.path(),&crate::bank::tests::seed()).unwrap();
+        let model=ModelClient::test_client(dir.path(),"http://127.0.0.1:1/v1");
+        let error=dispatch(&mut store,&model,"import_accuracy_start",&json!({"operationId":"simulated-missing-accuracy-role","filename":"模拟新导入.txt","contentBase64":"invalid-base64"})).unwrap_err();
+        assert!(matches!(error.code.as_str(),"import_model_not_configured"|"not_configured"),"{error:?}");
+        let count:i64=store.user.query_row("SELECT COUNT(*) FROM documents WHERE kind='imports'",[],|row|row.get(0)).unwrap();
+        assert_eq!(count,0);
+        assert!(!dir.path().join("imports").exists());
+    }
+
+    #[test]
+    fn new_entry_does_not_upgrade_legacy_records_or_call_old_review_roles(){
+        let dir=tempfile::tempdir().unwrap();
+        let mut store=Store::open(dir.path(),&crate::bank::tests::seed()).unwrap();
+        let model=ModelClient::test_client(dir.path(),"http://127.0.0.1:1/v1");
+        let legacy=json!({"importId":"simulated-legacy-entry","revision":0,"questions":[],"status":"failed"});
+        store.put_document("imports","simulated-legacy-entry",&legacy).unwrap();
+        let input=json!({"importId":"simulated-legacy-entry","expectedRevision":0,"operationId":"simulated-illegal-upgrade"});
+        assert_eq!(dispatch(&mut store,&model,"import_accuracy_start",&input).unwrap_err().code,"accuracy_new_import_required");
+        assert_eq!(store.document("imports","simulated-legacy-entry").unwrap(),legacy);
+        let new=json!({"importId":"simulated-new-entry","revision":0,"accuracyRunId":"simulated-run-id","questions":[],"status":"failed"});
+        store.put_document("imports","simulated-new-entry",&new).unwrap();
+        for action in ["import_teaching_retry_start","import_annotation_start","import_review_start"]{
+            assert_eq!(dispatch(&mut store,&model,action,&json!({"importId":"simulated-new-entry","operationId":"simulated-block-old-role"})).unwrap_err().code,"accuracy_action_required");
+        }
+        assert_eq!(store.document("imports","simulated-new-entry").unwrap(),new);
+    }
 }
 
 #[cfg(all(test, windows))]
@@ -1140,6 +1288,40 @@ mod tests {
         assert_eq!(interrupted["import"]["status"], "pending_review");
         assert!(interrupted["import"]["error"].is_null());
         assert_eq!(accepted["job"]["mode"], "annotation");
+    }
+    #[test]
+    fn simulated_annotation_target_ids_use_the_existing_task_scope_without_published_or_complete_questions() {
+        let mut complete = question();
+        complete["questionId"] = json!("sim-complete");
+        complete["difficultyAssessment"] = json!({"level":"easy","basis":"模拟已有难度。"});
+        complete["primaryKnowledgeUids"] = json!(["sim-point"]);
+        complete["task"] = json!({"label":"模拟完整考点"});
+        complete["solutionPaths"] = json!([]);
+        complete["annotationStatus"] = json!("succeeded");
+        let mut questions = vec![complete.clone()];
+        for (id,field,value) in [
+            ("sim-failed","annotationStatus",json!("failed")),
+            ("sim-missing-uid","primaryKnowledgeUids",json!([])),
+            ("sim-missing-difficulty","difficultyAssessment",json!({"level":null})),
+            ("sim-missing-task","task",json!({"label":" "})),
+            ("sim-published","primaryKnowledgeUids",json!([])),
+        ] {
+            let mut q = complete.clone();q["questionId"] = json!(id);q[field] = value;questions.push(q);
+        }
+        let mut teaching = complete.clone();teaching["questionId"] = json!("sim-ready-missing-paths");
+        teaching::initialize(&mut teaching,&json!({"generatedTeaching":{"answer":"2",
+            "difficultyAssessment":{"level":"easy","basis":"模拟：已知运算，直接相加。"},"teachingSolution":"模拟：$1+1=2$。",
+            "teachingFocusSchemaVersion":2,"teachingFocus":{"examFocus":"模拟整数加法。","studentRequirements":["计算正确的和。"]},"issues":[]}}));
+        assert!(teaching::ready(&teaching));
+        questions.push(teaching.clone());
+        teaching["questionId"] = json!("sim-stale-teaching");
+        teaching["stem"] = json!("模拟原题已变化。");
+        questions.push(teaching);
+        let record = json!({"questions":questions,"publishedQuestionIds":["sim-published"]});
+        let before = record.clone();
+        assert_eq!(annotation_target_ids(&record),json!(["sim-failed","sim-missing-uid","sim-missing-difficulty","sim-missing-task","sim-ready-missing-paths"]).as_array().unwrap().clone());
+        assert_eq!(record,before);
+        assert!(annotation_target_ids(&json!({"questions":[],"publishedQuestionIds":[]})).is_empty());
     }
     #[test]
     fn simulated_missing_paths_are_supplementable_only_with_current_ready_teaching_reference() {

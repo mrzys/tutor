@@ -5,6 +5,7 @@ import {
   createMemo,
   createSignal,
   onCleanup,
+  type JSX,
 } from "solid-js";
 import katex from "katex";
 import { Dynamic } from "solid-js/web";
@@ -247,10 +248,13 @@ export function QuestionBody(props: {
   difficultyBasis?: string;
   formalKnowledge?: string[];
   reviewFieldPrefix?: string;
+  renderReviewField?: (path: string, content: JSX.Element) => JSX.Element;
 }) {
   const presentation = () =>
     questionSourcePresentation(props.question, props.manifest);
   const exportLayout = new URLSearchParams(window.location.search).has("exportTask");
+  const reviewField = (path: string, content: JSX.Element) => !exportLayout && props.renderReviewField
+    ? props.renderReviewField(path, content) : content;
   const choices = createMemo(() => exportLayout
     ? { stem: presentation().stem, options: props.question?.student?.options || [], ambiguous: false, extracted:false }
     : choicePresentation(presentation().stem, props.question?.student?.options || [], props.question?.questionType,
@@ -297,7 +301,7 @@ export function QuestionBody(props: {
                 （难度：{props.difficultyLabel}）
               </span>
             </Show>
-            <RichText text={choices().stem} question={props.question} />
+            {reviewField("stem", <RichText text={choices().stem} question={props.question} />)}
           </Show>
         </div>
         <Show when={props.showPoints}>
@@ -330,7 +334,11 @@ export function QuestionBody(props: {
                 <AdaptiveOptions options={options()} reviewField={props.reviewFieldPrefix && !choices().extracted ? option => {
                   const index = (props.question?.student?.options || []).indexOf(option);
                   return index < 0 ? undefined : `${props.reviewFieldPrefix}options[${index}].text`;
-                } : undefined} render={option => <RichText text={option.text} question={props.question} />} />
+                } : undefined} render={option => {
+                  const index = (props.question?.student?.options || []).indexOf(option);
+                  const text = <RichText text={option.text} question={props.question} />;
+                  return !choices().extracted && index >= 0 ? reviewField(`options[${index}].text`, text) : text;
+                }} />
               </div>
             </Show>
           </Show>
@@ -339,7 +347,7 @@ export function QuestionBody(props: {
             {(part: any, index) => (
               <div class="question-part" classList={{"question-part-child":Boolean(part.parentPartId)}} data-import-field={props.reviewFieldPrefix ? `${props.reviewFieldPrefix}parts[${index()}].prompt` : undefined} tabIndex={props.reviewFieldPrefix ? -1 : undefined}>
                 {exportLayout ? part.label || `（${index() + 1}）` : partDisplayLabel(part.label, part.prompt, index())}
-                <RichText text={part.prompt} question={props.question} />
+                {reviewField(`parts[${index()}].prompt`, <RichText text={part.prompt} question={props.question} />)}
               </div>
             )}
           </For>
@@ -381,13 +389,15 @@ export function QuestionBody(props: {
                     >
                       <For each={props.question?.teacher?.[field] || []}>
                         {(entry: any) => (
-                          <p data-import-field={props.reviewFieldPrefix && entry.importField ? `${props.reviewFieldPrefix}${entry.importField}` : undefined} tabIndex={props.reviewFieldPrefix && entry.importField ? -1 : undefined}>
-                            <RichText
-                              text={entry.text}
-                              question={props.question}
-                              teacher
-                            />
-                          </p>
+                          <Show when={!exportLayout && props.renderReviewField && entry.importField} fallback={
+                            <p data-import-field={props.reviewFieldPrefix && entry.importField ? `${props.reviewFieldPrefix}${entry.importField}` : undefined} tabIndex={props.reviewFieldPrefix && entry.importField ? -1 : undefined}>
+                              <RichText text={entry.text} question={props.question} teacher />
+                            </p>
+                          }>
+                            <div class="import-source-reference-entry" data-import-field={`${props.reviewFieldPrefix}${entry.importField}`} tabIndex={-1}>
+                              {reviewField(entry.importField, <RichText text={entry.text} question={props.question} teacher />)}
+                            </div>
+                          </Show>
                         )}
                       </For>
                     </Show>

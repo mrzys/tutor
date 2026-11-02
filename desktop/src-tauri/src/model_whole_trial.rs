@@ -358,6 +358,9 @@ impl ModelClient {
             task: task.to_owned(),
             ..Default::default()
         };
+        let mut accuracy_source = super::model_accuracy::SourceBudgetGuard::begin(
+            &selected, task, &body, deadline_seconds, &directory.join("response.json"),
+        )?;
         let result = runtime.block_on(async {
             let deadline = tokio::time::Instant::now() + Duration::from_secs(deadline_seconds).saturating_sub(started.elapsed());
             let http = reqwest::Client::builder().redirect(reqwest::redirect::Policy::none())
@@ -403,6 +406,7 @@ impl ModelClient {
             &directory.join("transport.json"),
             &json!({"schemaVersion":1,"task":task,"effort":if formal {saved_effort}else{Some(effort)},"stream":true,"maxTokens":body.get("max_tokens").or_else(||body.get("max_completion_tokens")),"maxStreamWireBytes":MAX_WIRE_BYTES,"maxRetainedVisibleBytes":MAX_BYTES,"timeoutSeconds":deadline_seconds,"elapsedMs":started.elapsed().as_millis() as u64,"status":if result.is_ok(){"completed"}else{"failed"},"errorCode":result.as_ref().err().map(|e|e.code.as_str()),"progress":stream.progress(started.elapsed().as_millis() as u64,"terminal")}),
         )?;
+        if let Some(guard) = accuracy_source.as_mut() { guard.finish(&result)?; }
         result
     }
 }

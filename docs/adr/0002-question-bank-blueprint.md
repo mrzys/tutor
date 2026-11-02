@@ -5,6 +5,7 @@
 - 依据：[S2-01 验证任务](../validation/mvp-assembly-task.md)、[S2-02 供给核查](../validation/question-bank-supply.md)。
 - 采纳记录：[S2-04 复核结论](../validation/adr-0002-adoption.md)；执行入口：[MVP 开发任务](../tasks/mvp-implementation.md)。
 - 后续细化（2026-10-10）：[ADR-0003：教学需求收集与确认](0003-teaching-requirements.md)为草案，讨论四维目标、可观察任务和题目证据的衔接，以及七维负担的按需使用；不将这些待验证能力设为本 ADR 的统一选题前提。
+- 已采纳的导入调整（2026-11-02）：用户明确同意 [ADR-0010](0010-import-accuracy-first.md) 的 D1/D2/D3。新策略提高实际交付字段的核验覆盖，人工实质核验可替代模型未判；本 ADR 的草稿/成卷确认权保留。OCR 与最终落地合同稳定，中间处理可演进；新流程实施状态另记，旧任务不追溯改变。
 
 ## 要解决什么问题
 

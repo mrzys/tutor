@@ -28,6 +28,18 @@ fn items(model: &ModelClient) -> Vec<Value> {
 fn roles() -> Value {
     json!({"sourceParsing":"ds","teachingGeneration":"mi","teachingReview":"qw"})
 }
+fn accuracy_roles() -> Value {
+    let mut value = roles();
+    for (role, profile) in [
+        ("sourceVerification", "qw"),
+        ("independentSolve", "ds"),
+        ("mathVerification", "qw"),
+        ("teachingVerification", "ds"),
+    ] {
+        value[role] = json!(profile);
+    }
+    value
+}
 fn fixture(explicit: bool) -> (tempfile::TempDir, ModelClient) {
     let dir = tempfile::tempdir().unwrap();
     // Do not open an absent settings file: avoid the development .env fallback.
@@ -742,4 +754,150 @@ fn three_roles_send_actual_distinct_models_keys_and_thinking_to_local_http() {
             assert_eq!(headers.contains(key), i == j);
         }
     }
+}
+
+#[test]
+fn accuracy_purposes_require_explicit_bindings_even_when_legacy_or_general_models_exist() {
+    for explicit in [false, true] {
+        let (dir, model) = fixture(explicit);
+        let before = std::fs::read(&model.path).unwrap();
+        let reopened = ModelClient::open(dir.path()).unwrap();
+        for role in ACCURACY_ROLE_KEYS {
+            let error = reopened.import_accuracy_model(role).err().unwrap();
+            assert_eq!(error.code, "import_model_not_configured");
+            assert!(error.message.contains(role_label(role).unwrap()));
+            assert_eq!(
+                reopened.public_settings()["effectiveImportRoles"][role]["strategy"],
+                "explicit"
+            );
+            assert_eq!(
+                reopened.public_settings()["effectiveImportRoles"][role]["configured"],
+                false
+            );
+        }
+        assert_eq!(std::fs::read(&model.path).unwrap(), before);
+        if explicit {
+            assert_eq!(reopened.public_settings()["importRoles"], roles());
+        }
+    }
+}
+
+#[test]
+fn accuracy_purposes_select_exact_credentials_and_independent_bound_thinking_without_mutating_profiles()
+ {
+    let (dir, mut model) = fixture(true);
+    let mut overrides = thinking(Value::Null, Value::Null, Value::Null);
+    for (role, profile, effort) in [
+        ("sourceVerification", "qw", "off"),
+        ("independentSolve", "ds", "low"),
+        ("mathVerification", "qw", "on"),
+        ("teachingVerification", "ds", "high"),
+    ] {
+        overrides[role] = override_for(&model, profile, effort);
+    }
+    model.save(&json!({"expectedRevision":model.revision,"importRoles":accuracy_roles(),"importRoleThinking":overrides})).unwrap();
+    let before = std::fs::read(&model.path).unwrap();
+    let reopened = ModelClient::open(dir.path()).unwrap();
+    for (role, profile, effort) in [
+        ("sourceVerification", "qw", "off"),
+        ("independentSolve", "ds", "low"),
+        ("mathVerification", "qw", "on"),
+        ("teachingVerification", "ds", "high"),
+    ] {
+        let selected = reopened.import_accuracy_model(role).unwrap();
+        let original = reopened.profiles.iter().find(|p| p.id == profile).unwrap();
+        assert_eq!(selected.active_profile_id.as_deref(), Some(profile));
+        assert_eq!(selected.api_key, original.api_key);
+        assert_eq!(selected.base_url, original.base_url);
+        assert_eq!(selected.model, original.model);
+        assert_eq!(selected.reasoning_effort.as_deref(), Some(effort));
+        assert_eq!(
+            reopened.public_settings()["effectiveImportRoles"][role]["reasoningSource"],
+            "purpose"
+        );
+    }
+    assert_eq!(reopened.active_profile_id.as_deref(), Some("mi"));
+    assert_eq!(
+        reopened
+            .profiles
+            .iter()
+            .find(|p| p.id == "ds")
+            .unwrap()
+            .reasoning_effort
+            .as_deref(),
+        Some("off")
+    );
+    assert_eq!(std::fs::read(&model.path).unwrap(), before);
+}
+
+#[test]
+fn old_three_key_saves_preserve_new_roles_and_thinking_but_explicit_null_clears_only_its_purpose() {
+    let (_dir, mut model) = fixture(true);
+    let mut overrides = thinking(Value::Null, Value::Null, Value::Null);
+    overrides["independentSolve"] = override_for(&model, "ds", "high");
+    model.save(&json!({"expectedRevision":model.revision,"importRoles":accuracy_roles(),"importRoleThinking":overrides})).unwrap();
+    model.save(&json!({"expectedRevision":model.revision,"importRoles":roles(),"importRoleThinking":thinking(Value::Null,Value::Null,Value::Null)})).unwrap();
+    assert_eq!(model.public_settings()["importRoles"], accuracy_roles());
+    assert_eq!(
+        model
+            .import_accuracy_model("independentSolve")
+            .unwrap()
+            .reasoning_effort
+            .as_deref(),
+        Some("high")
+    );
+    let mut clear = roles();
+    clear["independentSolve"] = Value::Null;
+    model
+        .save(&json!({"expectedRevision":model.revision,"importRoles":clear}))
+        .unwrap();
+    assert_eq!(
+        model
+            .import_accuracy_model("independentSolve")
+            .err()
+            .unwrap()
+            .code,
+        "import_model_not_configured"
+    );
+    assert!(model.public_settings()["importRoleThinking"]["independentSolve"].is_null());
+    assert_eq!(
+        model
+            .import_accuracy_model("mathVerification")
+            .unwrap()
+            .active_profile_id
+            .as_deref(),
+        Some("qw")
+    );
+}
+
+#[test]
+fn accuracy_purpose_settings_reject_dangling_profile_and_stale_provider_binding_atomically() {
+    let (_dir, mut model) = fixture(true);
+    model
+        .save(&json!({"expectedRevision":model.revision,"importRoles":accuracy_roles()}))
+        .unwrap();
+    let before = std::fs::read(&model.path).unwrap();
+    let mut bad = accuracy_roles();
+    bad["mathVerification"] = json!("missing");
+    assert!(
+        model
+            .save(&json!({"expectedRevision":model.revision,"importRoles":bad}))
+            .is_err()
+    );
+    let mut overrides = thinking(Value::Null, Value::Null, Value::Null);
+    overrides["independentSolve"] = override_for(&model, "ds", "high");
+    overrides["independentSolve"]["provider"] = json!("bailian");
+    assert!(
+        model
+            .save(&json!({"expectedRevision":model.revision,"importRoleThinking":overrides}))
+            .is_err()
+    );
+    let remaining: Vec<_> = items(&model)
+        .into_iter()
+        .filter(|p| p["id"] != "qw")
+        .collect();
+    let mut old_save = roles();
+    old_save["teachingReview"] = Value::Null;
+    assert!(model.save(&json!({"expectedRevision":model.revision,"profiles":remaining,"importRoles":old_save})).is_err());
+    assert_eq!(std::fs::read(&model.path).unwrap(), before);
 }

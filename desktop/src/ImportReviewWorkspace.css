@@ -1,0 +1,243 @@
+/* The review has one viewport frame. The queue, original and reading surface
+   own their scroll ranges; the optional problems drawer never takes a row. */
+.main-content.import-content:has(.import-review-modern) { padding: 8px 16px 6px; }
+.import-content .import-review-modern {
+  --font-small: 13px;
+  --font-caption: 13px;
+  --font-body: 14px;
+  --font-reading: 16px;
+  --review-content-size: 15px;
+  --review-title-size: 18px;
+  --review-heading-size: 18px;
+  min-height: 0;
+  overflow: visible;
+  font-size: var(--font-body);
+  line-height: 1.5;
+}
+.import-review-modern [hidden] { display: none !important; }
+.import-accuracy-domains { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 4px 0 8px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.import-accuracy-domains > button { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; min-width: 0; min-height: 64px; height: auto; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; text-align: left; background: var(--surface); }
+.import-accuracy-domains > button[aria-pressed="true"] { border-color: var(--accent); background: var(--surface-subtle); }
+.import-accuracy-domains strong { font-size: 13px; font-weight: 600; }
+.import-accuracy-domains span { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; color: var(--muted); }
+.import-accuracy-remaining { margin: 8px 0 16px; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.import-review-modern button, .import-review-modern select { font-size: var(--font-body); }
+.import-review-modern button > svg { width: 1.125em; height: 1.125em; flex-shrink: 0; }
+.import-review-header { flex: none; min-width: 0; }
+.sidebar-collapsed .import-review-title-row { padding-left: 52px; }
+.import-review-title-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.import-review-title-row h1 { flex: 1; min-width: 0; margin: 0; font-size: var(--review-title-size); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.import-review-title-row .import-history-back { flex: none; width: 44px; min-height: 44px; height: 44px; padding: 11px; justify-content: center; border-radius: 6px; }
+.import-review-paper-actions { display: flex; align-items: center; flex: none; gap: 8px; }
+.import-review-paper-actions > button { min-height: 44px; height: auto; padding: 6px 12px; font-size: 13px; border-radius: 6px; white-space: nowrap; }
+.import-review-paper-actions .import-annotation-start { display: flex; align-items: center; gap: 6px; color: var(--text); }
+.import-annotation-count { font-size: 13px; color: var(--muted); font-weight: 400; }
+.import-review-filter-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; padding: 2px 0 4px; border-bottom: 1px solid var(--line); }
+.import-review-filters, .import-review-other-tasks { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.import-review-filters { background: var(--surface-subtle); padding: 2px; border-radius: 6px; }
+.import-review-filters button { display: flex; align-items: center; gap: 5px; min-height: 44px; height: auto; padding: 4px 10px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 13px; white-space: nowrap; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.import-review-filters button:hover { color: var(--text); background: rgba(0, 0, 0, 0.03); }
+.import-review-filters button.current { color: var(--text); background: var(--surface, #fff); font-weight: 600; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+.import-review-filters button span { font-size: 13px; padding: 1px 5px; border-radius: 10px; background: var(--surface-hover); color: var(--muted); }
+.import-review-filters button.current span { background: var(--surface-subtle); color: var(--text); }
+.import-review-other-tasks { gap: 8px; }
+.import-review-other-tasks button { white-space: nowrap; font-size: 13px; }
+.import-review-other-tasks button.current { color: var(--accent); font-weight: 600; }
+.import-review-other-tasks select { width: auto; min-height: 28px; height: 28px; max-width: 185px; padding: 2px 20px 2px 8px; font-size: 13px; border-radius: 6px; border: 1px solid var(--line); background-color: transparent; color: var(--muted); }
+.import-content .import-review-modern .import-review-layout { display: grid; flex: 1; min-height: 0; grid-template-columns: 200px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 14px; padding-top: 6px; }
+.import-content .import-review-modern .import-review-layout.is-queue-collapsed { grid-template-columns: minmax(0, 1fr); }
+.import-review-modern .import-queue-heading { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin: 0; padding: 0 6px; }
+.import-review-modern .import-queue-heading strong { font-size: 13px; }
+.import-review-modern .import-queue-heading span { font-size: 13px; color: var(--muted); }
+.import-content .import-review-modern .import-question-list { display: flex; flex-direction: column; height: 100%; margin: 0; padding: 0 4px 8px 0; overflow-y: auto; overflow-x: hidden; gap: 3px; }
+.import-content .import-review-modern .import-question-list button { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex: none; width: 100%; min-width: 0; max-width: none; min-height: 36px; height: 36px; padding: 0 8px; border: 0; border-left: 3px solid transparent; border-radius: 5px; text-align: left; background: transparent; cursor: pointer; transition: background .12s, border-color .12s; }
+.import-content .import-review-modern .import-question-list button:hover { background: var(--surface-hover); }
+.import-content .import-review-modern .import-question-list button.current { border-left-color: var(--accent); background: var(--surface-hover); font-weight: 600; }
+.import-content .import-review-modern .import-question-list button .import-queue-title { font-size: 13px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.import-content .import-review-modern .import-question-list button .import-queue-badge { display: inline-flex; align-items: center; flex: none; padding: 1px 6px; border-radius: 4px; font-size: 13px; line-height: 1.3; font-weight: 500; white-space: nowrap; background: var(--surface-subtle); color: var(--muted); }
+.import-content .import-review-modern .import-question-list button[data-tone="red"] .import-queue-badge,
+.import-content .import-review-modern .import-question-list button[data-tone="error"] .import-queue-badge { color: var(--danger, #b42318); background: rgba(180, 35, 24, 0.08); }
+.import-content .import-review-modern .import-question-list button[data-tone="amber"] .import-queue-badge,
+.import-content .import-review-modern .import-question-list button[data-tone="warning"] .import-queue-badge { color: var(--warning, #b54708); background: rgba(181, 71, 8, 0.08); }
+.import-content .import-review-modern .import-question-list button[data-tone="success"] .import-queue-badge { color: var(--success, #027a48); background: rgba(2, 122, 72, 0.08); }
+.import-content .import-review-modern .import-audit-workspace { position: relative; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 0; overflow: hidden; }
+.import-review-modern .import-compare-toolbar { display: flex; flex: none; min-height: 44px; height: auto; gap: 8px; align-items: center; justify-content: flex-start; flex-wrap: wrap; padding-bottom: 2px; }
+.import-compare-toolbar > button, .import-reading-view-controls select { min-height: 44px; height: auto; padding: 4px 8px; font-size: 13px; white-space: nowrap; border-radius: 5px; }
+.import-reading-view-controls { display: flex; align-items: center; gap: 4px; }
+.import-reading-view-controls select { width: auto; border: 1px solid var(--line); background-color: transparent; }
+.import-compare-toolbar .import-problems-toggle { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.import-review-modern .import-comparison-panes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 16px; padding-top: 8px; }
+.import-review-modern .import-reading-workspace[data-split-ratio=image] .import-comparison-panes { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.import-review-modern .import-reading-workspace[data-split-ratio=text] .import-comparison-panes { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+.import-review-modern .import-reading-workspace[data-review-view=text] .import-comparison-panes,
+.import-review-modern .import-reading-workspace[data-review-view=image] .import-comparison-panes { grid-template-columns: minmax(0, 1fr); }
+.import-review-modern .import-reading-pane { padding: 0 10px 24px 0; height: 100%; }
+.import-review-modern .import-question-heading { position: relative; height: auto; min-height: 36px; margin: 0 0 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.import-review-modern .import-question-heading > div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.import-review-modern .import-question-heading strong { font-size: var(--review-heading-size); }
+.import-review-modern .import-question-heading small { font-size: var(--font-caption); }
+.import-review-modern .import-question-heading button { white-space: nowrap; min-height: 44px; height: auto; padding: 6px 8px; font-size: 13px; }
+.import-review-modern .import-preview { max-width: 1100px; margin: 0; padding: 2px 0 16px; font-size: var(--font-reading); line-height: 1.7; }
+.import-review-modern .import-preview .question-body { margin-top: 0; }
+.import-review-modern .question-top,
+.import-review-modern .question-content,
+.import-review-modern .teacher-material { font-size: var(--font-reading); line-height: 1.7; }
+.import-review-modern .teacher-material h4 { font-size: var(--font-body); }
+.import-review-modern .paper-table-scroll table { font-size: inherit; }
+.import-source-readable-field.is-editable,
+.import-teaching-field.is-editable { position: relative; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; transition: background .15s ease; }
+.import-source-readable-field.is-editable:hover,
+.import-teaching-field.is-editable:hover { background: var(--surface-subtle); }
+.import-source-field-edit,
+.import-teaching-field-edit { position: absolute; top: -7px; right: -7px; width: 44px; height: 44px; min-height: 44px; padding: 13px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; opacity: 0; color: var(--muted); transition: opacity .15s ease, background .15s ease, color .15s ease; }
+.import-source-readable-field:hover > .import-source-field-edit,
+.import-teaching-field:hover > .import-teaching-field-edit,
+.import-source-field-edit:focus-visible,
+.import-teaching-field-edit:focus-visible { opacity: 1; }
+.import-source-field-edit:hover,
+.import-teaching-field-edit:hover { background: var(--surface-hover); color: var(--text); }
+.import-source-field-issue, .import-teaching-field-issue { font-size: var(--font-small); line-height: 1.65; color: var(--warning); margin: 6px 0; }
+.import-reading-section { border-top: 1px solid var(--line); margin: 16px 0 0; }
+.import-reading-section > summary { display: flex; align-items: center; justify-content: space-between; list-style: none; min-height: 44px; cursor: pointer; font-size: var(--font-body); font-weight: 600; }
+.import-reading-section > summary::-webkit-details-marker { display: none; }
+.import-reading-section > summary small { font-size: var(--font-caption); color: var(--muted); font-weight: 400; margin-left: 8px; }
+.import-reading-section > summary > svg { transition: transform .15s; }
+.import-reading-section[open] > summary > svg { transform: rotate(180deg); }
+.import-reading-section-content { padding: 2px 0 16px; font-size: var(--review-content-size); }
+.import-reading-section-content h4 { margin: 16px 0 6px; font-size: var(--font-body); }
+.import-reading-section-content h5 { margin: 12px 0 4px; font-size: var(--font-body); }
+.import-reading-section-content .import-reading-facts { margin: 0; }
+.import-reading-facts dd small { display: inline-block; font-size: var(--font-caption); color: var(--muted); margin-left: 8px; }
+.import-question-problems { position: absolute; z-index: 5; inset: 48px 0 0 auto; display: flex; flex-direction: column; width: min(300px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 12px 12px; box-shadow: -8px 0 28px #0000000c; }
+.import-question-problems[hidden] { display: none; }
+.import-question-problems > header { display: flex; align-items: center; justify-content: space-between; flex: none; min-height: 42px; }
+.import-question-problems h3 { font-size: var(--font-body); margin: 0; color: var(--accent); }
+.import-question-problems .import-review-problems { margin: 0; padding: 0; list-style: none; }
+.import-question-problems .import-review-problem { padding: 12px 0; margin: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; font-size: var(--font-body); }
+.import-question-problems .import-review-problem > strong { display: block; margin-top: 4px; font-size: var(--font-body); }
+.import-problem-field-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.import-problem-field-actions button { min-height: 44px; padding: 4px 8px; font-size: 13px; }
+.import-question-problems .import-opinion-details > summary { min-height: 44px; align-content: center; cursor: pointer; }
+.import-question-problems .import-review-context { font-size: var(--font-caption); }
+.import-review-modern .import-review-problem-message, .import-review-modern .import-review-problem-title { font-size: var(--font-body); }
+.import-review-modern .import-teaching-actions { font-size: var(--font-body); line-height: 1.7; }
+.import-review-modern .import-accuracy-status > .import-teaching-actions strong { flex-basis: calc(var(--font-body) * 7); }
+.import-review-modern .import-accuracy-status details { font-size: var(--font-small); }
+.import-review-modern .source-page-toolbar label,
+.import-review-modern .source-page-toolbar select,
+.import-review-modern .source-page-document-actions button { font-size: var(--font-small); }
+.import-review-modern .source-page-controls button { font-size: var(--font-small); }
+.import-content .import-review-modern .import-review-footer { display: flex; flex-direction: row; align-items: center; justify-content: space-between; flex: 0 0 auto; min-height: 48px; padding: 4px 0 0; gap: 12px; border-top: 1px solid var(--line); overflow: visible; }
+.import-current-task { display: flex; align-items: center; gap: 8px; flex: none; }
+.import-current-task button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; height: auto; width: auto; padding: 6px 12px; font-size: 13px; white-space: nowrap; border-radius: 6px; }
+.import-current-task .import-confirm-source { font-size: var(--font-body); line-height: 1.5; }
+.import-current-task .import-source-eligibility { display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: var(--font-caption); }
+.import-review-footer .import-save-status { flex: 1; text-align: center; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-size: 13px; color: var(--muted); }
+.import-review-modern .import-question-navigation { display: flex; flex: none; min-height: 34px; border: 0; gap: 6px; }
+.import-review-modern .import-question-navigation button { min-height: 44px; height: auto; padding: 6px 10px; font-size: 13px; border-radius: 6px; }
+.import-task-note { position: relative; }
+.import-task-note > summary { min-height: 34px; align-content: center; cursor: pointer; font-size: var(--font-caption); color: var(--muted); padding: 4px; }
+.import-task-note > div { position: absolute; z-index: 6; bottom: calc(100% + 8px); left: 0; width: 260px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 6px 24px #00000012; }
+.import-task-note textarea { width: 100%; min-height: 80px; }
+.import-review-modern .import-process-strip { flex: none; margin: 4px 0; font-size: var(--font-caption); }
+.import-review-modern > .import-failure { flex: none; max-height: 180px; overflow: auto; margin: 4px 0; }
+.import-review-modern .import-failure-title h3 { font-size: var(--font-body); }
+.import-review-modern .import-failure dl > div { grid-template-columns: calc(var(--font-body) * 5) minmax(0, 1fr); }
+.import-review-modern .import-failure details, .import-review-modern .import-failure-preserved { font-size: var(--font-caption); }
+.import-review-modern > .import-failure.import-failure-compact { flex: none; max-height: none; overflow: visible; margin: 4px 0 6px; padding: 0 12px; border: 1px solid rgba(180, 35, 24, 0.18); border-left: 3px solid var(--danger, #b42318); border-radius: 8px; background: var(--panel, #fff); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); }
+.import-review-modern .import-failure > .import-failure-disclosure { margin: 0; font-size: inherit; }
+.import-failure-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; cursor: pointer; list-style: none; font-size: 13px; }
+.import-failure-summary::-webkit-details-marker { display: none; }
+.import-failure-summary:focus-visible { outline: 2px solid var(--focus-color); outline-offset: 2px; border-radius: 4px; }
+.import-failure-summary-main { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.import-failure-summary-title { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--danger, #b42318); font-weight: 600; }
+.import-failure-summary-title > svg { flex: none; width: 1.15em; height: 1.15em; }
+.import-failure-summary-reason { min-width: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import-failure-preserved-inline { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; white-space: nowrap; margin-left: 4px; }
+.import-failure-summary-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.import-failure-resume-button { min-height: 44px; height: auto; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; transition: background .12s; }
+.import-failure-resume-button:hover:not(:disabled) { background: var(--surface-hover); }
+.import-failure-toggle { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.import-failure-toggle svg { flex: none; transition: transform .15s; }
+.import-failure-disclosure .when-open, .import-failure-disclosure[open] .when-closed { display: none; }
+.import-failure-disclosure[open] .when-open { display: inline; }
+.import-failure-disclosure[open] .import-failure-toggle svg { transform: rotate(180deg); }
+.import-failure-body { max-height: min(220px, 28dvh); overflow: auto; padding: 8px 4px 10px; border-top: 1px solid var(--line); overscroll-behavior: contain; font-size: 13px; }
+.import-failure-key-points { margin-bottom: 6px; }
+.import-failure-next-action { margin: 4px 0; color: var(--text); }
+.import-failure-tech-details { margin-top: 6px; font-size: 13px; }
+.import-failure-tech-details summary { cursor: pointer; user-select: none; }
+.import-failure-tech-grid { margin: 6px 0 0; display: grid; gap: 6px; }
+.import-failure-tech-grid > div { display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 8px; }
+.import-failure-tech-grid dt { color: var(--muted); }
+.import-failure-tech-grid dd { margin: 0; }
+.import-review-modern .import-fields { padding-right: 6px; }
+@media(min-width: 1650px) {
+  .import-content .import-review-modern .import-review-layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .import-content .import-review-modern .import-audit-workspace.is-issues-open { grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+  .import-question-problems { position: static; width: auto; min-height: 0; border: 0; border-left: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+}
+@media(min-width: 1800px) {
+  .import-content .import-review-modern { --font-small: 15px; --font-caption: 15px; --font-body: 16px; --font-reading: 18px; --review-content-size: 17px; --review-title-size: 20px; --review-heading-size: 20px; }
+  .import-review-modern > .import-failure { max-height: 200px; }
+}
+@media(min-width: 2560px) {
+  .import-content .import-review-modern { --font-small: 16px; --font-caption: 16px; --font-body: 18px; --font-reading: 20px; --review-content-size: 19px; --review-title-size: 22px; --review-heading-size: 22px; }
+  .import-content .import-review-modern .import-review-layout { grid-template-columns: 260px minmax(0, 1fr); gap: 24px; }
+  .import-content .import-review-modern .import-audit-workspace.is-issues-open { grid-template-columns: minmax(0, 1fr) 360px; }
+  .import-review-modern > .import-failure { max-height: 220px; }
+}
+@media(max-width: 1000px) {
+  .main-content.import-content:has(.import-review-modern) { padding: 8px 12px 6px; }
+  .import-content .import-review-modern .import-review-layout { grid-template-columns: 164px minmax(0, 1fr); gap: 10px; }
+  .import-review-paper-actions .import-annotation-start { gap: 4px; padding-inline: 6px; }
+  .import-annotation-start .import-annotation-count { display: none; }
+  .import-review-title-row h1 { font-size: var(--review-title-size); }
+  .import-content .import-review-modern .import-review-footer { flex-wrap: wrap; }
+  .import-review-footer .import-save-status { flex: 1 1 100%; order: 3; text-align: left; white-space: normal; }
+  .import-review-modern .import-comparison-panes { gap: 10px; }
+}
+@media(max-width: 700px) {
+  .import-content .import-review-modern { --font-reading: 16px; --review-content-size: 15px; --review-title-size: 17px; --review-heading-size: 18px; }
+  .main-content.import-content:has(.import-review-modern) { padding: 6px 8px; }
+  .import-review-title-row { flex-wrap: wrap; gap: 4px; min-height: auto; }
+  .import-review-title-row h1 { flex: 1; }
+  .import-review-title-row .import-review-paper-actions { flex: 0 0 100%; justify-content: flex-end; gap: 4px; }
+  .import-review-paper-actions > button { padding-inline: 8px; }
+  .import-review-filter-row { gap: 4px; flex-wrap: wrap; }
+  .import-review-filters { gap: 4px; }
+  .import-review-other-tasks { width: 100%; justify-content: space-between; }
+  .import-review-other-tasks select { max-width: 160px; }
+  .import-content .import-review-modern .import-review-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: 48px minmax(0, 1fr); gap: 4px; }
+  .import-content .import-review-modern .import-review-layout.is-queue-collapsed { grid-template-rows: minmax(0, 1fr); }
+  .import-content .import-review-modern .import-question-list { height: 48px; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0 0 4px; }
+  .import-content .import-review-modern .import-question-list button { flex: 0 0 140px; min-width: 140px; max-width: 140px; height: 44px; min-height: 44px; }
+  .import-review-modern .import-queue-heading { display: none; }
+  .import-reading-view-controls select { max-width: 108px; padding-inline: 4px; }
+  .import-reading-view-controls select[aria-label="并排分栏比例"] { display: none; }
+  .import-compare-toolbar > button { padding-inline: 4px; }
+  .import-review-modern .import-comparison-panes,
+  .import-review-modern .import-reading-workspace[data-split-ratio] .import-comparison-panes { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(240px, 35dvh) minmax(280px, 1fr); gap: 8px; overflow-y: auto; overscroll-behavior: contain; }
+  .import-review-modern .import-reading-workspace[data-review-view=text] .import-comparison-panes,
+  .import-review-modern .import-reading-workspace[data-review-view=image] .import-comparison-panes { grid-template-rows: minmax(0, 1fr); overflow: hidden; }
+  .import-content .import-review-modern .import-review-footer { flex-wrap: wrap; min-height: 60px; gap: 4px; padding: 4px 0; }
+  .import-current-task { width: 100%; gap: 4px; flex-wrap: wrap; }
+  .import-current-task button { padding-inline: 8px; }
+  .import-review-modern .import-question-navigation { width: 100%; justify-content: space-between; }
+  .import-task-note > div { left: auto; right: 0; width: 230px; }
+  .import-review-modern > .import-failure { max-height: 120px; }
+  .import-review-modern .import-failure dl > div { grid-template-columns: minmax(0, 1fr); }
+  .import-failure-summary { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .import-failure-summary-actions { width: 100%; justify-content: flex-end; }
+  .import-failure-body { max-height: min(240px, 30dvh); }
+}
+@media (pointer: coarse) {
+  .import-review-modern button,
+  .import-review-modern select,
+  .import-review-modern summary { min-height: 44px; }
+  .import-content .import-review-modern .import-question-list button { min-height: 44px; height: auto; }
+  .import-source-field-edit,
+  .import-teaching-field-edit { opacity: 1; }
+  .import-review-other-tasks select { height: auto; }
+}
+@media(prefers-reduced-motion:reduce) { .import-reading-section > summary > svg, .import-failure-toggle svg { transition: none; } }

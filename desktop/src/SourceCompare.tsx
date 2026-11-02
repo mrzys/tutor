@@ -12,6 +12,24 @@ import { sourcePageFocus } from "./source-page-focus";
 GlobalWorkerOptions.workerSrc = workerUrl;
 type CompareMode = "split" | "image" | "text";
 
+export type SourcePageViewerProps = {
+  importId: string;
+  pages?: number[];
+  question?: any;
+  focusRequest?: number;
+  onOpenPdf?: () => void;
+};
+
+export type SourceCompareProps = {
+  importId: string;
+  pages?: number[];
+  extractedPages?: string[];
+  question?: any;
+  initialPage?: number;
+  onOpenPdf?: () => void;
+  onClose: () => void;
+};
+
 async function verifiedSourceBytes(value: any): Promise<Uint8Array> {
   if (typeof value?.dataBase64 !== "string" || !/^[a-f0-9]{64}$/i.test(value.sha256 || "")) throw new Error("原件数据或校验信息不完整，请重新打开。");
   const bytes = Uint8Array.from(atob(value.dataBase64), char => char.charCodeAt(0));
@@ -23,12 +41,17 @@ async function verifiedSourceBytes(value: any): Promise<Uint8Array> {
 
 /** Review-only original page. The host places the actual transcribed question
  * beside this viewer; source pages never become student question assets. */
-export function SourcePageViewer(props: { importId: string; pages?: number[]; question?: any; focusRequest?: number; onExpand?: () => void }) {
+export function SourcePageViewer(props: SourcePageViewerProps) {
   const [page, setPage] = createSignal(props.pages?.find(number => number > 0) || 1);
-  const [zoom, setZoom] = createSignal(1), [width, setWidth] = createSignal(500);
+  // Scanned multi-column pages remain readable before any validated question
+  // location is available. This magnifies the complete page; it is not a crop
+  // or an inferred location, and the fit-width control still returns to 100%.
+  const initialZoom = 2;
+  const [zoom, setZoom] = createSignal(initialZoom), [width, setWidth] = createSignal(500);
   const [source, setSource] = createSignal<any>(null), [loading, setLoading] = createSignal(false);
   const [rendering, setRendering] = createSignal(false), [imageReady, setImageReady] = createSignal(false);
   const [error, setError] = createSignal(""), [retry, setRetry] = createSignal(0), [focusTick, setFocusTick] = createSignal(0);
+  const [expanded, setExpanded] = createSignal(false);
   let pane!: HTMLDivElement, stage!: HTMLDivElement, canvas!: HTMLCanvasElement;
   let closed = false, loadVersion = 0, renderVersion = 0, pdfVersion = 0, identity = "", pdfOwner = "", autoFocusIdentity = "";
   let pdfTask: PDFDocumentLoadingTask | null = null, pdfPromise: Promise<PDFDocumentProxy> | null = null, renderTask: RenderTask | null = null;
@@ -43,7 +66,7 @@ export function SourcePageViewer(props: { importId: string; pages?: number[]; qu
     const next = `${props.importId}|${props.question?.questionId || ""}`;
     if (next === identity) return;
     if (identity.split("|")[0] !== props.importId) { resetPdf(); cache.clear(); }
-    identity = next; setPage(pages()[0] || 1); setZoom(1); setFocusTick(value => value + 1);
+    identity = next; setExpanded(false); setPage(pages()[0] || 1); setZoom(initialZoom); setFocusTick(value => value + 1);
   });
   createEffect(() => {
     const importId = props.importId, questionId = String(props.question?.questionId || ""), number = page(); retry();
@@ -114,10 +137,19 @@ export function SourcePageViewer(props: { importId: string; pages?: number[]; qu
   onCleanup(() => { closed = true; loadVersion++; resetPdf(); cache.clear(); });
   function beginDrag(event: PointerEvent) { if (event.button !== 0 || event.pointerType === "touch" || (event.target as HTMLElement).closest("button,a,input,select,textarea")) return; drag = { pointer:event.pointerId, x:event.clientX, y:event.clientY, left:pane.scrollLeft, top:pane.scrollTop }; pane.setPointerCapture(event.pointerId); pane.classList.add("is-dragging"); event.preventDefault(); }
   function endDrag() { drag = null; pane.classList.remove("is-dragging"); }
-  return <section class="source-page-viewer" aria-label="本题原卷">
+  return <><section class="source-page-viewer" aria-label="本题原卷">
     <div class="source-page-toolbar">
-      <label>原卷<select aria-label="本题原卷页码" value={page()} onChange={event => { setPage(Number(event.currentTarget.value)); setZoom(1); }}><For each={pages().length ? pages() : Array.from({ length:pageCount() }, (_,index)=>index+1)}>{number=><option value={number}>第 {number} 页{pages().includes(number) ? " · 本题" : ""}</option>}</For></select></label>
-      <div class="source-page-controls"><button type="button" aria-label="缩小原图" title="缩小原图" disabled={zoom() <= 1} onClick={()=>setZoom(v=>Math.max(1,v-.25))}><ZoomOut size={17}/></button><button type="button" title="恢复适合宽度" aria-label="恢复适合宽度" onClick={()=>setZoom(1)}>{Math.round(zoom()*100)}%</button><button type="button" aria-label="放大原图" title="放大原图" disabled={zoom() >= 3} onClick={()=>setZoom(v=>Math.min(3,v+.25))}><ZoomIn size={17}/></button><button type="button" aria-label="定位当前题原图" title="定位当前题原图" disabled={!focus() || !imageReady()} onClick={locate}><LocateFixed size={17}/></button><Show when={props.onExpand}><button type="button" aria-label="展开原卷对照" title="展开原卷对照" onClick={props.onExpand}><Maximize2 size={17}/></button></Show></div>
+      <label>原卷<select aria-label="本题原卷页码" value={page()} onChange={event => { setPage(Number(event.currentTarget.value)); setZoom(initialZoom); }}><For each={pages().length ? pages() : Array.from({ length:pageCount() }, (_,index)=>index+1)}>{number=><option value={number}>第 {number} 页{pages().includes(number) ? " · 本题" : ""}</option>}</For></select></label>
+      <div class="source-page-document-actions">
+        <button type="button" class="text-button" onClick={()=>setExpanded(true)}><Maximize2 size={16}/>展开对照</button>
+        <Show when={props.onOpenPdf}><button type="button" class="text-button" onClick={()=>props.onOpenPdf?.()}><FileText size={16}/>整份 PDF</button></Show>
+      </div>
+      <div class="source-page-controls" role="group" aria-label="原页缩放与定位">
+        <button type="button" aria-label="缩小原图" title="缩小原图" disabled={zoom() <= 1} onClick={()=>setZoom(v=>Math.max(1,v-.25))}><ZoomOut size={16}/></button>
+        <button type="button" title="恢复适合宽度" aria-label="恢复适合宽度" onClick={()=>setZoom(1)}>{Math.round(zoom()*100)}%</button>
+        <button type="button" aria-label="放大原图" title="放大原图" disabled={zoom() >= 3} onClick={()=>setZoom(v=>Math.min(3,v+.25))}><ZoomIn size={16}/></button>
+        <button type="button" class="source-page-locate" aria-label="定位当前题原图" title={!focus() ? "缺少可靠的本题坐标，显示整页原图" : "定位当前题在原卷中的位置"} disabled={!focus() || !imageReady()} onClick={locate}><LocateFixed size={16}/>定位本题</button>
+      </div>
     </div>
     <div class="source-page-image-scroll" ref={pane} tabIndex={0} aria-label="原图，可滚动或拖动浏览" onPointerDown={beginDrag} onPointerMove={event=>{ if (drag?.pointer===event.pointerId) { pane.scrollLeft=drag.left+drag.x-event.clientX; pane.scrollTop=drag.top+drag.y-event.clientY; } }} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
       <Show when={loading()}><Busy label="正在读取已保存的原卷…"/></Show><ErrorBanner message={error()} retry={()=>{cache.clear();setRetry(v=>v+1);}}/>
@@ -129,18 +161,15 @@ export function SourcePageViewer(props: { importId: string; pages?: number[]; qu
       </div>
       <Show when={source() && !source().image && !source().hasPdf}><p class="warning-text">此记录未保存原页图像或 PDF，无法显示原图。</p></Show>
     </div>
-    <p class="source-page-status" role="status">{error() ? "原卷显示未完成，请重试。" : loading() || rendering() ? "读取本机材料，不会重新识别。" : focus() && imageReady() ? "已定位本题原文范围 · 可缩放、拖动查看" : "缺少可靠的本题坐标，当前显示整页，请按题号核对。"}</p>
-  </section>;
+  </section>
+    <Show when={expanded()}><SourceCompare importId={props.importId} pages={props.pages} question={props.question} initialPage={page()}
+      onClose={()=>setExpanded(false)} onOpenPdf={props.onOpenPdf}/></Show>
+  </>;
 }
 
-export function SourceCompare(props: {
-  importId: string;
-  pages?: number[];
-  extractedPages?: string[];
-  question?: any;
-  onClose: () => void;
-}) {
-  const [page, setPage] = createSignal(props.pages?.find(value => value > 0) || 1);
+export function SourceCompare(props: SourceCompareProps) {
+  const firstPage = () => Number.isSafeInteger(props.initialPage) && props.initialPage! > 0 ? props.initialPage! : props.pages?.find(value => value > 0) || 1;
+  const [page, setPage] = createSignal(firstPage());
   const [mode, setMode] = createSignal<CompareMode>("split");
   const [zoom, setZoom] = createSignal(1);
   const [source, setSource] = createSignal<any>(null);
@@ -153,6 +182,7 @@ export function SourceCompare(props: {
   let canvas!: HTMLCanvasElement;
   let loadVersion = 0;
   let renderVersion = 0;
+  let pdfVersion = 0, pdfOwner = "", importIdentity = "";
   let closed = false;
   let pdfTask: PDFDocumentLoadingTask | null = null;
   let pdfPromise: Promise<PDFDocumentProxy> | null = null;
@@ -164,45 +194,44 @@ export function SourceCompare(props: {
   ];
   const pageCount = createMemo(() => source()?.pageCount || props.extractedPages?.length || Math.max(1, ...(props.pages || [])));
   const sourceText = () => source()?.text || props.extractedPages?.[page() - 1] || "";
-  async function verifiedBytes(value: any): Promise<Uint8Array> {
-    if (typeof value?.dataBase64 !== "string" || !/^[a-f0-9]{64}$/i.test(value.sha256 || ""))
-      throw new Error("原件数据或校验信息不完整，请重新打开。");
-    const bytes = Uint8Array.from(atob(value.dataBase64), char => char.charCodeAt(0));
-    const digest = await crypto.subtle.digest("SHA-256", bytes);
-    const actual = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
-    if (actual !== value.sha256) throw new Error("原件内容校验失败，请保留原件重新导入。");
-    return bytes;
-  }
   function stopRender() {
     renderVersion++;
     renderTask?.cancel();
     renderTask = null;
     if (canvas) { canvas.width = 0; canvas.height = 0; }
   }
-  async function originalPdf() {
-    if (!pdfPromise) {
+  function resetPdf() { stopRender(); pdfVersion++; void pdfTask?.destroy().catch(() => {}); pdfTask = null; pdfPromise = null; pdfOwner = ""; }
+  createEffect(() => {
+    if (importIdentity === props.importId) return;
+    importIdentity = props.importId;
+    resetPdf(); setPage(firstPage()); setZoom(1);
+  });
+  async function originalPdf(importId: string) {
+    if (!pdfPromise || pdfOwner !== importId) {
+      void pdfTask?.destroy().catch(() => {}); pdfTask = null; pdfPromise = null; pdfOwner = importId;
+      const own = ++pdfVersion;
       pdfPromise = (async () => {
-        const value = await request("import_original_read", { importId: props.importId });
-        if (value.importId !== props.importId) throw new Error("原卷与当前导入记录不一致。");
-        const bytes = await verifiedBytes(value);
-        if (closed) throw new Error("已关闭原卷对照。");
+        const value = await request("import_original_read", { importId });
+        if (value.importId !== importId) throw new Error("原卷与当前导入记录不一致。");
+        const bytes = await verifiedSourceBytes(value);
+        if (closed || own !== pdfVersion || pdfOwner !== importId || props.importId !== importId) throw new Error("原卷已切换。");
         pdfTask = getDocument({ data: bytes });
         return pdfTask.promise;
-      })().catch(failure => { pdfPromise = null; throw failure; });
+      })().catch(failure => { if (own === pdfVersion && pdfOwner === importId) pdfPromise = null; throw failure; });
     }
     return pdfPromise;
   }
   createEffect(() => {
-    const number = page(); retry();
+    const number = page(), importId = props.importId; retry();
     const own = ++loadVersion;
     stopRender(); setSource(null); setError(""); setLoading(true);
     (async () => {
-      const value = await request("import_source_page", { importId: props.importId, page: number, includeTextAssets: true });
+      const value = await request("import_source_page", { importId, page: number, includeTextAssets: true });
       if (closed || own !== loadVersion) return;
-      if (value.importId !== props.importId || value.page !== number) throw new Error("原页与当前选择不一致，请重试。");
+      if (value.importId !== importId || value.page !== number) throw new Error("原页与当前选择不一致，请重试。");
       if (value.image) {
         if (value.image.mimeType !== "image/png") throw new Error("原页图像格式不受支持。");
-        await verifiedBytes(value.image);
+        await verifiedSourceBytes(value.image);
       }
       if (closed || own !== loadVersion) return;
       setSource(value);
@@ -210,13 +239,13 @@ export function SourceCompare(props: {
       .finally(() => { if (!closed && own === loadVersion) setLoading(false); });
   });
   createEffect(() => {
-    const value = source(), number = page(), available = width(), scale = zoom(), view = mode();
+    const value = source(), number = page(), available = width(), scale = zoom(), view = mode(), importId = props.importId;
     stopRender();
     if (!value || value.image || !value.hasPdf || view === "text") { setRendering(false); return; }
     const own = renderVersion;
     setRendering(true);
     (async () => {
-      const pdf = await originalPdf();
+      const pdf = await originalPdf(importId);
       if (closed || own !== renderVersion) return;
       const pdfPage = await pdf.getPage(number);
       if (closed || own !== renderVersion) return;
@@ -244,7 +273,7 @@ export function SourceCompare(props: {
     observer.observe(imagePane);
     onCleanup(() => observer.disconnect());
   });
-  onCleanup(() => { closed = true; loadVersion++; stopRender(); void pdfTask?.destroy().catch(() => {}); });
+  onCleanup(() => { closed = true; loadVersion++; resetPdf(); });
   function tabKey(event: KeyboardEvent, index: number) {
     if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
@@ -269,6 +298,7 @@ export function SourceCompare(props: {
             <button type="button" disabled={mode() === "text"} title="恢复适合宽度" onClick={() => setZoom(1)}>{Math.round(zoom() * 100)}%</button>
             <button type="button" title="放大原图" aria-label="放大原图" disabled={zoom() >= 3 || mode() === "text"} onClick={() => setZoom(value => Math.min(3, value + .25))}><ZoomIn size={17}/></button>
           </div>
+          <Show when={props.onOpenPdf}><button type="button" class="text-button source-compare-open-pdf" onClick={()=>{props.onClose();props.onOpenPdf?.();}}><FileText size={16}/>整份 PDF</button></Show>
         </div>
         <p class="source-compare-note">原图保留原卷版面；识别原文是 OCR 提取结果。请以原图核对公式、图表和遗漏。</p>
         <ErrorBanner message={error()} retry={() => setRetry(value => value + 1)}/>

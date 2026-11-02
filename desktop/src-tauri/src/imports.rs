@@ -18,6 +18,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
+pub(crate) mod accuracy;
 mod background;
 mod diagnostics;
 mod duplicates;
@@ -1081,6 +1082,29 @@ enum StagedImport {
 fn import_role_configured(model: &ModelClient, field: &str) -> bool {
     model.public_settings()[field].as_bool().unwrap_or_else(|| model.configured())
 }
+fn verify_accuracy_source_configuration(store:&Store,model:&ModelClient,record:&Value)->AppResult<()> {
+    if s(record,"accuracyRunId").is_empty() {return Ok(());}
+    let run=accuracy::store::load_run(store,s(record,"accuracyRunId"))?;
+    let current=model.public_settings();
+    if run["strategy"]["bindings"]["sourceParsing"]!=model.import_source_model()?.import_execution_identity()?
+        || run["strategy"]["roleSettings"]["sourceParsing"]!=current["effectiveImportRoles"]["sourceParsing"] {
+        return Err(err("accuracy_configuration_changed","拆题配置或思考设置已变更，请恢复本次保存的配置后继续；原策略和已用额度均保留。"));
+    }
+    Ok(())
+}
+fn source_transcription_context(store:&Store,record:&Value,pages:&[String])->AppResult<Value>{
+    let mut context=json!({"document":{"filename":record["filename"],"pages":pages.iter().enumerate().map(|(i,text)|json!({"page":i+1,"text":text})).collect::<Vec<_>>(),"sourceIssues":record["sourceIssues"]}});
+    if !s(record,"accuracyRunId").is_empty() {
+        // Source transcription has no teaching decision to make. Do not even
+        // load the full catalogue here: later stages receive their own inputs.
+        context["accuracySourceOnly"]=json!(true);
+        context["sourceInstructions"]=json!("只保真整理本次原卷题目、原参考与素材；不求解、不补原卷缺项、不生成教学稿、知识点、考查任务或难度。来源自评只作为同次辅助意见，不能授予后续核验或入库资格。");
+    } else {
+        // Historical runs retain the complete original request contract.
+        context["trustedCatalogue"]=trusted_catalog(store)?;
+    }
+    Ok(context)
+}
 
 fn stage_import(
     store: &mut Store,
@@ -1088,13 +1112,22 @@ fn stage_import(
     payload: &Value,
     cancel: &AtomicBool,
 ) -> AppResult<StagedImport> {
+    let retry = !s(payload, "importId").is_empty();
+    let accuracy_requested = if retry {
+        !s(&store.document("imports", s(payload, "importId"))?, "accuracyRunId").is_empty()
+    } else {
+        payload.get("accuracyStrategy").is_some_and(|value| !value.is_null() && *value != false)
+    };
+    if accuracy_requested {
+        // Readiness is local and checked before decoding or preserving uploads.
+        accuracy::validate_configuration(model)?;
+    }
     // Role readiness is local: importing must not require an unrelated active
     // assembly model, and a teaching-only resume need not select a source model.
     if !import_role_configured(model, "importTeachingConfigured") {
         return Err(err("not_configured", "请先在设置中配置解析生成模型，再导入试卷。"));
     }
     model.import_generator()?;
-    let retry = !s(payload, "importId").is_empty();
     if !retry {
         model.import_source_model()?;
     }
@@ -1133,7 +1166,8 @@ fn stage_import(
         let resume_teaching = !rows(&record["questions"]).is_empty()
             && (record["status"] == "failed" || record["status"] == "pending_review"
                 || matches!(s(&record["backgroundJob"],"status"),"interrupted"|"cancelled"|"failed"))
-            && rows(&record["questions"]).iter().all(|q| q["teachingWorkflow"].is_object());
+            && (!s(&record,"accuracyRunId").is_empty()
+                || rows(&record["questions"]).iter().all(|q| q["teachingWorkflow"].is_object()));
         if !rows(&record["publishedQuestionIds"]).is_empty()
             || (!rows(&record["questions"]).is_empty() && !resume_teaching)
         {
@@ -1149,6 +1183,12 @@ fn stage_import(
             && paddle::document_extension(s(&record["source"], "extension")) && !ocr.configured()
         {
             return Err(err("ocr_not_configured", "请先在设置的“试卷识别”中配置 PaddleOCR，再重新识别。"));
+        }
+        if !s(&record,"accuracyRunId").is_empty() {
+            if !resume_teaching {
+                verify_accuracy_source_configuration(store,model,&record)?;
+            }
+            accuracy::store::resume_run(store,s(&record,"accuracyRunId"))?;
         }
         let bytes = read_source(store, &record)?;
         (record, bytes)
@@ -1180,7 +1220,11 @@ fn stage_import(
         cancelled(cancel)?;
         let source = save_source(store, &id, &extension, &bytes)?;
         let timestamp = now();
-        let record = json!({"importId":id,"filename":name,"status":"processing","revision":0,"createdAt":timestamp,"updatedAt":timestamp,"creationHash":hash,"source":source,"questions":[],"sourceIssues":[],"operations":[],"publishedQuestionIds":[],"publicationHistory":[],"error":null});
+        let mut record = json!({"importId":id,"filename":name,"status":"processing","revision":0,"createdAt":timestamp,"updatedAt":timestamp,"creationHash":hash,"source":source,"questions":[],"sourceIssues":[],"operations":[],"publishedQuestionIds":[],"publicationHistory":[],"error":null});
+        if accuracy_requested {
+            record["accuracyStrategy"] = payload["accuracyStrategy"].clone();
+            accuracy::initialize_run(store, model, &mut record)?;
+        }
         save_cas(store, None, &record)?;
         (record, bytes)
     };
@@ -1235,6 +1279,18 @@ impl ImportScope {
         false
     }
 }
+fn process_content(
+    store: &mut Store, model: &ModelClient, record: &mut Value, saved: &mut Value,
+    assets: &[Value], cancel: &AtomicBool,
+) -> AppResult<()> {
+    if !s(record,"accuracyRunId").is_empty() {
+        let outcome=accuracy::process(store,model,record,cancel);
+        *saved=store.document("imports",s(record,"importId"))?;
+        outcome
+    } else {
+        teaching::process(store,model,record,saved,assets,cancel)
+    }
+}
 fn process_import_scoped(
     store: &mut Store, model: &ModelClient, op: &str, hash: &str,
     cancel: &AtomicBool, mut record: Value, bytes: Vec<u8>, scope: ImportScope,
@@ -1250,11 +1306,12 @@ fn process_import_scoped(
         if !rows(&record["questions"]).is_empty() {
             if scope.source_only() { return Err(err("source_trial_completed", "拆题试验不覆盖已有题目。")); }
             let assets = if record["ocrSource"].is_object() { paddle::load_document(store,&record)?.assets } else {vec![]};
-            teaching::process(store,workflow_model,&mut record,&mut saved,&assets,cancel)?;
+            process_content(store,workflow_model,&mut record,&mut saved,&assets,cancel)?;
             record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
             return Ok(());
         }
-        let source_model = workflow_model.import_source_model()?;
+        verify_accuracy_source_configuration(store,workflow_model,&record)?;
+        let source_model = accuracy::bind_model(&workflow_model.import_source_model()?, &record);
         let model = &source_model;
         let attempt_path = prepare_attempt_path(store, &record, op)?;
         let provider_path = attempt_path.with_extension("provider-response.json");
@@ -1415,7 +1472,7 @@ fn process_import_scoped(
                 };
                 cancelled(cancel)?;duplicates::annotate(&store.bank,&mut pending)?;
                 record["questions"]=json!(pending);save_cas(store,Some(&saved),&record)?;saved=record.clone();
-                teaching::process(store,workflow_model,&mut record,&mut saved,&document.assets,cancel)?;
+                process_content(store,workflow_model,&mut record,&mut saved,&document.assets,cancel)?;
                 record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
                 return Ok(());
             }
@@ -1433,7 +1490,7 @@ fn process_import_scoped(
         record["recognitionStage"] = json!("structuring");
         save_cas(store, Some(&saved), &record)?;
         saved = record.clone();
-        let mut context = json!({"document":{"filename":record["filename"],"pages":extracted.pages.iter().enumerate().map(|(i,t)|json!({"page":i+1,"text":t})).collect::<Vec<_>>(),"sourceIssues":record["sourceIssues"]},"trustedCatalogue":trusted_catalog(store)?});
+        let mut context = source_transcription_context(store,&record,&extracted.pages)?;
         if let Some(document) = &ocr_document {
             context["document"] = paddle::context(document);
             context["document"]["filename"] = record["filename"].clone();
@@ -1468,7 +1525,7 @@ fn process_import_scoped(
             record["questions"] = json!(pending);
             save_cas(store, Some(&saved), &record)?;
             saved = record.clone();
-            if !scope.source_only() { teaching::process(store, workflow_model, &mut record, &mut saved, &document.assets, cancel)?; }
+            if !scope.source_only() { process_content(store, workflow_model, &mut record, &mut saved, &document.assets, cancel)?; }
             record["status"] = json!("pending_review");
             record["recognitionStage"] = json!("complete");
             return Ok(());
@@ -1479,7 +1536,7 @@ fn process_import_scoped(
                 duplicates::annotate(&store.bank,&mut pending)?;
                 record["questions"]=json!(pending);
                 save_cas(store,Some(&saved),&record)?;saved=record.clone();
-                if !scope.source_only() { teaching::process(store,workflow_model,&mut record,&mut saved,&document.assets,cancel)?; }
+                if !scope.source_only() { process_content(store,workflow_model,&mut record,&mut saved,&document.assets,cancel)?; }
                 record["status"]=json!("pending_review");record["recognitionStage"]=json!("complete");
                 return Ok(());
             }
@@ -1611,14 +1668,18 @@ fn process_import_scoped(
         // conditional reviewer call. Cancellation never discards source work.
         save_cas(store,Some(&saved),&record)?;saved=record.clone();
         let source_assets=ocr_document.as_ref().map(|d|d.assets.as_slice()).unwrap_or(&[]);
-        if !scope.source_only() { teaching::process(store,workflow_model,&mut record,&mut saved,source_assets,cancel)?; }
+        if !scope.source_only() { process_content(store,workflow_model,&mut record,&mut saved,source_assets,cancel)?; }
         record["status"] = json!("pending_review");
         record["recognitionStage"] = json!("complete");
         Ok(())
     })();
     if let Err(error) = outcome {
+        if !s(&record,"accuracyRunId").is_empty() {accuracy::pause(store,&record)?;}
         record["status"] = json!("failed");
         record["error"] = serde_json::to_value(error)?;
+    }
+    if !s(&record,"accuracyRunId").is_empty() {
+        accuracy::store::pause_parent_clocks(store,s(&record,"accuracyRunId"))?;
     }
     if record["backgroundJob"].is_object() {
         record["backgroundJob"]["status"] = json!(if record["error"]["code"] == "cancelled" {
@@ -1727,6 +1788,11 @@ fn review_save_with_scope(store: &Store, payload: &Value, single: bool) -> AppRe
     }
     let saved = record.clone();
     let previous = rows(&record["questions"]);
+    let accurate = !s(&record,"accuracyRunId").is_empty();
+    let projected_previous = if accurate {rows(&accuracy::project_record(store,&record)?["questions"])} else {vec![]};
+    let metadata_fields = ["knowledgeSchemaVersion","primaryKnowledgeUids","knowledgeUids","knowledgeTopics",
+        "task","solutionPaths","difficultyAssessment","sectionIds","requiredSectionIds","requiredPremises",
+        "allowedSolution","mappingConfirmed","teachingFocus"];
     let questions = if single {
         let id = s(payload, "questionId");
         if id.is_empty() || payload["question"]["questionId"] != id
@@ -1766,7 +1832,10 @@ fn review_save_with_scope(store: &Store, payload: &Value, single: bool) -> AppRe
             return Err(err("invalid_import", "请先读取完整题目，再保存审核修改。"));
         }
         if published.iter().any(|p| p == id) {
-            if old != q {
+            let baseline = if accurate {
+                projected_previous.iter().find(|previous|previous["questionId"]==id).unwrap_or(old)
+            } else {old};
+            if baseline != q {
                 return Err(err(
                     "immutable_question",
                     "已发布题目不能通过待审核记录修改。",
@@ -1774,6 +1843,13 @@ fn review_save_with_scope(store: &Store, payload: &Value, single: bool) -> AppRe
             }
             normalized.push(old.clone());
             continue;
+        }
+        if accurate {
+            let projected=projected_previous.iter().find(|previous|previous["questionId"]==id)
+                .ok_or_else(||err("accuracy_integrity","准确性题目投影身份已失效。"))?;
+            if metadata_fields.iter().any(|field|q.get(*field).is_some_and(|value|*value!=projected[*field])) {
+                return Err(err("accuracy_action_required","教学信息由准确性流程按版本核对；请通过准确性修订修改难度、知识点或解法信息，原题修改尚未保存。"));
+            }
         }
         structured::check_review_immutable(old, q)?;
         if paddle::uses(old) && (old["sourceBlockIds"] != q["sourceBlockIds"] || old["sourceMaterialRoles"] != q["sourceMaterialRoles"]) {
@@ -1784,6 +1860,14 @@ fn review_save_with_scope(store: &Store, payload: &Value, single: bool) -> AppRe
         } else {
             normalize_question(q, id, page_count)?
         };
+        if accurate {
+            // A source edit carries the original process metadata unchanged.
+            // The model projection remains read-only until explicit revision.
+            for field in &metadata_fields {
+                if let Some(value)=old.get(*field) {next[*field]=value.clone();}
+                else {next.as_object_mut().unwrap().remove(*field);}
+            }
+        }
         // Asset placement evidence is generated by the source pipeline, not an
         // editable question field. The shared normalizer intentionally does not
         // trust model-supplied audits, so restore only the persisted evidence.
@@ -1884,6 +1968,29 @@ fn build_manifest_with_review(
     record: &Value,
     agent_review: Option<&Value>,
 ) -> AppResult<Value> {
+    build_manifest_inner(store,record,agent_review,None)
+}
+pub(crate) fn build_accuracy_manifest_for_replay(store:&Store,record:&Value,manifest:&Value)->AppResult<Value>{
+    if s(record,"accuracyRunId").is_empty(){return Err(err("accuracy_integrity","旧流程不能借用准确性定稿回放。"));}
+    let pending=&record["pendingPublication"];
+    let exact_pending=pending["manifest"]==*manifest && !s(pending,"operationId").is_empty()
+        && pending["payload"]["operationId"]==pending["operationId"]
+        && pending["payload"]["importId"]==record["importId"]
+        && pending["payload"]["expectedRevision"]==record["revision"]
+        && pending["payload"]["acknowledgeReview"]==true
+        && hash_json(&pending["payload"])==pending["payloadHash"];
+    let committed=exact_pending && store.bank.publication_matches(s(pending,"operationId"),manifest)?;
+    build_manifest_inner(store,record,None,committed.then_some(manifest))
+}
+fn build_manifest_inner(
+    store: &Store,
+    record: &Value,
+    agent_review: Option<&Value>,
+    replay_manifest:Option<&Value>,
+) -> AppResult<Value> {
+    let projected = accuracy::project_record(store, record)?;
+    let record = &projected;
+    let accurate = !s(record, "accuracyRunId").is_empty();
     paddle::verify_audit(store, record)?;
     verify_recovered_source_for_publication(store, record)?;
     // The agent authority is only constructed by the debug maintenance entry.
@@ -1912,12 +2019,36 @@ fn build_manifest_with_review(
     let mut knowledge_mappings = vec![];
     let mut current_questions = rows(&record["questions"]);
     duplicates::annotate(&store.bank, &mut current_questions)?;
-    for q in current_questions.iter().filter(|q| {
-        (s(q, "reviewDecision") == "approve" || review::model_ready(q, record))
-            && !published.iter().any(|id| id == s(q, "questionId"))
-    }) {
-        let model_approved = s(q, "reviewDecision") != "approve" && review::model_ready(q, record);
-        if model_approved {
+    if let Some(manifest)=replay_manifest {
+        let frozen=rows(&manifest["questions"]);
+        let bank_questions=store.bank.questions()?;
+        for question in &mut current_questions {
+            let qid=s(question,"questionId").to_owned();
+            let exact_self=frozen.iter().find(|q|q["questionId"]==qid).is_some_and(|frozen|{
+                bank_questions.iter().any(|bank|bank["questionId"]==qid
+                    && ["questionType","student","teacher","contentVersion","teacherVersion","contentSha256","teacherSha256"].iter().all(|key|bank[*key]==frozen[*key]))
+            });
+            if exact_self {
+                question["duplicateCandidates"]=json!(rows(&question["duplicateCandidates"]).into_iter()
+                    .filter(|candidate|candidate["questionId"]!=qid).collect::<Vec<_>>());
+            }
+        }
+    }
+    for q in &current_questions {
+        if published.iter().any(|id| id == s(q, "questionId")) {
+            continue;
+        }
+        let eligible = if accurate {
+            s(q,"reviewDecision") != "reject" && accuracy::eligible(store,record,q)?
+        } else {
+            s(q, "reviewDecision") == "approve" || review::model_ready(q, record)
+        };
+        if !eligible { continue; }
+        let model_approved = if accurate {q["accuracy"]["source"]["status"]!="teacher_reviewed"}
+            else {s(q, "reviewDecision") != "approve" && review::model_ready(q, record)};
+        if accurate {
+            accuracy::verify_question(store,record,q)?;
+        } else if model_approved {
             review::verify_opinion(store, q, record)?;
         } else {
             check_approved(q, record)?;
@@ -2093,6 +2224,9 @@ fn build_manifest_with_review(
             knowledge_mappings.push(json!({"questionId":id,"knowledgeUid":uid,"topic":topic,"status":status,"basis":basis,"role":role,"solutionPathId":path_id}));
         }
         questions.push(json!({"schemaVersion":1,"questionId":id,"questionType":q["questionType"],"student":student,"teacher":teacher,"sourceRefs":[{"sourceId":source_id,"pages":q["pages"],"label":q["sourceLabel"],"locator":q["sourceLabel"]}],"contentSha256":content_hash,"teacherSha256":teacher_hash,"contentVersion":content_version,"teacherVersion":teacher_version,"verification":{"result":"pass","method":"teacher_review","checkedBy":"local_teacher","checkedAt":record["updatedAt"],"basis":q["reviewBasis"],"contentVersion":content_version,"teacherVersion":teacher_version,"origin":{"sourceTitle":record["filename"],"sourceQuestionNumber":q["sourceLabel"]}}}));
+        if accurate && !model_approved {
+            questions.last_mut().unwrap()["verification"]["basis"]=q["accuracy"]["source"]["basis"].clone();
+        }
         if model_approved {
             let published = questions.last_mut().unwrap();
             published["verification"]["method"] = json!("model_review");
@@ -2152,8 +2286,12 @@ fn build_manifest_with_review(
         let mut assessed = q.clone();
         assessed["difficultyAssessment"] = annotations::normalize_difficulty(q)?;
         annotations::apply_difficulty(&mut entry, &assessed);
-        teaching::verify_audit(store,q)?;
-        teaching::apply_to_entry(q,questions.last().unwrap(),&mut entry,s(record,"importId"))?;
+        if accurate {
+            accuracy::apply_to_entry(store,record,q,questions.last().unwrap(),&mut entry)?;
+        } else {
+            teaching::verify_audit(store,q)?;
+            teaching::apply_to_entry(q,questions.last().unwrap(),&mut entry,s(record,"importId"))?;
+        }
         entries.push(entry);
     }
     if questions.is_empty() {
@@ -2205,9 +2343,10 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
     verify_recovered_source_for_publication(store, &record)?;
     // Pending publication retries must still retain their bound source audit;
     // a frozen manifest is not permission to ignore damaged review evidence.
+    let accurate = !s(&record,"accuracyRunId").is_empty();
     for question in rows(&record["questions"])
         .iter()
-        .filter(|q| review::model_ready(q, &record))
+        .filter(|q| !accurate && review::model_ready(q, &record))
     {
         review::verify_opinion(store, question, &record)?;
     }
@@ -2236,7 +2375,7 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
     // Revalidate the actual classroom request/response even when reusing a
     // frozen manifest after a failed bank write. Freezing is not permission to
     // publish a draft whose supporting files disappeared or were modified.
-    for entry in rows(&manifest["configPatch"]["assemblyIndex"]["entries"]) {
+    for entry in rows(&manifest["configPatch"]["assemblyIndex"]["entries"]).into_iter().filter(|_| !accurate) {
         if entry["teachingAnalysis"].is_object() {
             let question=rows(&record["questions"]).into_iter().find(|q|q["questionId"]==entry["questionId"])
                 .ok_or_else(||err("teaching_audit_changed","冻结发布清单的教学稿题目身份已失效。"))?;
@@ -2247,8 +2386,13 @@ fn publish(store: &Store, payload: &Value, cancel: &AtomicBool) -> AppResult<Val
         }
     }
     cancelled(cancel)?;
+    if accurate {
+        accuracy::verify_manifest(store,&record,&manifest)?;
+    }
     let saved = record.clone();
-    let receipt = match if manifest["userConfirmedPublication"] == true {
+    let receipt = match if accurate {
+        store.bank.publish_accuracy_import(op, &manifest)
+    } else if manifest["userConfirmedPublication"] == true {
         store.bank.publish_model_review_import(op, &manifest)
     } else {
         store.bank.publish_import(op, &manifest)
@@ -2316,7 +2460,20 @@ pub fn dispatch(
     payload: &Value,
     cancel: &AtomicBool,
 ) -> AppResult<Option<Value>> {
+    // Historical unit fixtures retain their original uploader so they can
+    // exercise the frozen legacy policy. Native builds never accept new files
+    // through that policy, including when a caller supplies a strategy marker.
+    #[cfg(not(test))]
+    require_current_upload_entry(action,payload)?;
     views::validate_scope(store, payload)?;
+    if let Some(result)=accuracy::dispatch(store,model,action,payload,cancel) {
+        return Ok(Some(views::finish(store,result?,payload)?));
+    }
+    if matches!(action,"import_teaching_quality_review"|"import_teaching_acknowledge"|"import_teaching_patch"|"import_teaching_publish"|"import_structured_step")
+        && !s(payload,"importId").is_empty()
+        && !s(&store.document("imports",s(payload,"importId"))?,"accuracyRunId").is_empty() {
+        return Err(err("accuracy_action_required","本题使用准确性核验流程，请通过本题的核验或显式修订继续；旧教学稿操作不适用。"));
+    }
     if let Some(result) = background::dispatch(store, model, action, payload)? {
         return Ok(Some(views::finish(store,result,payload)?));
     }
@@ -2331,7 +2488,7 @@ pub fn dispatch(
         "import_get" => {
             let persisted = store.document_json("imports", s(payload, "importId"))?;
             let record: Value = serde_json::from_str(&persisted)?;
-            json!({"detailVersion":sha(persisted.as_bytes()),"diagnostic":diagnostics::for_record(store,&record),"reviewRequirements":review_requirement_map(&record),"reviewEligibility":review::eligibility(&record),"import":record})
+            json!({"detailVersion":accuracy::detail_version(store,&record,&sha(persisted.as_bytes()))?,"diagnostic":diagnostics::for_record(store,&record),"reviewRequirements":review_requirement_map(&record),"reviewEligibility":review_eligibility(store,&record)?,"import":record})
         }
         "import_teaching_quality_review" => teaching::record_quality_review(store,payload,cancel)?,
         "import_teaching_controls" => {
@@ -2377,6 +2534,33 @@ pub fn dispatch(
     };
     Ok(Some(views::finish(store,result,payload)?))
 }
+fn require_current_upload_entry(action:&str,payload:&Value)->AppResult<()> {
+    if matches!(action,"import_start"|"import_prepare") && s(payload,"importId").trim().is_empty() {
+        return Err(err("accuracy_entry_required","新上传请使用当前准确性导入入口；旧入口仅用于继续已有导入任务。"));
+    }
+    Ok(())
+}
+fn review_eligibility(store:&Store,record:&Value)->AppResult<Value>{
+    if s(record,"accuracyRunId").is_empty() {return Ok(review::eligibility(record));}
+    let published=ids(&record["publishedQuestionIds"]);
+    let mut result=serde_json::Map::new();
+    for question in rows(&record["questions"]) {
+        let qid=s(&question,"questionId");
+        let already_published=published.iter().any(|id|id==qid);
+        let eligible=!already_published && s(&question,"reviewDecision")!="reject"
+            && accuracy::eligible(store,record,&question)?;
+        let publication_scope=accuracy::publication_scope_for_question(store,record,&question)?;
+        let reason=if already_published {"已入库".to_owned()} else if eligible {
+            "实际交付内容的有效核验已完成，可确认入库".to_owned()
+        } else {
+            question["accuracy"]["reason"].as_str().filter(|text|!text.trim().is_empty())
+                .unwrap_or("来源、解答或教学信息仍有未解决问题，请查看核验结果。") .to_owned()
+        };
+        result.insert(qid.to_owned(),json!({"eligible":eligible,"method":if eligible {json!("model_review")} else {Value::Null},
+            "reason":reason,"publicationScope":publication_scope,"sourceMaterialFindings":teaching::source_material_findings(&question)}));
+    }
+    Ok(Value::Object(result))
+}
 fn with_teaching_controls(store:&Store,mut result:Value)->Value{
     if result["import"].is_object(){
         if !result["detailVersion"].is_string() {
@@ -2393,6 +2577,46 @@ fn with_teaching_controls(store:&Store,mut result:Value)->Value{
 mod tests {
     use super::*;
     use std::net::TcpListener;
+
+    #[test]
+    fn native_upload_route_rejects_new_legacy_files_and_preserves_explicit_existing_imports(){
+        for action in ["import_start","import_prepare"] {
+            for id in [Value::Null,json!(""),json!("   ")] {
+                let payload=json!({"importId":id,"filename":"模拟不能绕过的新上传.txt","contentBase64":"not-decoded","accuracyStrategy":"import-accuracy-first-v1"});
+                let error=require_current_upload_entry(action,&payload).unwrap_err();
+                assert_eq!(error.code,"accuracy_entry_required");
+                assert!(error.message.contains("当前准确性导入入口"));
+            }
+            for id in ["simulated-legacy-import","simulated-accuracy-import"] {
+                require_current_upload_entry(action,&json!({"importId":id})).unwrap();
+            }
+        }
+        require_current_upload_entry("import_accuracy_start",&json!({"filename":"模拟当前入口.txt"})).unwrap();
+        require_current_upload_entry("import_get",&json!({})).unwrap();
+    }
+    #[test]
+    fn production_catalogue_is_not_a_source_input_for_new_accuracy_txt_but_legacy_context_is_exact(){
+        let dir=tempfile::tempdir().unwrap();
+        let seed:Value=serde_json::from_str(include_str!("../../resources/seed.json")).unwrap();
+        let store=Store::open(dir.path(),&seed).unwrap();
+        let pages=vec!["模拟原文：1.计算17+25。原答案42；原解析17+25=42。".to_owned()];
+        let mut record=json!({"filename":"模拟生产目录来源.txt","sourceIssues":[],"accuracyRunId":"simulated-source-context-run"});
+        let current=source_transcription_context(&store,&record,&pages).unwrap();
+        assert!(current.get("trustedCatalogue").is_none());
+        assert_eq!(current["accuracySourceOnly"],true);
+        assert!(s(&current,"sourceInstructions").contains("不求解"));
+        assert_eq!(current["document"]["pages"][0]["text"],pages[0]);
+        record.as_object_mut().unwrap().remove("accuracyRunId");
+        let legacy=source_transcription_context(&store,&record,&pages).unwrap();
+        let catalogue=trusted_catalog(&store).unwrap();
+        assert!(rows(&catalogue["knowledgePoints"]).len()>=509);
+        assert!(rows(&catalogue["tasks"]).len()>=340);
+        let exact_old=json!({"document":{"filename":record["filename"],"pages":[{"page":1,"text":pages[0]}],"sourceIssues":record["sourceIssues"]},"trustedCatalogue":catalogue});
+        assert_eq!(legacy,exact_old);
+        assert!(legacy.get("accuracySourceOnly").is_none());
+        assert!(legacy.to_string().len()>24_000);
+        assert!(current.to_string().len()<2_000);
+    }
 
     #[test]
     fn audit_path_existing_targets_are_canonical_and_missing_targets_fail() {

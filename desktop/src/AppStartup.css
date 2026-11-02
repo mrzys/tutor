@@ -1,0 +1,78 @@
+.startup-shell .startup-sidebar-note {
+  margin: 28px 12px;
+  color: var(--muted);
+  font-size: var(--font-caption);
+  line-height: 1.6;
+}
+.startup-shell .sidebar-nav button:disabled {
+  opacity: 1;
+  color: var(--muted);
+}
+.startup-reader {
+  min-height: 140px;
+  padding-block: 24px;
+  color: var(--muted);
+}
+.startup-reader,
+.workspace-loading {
+  width: 100%;
+  max-width: 900px;
+  margin-inline: auto;
+}
+.workspace-loading {
+  padding-block: 18px;
+}
+.startup-reader .busy-panel,
+.workspace-loading .busy-panel {
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--font-small);
+  gap: 8px;
+}
+.startup-reader .busy-panel strong,
+.workspace-loading .busy-panel strong { font-weight: 400; }
+.startup-reader .busy-panel svg,
+.workspace-loading .busy-panel svg { width: 16px; height: 16px; }
+.history-loading {
+  margin: 14px 10px;
+  color: var(--muted);
+  font-size: var(--font-caption);
+  line-height: 1.6;
+}
+.history-read-error {
+  padding: 8px;
+}
+.assembly-model-loading {
+  color: var(--muted);
+  font-size: var(--font-caption);
+  text-align: center;
+}
+@media (max-width: 760px) {
+  .desktop-app.startup-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .startup-shell .sidebar {
+    position: static;
+    width: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 18px 20px;
+    box-shadow: none;
+  }
+  .startup-shell .main-panel {
+    height: auto;
+    min-height: 0;
+  }
+  .startup-shell .sidebar-nav,
+  .startup-shell .startup-sidebar-note {
+    display: none;
+  }
+  .startup-shell .main-panel::before {
+    display: none;
+  }
+}

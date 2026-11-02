@@ -1,0 +1,12 @@
+.import-accuracy-status { margin-block: 24px; min-width: 0; }
+.import-accuracy-status > .import-teaching-actions { justify-content: flex-start; align-items: baseline; }
+.import-accuracy-status > .import-teaching-actions strong { flex: 0 0 112px; }
+.import-accuracy-status details { margin-top: 12px; }
+.import-accuracy-status summary { min-height: 44px; padding-block: 8px; align-content: center; cursor: pointer; }
+.import-accuracy-status button { min-height: 44px; height: auto; }
+.import-accuracy-status details { font-size: 13px; }
+.import-accuracy-status p { overflow-wrap: anywhere; }
+.import-accuracy-status select { max-width: 100%; }
+@media (max-width: 600px) {
+  .import-accuracy-status > .import-teaching-actions strong { flex-basis: 100%; }
+}

@@ -67,6 +67,7 @@
 .usage-demo-config strong { font-weight: 500; color: var(--accent); }
 .usage-demo-config small { color: var(--muted); font-size: 13px; }
 .usage-demo-config > div > svg:last-child { margin-left: auto; }
+.usage-demo-config > p { margin: 0; font-size: 13px; color: var(--muted); }
 .usage-demo-upload, .usage-demo-publish { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 16px 10px; border: 1px dashed var(--control-border); border-radius: 8px; text-align: center; }
 .usage-demo-upload strong, .usage-demo-publish strong { color: var(--accent); font-size: 14px; font-weight: 500; }
 .usage-demo-upload span, .usage-demo-publish span { color: var(--muted); font-size: 13px; }

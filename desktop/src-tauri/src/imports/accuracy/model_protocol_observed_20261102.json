@@ -1,0 +1,48 @@
+{
+  "description": "Visible message contents captured from an isolated real-paper run on 2026-11-02. Raw message text is unchanged; hidden provider reasoning, credentials and images are excluded. These are protocol regressions, not independent mathematical truth.",
+  "cases": [
+    {
+      "case": "q1_math_valid",
+      "observedResponseFile": "d156874b-7746-40db-ac9c-c8cb997202b6.response.json",
+      "observedWireSha256": "3d857ab50512662c34a7d9e2e20ec00434fff1dbd47c1f6a72de85b744aaf901",
+      "rawMessageContent": "{\n  \"questionId\": \"import-5a5b3605cc976c33537d0ec8-q1\",\n  \"status\": \"no_issue_found\",\n  \"confidence\": \"high\",\n  \"checks\": [\n    {\n      \"target\": \"originalProblemValidity\",\n      \"status\": \"checked\",\n      \"basis\": \"题干清晰，集合定义明确，选项互斥且覆盖了常见错误（如交集或边界混淆），题目有效。\"\n    },\n    {\n      \"target\": \"candidate.answer\",\n      \"status\": \"checked\",\n      \"basis\": \"候选答案C与独立解及数学推导一致。\"\n    },\n    {\n      \"target\": \"candidate.solution\",\n      \"status\": \"checked\",\n      \"basis\": \"候选解答逻辑正确：识别M=(-3,1)，N=[-1,4)，并集取最小左界(-3,开)和最大右界(4,开)，得到(-3,4)。\"\n    },\n    {\n      \"target\": \"originalReference.answer\",\n      \"status\": \"checked\",\n      \"basis\": \"原参考答案为空，以独立解为准。\"\n    },\n    {\n      \"target\": \"originalReference.solution\",\n      \"status\": \"checked\",\n      \"basis\": \"原参考解答为空，无法检查，但不影响本题判定。\"\n    }\n  ],\n  \"findings\": [],\n  \"disagreements\": [],\n  \"referencePresence\": {\n    \"answer\": \"absent\",\n    \"solution\": \"absent\"\n  },\n  \"assetDisclosures\": []\n}",
+      "requiredTargets": [
+        "originalProblemValidity",
+        "candidate.answer",
+        "candidate.solution",
+        "originalReference.answer",
+        "originalReference.solution"
+      ],
+      "contractAccepted": true
+    },
+    {
+      "case": "q1_teaching_target_suffix",
+      "observedResponseFile": "f53a8817-2124-4b8c-87fa-2d80fe32d809.response.json",
+      "observedWireSha256": "e4ce1e95a23e223d02d0fa6fffc9dd8e925ba3897fe090e54601a67ba7588bc6",
+      "rawMessageContent": "{\n  \"questionId\": \"import-5a5b3605cc976c33537d0ec8-q1\",\n  \"status\": \"issues_found\",\n  \"confidence\": \"high\",\n  \"checks\": [\n    {\n      \"target\": \"primaryKnowledgeUids\",\n      \"status\": \"issue\",\n      \"basis\": \"候选及元数据中的主考知识UID为M-K-01-1210（并集）、M-K-01-115（描述法）、M-K-02-114（区间）。根据固定题面，题目核心运算为集合M与N的并集，依赖的核心知识点确认为“并集”及“区间表示”。目录中“M-K-01-1210”UID标签为“并集”，属于“集合间的关系与运算”(M-K-01-120)的子类，直接对应题干操作。辅助知识“描述法”(M-K-01-115)和“区间”(M-K-02-114)作为基础概念支撑正确。未发现缺失的主考知识或错误的引用。\"\n    },\n    {\n      \"target\": \"solutionPaths/interval-union-endpoint-check\",\n      \"status\": \"checked\",\n      \"basis\": \"路径依赖UID：M-K-01-1210、M-K-01-115、M-K-02-114，无前提依赖。路径依据描述将描述法集合转为区间求并集并检查端点，这与解题逻辑完全一致。UID指向准确，无多余或缺失的必要先决条件。\"\n    },\n    {\n      \"target\": \"task\",\n      \"status\": \"checked\",\n      \"basis\": \"任务ID为import-task-39b97a29a0c8fe29ba76。在tasks表中查找该UID，对应的label为“由两个实数区间求并集”，题型为single_choice。这符合本题的两个已知集合均为实数区间且要求计算并集的特征。匹配正确。\"\n    },\n    {\n      \"target\": \"difficultyAssessment\",\n      \"status\": \"issue\",\n      \"basis\": \"难度档位判定存在主观分歧。元数据中标定为“easy”。依据描述：“步骤单一，属于基础内容难度”。然而，题目要求计算两个区间的并集，其中一个集合左端点不包含(-3,)，另一个右端点不包含(,4)，涉及对不等式端点开闭性质的理解和并集的合并逻辑。对于刚学习集合运算的学生而言，区分开闭区间端点的处理是主要易错点（如遗漏端点或错误包含），通常被视为基础但非最简（如单元素集合）的题目。考虑到该题仅涉及一次并集操作且无参数讨论，归为“easy”尚可接受，但严格来说，涉及区间端点判定的题目往往具有基础性陷阱。此处不强制修改，但标记为低程度分歧，若标准严格可能需上调至“medium”门槛。鉴于目前仅为基础运算，维持原档。”\"\n    },\n    {\n      \"target\": \"teachingFocus.examFocus\",\n      \"status\": \"checked\",\n      \"basis\": \"考查集合的并集运算，以及用不等式/区间表示集合时端点开闭的处理。这与题目实际考察点完全吻合。\"\n    },\n    {\n      \"target\": \"teachingFocus.studentRequirements\",\n      \"status\": \"checked\",\n      \"basis\": \"列出的三条学生要求分别对应识别区间及端点、数轴合并确定端点开闭、结果与选项对应。这些都是解决本题必须可观察的能力，表述清晰且必要。\"\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"finding-difficulty-subjective\",\n      \"message\": \"难度评估存在主观分歧。当前判定为'easy'，依据是步骤单一。但涉及区间端点开闭判断通常具有一定陷阱性，部分标准可能将其归为'medium'。目前证据不足以推翻'easy'判定，因为不涉及参数讨论或多步复杂推导，故保留现状。\",\n      \"fieldPath\": \"metadata.difficultyAssessment.level\",\n      \"basis\": \"题目仅涉及单一并集运算，但需正确处理两个边界点的开闭性质。相较于纯代数代入，区间几何意义增加了认知负荷，但仍在高一入门阶段常规练习范围内。\"\n    }\n  ],\n  \"referencePresence\": {\n    \"answer\": \"present\",\n    \"solution\": \"present\"\n  },\n  \"assetDisclosures\": [],\n  \"disagreements\": []\n}",
+      "requiredTargets": [
+        "primaryKnowledgeUids",
+        "solutionPaths",
+        "task",
+        "difficultyAssessment",
+        "teachingFocus.examFocus",
+        "teachingFocus.studentRequirements"
+      ],
+      "contractAccepted": false
+    },
+    {
+      "case": "q2_math_control_character_and_positive_finding",
+      "observedResponseFile": "c90dcccd-2f94-4472-a591-5c833d48fd97.response.json",
+      "observedWireSha256": "73099d9fb78818f6f67be2ab3a407645747a61828af0247d8bc289989d08934b",
+      "rawMessageContent": "{\n  \"questionId\": \"import-5a5b3605cc976c33537d0ec8-q2\",\n  \"status\": \"no_issue_found\",\n  \"confidence\": \"high\",\n  \"checks\": [\n    {\n      \"target\": \"originalProblemValidity\",\n      \"status\": \"checked\",\n      \"basis\": \"题干方程 $\\frac{z}{i}=-1-i$ 逻辑清晰，选项互斥且覆盖常见计算符号错误，无歧义。\"\n    },\n    {\n      \"target\": \"candidate.answer\",\n      \"status\": \"checked\",\n      \"basis\": \"候选答案 '1-i' 正确匹配选项 C。\"\n    },\n    {\n      \"target\": \"candidate.solution\",\n      \"status\": \"checked\",\n      \"basis\": \"候选解答通过 $z = i(-1-i) = -i - i^2 = -i + 1 = 1-i$ 推导，步骤完整，结论正确。\"\n    },\n    {\n      \"target\": \"originalReference.answer\",\n      \"status\": \"checked\",\n      \"basis\": \"原参考答案为空，无法作为比对依据，但不影响对现有解法的独立验证。\"\n    },\n    {\n      \"target\": \"originalReference.solution\",\n      \"status\": \"checked\",\n      \"basis\": \"原参考解题过程为空，无法比对步骤，但独立解已验证其正确性。\"\n    }\n  ],\n  \"findings\": [\n    {\n      \"id\": \"finding-1\",\n      \"message\": \"经独立验算，方程 $\\frac{z}{i}=-1-i$ 等价于 $z = i(-1-i) = -i - i^2 = -i - (-1) = 1-i$。该结果对应选项 C。候选模型与独立模型均得出 $1-i$，尽管候选标记为 C，独立文本描述中提及 B 但在后续对比选项中明确判定 $1-i$ 对应 C，最终结论一致且数学推导无误。\",\n      \"fieldPath\": \"solution.validity\",\n      \"basis\": \"复数代数运算规则及选项映射\",\n      \"domain\": \"mathematics\"\n    }\n  ],\n  \"disagreements\": [],\n  \"referencePresence\": {\n    \"answer\": \"absent\",\n    \"solution\": \"absent\"\n  }\n}",
+      "requiredTargets": [
+        "originalProblemValidity",
+        "candidate.answer",
+        "candidate.solution",
+        "originalReference.answer",
+        "originalReference.solution"
+      ],
+      "contractAccepted": false
+    }
+  ]
+}

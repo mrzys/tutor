@@ -185,4 +185,25 @@
   .settings-page .model-settings-footer { bottom: -28px; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
   .model-settings-footer > div { margin-left: auto; }
 }
+.settings-import-context { min-width: 0; margin-bottom: 24px; padding: 16px 20px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--surface-radius); font-size: 13px; line-height: 1.7; }
+.settings-import-context > strong { display: block; color: var(--accent); font-size: 15px; }
+.settings-import-context > p { margin: 6px 0; overflow-wrap: anywhere; }
+.settings-import-context button { min-height: 44px; }
+.model-import-readiness { min-width: 0; margin: 0 0 20px; padding: 16px 20px; border: 1px solid var(--line); border-radius: var(--surface-radius); font-size: 13px; line-height: 1.7; }
+.model-import-readiness > strong { display: block; color: var(--accent); font-size: 15px; }
+.model-import-readiness > div { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; }
+.model-import-readiness > div > strong { color: var(--accent); font-size: 15px; }
+.model-import-readiness [role="status"] { font-variant-numeric: tabular-nums; }
+.model-import-readiness > p { margin: 6px 0; overflow-wrap: anywhere; }
+.model-import-readiness ul { margin: 8px 0; padding-left: 20px; }
+.model-import-readiness button { min-height: 44px; }
+.model-purpose-bulk { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; min-width: 0; margin-bottom: 20px; padding: 16px 20px; border: 1px solid var(--line); border-radius: var(--surface-radius); }
+.model-purpose-bulk > .settings-model-select { flex: 1 1 260px; min-width: 0; margin: 0; }
+.model-purpose-bulk > button { min-height: 44px; flex: 0 0 auto; }
+.model-purpose-bulk > p { flex: 1 1 100%; margin: 0; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; color: var(--muted); }
+.model-purpose-required { display: inline; margin-left: 8px; font-size: 13px; color: var(--muted); font-weight: 400; white-space: nowrap; }
+@media (max-width: 600px) {
+  .settings-import-context, .model-import-readiness, .model-purpose-bulk { padding: 14px; }
+  .model-purpose-bulk > .settings-model-select, .model-purpose-bulk > button { flex: 1 1 100%; }
+}
 @media (prefers-reduced-motion: reduce) { .settings-select-trigger svg, .settings-developer-switch > span:first-child::before { transition: none; } }

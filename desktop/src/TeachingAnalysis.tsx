@@ -1,6 +1,12 @@
-import { For, Show, createEffect, createMemo, createSignal, onCleanup, type JSX } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, createUniqueId, onCleanup, type JSX } from "solid-js";
+import { Portal } from "solid-js/web";
+import { ArrowRight, Pencil } from "lucide-solid";
 import { teachingAnalysisPresentation, teachingFocusPresentation } from "./shared/teaching-analysis.mjs";
 import { teachingIssueRows, teachingPatchFieldLabel, type TeachingIssueRow, type TeachingReviewControls } from "./import-review";
+import { Modal } from "./ui";
+import { MathSnippetBar } from "./MathSnippetBar";
+import { createTeachingEditDraft, teachingEditCanSave, teachingEditCurrent, teachingEditDirty, teachingEditIdentity, type TeachingEditDraft } from "./teaching-edit";
+import "./TeachingAnalysis.css";
 
 type TeachingMaterialProps = {
   question: any;
@@ -66,7 +72,12 @@ type TeachingReviewActionsProps = {
   onPatch: (fieldPath: string, oldText: string, newText: string, basis: string) => Promise<void>;
   editRequest?: number;
   editFieldPath?: string;
+  /** Increment only after the parent has confirmed discarding local input. */
+  discardRequest?: number;
+  onEditRequestHandled?: (request: number) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 };
 
 const teachingChecks = [
@@ -76,20 +87,34 @@ const teachingChecks = [
   ["formulaChecked", "已核对公式、图片与表格"],
 ] as const;
 
-function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: TeachingIssueRow }) {
+function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: TeachingIssueRow; onSavingChange?: (saving: boolean) => void }) {
   const [kind, setKind] = createSignal("");
   const [basis, setBasis] = createSignal("");
   const [checks, setChecks] = createSignal<Record<string, boolean>>({});
   const [failure, setFailure] = createSignal("");
+  const [saving, setSaving] = createSignal(false);
+  let previousDiscardRequest = props.discardRequest || 0;
+  createEffect(() => {
+    const request = props.discardRequest || 0;
+    if (request === previousDiscardRequest) return;
+    previousDiscardRequest = request;
+    setKind(""); setBasis(""); setChecks({}); setFailure("");
+  });
   createEffect(() => props.onDirtyChange?.(Boolean(kind() || basis().trim() || Object.values(checks()).some(Boolean))));
-  onCleanup(() => props.onDirtyChange?.(false));
+  createEffect(() => props.onSavingChange?.(saving()));
+  onCleanup(() => { props.onDirtyChange?.(false); props.onSavingChange?.(false); });
   const canSubmit = () => Boolean(kind() && basis().trim() && teachingChecks.every(([key]) => checks()[key] === true));
   async function acknowledge(event: SubmitEvent) {
     event.preventDefault();
-    if (props.disabled || !canSubmit()) return;
+    if (props.disabled || saving() || !canSubmit()) return;
     setFailure("");
-    try { await props.onAcknowledge(props.issue, kind(), basis(), checks()); }
+    setSaving(true);
+    try {
+      await props.onAcknowledge(props.issue, kind(), basis(), checks());
+      setKind(""); setBasis(""); setChecks({});
+    }
     catch (error: any) { setFailure(error.message || "核对结果未保存，请重试。"); }
+    finally { setSaving(false); }
   }
   return <section class="import-teaching-issue" data-testid="teaching-issue" data-disposition={props.issue.disposition}>
     <p><strong>{props.issue.acknowledged && props.issue.disposition === "informative" ? "已核对提醒" : "待核对意见"}：</strong>{props.renderText(props.issue.issue)}</p>
@@ -98,7 +123,7 @@ function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: Teachi
       <details><summary>核对并保留为提醒</summary>
         <p class="muted">仅当本条不影响题目与教学稿使用时，才可保留为提醒。数学错误、条件矛盾或必要依据不足应继续待处理；不能以确认代替修正。</p>
         <form onSubmit={acknowledge}>
-          <fieldset class="import-manual-fields" disabled={props.disabled}>
+          <fieldset class="import-manual-fields" disabled={props.disabled || saving()}>
             <label class="field-label">意见性质
               <select aria-label="教学稿意见性质" value={kind()} onChange={event => setKind(event.currentTarget.value)}>
                 <option value="">请选择已核实的性质</option>
@@ -121,7 +146,7 @@ function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: Teachi
               <textarea rows={3} maxLength={5000} aria-label="教学稿告警核对依据" placeholder="说明对照了哪些原文、图片或计算，为什么这条意见不影响教学稿使用。" value={basis()} onInput={event => setBasis(event.currentTarget.value)} />
             </label>
             <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
-            <div class="import-teaching-actions"><button type="button" class="text-button" onClick={() => { setKind(""); setBasis(""); setChecks({}); setFailure(""); }}>撤销本条填写</button><button type="submit" class="secondary" disabled={!canSubmit()}>保存本条核对</button></div>
+            <div class="import-teaching-actions"><button type="button" class="text-button" onClick={() => { setKind(""); setBasis(""); setChecks({}); setFailure(""); }}>撤销本条填写</button><button type="submit" class="secondary" disabled={!canSubmit() || saving()}>{saving() ? "保存中…" : "保存本条核对"}</button></div>
           </fieldset>
         </form>
       </details>
@@ -133,90 +158,196 @@ function TeachingIssueAction(props: TeachingReviewActionsProps & { issue: Teachi
  * this form performs no model call and never writes source transcription. */
 export function TeachingReviewActions(props: TeachingReviewActionsProps) {
   const issues = createMemo(() => teachingIssueRows(props.question, props.controls));
-  const [path, setPath] = createSignal("");
-  const [oldText, setOldText] = createSignal("");
-  const [replacement, setReplacement] = createSignal("");
-  const [basis, setBasis] = createSignal("");
-  const [confirmed, setConfirmed] = createSignal(false);
+  const currentIdentity = createMemo(() => teachingEditIdentity(props.question, props.controls));
+  const [open, setOpen] = createSignal(false);
+  const [reviewOpen, setReviewOpen] = createSignal(false);
+  const [draft, setDraft] = createSignal<TeachingEditDraft | null>(null);
   const [failure, setFailure] = createSignal("");
+  const [saving, setSaving] = createSignal(false);
+  const [discardRequested, setDiscardRequested] = createSignal(false);
+  const [mathActive, setMathActive] = createSignal(false);
   const [issueDrafts, setIssueDrafts] = createSignal<Record<string, boolean>>({});
-  let identity = "";
-  let editorDetails: HTMLDetailsElement | undefined;
+  const [issueSaving, setIssueSaving] = createSignal<Record<string, boolean>>({});
+  const [issueReset, setIssueReset] = createSignal(0);
+  const [reviewDiscardRequested, setReviewDiscardRequested] = createSignal(false);
+  const formId = `teaching-edit-${createUniqueId()}`;
   let replacementInput: HTMLTextAreaElement | undefined;
-  createEffect(() => {
-    const next = `${props.question?.questionId}|${props.controls?.candidateSha256 || ""}|${props.controls?.sourceContentSha256 || ""}`;
-    if (next !== identity) {
-      identity = next;
-      setPath(""); setOldText(""); setReplacement(""); setBasis(""); setConfirmed(false); setFailure("");
-    }
-  });
+  const issueDirty = () => Object.values(issueDrafts()).some(Boolean);
+  const reviewSaving = () => Object.values(issueSaving()).some(Boolean);
+  const draftCurrent = () => !draft() || teachingEditCurrent(draft()!, props.question, props.controls);
+  const editorDisabled = () => props.disabled || saving() || issueDirty() || !draftCurrent();
+  const canSave = () => !editorDisabled() && teachingEditCanSave(draft(), props.question, props.controls);
+  const longField = () => Boolean(draft() && (draft()!.fieldPath === "teachingSolution" || draft()!.oldText.length > 400 || draft()!.oldText.split("\n").length > 6));
+  createEffect(() => props.onDirtyChange?.(teachingEditDirty(draft()) || issueDirty()));
+  createEffect(() => props.onOpenChange?.(open() || reviewOpen()));
+  onCleanup(() => { props.onDirtyChange?.(false); props.onOpenChange?.(false); });
   let previousEditRequest = 0;
+  let previousDiscardRequest = props.discardRequest || 0;
+  createEffect(() => {
+    const request = props.discardRequest || 0;
+    if (request === previousDiscardRequest) return;
+    previousDiscardRequest = request;
+    discardEditor();
+    discardReview();
+  });
   createEffect(() => {
     const request = props.editRequest || 0;
     if (!request || request === previousEditRequest) { previousEditRequest = request; return; }
     previousEditRequest = request;
-    const field = props.controls?.editableFields?.find(field => field.path === props.editFieldPath)
-      || props.controls?.editableFields?.find(field => field.path === "teachingSolution") || props.controls?.editableFields?.[0];
-    if (field && (!path() || Boolean(props.editFieldPath) && field.path !== path())) selectField(field.path);
-    if (editorDetails) editorDetails.open = true;
-    requestAnimationFrame(() => replacementInput?.focus());
+    openEditor(props.editFieldPath);
+    props.onEditRequestHandled?.(request);
   });
-  createEffect(() => props.onDirtyChange?.(Boolean(replacement() !== oldText() || basis().trim() || Object.values(issueDrafts()).some(Boolean))));
-  onCleanup(() => props.onDirtyChange?.(false));
+  function openEditor(fieldPath = "") {
+    if (saving()) return;
+    setOpen(true);
+    if (draft() && teachingEditDirty(draft())) {
+      if (fieldPath && fieldPath !== draft()!.fieldPath) setFailure("当前字段有未保存修改，请先保存或取消本次编辑，再修改其他字段。");
+      return;
+    }
+    setFailure("");
+    if (fieldPath) selectField(fieldPath);
+    else setDraft(null);
+  }
   function selectField(fieldPath: string) {
-    if (path() && fieldPath !== path() && (replacement() !== oldText() || basis().trim())) {
+    if (saving()) return;
+    if (draft() && teachingEditDirty(draft())) {
       setFailure("当前字段有未保存修改，请先保存或撤销本次编辑，再切换字段。");
       return;
     }
-    const value = props.controls?.editableFields?.find(field => field.path === fieldPath)?.value || "";
-    setPath(fieldPath); setOldText(value); setReplacement(value); setBasis(""); setConfirmed(false); setFailure("");
+    const next = createTeachingEditDraft(props.question, props.controls, fieldPath);
+    if (!next) { setFailure("该字段当前不可修改，请重新读取本题后再试。"); return; }
+    setDraft(next); setFailure(""); setMathActive(false);
+    requestAnimationFrame(() => replacementInput?.focus());
   }
-  const changed = () => Boolean(path() && replacement().trim() && replacement() !== oldText());
+  function updateDraft(changes: Partial<TeachingEditDraft>) {
+    setDraft(value => value ? { ...value, ...changes } : value);
+  }
+  function closeEditor() {
+    if (saving()) return;
+    if (teachingEditDirty(draft())) { setDiscardRequested(true); return; }
+    discardEditor();
+  }
+  function discardEditor() {
+    if (saving()) return;
+    setDiscardRequested(false); setDraft(null); setFailure(""); setOpen(false); setMathActive(false);
+  }
+  function closeReview() {
+    if (reviewSaving()) return;
+    if (issueDirty()) { setReviewDiscardRequested(true); return; }
+    discardReview();
+  }
+  function discardReview() {
+    if (reviewSaving()) return;
+    setReviewOpen(false); setReviewDiscardRequested(false);
+    setIssueDrafts({}); setIssueReset(value => value + 1);
+  }
+  function chooseAnotherField() {
+    if (teachingEditDirty(draft())) {
+      setFailure("当前字段有未保存修改，请先保存或取消本次编辑，再修改其他字段。");
+      return;
+    }
+    setDraft(null); setFailure(""); setMathActive(false);
+  }
+  function insertSnippet(snippet: string) {
+    const input = replacementInput;
+    if (!input || editorDisabled()) return;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    updateDraft({ replacement: draft()!.replacement.slice(0, start) + snippet + draft()!.replacement.slice(end), confirmed: false });
+    input.focus();
+    const cursor = start + (snippet === "$$" ? 1 : snippet.length);
+    input.setSelectionRange(cursor, cursor);
+  }
   async function patch(event: SubmitEvent) {
     event.preventDefault();
-    if (props.disabled || !changed() || !basis().trim() || !confirmed()) return;
-    setFailure("");
+    if (!canSave()) return;
+    const submitted = draft()!;
+    setFailure(""); setSaving(true);
     try {
-      await props.onPatch(path(), oldText(), replacement(), basis());
-      if (editorDetails) editorDetails.open = false;
+      await props.onPatch(submitted.fieldPath, submitted.oldText, submitted.replacement, submitted.basis);
+      setDraft(null); setDiscardRequested(false); setOpen(false);
     }
     catch (error: any) { setFailure(error.message || "局部修订未保存，请重试。"); }
+    finally { setSaving(false); }
   }
-  return <Show when={props.controls}>
+  const issueActions = () => <For each={issues().map(issue => `${currentIdentity()}:${issue.issueIndex}:${issue.issueSha256}`)}>{id => {
+    const initialIssue = issues().find(item => `${currentIdentity()}:${item.issueIndex}:${item.issueSha256}` === id)!;
+    const issue = () => issues().find(item => `${currentIdentity()}:${item.issueIndex}:${item.issueSha256}` === id) || initialIssue;
+    return <TeachingIssueAction {...props} issue={issue()} discardRequest={issueReset()}
+      disabled={props.disabled || open() || teachingEditDirty(draft()) || Object.entries(issueDrafts()).some(([key, dirty]) => key !== id && dirty)}
+      onDirtyChange={value => setIssueDrafts(items => ({ ...items, [id]: value }))}
+      onSavingChange={value => setIssueSaving(items => ({ ...items, [id]: value }))} />;
+  }}</For>;
+  return <>
+    <Show when={props.controls && (!props.hideTrigger || issues().length)}>
     <section class="import-teaching-controls" aria-label="教学稿核对与局部修订">
       <Show when={issues().length}>
-        <details><summary>核对记录与提醒（{issues().length}）</summary>
-          <For each={issues()}>{issue => {
-            const id = `${issue.issueIndex}:${issue.issueSha256}`;
-            return <TeachingIssueAction {...props} issue={issue}
-              disabled={props.disabled || replacement() !== oldText() || Boolean(basis().trim()) || Object.entries(issueDrafts()).some(([key, dirty]) => key !== id && dirty)}
-              onDirtyChange={value => setIssueDrafts(items => ({ ...items, [id]: value }))} />;
-          }}</For>
-        </details>
+        <Show when={props.hideTrigger} fallback={<details><summary>核对记录与提醒（{issues().length}）</summary>{issueActions()}</details>}>
+          <button type="button" class="text-button teaching-review-options" disabled={saving() || open()} onClick={() => setReviewOpen(true)}>查看本题复核选项</button>
+        </Show>
       </Show>
-      <Show when={props.controls?.canPatch}>
-        <details ref={editorDetails} class="import-teaching-editor"><summary>修改AI解析</summary>
-          <Show when={props.disabledReason}><p class="muted">{props.disabledReason}</p></Show>
-          <form onSubmit={patch} data-testid="teaching-patch-form">
-            <fieldset class="import-manual-fields" disabled={props.disabled || Object.values(issueDrafts()).some(Boolean)}>
-              <label class="field-label">修改内容
-                <select aria-label="教学稿修订字段" value={path()} onChange={event => { selectField(event.currentTarget.value); event.currentTarget.value = path(); }}>
-                  <option value="">请选择一个字段</option>
-                  <For each={props.controls?.editableFields || []}>{field => <option value={field.path}>{teachingPatchFieldLabel(field.path)}</option>}</For>
-                </select>
-              </label>
-              <Show when={path()}>
-                <label class="field-label">内容<textarea ref={replacementInput} rows={path() === "teachingSolution" ? 9 : 3} aria-label="教学稿修改后内容" value={replacement()} onInput={event => { setReplacement(event.currentTarget.value); setConfirmed(false); }} /></label>
-                <details class="import-edit-comparison"><summary>查看原文与排版对照</summary><p><strong>修改前</strong></p>{props.renderText(oldText())}<Show when={changed()}><p><strong>修改后</strong></p>{props.renderText(replacement())}</Show></details>
-                <label class="field-label">修改依据<textarea rows={2} maxLength={5000} aria-label="教学稿局部修订依据" value={basis()} placeholder="简述修改及核对依据" onInput={event => setBasis(event.currentTarget.value)} /></label>
-                <label class="check-row"><input type="checkbox" checked={confirmed()} onChange={event => setConfirmed(event.currentTarget.checked)} />已核对修改前后内容及受影响的结论</label>
-                <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
-                <div class="import-teaching-actions"><button type="button" class="text-button" onClick={() => { setReplacement(oldText()); setBasis(""); setConfirmed(false); setFailure(""); if (editorDetails) editorDetails.open = false; }}>取消</button><button type="submit" class="primary" disabled={!changed() || !basis().trim() || !confirmed()}>保存解析修改</button></div>
-              </Show>
-            </fieldset>
-          </form>
-        </details>
+      <Show when={props.controls?.canPatch && !props.hideTrigger}>
+        <button type="button" class="text-button" disabled={props.disabled || issueDirty()} onClick={() => openEditor()}><Pencil size={15} />修改AI解析</button>
       </Show>
     </section>
-  </Show>;
+    </Show>
+    <Show when={open() || reviewOpen()}><Portal>
+      <div class="teaching-edit-dialog" data-long={longField()} on:keydown={event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") { event.preventDefault(); event.stopPropagation(); }
+      }}>
+        <Show when={open()}><Modal title={draft() ? `修改${teachingPatchFieldLabel(draft()!.fieldPath)}` : "修改AI解析"} wide={Boolean(draft())} stable={false} busy={saving()} onClose={closeEditor}
+          footer={<>
+            <button type="button" class="secondary" disabled={saving()} onClick={closeEditor}>取消</button>
+            <Show when={draft()}><button type="submit" form={formId} class="primary" disabled={!canSave()}>{saving() ? "保存中…" : "保存修改"}</button></Show>
+          </>}>
+          <Show when={draft()} fallback={<>
+            <p class="teaching-edit-context">选择要修改的内容。</p>
+            <Show when={props.disabledReason}><p class="muted">{props.disabledReason}</p></Show>
+            <Show when={issueDirty()}><p class="warning-text">请先保存或撤销尚未完成的意见核对，再修改解析。</p></Show>
+            <div class="teaching-edit-fields"><For each={props.controls?.editableFields || []}>{field =>
+              <button type="button" class="teaching-edit-field" disabled={props.disabled || issueDirty()} onClick={() => selectField(field.path)}>
+                <span><strong>{teachingPatchFieldLabel(field.path)}</strong><small>{field.value.replace(/\s+/g, " ").slice(0, 90) || "暂无内容"}</small></span><ArrowRight size={18} aria-hidden="true" />
+              </button>
+            }</For></div>
+            <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
+          </>}>{value => <>
+            <p class="teaching-edit-context">原题号 {value().questionLabel} · {teachingPatchFieldLabel(value().fieldPath)} <button type="button" class="text-button" disabled={saving()} onClick={chooseAnotherField}>选择其他字段</button></p>
+            <Show when={!draftCurrent()}><p class="warning-text" role="alert">本题或教学稿版本已变化，输入已保留。请取消本次编辑并重新打开当前字段后再修改。</p></Show>
+            <Show when={props.disabledReason}><p class="muted">{props.disabledReason}</p></Show>
+            <form id={formId} class="teaching-edit-form" onSubmit={patch} data-testid="teaching-patch-form">
+              <fieldset class="import-manual-fields" disabled={editorDisabled()}>
+                <div class="teaching-edit-comparison">
+                  <section class="teaching-edit-original"><h3>修改前</h3><div class="teaching-edit-original-content">{props.renderText(value().oldText)}</div></section>
+                  <section class="teaching-edit-replacement" onFocusIn={() => setMathActive(true)}><h3>修改后</h3>
+                    <Show when={mathActive() && !editorDisabled()}><MathSnippetBar onInsert={insertSnippet} /></Show>
+                    <textarea ref={replacementInput} rows={longField() ? 8 : 3} aria-label="教学稿修改后内容" value={value().replacement} onInput={event => updateDraft({ replacement: event.currentTarget.value, confirmed: false })} />
+                  </section>
+                </div>
+                <details class="teaching-edit-preview"><summary>预览修改后的排版</summary><div>{props.renderText(value().replacement)}</div></details>
+                <label class="field-label teaching-edit-basis">修改依据（必填）<textarea rows={2} maxLength={5000} aria-label="教学稿局部修订依据" value={value().basis} placeholder="简述修改及核对依据" onInput={event => updateDraft({ basis: event.currentTarget.value })} /></label>
+                <label class="check-row"><input type="checkbox" checked={value().confirmed} onChange={event => updateDraft({ confirmed: event.currentTarget.checked })} /><span>已核对修改前后内容及受影响的结论</span></label>
+              </fieldset>
+              <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
+            </form>
+          </>}</Show>
+        </Modal></Show>
+        <Show when={reviewOpen()}><Modal title="本题复核选项" wide stable={false} busy={reviewSaving()} onClose={closeReview}
+          footer={<button type="button" class="secondary" disabled={reviewSaving()} onClick={closeReview}>关闭</button>}>
+          <div class="teaching-review-options-content">{issueActions()}</div>
+        </Modal></Show>
+        <Show when={discardRequested()}>
+          <Modal title="放弃本次修改？" onClose={() => setDiscardRequested(false)} footer={<>
+            <button type="button" class="secondary" onClick={() => setDiscardRequested(false)}>继续编辑</button>
+            <button type="button" class="primary" onClick={discardEditor}>放弃修改</button>
+          </>}><p>本次修改尚未保存。放弃后会保留原来的内容。</p></Modal>
+        </Show>
+        <Show when={reviewDiscardRequested()}>
+          <Modal title="放弃本次核对填写？" onClose={() => setReviewDiscardRequested(false)} footer={<>
+            <button type="button" class="secondary" onClick={() => setReviewDiscardRequested(false)}>继续填写</button>
+            <button type="button" class="primary" onClick={discardReview}>放弃填写</button>
+          </>}><p>本次核对尚未保存。已保存的意见与记录保持不变。</p></Modal>
+        </Show>
+      </div>
+    </Portal></Show>
+  </>;
 }

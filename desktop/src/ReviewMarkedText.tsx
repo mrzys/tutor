@@ -13,12 +13,13 @@ export function ReviewMarkedText(props: {
   binding?: ReviewTextBinding;
   projectText?: (value: string) => string;
   onSelectIssue?: (issueId: string) => void;
+  compact?: boolean;
 }) {
   const presentation = createMemo(() => reviewTextMarks(props.text, props.fieldPath, props.issues, props.binding, props.projectText));
   return <>
     <Show when={presentation().unlocatedIssueIds.length}>
       <span class="import-review-field-note" data-review-field-note={props.fieldPath}>
-        此字段有 {presentation().unlocatedIssueIds.length} 项疑点，具体位置暂无法可靠标注。
+        {props.compact ? "按字段核对" : `此字段有 ${presentation().unlocatedIssueIds.length} 项疑点，具体位置暂无法可靠标注。`}
         <Show when={props.onSelectIssue}><button class="text-button" type="button" onClick={() => props.onSelectIssue?.(presentation().unlocatedIssueIds[0])}>查看疑点</button></Show>
       </span>
     </Show>

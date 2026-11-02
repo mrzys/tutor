@@ -1,0 +1,26 @@
+.import-source-field-dialog .modal:has(.import-source-field-form) { width:min(960px,100%); max-height:calc(100dvh - 48px); }
+.import-source-field-dialog .modal:has(.import-source-field-form) .modal-header { padding-top:12px; padding-bottom:4px; }
+.import-source-field-dialog .modal:has(.import-source-field-form) .modal-footer { padding-top:12px; padding-bottom:12px; }
+.import-source-field-context { margin:0 0 12px; color:var(--muted); font-size:14px; }
+.import-source-field-form fieldset { min-width:0; margin:0; padding:0; border:0; }
+.import-source-field-comparison { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+.import-source-field-comparison > section { min-width:0; }
+.import-source-field-comparison h3 { margin:0 0 8px; font-size:14px; font-weight:600; }
+.import-source-field-original { max-height:180px; padding:10px 12px; overflow:auto; overflow-wrap:anywhere; line-height:1.75; border:1px solid var(--line); border-radius:var(--control-radius); background:var(--surface-subtle); }
+.import-source-field-original img,.import-source-field-preview img { max-width:100%; height:auto; }
+.import-source-field-comparison textarea { display:block; width:100%; min-height:132px; line-height:1.75; resize:vertical; }
+.import-source-field-dialog[data-long=true] .import-source-field-original { max-height:min(40dvh,340px); }
+.import-source-field-dialog[data-long=true] .import-source-field-comparison textarea { min-height:250px; }
+.import-source-field-comparison .import-math-toolbar { flex-wrap:nowrap; overflow-x:auto; padding:2px 6px; margin-top:0; }
+.import-source-field-comparison .import-math-token { flex-shrink:0; min-width:44px; min-height:44px; }
+.import-source-field-comparison .import-math-toolbar-label { display:none; }
+.import-source-field-preview { margin-top:8px; }
+.import-source-field-preview > summary { min-height:44px; align-content:center; cursor:pointer; font-size:14px; color:var(--muted); }
+.import-source-field-preview > div { line-height:1.75; overflow-wrap:anywhere; }
+.import-source-field-dialog .modal-footer button { min-height:44px; }
+@media(max-width:700px) {
+  .import-source-field-dialog .modal:has(.import-source-field-form) { max-height:calc(100dvh - 24px); }
+  .import-source-field-comparison { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .import-source-field-original,.import-source-field-dialog[data-long=true] .import-source-field-original { max-height:140px; }
+  .import-source-field-dialog[data-long=true] .import-source-field-comparison textarea { min-height:200px; }
+}
