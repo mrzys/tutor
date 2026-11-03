@@ -1,5 +1,5 @@
 import { For, Show, createMemo, onCleanup, onMount } from "solid-js";
-import { Check, Plus } from "lucide-solid";
+import { Check, Info, Plus } from "lucide-solid";
 import { typeLabels } from "./bridge";
 import { Asset, RichText } from "./Paper";
 import { assetKey, assetReferences, inlineAssetIds, resolveAsset } from "./rich-content";
@@ -118,7 +118,7 @@ export function BankQuestionCard(props: { row: any; manifest?: any; selected: bo
       <div class="bank-question-tags" aria-label="题型与难度">
         <span class="bank-question-type">{typeLabels[question().questionType] || question().questionType}</span>
         <span class="bank-question-difficulty" data-difficulty={difficultyLevels.some(level => level.id === metadata().difficulty.level) ? metadata().difficulty.level : "unknown"} title="题目难度（内容估计）">{difficulty()}</span>
-        <button ref={detailTrigger} type="button" class="bank-question-detail-keyboard" aria-label="查看题目详情" aria-haspopup="dialog" onClick={openDetails}>查看题目详情</button>
+        <button ref={detailTrigger} type="button" class="bank-question-detail-keyboard" aria-label="查看题目详情" title="查看题目详情" aria-haspopup="dialog" onClick={openDetails}><Info size={17} /></button>
         <button type="button" class="bank-question-add" disabled={props.disabled} aria-pressed={props.selected} aria-label={props.selected ? "从组卷篮移出此题" : "将此题加入组卷篮"} onClick={() => { cancelOpening(); props.onToggle(); }}>{props.selected ? <><Check size={14} />已加入 · 移出</> : <><Plus size={14} />加入组卷篮</>}</button>
       </div>
       <BankQuestionPreview question={question()} manifest={props.manifest} /></div>

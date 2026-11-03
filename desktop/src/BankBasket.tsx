@@ -1,8 +1,9 @@
-import { For, Show, onCleanup, onMount } from "solid-js";
+import { For, Show, createSignal, onCleanup, onMount } from "solid-js";
+import { Portal } from "solid-js/web";
 import { LoaderCircle, ShoppingBasket, X } from "lucide-solid";
 import { typeLabels } from "./bridge";
 import { RichText } from "./Paper";
-import { CloseButton } from "./ui";
+import { CloseButton, Modal } from "./ui";
 import { BankQuestionPreview, bankMetadata } from "./BankQuestionCard";
 import { questionSourcePresentation } from "./shared/source-label.mjs";
 
@@ -12,6 +13,7 @@ export function BankBasket(props: {
   onTitle: (value: string) => void; onRemove: (questionId: string) => void;
   onClear: () => void; onCreate: () => void; onClose: () => void;
 }) {
+  const [confirmClear, setConfirmClear] = createSignal(false);
   let basket!: HTMLElement;
   const previous = document.activeElement as HTMLElement | null;
   onMount(() => {
@@ -26,6 +28,7 @@ export function BankBasket(props: {
     if (width > 0) body.style.paddingRight = `${(parseFloat(getComputedStyle(body).paddingRight) || 0) + width}px`;
     const frame = requestAnimationFrame(() => basket.querySelector<HTMLButtonElement>(".close-button")?.focus());
     const keys = (event: KeyboardEvent) => {
+      if (confirmClear() || event.defaultPrevented) return;
       if (event.key === "Escape" && !document.querySelector(".bank-select-popup")) {
         event.preventDefault(); if (!props.busy) props.onClose();
       }
@@ -56,13 +59,13 @@ export function BankBasket(props: {
   }
   return <>
     <button type="button" class="bank-basket-backdrop" aria-label="关闭组卷篮" disabled={props.busy} onClick={props.onClose} />
-    <aside ref={basket} class="bank-basket is-open" role="dialog" aria-modal="true" aria-label="组卷篮">
+    <aside ref={basket} class="bank-basket is-open" role="dialog" aria-modal={confirmClear() ? "false" : "true"} inert={confirmClear()} aria-label="组卷篮">
       <div class="bank-basket-heading"><div><span class="bank-basket-icon"><ShoppingBasket size={18} /><Show when={props.selections.length}><b>{props.selections.length}</b></Show></span><div><strong>组卷篮</strong><span aria-live="polite">已选 {props.selections.length} 道题</span></div></div><CloseButton label="关闭组卷篮" disabled={props.busy} onClick={props.onClose} /></div>
       <form class="bank-basket-actions" onSubmit={event => { event.preventDefault(); props.onCreate(); }}>
         <Show when={props.error}><p class="bank-create-error" role="alert">{props.error}</p></Show>
         <label><span>试卷标题</span><input aria-label="试卷标题" value={props.title} disabled={props.busy} maxlength={120} required placeholder="例如：集合单元练习" onInput={event => props.onTitle(event.currentTarget.value)} /></label>
         <button class="primary" type="submit" title="按题型整理，同题型保留选题顺序" disabled={!props.selections.length || props.busy || !props.title.trim()}>{props.busy ? <><LoaderCircle class="spin" size={16} />正在创建…</> : `生成试卷草稿${props.selections.length ? `（${props.selections.length}）` : ""}`}</button>
-        <Show when={props.selections.length}><div class="bank-basket-tools"><button type="button" class="bank-basket-clear" aria-label="清空组卷篮" disabled={props.busy} onClick={() => { if (window.confirm(`确定清空组卷篮中的 ${props.selections.length} 道题吗？`)) props.onClear(); }}>清空</button></div></Show>
+        <Show when={props.selections.length}><div class="bank-basket-tools"><button type="button" class="bank-basket-clear" aria-label="清空组卷篮" disabled={props.busy} onClick={() => setConfirmClear(true)}>清空</button></div></Show>
       </form>
       <div class="bank-basket-list">
         <For each={props.selections}>{(question, index) => <article class="bank-basket-item">
@@ -73,5 +76,9 @@ export function BankBasket(props: {
         <Show when={!props.selections.length}><div class="bank-basket-empty"><ShoppingBasket size={22} /><strong>还没有选择题目</strong></div></Show>
       </div>
     </aside>
+    <Show when={confirmClear()}><Portal><Modal title="清空组卷篮" onClose={() => setConfirmClear(false)} busy={props.busy} footer={<>
+      <button type="button" class="secondary" disabled={props.busy} onClick={() => setConfirmClear(false)}>取消</button>
+      <button type="button" class="primary" disabled={props.busy || !props.selections.length} onClick={() => { props.onClear(); setConfirmClear(false); requestAnimationFrame(() => basket.querySelector<HTMLButtonElement>(".close-button")?.focus({ preventScroll: true })); }}>确认清空</button>
+    </>}><p>确定移出组卷篮中的 {props.selections.length} 道题吗？题库题目和已创建的草稿会保留。</p></Modal></Portal></Show>
   </>;
 }

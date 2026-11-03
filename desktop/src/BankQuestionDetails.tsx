@@ -9,6 +9,8 @@ import { teachingAnalysisPresentation, teachingFocusPresentation } from "./share
 import { difficultyLevels } from "./assembly-details";
 import { BankQuestionPreview, bankMetadata } from "./BankQuestionCard";
 import { questionSourcePresentation } from "./shared/source-label.mjs";
+import { ReferenceAvailability } from "./ReferenceAvailability";
+import { teacherReferenceEntries } from "./teacher-reference";
 
 export function BankQuestionDetails(props: { row: any; config: any; onClose: () => void }) {
   const question = () => props.row.question || props.row;
@@ -28,6 +30,7 @@ export function BankQuestionDetails(props: { row: any; config: any; onClose: () 
   const locators = () => metadata().sourceRefs.filter((ref: any) => !/^tutor-set(?:-|$)/i.test(ref.locator || ""))
     .map((ref: any) => `${ref.locator || "题库收录"}${ref.pages?.length ? `（${ref.pages.join("、")} 页）` : ""}`).join("；");
   return <Drawer title="题目详情" onClose={props.onClose}>
+    <ReferenceAvailability question={question()} teacher />
     <section class="bank-detail-preview desktop-bank" aria-label="题目内容"><BankQuestionPreview question={question()} manifest={props.config.sourceManifest} /></section>
     <section class="assembly-details-section question-details" aria-label="题目考查信息">
       <dl class="explanation-list">
@@ -48,11 +51,17 @@ export function BankQuestionDetails(props: { row: any; config: any; onClose: () 
         </Show>
       </Show>
     </section>
+    <Show when={teacherReferenceEntries(question(), "answers").length}>
+      <section class="assembly-details-section bank-reference-answers" aria-label="参考答案">
+        <h3>参考答案</h3>
+        <For each={teacherReferenceEntries(question(), "answers")}>{(entry: any) => <p><RichText text={entry.text} question={question()} teacher /></p>}</For>
+      </section>
+    </Show>
     <TeachingAnalysis question={question()} teacher renderText={value => <RichText text={value} question={question()} teacher />} />
-    <Show when={question().teacher?.solutions?.length}>
+    <Show when={teacherReferenceEntries(question(), "solutions").length}>
       <details class="question-dependency-details">
         <summary>{teachingAnalysisPresentation(question(), true) ? "原有解析" : "解析"}</summary>
-        <For each={question().teacher.solutions}>{(entry: any) => <RichText text={entry.text} question={question()} teacher />}</For>
+        <For each={teacherReferenceEntries(question(), "solutions")}>{(entry: any) => <RichText text={entry.text} question={question()} teacher />}</For>
       </details>
     </Show>
     <Show when={metadata().solutionPaths.length} fallback={<p class="muted">暂未记录有完整依据的解法依赖。</p>}>

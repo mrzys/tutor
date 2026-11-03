@@ -95,8 +95,6 @@
 .model-purpose-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .model-purpose-heading h2 { margin: 0; font-size: 16px; font-weight: 600; }
 .model-purpose-heading p { margin: 5px 0 0; font-size: var(--font-small); }
-.model-purpose-topline { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 16px; }
-.model-purpose-topline .model-mode-switch { flex-shrink: 0; margin: 0; }
 .model-purpose-settings > p { font-size: var(--font-small); line-height: 1.75; margin: 10px 0 18px; }
 .model-purpose-settings > .settings-model-select { margin-bottom: 14px; }
 .model-purpose-grid { display: grid; gap: 12px; padding: 4px 0; }
@@ -180,7 +178,6 @@
   .model-purpose-item { padding: 16px; }
   .model-purpose-controls, .model-general-settings { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .model-mode-switch { display: flex; }
-  .model-purpose-topline { align-items: stretch; flex-direction: column; gap: 14px; }
   .model-mode-switch button { flex: 1; }
   .settings-page .model-settings-footer { bottom: -28px; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
   .model-settings-footer > div { margin-left: auto; }
@@ -197,13 +194,8 @@
 .model-import-readiness > p { margin: 6px 0; overflow-wrap: anywhere; }
 .model-import-readiness ul { margin: 8px 0; padding-left: 20px; }
 .model-import-readiness button { min-height: 44px; }
-.model-purpose-bulk { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; min-width: 0; margin-bottom: 20px; padding: 16px 20px; border: 1px solid var(--line); border-radius: var(--surface-radius); }
-.model-purpose-bulk > .settings-model-select { flex: 1 1 260px; min-width: 0; margin: 0; }
-.model-purpose-bulk > button { min-height: 44px; flex: 0 0 auto; }
-.model-purpose-bulk > p { flex: 1 1 100%; margin: 0; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; color: var(--muted); }
 .model-purpose-required { display: inline; margin-left: 8px; font-size: 13px; color: var(--muted); font-weight: 400; white-space: nowrap; }
 @media (max-width: 600px) {
-  .settings-import-context, .model-import-readiness, .model-purpose-bulk { padding: 14px; }
-  .model-purpose-bulk > .settings-model-select, .model-purpose-bulk > button { flex: 1 1 100%; }
+  .settings-import-context, .model-import-readiness { padding: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .settings-select-trigger svg, .settings-developer-switch > span:first-child::before { transition: none; } }

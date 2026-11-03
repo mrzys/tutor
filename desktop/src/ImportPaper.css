@@ -440,7 +440,13 @@
 .import-field-highlight { outline:2px solid var(--triage-color, #b45309); outline-offset:6px; border-radius:4px; }
 [data-import-field] { scroll-margin-block:50px; }
 .import-publication-list { list-style:none; padding:0; max-height:35dvh; overflow-y:auto; border-top:1px solid var(--line); }
-.import-publication-list li { display:flex; justify-content:space-between; align-items:baseline; gap:16px; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.import-publication-list li { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.import-publication-list li > div { min-width:0; flex:1; }
+.import-publication-list li > div > span { font-weight:600; }
+.import-publication-list li > div > div { margin-top:6px; color:var(--muted); max-height:5em; overflow:hidden; font-size:14px; line-height:1.65; }
+.import-publication-list li img { display:none; }
+.import-publication-list li > strong { flex-shrink:0; }
+.import-publication-blocked-reason { margin:0; font-size:13px; line-height:1.6; min-width:0; }
 .import-publication-list strong { font-weight:500; text-align:right; }
 .import-teaching-actions { gap:10px; flex-wrap:wrap; }
 .import-issue-jump { display:none; min-height:44px; font-size:13px; margin-bottom:10px; color:var(--triage-color,var(--muted)); }
@@ -1085,6 +1091,8 @@
 .import-record-name .import-record-mobile-meta { font-size: 13px; }
 @media (max-width: 600px) {
   .import-upload-confirmation { padding: 16px; }
+  .import-publication-list li { flex-direction:column; gap:6px; }
+  .import-publication-list li > strong { text-align:left; }
   .import-upload-confirmation dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .import-upload-confirmation-actions > button { flex: 1 1 auto; }
 }

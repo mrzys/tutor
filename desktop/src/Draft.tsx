@@ -20,6 +20,7 @@ import { difficultyLevels, slotDifficulty } from "./assembly-details";
 import { confirmedSlotTaskLabel } from "./shared/assembly-evidence.mjs";
 import { QuestionDetails } from "./QuestionDetails";
 import { teachingDisplayText } from "./teaching-text";
+import { ReferenceAvailability } from "./ReferenceAvailability";
 
 export function DraftView(props: {
   draft: any;
@@ -303,7 +304,9 @@ export function DraftView(props: {
                   <LockKeyhole size={13} />
                 </span>
               </Show>
-              <div class="question-actions">
+              <div class="draft-question-tools">
+              <ReferenceAvailability question={slot.question} teacher compact />
+              <div class="question-actions" role="group" aria-label={`第 ${slot.number} 题操作`}>
                 <button aria-label={`第 ${slot.number} 题详情`} onClick={() => setDetailSlot(slot.slotId)}><Info size={14} />详情</button>
                 <button
                   disabled={props.busy}
@@ -369,6 +372,7 @@ export function DraftView(props: {
                     </Popover>
                   </Show>
                 </div>
+              </div>
               </div>
             </article>
           )}
@@ -695,6 +699,7 @@ export function DraftView(props: {
         >
           <ErrorBanner message={editError()} />
           <p>删除第 {deleteSlot().number} 题？题量将相应减少。</p>
+          <p class="muted">此操作暂不支持撤销；如需保留现题，可取消并锁定题目。</p>
         </Modal>
       </Show>
     </>

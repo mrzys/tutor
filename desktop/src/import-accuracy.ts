@@ -5,12 +5,13 @@ export const accuracyDomains: readonly { id: AccuracyDomain; label: string }[] =
   { id: "source", label: "原题与原参考" }, { id: "math", label: "答案与证明" }, { id: "teaching", label: "教学信息" },
 ];
 export const accuracyRequiredRoles = [
-  ["sourceParsing", "拆题"], ["teachingGeneration", "解析生成"], ["sourceVerification", "来源核验"],
-  ["independentSolve", "独立求解"], ["mathVerification", "数学核验"], ["teachingVerification", "教学核验"],
+  ["sourceParsing", "处理模型"], ["teachingGeneration", "处理模型"], ["teachingReview", "复核模型"],
 ] as const;
 const text = (value: unknown): string => typeof value === "string" ? value : "";
 const object = (value: unknown): value is Record<string, any> => Boolean(value && typeof value === "object" && !Array.isArray(value));
 const stageLabels: Record<string, string> = {
+  generation: "生成答案解析与教学信息", verification: "核对来源、数学与教学信息",
+  accuracy_combined_generation: "生成答案解析与教学信息", accuracy_combined_verification: "核对来源、数学与教学信息",
   source: "来源核验", solution: "解答生成", independent: "独立求解", mathematics: "数学核验", metadata: "教学信息整理", teaching: "教学核验",
   source_fidelity: "来源核验", source_verification: "来源核验", solution_generation: "解答生成", independent_solve: "独立求解",
   math_and_reference: "数学核验", math_verification: "数学核验", teaching_generation: "教学信息整理", metadata_generation: "教学信息整理",
@@ -23,14 +24,20 @@ export function accuracyStageLabel(stage: unknown): string { return stageLabels[
 export function accuracyImportAction(record: any, retry = false): "import_accuracy_start" | "import_start" {
   return !retry || !record || record.accuracyRunId ? "import_accuracy_start" : "import_start";
 }
-export function accuracyModelReadiness(model: any, repair = false): { configured: boolean; missing: string[] } {
-  const required: readonly (readonly [string, string])[] = repair ? [...accuracyRequiredRoles, ["teachingReview", "解析复核"]] : accuracyRequiredRoles;
+export function accuracyModelReadiness(model: any, strategyVersion?: string): { configured: boolean; missing: string[] } {
+  const combined = !strategyVersion || strategyVersion === "import-two-model-v1";
+  const required: readonly (readonly [string, string])[] = combined ? accuracyRequiredRoles : [
+    ["sourceParsing", "拆题"], ["teachingGeneration", "解析生成"], ["sourceVerification", "来源核验"],
+    ["independentSolve", "独立求解"], ["mathVerification", "数学核验"], ["teachingVerification", "教学核验"],
+  ];
   const missing = required.filter(([key]) => {
     const profileId = model?.importRoles?.[key], effective = model?.effectiveImportRoles?.[key];
     return typeof profileId !== "string" || !profileId || effective?.strategy !== "explicit" || effective?.configured !== true
       || effective?.profileId !== profileId || !Array.isArray(model?.profiles) || !model.profiles.some((profile: any) => profile?.id === profileId && profile?.configured === true);
   }).map(([, label]) => label);
-  return { configured: missing.length === 0, missing };
+  if (combined && model?.importRoles?.sourceParsing !== model?.importRoles?.teachingGeneration) missing.push("处理模型");
+  const unique = [...new Set(missing)];
+  return { configured: unique.length === 0, missing: unique };
 }
 export function accuracyDomainLabel(domain: unknown): string {
   if (domain === "mathematics" || domain === "generated_solution" || domain === "original_reference") return "答案与证明";
@@ -49,7 +56,7 @@ export function accuracyStatus(question: any, domain?: AccuracyDomain): Accuracy
   if (["cancelled", "interrupted", "paused"].includes(status)) return result("interrupted", "已暂停，材料已保留");
   if (["queued", "running", "processing", "generating", "reviewing"].includes(status)) return result("processing", "处理中");
   if (["teacher_reviewed", "teacher_checked", "human_reviewed"].includes(status)) return result("reviewed", "教师已核对");
-  if (["ready", "no_issue_found", "model_checked"].includes(status)) return result("ready", "模型核对未发现问题");
+  if (["ready", "no_issue_found", "model_checked"].includes(status)) return result("ready", "模型未发现疑点");
   if (["needs_review", "issue_found", "issues_found", "unresolved", "blocked", "stale"].includes(status)) return result("needs_review", "待处理");
   return result("pending", "尚未完成核对");
 }

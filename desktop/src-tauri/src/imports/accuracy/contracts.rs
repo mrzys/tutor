@@ -341,6 +341,14 @@ fn object_schema(required: &[&str], properties: Value) -> Value {
 }
 
 pub(super) fn response_contract(kind: &str) -> Value {
+    if kind == "combined_generation" {
+        return object_schema(&["questionId", "solution", "metadata"], json!({"questionId":string_schema(),"solution":response_contract("solution"),"metadata":response_contract("metadata")}));
+    }
+    if kind == "combined_verification" {
+        let mut math = response_contract("math");
+        math["properties"]["disagreements"]["items"]["properties"]["classification"] = json!({"enum":["equivalent","candidate_defect","source_problem","unresolved"]});
+        return object_schema(&["questionId", "source", "math", "teaching"], json!({"questionId":string_schema(),"source":response_contract("source"),"math":math,"teaching":response_contract("teaching")}));
+    }
     if matches!(
         kind,
         "solution"

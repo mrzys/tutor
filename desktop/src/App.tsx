@@ -65,6 +65,7 @@ import { StudentWork } from "./StudentWork";
 import { UsageGuide } from "./UsageGuide";
 import "./GuideEntry.css";
 import "./AppStartup.css";
+import "./App.css";
 import { PaperSheet, RichText } from "./Paper";
 import { waitForPaperAssets } from "./rich-content";
 import { resizeQuestionCounts, slotDifficulty } from "./assembly-details";
@@ -318,6 +319,16 @@ export default function App() {
   const [corrections, setCorrections] = createSignal("");
   const [review, setReview] = createSignal("");
   const [toast, setToast] = createSignal("");
+  const [discardAssembly, setDiscardAssembly] = createSignal<{ label: string; action: () => void } | null>(null);
+  const hasUnconfirmedAssembly = () => Boolean(req() && !draft()?.draftId && !paper()?.paperId);
+  onMount(() => {
+    const protectRequirements = (event: BeforeUnloadEvent) => {
+      if (!hasUnconfirmedAssembly()) return;
+      event.preventDefault(); event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", protectRequirements);
+    onCleanup(() => window.removeEventListener("beforeunload", protectRequirements));
+  });
   const [pdfResult, setPdfResult] = createSignal<any>(null);
   const [pdfPreview, setPdfPreview] = createSignal(false);
   function developerEvent(event: string, details: any = {}, traceId: string = currentAssemblyTraceId()) {
@@ -425,6 +436,13 @@ export default function App() {
   }
   function newPaper() {
     if (busy()) return;
+    if (hasUnconfirmedAssembly()) {
+      setDiscardAssembly({ label: "放弃并新建", action: newPaperNow });
+      return;
+    }
+    newPaperNow();
+  }
+  function newPaperNow() {
     batch(() => { setView("new"); beginAssemblyTrace(); });
     developerEvent("new_assembly");
     setStage("requirements");
@@ -442,8 +460,12 @@ export default function App() {
     setComposerKey((key) => key + 1);
     setSidebar(innerWidth > 760);
   }
-  async function open(kind: string, id: string) {
+  async function open(kind: string, id: string, discardApproved = false) {
     if (busy() || (view() === "workbench" && ((kind === "draft" && stage() === "draft" && activeDraft() === id) || (kind === "paper" && stage() === "paper" && activePaper() === id)))) return;
+    if (!discardApproved && hasUnconfirmedAssembly()) {
+      setDiscardAssembly({ label: "放弃并打开记录", action: () => void open(kind, id, true) });
+      return;
+    }
     batch(() => { setOpeningHistory(`${kind}:${id}`); beginAssemblyTrace(); });
     developerEvent("history_open", kind === "draft" ? { draftId: id } : { paperId: id });
     try {
@@ -935,6 +957,7 @@ export default function App() {
                 </button>
                 <button aria-label="学生管理" class={view() === "students" ? "current" : ""} disabled={Boolean(busy())} onClick={() => { setView("students"); setSidebar(innerWidth > 760); }}><UsersRound size={19} />学生管理<Show when={studentJobs()}><small class="import-nav-count" aria-label="后台批改中">{studentJobs()}</small></Show></button>
               </nav>
+              <Show when={busy()}><p class="sidebar-busy-note" role="status">{busy() === "import" ? "正在保存导入进度" : busy()}；完成或停止后可切换工作区。</p></Show>
               <div class="history-scroll" aria-busy={historyLoading()}>
                 <Show when={historyLoading()}><p class="history-loading" role="status">正在读取试卷记录…</p></Show>
                 <Show when={historyError()}><div class="history-read-error"><ErrorBanner message={historyError()} retry={() => void refreshHistory().catch(() => {})} /></div></Show>
@@ -1344,16 +1367,14 @@ export default function App() {
                               <dd><RichText text={teachingDisplayText(intakeSummary())} /></dd>
                             </div>
                           </Show>
-                          <For each={warnings()}>
-                            {(warning) => (
-                              <div>
-                                <dt>提示</dt>
-                                <dd class="warning-text"><RichText text={teachingDisplayText(warning)} /></dd>
-                              </div>
-                            )}
-                          </For>
                         </dl>
                       </details>
+                      <Show when={warnings().length}>
+                        <div class="requirements-confirm-warnings" role="status" aria-label="确认前需核对的提示">
+                          <strong>确认前请核对</strong>
+                          <For each={warnings()}>{warning => <p><RichText text={teachingDisplayText(warning)} /></p>}</For>
+                        </div>
+                      </Show>
                       <div class="review-confirm">
                         <button
                           class="primary"
@@ -1522,8 +1543,19 @@ export default function App() {
               }}
             />
           </Show>
+          <Show when={discardAssembly()}>{pending => <Modal title="保留当前组卷要求？" stable onClose={() => setDiscardAssembly(null)} footer={<>
+            <button type="button" class="secondary" onClick={() => setDiscardAssembly(null)}>继续当前练习</button>
+            <button type="button" class="primary" onClick={() => { const action = pending().action; setDiscardAssembly(null); action(); }}>{pending().label}</button>
+          </>}>
+            <p>当前需求和题位修改尚未形成草稿，仅保留在本窗口。继续将丢弃这些内容。</p>
+            <p class="muted">如需保留，请继续当前练习，选题后创建草稿。</p>
+          </Modal>}</Show>
           <Show when={preview()}>
-            <Modal title="试卷预览" onClose={() => setPreview(false)} wide>
+            <Modal title="试卷预览" onClose={() => setPreview(false)} wide footer={<>
+              <button type="button" class="secondary" onClick={() => setPreview(false)}>返回编辑</button>
+              <button type="button" class="primary" disabled={Boolean(busy())} onClick={() => { setPreview(false); void beginConfirm(); }}>确认成卷</button>
+            </>}>
+              <p class="paper-preview-state" role="status">预览，尚未确认成卷。<Show when={(draft()?.planningShortage?.missingTotal || 0) > 0 || (draft()?.slots || []).some((slot: any) => !slot.question)}>只展示已有题目并连续编号，缺题不占题号；返回编辑后可继续补题。</Show></p>
               <div class="type-tabs" role="tablist" aria-label="预览版本">
                 <button
                   role="tab"

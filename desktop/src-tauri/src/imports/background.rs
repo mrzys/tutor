@@ -348,7 +348,7 @@ pub(super) fn stage_strategy_continue(store:&Store,model:&ModelClient,payload:&V
     if questions.is_empty(){return Err(err("accuracy_source_required","请先完成原卷来源整理；策略继续仅处理已保存原题，不重新发起来源请求。"));}
     let published=ids(&record["publishedQuestionIds"]);
     if questions.iter().all(|question|published.iter().any(|id|id==s(question,"questionId"))) {return Err(err("immutable_question","本卷题目已全部入库，不能通过策略继续重跑已发布题目。"));}
-    accuracy::validate_configuration(model)?;
+    accuracy::validate_configuration_for_record(store,model,&record)?;
     read_source(store,&record)?;paddle::verify_audit(store,&record)?;
     verify_recovered_source_for_publication(store,&record)?;
     let prior=s(&record,"accuracyRunId").to_owned();

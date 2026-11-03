@@ -1120,7 +1120,11 @@ fn stage_import(
     };
     if accuracy_requested {
         // Readiness is local and checked before decoding or preserving uploads.
-        accuracy::validate_configuration(model)?;
+        if retry {
+            accuracy::validate_configuration_for_record(store, model, &store.document("imports", s(payload, "importId"))?)?;
+        } else {
+            accuracy::validate_configuration(model)?;
+        }
     }
     // Role readiness is local: importing must not require an unrelated active
     // assembly model, and a teaching-only resume need not select a source model.

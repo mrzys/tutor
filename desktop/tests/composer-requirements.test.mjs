@@ -1,6 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { composerRequirements } from '../src/composer-requirements.ts';
+import { composerRequirements, composerSubmitState } from '../src/composer-requirements.ts';
+
+test('模拟入口：缺模型可先配置，已配但空要求说明禁用原因，忙时不重复提交', () => {
+  const missing = composerSubmitState(false, false, false);
+  assert.equal(missing.disabled, false);
+  assert.equal(missing.label, '配置模型后开始');
+  assert.match(missing.hint, /先配置/);
+  const empty = composerSubmitState(true, false, false);
+  assert.equal(empty.disabled, true);
+  assert.match(empty.hint, /请输入组卷要求/);
+  assert.equal(composerSubmitState(true, false, true).disabled, false);
+  assert.equal(composerSubmitState(true, false, true).hint, '');
+  for (const configured of [true, false]) assert.equal(composerSubmitState(configured, true, true).disabled, true);
+});
 
 test('模拟回归：新范围不继承模板教学说明，返回同一范围保留已确认目标', () => {
   const defaults = { title: '模板名称', goal: '集合模板目标', teachingGoals: [{ id: 'template' }], counts: { single_choice: 6, fill_blank: 2, free_response: 2 } };

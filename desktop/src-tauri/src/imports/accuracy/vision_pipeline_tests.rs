@@ -67,6 +67,77 @@ fn context(body: &Value) -> Value {
 }
 
 #[test]
+fn combined_requests_deliver_real_crops_and_review_original_page_without_a_blind_request() {
+    let provider = Provider::start(Scenario::Clean);
+    let (_dir, store, model, mut record) = super::two_model_tests::combined_fixture(&provider);
+    let assets = vec![
+        png_asset("merged-student-crop", "student", [255, 0, 0, 255]),
+        png_asset("merged-reference-crop", "teacher", [0, 0, 255, 255]),
+        png_asset("merged-original-page", "source_page", [0, 255, 0, 255]),
+    ];
+    let q = &mut record["questions"][0];
+    q["student"]["assets"] = json!([{"assetId":assets[0]["id"],"sha256":assets[0]["sha256"]}]);
+    q["teacher"]["assets"] = json!([{"assetId":assets[1]["id"],"sha256":assets[1]["sha256"]}]);
+    let q = q.clone();
+    let mut value = json!({"sourceSha256":source_sha(&q),"repairCalls":0});
+    let catalogue = applicable_catalogue(&store, &record).unwrap();
+    runner::process_question(
+        &store,
+        &model,
+        &record,
+        &q,
+        &mut value,
+        &rows(&record["extractedPages"]),
+        &assets,
+        &catalogue,
+        &AtomicBool::new(false),
+    )
+    .unwrap();
+    let sent = provider.sent();
+    assert_eq!(sent.len(), 2);
+    assert_eq!(
+        image_hashes(&sent[0].1),
+        BTreeSet::from([
+            s(&assets[0], "sha256").to_owned(),
+            s(&assets[1], "sha256").to_owned()
+        ])
+    );
+    assert_eq!(
+        image_hashes(&sent[1].1),
+        assets
+            .iter()
+            .map(|asset| s(asset, "sha256").to_owned())
+            .collect()
+    );
+    assert_eq!(context(&sent[1].1)["independentBlindSolve"], false);
+    assert!(value["independent"].is_null());
+    let mut missing_assets = assets.clone();
+    missing_assets.remove(1);
+    let mut unchanged = value.clone();
+    assert_eq!(
+        runner::process_question(
+            &store,
+            &model,
+            &record,
+            &q,
+            &mut unchanged,
+            &rows(&record["extractedPages"]),
+            &missing_assets,
+            &catalogue,
+            &AtomicBool::new(false)
+        )
+        .unwrap_err()
+        .code,
+        "accuracy_images_required"
+    );
+    assert_eq!(
+        provider.sent().len(),
+        2,
+        "missing current bytes cannot use cached claims to make extra or incomplete requests"
+    );
+}
+
+#[test]
 fn actual_http_images_include_original_reference_only_for_solution_and_math() {
     let provider = Provider::start(Scenario::Clean);
     let (_directory, store, model, record, assets) = image_fixture(&provider);
@@ -188,7 +259,8 @@ fn complete_real_seed_directory_reaches_metadata_and_teaching_over_actual_http_w
     let provider = Provider::start(Scenario::Clean);
     let (_directory, store, model, record) = fixture(&provider);
     let mut full = catalogue::production_catalogue();
-    full["difficultyRubric"] = run_for(&store, &record).unwrap()["strategy"]["difficultyRubric"].clone();
+    full["difficultyRubric"] =
+        run_for(&store, &record).unwrap()["strategy"]["difficultyRubric"].clone();
     let projected = catalogue::snapshot(&full);
     let q = record["questions"][0].clone();
     let mut state = json!({"sourceSha256":source_sha(&q),"repairCalls":0});

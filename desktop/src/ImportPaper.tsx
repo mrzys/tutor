@@ -84,10 +84,10 @@ const SourcePageViewer = lazy(() => import("./SourceCompare").then(module => ({ 
 const PdfPreview = lazy(() => import("./PdfPreview").then(module => ({ default: module.PdfPreview })));
 
 const statusLabels: Record<string, string> = {
-  prepared: "待处理",
-  review: "待处理",
-  pending_review: "待处理",
-  parsed: "待处理",
+  prepared: "待开始识别",
+  review: "待核对",
+  pending_review: "待核对",
+  parsed: "待核对",
   failed: "处理未完成",
   cancelled: "已停止",
   parsing: "解析中",
@@ -168,6 +168,7 @@ export function ImportPaper(props: {
   const [checking, setChecking] = createSignal(true);
   const [importConfigured, setImportConfigured] = createSignal(false);
   const [accuracyConfigured, setAccuracyConfigured] = createSignal(false);
+  const [accuracyConfiguration, setAccuracyConfiguration] = createSignal<any>(null);
   const [missingAccuracyRoles, setMissingAccuracyRoles] = createSignal<string[]>([]);
   const [uploadDestinations, setUploadDestinations] = createSignal<ReturnType<typeof uploadModelDestinations>>([]);
   const [ocrDestination, setOcrDestination] = createSignal("尚未配置");
@@ -175,7 +176,7 @@ export function ImportPaper(props: {
   const [teachingConfigured, setTeachingConfigured] = createSignal(false);
   const [activeConfigured, setActiveConfigured] = createSignal(false);
   const accuracyRecord = () => Boolean(record()?.accuracyRunId);
-  const configured = () => !record() || accuracyRecord() ? accuracyConfigured() : record()?.questions?.length ? teachingConfigured() : importConfigured();
+  const configured = () => !record() ? accuracyConfigured() : accuracyRecord() ? accuracyModelReadiness(accuracyConfiguration(), record()?.accuracyStrategy).configured : record()?.questions?.length ? teachingConfigured() : importConfigured();
   const [ocrConfigured, setOcrConfigured] = createSignal(false);
   const [ocrWarning, setOcrWarning] = createSignal("");
   const [configurationTarget, setConfigurationTarget] = createSignal<"models" | "ocr" | null>(null);
@@ -216,6 +217,7 @@ export function ImportPaper(props: {
   const [teachingEditorOpen, setTeachingEditorOpen] = createSignal(false);
   const [editTeachingRequest, setEditTeachingRequest] = createSignal(0);
   const [leaveAction, setLeaveAction] = createSignal<null | (() => void)>(null);
+  const [historyLeaveConfirm, setHistoryLeaveConfirm] = createSignal(false);
   const [questionAction, setQuestionAction] = createSignal<null | { kind: "retry" | "publish"; questionId: string; revision: number; binding: any }>(null);
   const [annotationAction, setAnnotationAction] = createSignal<ImportAnnotationPlan | null>(null);
   const [annotationError, setAnnotationError] = createSignal("");
@@ -262,6 +264,10 @@ export function ImportPaper(props: {
   const jobStates = new Map<string, string>();
   const [catalog, setCatalog] = createSignal<any>(null);
   const [confirmPublish, setConfirmPublish] = createSignal(false);
+  const [publicationDetailsLoading, setPublicationDetailsLoading] = createSignal(false);
+  const [publicationPreviewValid, setPublicationPreviewValid] = createSignal(false);
+  const [publicationPreviewKey, setPublicationPreviewKey] = createSignal("");
+  let publicationReadVersion = 0;
   const [publishError, setPublishError] = createSignal("");
   const [notice, setNotice] = createSignal("");
   const [cancelled, setCancelled] = createSignal(false);
@@ -340,8 +346,7 @@ export function ImportPaper(props: {
     const accuracy = accuracyStatus(row.question);
     if (accuracy) {
       if (["ready", "reviewed"].includes(accuracy.kind)) return "";
-      const text = accuracy.reason || accuracy.label || "";
-      return text.length > 8 ? text.slice(0, 8) : text;
+      return accuracy.label || "待核对";
     }
     const substantive = row.issues.filter(issue => issue.id !== "source:not-reviewed");
     if (!substantive.length) return "";
@@ -358,7 +363,6 @@ export function ImportPaper(props: {
     const title = first.title;
     if (title) {
       if (title.startsWith("检查术语“")) return "术语提示";
-      if (title.length > 8) return title.slice(0, 8);
       return title;
     }
     return "待核对";
@@ -634,6 +638,10 @@ export function ImportPaper(props: {
   }
   function backToHistory() {
     if (busy() || publishFrozen()) return;
+    if (dirty()) { setHistoryLeaveConfirm(true); return; }
+    finishBackToHistory();
+  }
+  function finishBackToHistory() {
     rememberEdits();
     setAnnotationAction(null);
     setOpeningImportId(null);
@@ -691,6 +699,9 @@ export function ImportPaper(props: {
       return premise?.label || "未识别的额外条件";
     }).join("、");
   const pendingApprove = () => triage().rows.filter(row => sourceReviewState(row) === "eligible").map(row => row.question);
+  const publicationBlockedReason = () => busy() ? "当前操作完成后可入库。" : publishFrozen() ? "上次入库结果尚待核查，请先完成原操作。" : activeJob() ? "本卷仍在后台处理，完成后可核对并入库。" : dirty() || editingDirty() ? "请先保存当前修改，再确认入库。" : !pendingApprove().length ? "暂无符合条件的题目，请先处理原题或教学信息中的待办。" : "";
+  const publicationContextKey = () => JSON.stringify([record()?.importId, record()?.revision, recordDetailVersion, pendingApprove().map(question => [question.questionId, reviewEligibility()[question.questionId]?.publicationScope])]);
+  const publicationPreviewCurrent = () => publicationPreviewValid() && publicationPreviewKey() === publicationContextKey();
   const needsOpinion = (item: any) => !published(item) && reviewEligibility()[item.questionId]?.eligible !== true;
   const reviewStateLabel = (item: any) => published(item) ? "已入库" : reviewEligibility()[item.questionId]?.eligible ? "可入库" : (item.teachingWorkflow && item.teachingWorkflow.status !== "ready_candidate") || item.modelReview?.status === "needs_review" || item.modelReview?.status === "blocked" ? "需处理" : item.modelReview?.status === "stale" ? "需重新检查" : item.modelReview?.status === "failed" ? "检查未完成" : item.reviewDecision === "approve" ? "已人工核对" : "待检查";
   const canRecheck = () => !accuracyRecord() && !activeJob() && questions().some(item => !published(item) && (dirty() || !item.modelReview || ["stale", "failed"].includes(item.modelReview.status)));
@@ -726,7 +737,7 @@ export function ImportPaper(props: {
   });
   onMount(() => {
     const warnUnsaved = (event: BeforeUnloadEvent) => {
-      if (dirty() || editingDirty()) { event.preventDefault(); event.returnValue = ""; }
+      if (dirty() || editingDirty() || editBuffers.size) { event.preventDefault(); event.returnValue = ""; }
     };
     window.addEventListener("beforeunload", warnUnsaved);
     onCleanup(() => window.removeEventListener("beforeunload", warnUnsaved));
@@ -742,7 +753,7 @@ export function ImportPaper(props: {
     onCleanup(() => { document.removeEventListener("pointerdown", closeTools); document.removeEventListener("keydown", escapeTools); });
     const handleShortcuts = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing || props.visible === false || document.querySelector(".import-accuracy-dialog") || annotationAction() || teachingEditorOpen() || sourceEditorOpen()
-        || confirmPublish() || questionAction() || originalPreview() || leaveAction()) return;
+        || confirmPublish() || questionAction() || originalPreview() || leaveAction() || historyLeaveConfirm()) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest("input,textarea,select,[contenteditable=true]")) return;
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -788,11 +799,12 @@ export function ImportPaper(props: {
       const model = modelResult.status === "fulfilled" ? modelResult.value : null;
       const ocr = ocrResult.status === "fulfilled" ? ocrResult.value : null;
       const accuracyReady = accuracyModelReadiness(model);
-      const modelReady = newPipeline ? accuracyReady.configured : importModelReady(model, resumeTeaching);
+      const modelReady = newPipeline ? accuracyModelReadiness(model, resumeTeaching ? record()?.accuracyStrategy : undefined).configured : importModelReady(model, resumeTeaching);
       if (alive && own === configVersion) {
         const ready = importModelReadiness(model);
         setImportConfigured(ready.configured);
         setAccuracyConfigured(accuracyReady.configured);
+        setAccuracyConfiguration(model);
         setMissingAccuracyRoles(accuracyReady.missing);
         setUploadDestinations(uploadModelDestinations(model));
         setOcrDestination(uploadOcrDestination(ocr));
@@ -801,6 +813,7 @@ export function ImportPaper(props: {
         setActiveConfigured(ready.activeConfigured);
         setModelWarning(model?.warning || "");
         setOcrConfigured(ocr?.configured === true);
+        if (file() && ocr?.configured === true && notice().startsWith("已暂存")) setNotice("所选文件仍保留在当前窗口，尚未发送；确认后开始识别。");
         setOcrWarning(ocr?.warning || "");
         setConfigurationTarget(!modelReady ? "models" : requireOcr && ocr?.configured !== true ? "ocr" : null);
         if (modelResult.status === "rejected") setError(modelResult.reason?.message || "模型设置读取失败，请重试。");
@@ -811,6 +824,7 @@ export function ImportPaper(props: {
       if (alive && own === configVersion) {
         setImportConfigured(false);
         setAccuracyConfigured(false);
+        setAccuracyConfiguration(null);
         setSourceConfigured(false);
         setTeachingConfigured(false);
         setActiveConfigured(false);
@@ -1142,7 +1156,7 @@ export function ImportPaper(props: {
       return;
     }
     setError("");
-    if (!(await checkConfiguration(kind === "document", false, true))) return;
+    if (!(await checkConfiguration(false, false, true))) return;
     setFileKind(kind);
     fileInput.accept = kind === "document" ? ".pdf,.docx" : ".txt,.md";
     fileInput.click();
@@ -1155,11 +1169,7 @@ export function ImportPaper(props: {
       setError("请先保存当前审核，或完成待确认的入库操作。");
       return;
     }
-    if (!accuracyConfigured() || !chosen) return;
-    if (/\.(pdf|docx)$/i.test(chosen.name) && !ocrConfigured()) {
-      setConfigurationTarget("ocr");
-      return;
-    }
+    if (!chosen) return;
     if (!/\.(txt|md|pdf|docx)$/i.test(chosen.name)) {
       setError("请选择 TXT、Markdown、PDF 或 DOCX 文件。");
       return;
@@ -1181,6 +1191,13 @@ export function ImportPaper(props: {
     setNotice("");
     prepareId = operationId();
     prepareAttempt = null;
+    if (!accuracyConfigured()) {
+      setConfigurationTarget("models");
+      setError("模型配置尚未完成。已暂存所选文件，请配置处理与复核模型后再开始；当前不会发送文件。");
+    } else if (/\.(pdf|docx)$/i.test(chosen.name) && !ocrConfigured()) {
+      setConfigurationTarget("ocr");
+      setNotice(`已暂存“${chosen.name}”，尚未发送。请先配置试卷识别，再返回确认开始；文件仅保留在当前窗口。`);
+    }
     // File selection is local. Only the explicit start button may send it to configured services.
   }
   async function parse(retry = false) {
@@ -1330,6 +1347,7 @@ export function ImportPaper(props: {
   }
   async function publish() {
     if (busy() || editingDirty()) return;
+    if (!publishFrozen() && !publicationPreviewCurrent()) { setPublishError("题目或入库范围已变化，请关闭后重新核对本次清单。"); return; }
     if (publishFrozen() && !publishAttempt) { setPublishError("缺少上次入库的完整原请求，当前断点已保留，请重新读取记录核对。"); return; }
     setPublishError("");
     if (!publishAttempt) {
@@ -1370,6 +1388,29 @@ export function ImportPaper(props: {
     } finally {
       if (alive) working("");
     }
+  }
+  async function openPublication() {
+    if (publicationBlockedReason()) return;
+    const own = ++publicationReadVersion, importId = record().importId, version = recordDetailVersion;
+    setPublicationPreviewKey(publicationContextKey());
+    setPublishError(""); setPublicationPreviewValid(false); setConfirmPublish(true);
+    const unread = pendingApprove().filter(question => !hasImportQuestionDetail(question));
+    if (!unread.length) { setPublicationPreviewValid(true); return; }
+    setPublicationDetailsLoading(true);
+    let index = 0;
+    try {
+      await Promise.all(Array.from({ length: Math.min(3, unread.length) }, async () => {
+        while (index < unread.length) {
+          const question = unread[index++];
+          const result = await questionRequests.get(importId, version!, question.questionId);
+          if (!alive || own !== publicationReadVersion || record()?.importId !== importId || recordDetailVersion !== version) throw new Error("本卷内容已变化，请关闭后重新确认入库范围。");
+          cacheQuestionDetail(result, version!, question.questionId);
+        }
+      }));
+      if (!pendingApprove().every(hasImportQuestionDetail) || publicationPreviewKey() !== publicationContextKey()) throw new Error("本次题干摘要或清单版本未完整读取，请关闭后重新核对入库范围。");
+      if (alive && own === publicationReadVersion) setPublicationPreviewValid(true);
+    } catch (failure: any) { if (alive && own === publicationReadVersion) setPublishError(failure.message || "本次题干摘要未读完，请关闭后重试；未入库任何题目。"); }
+    finally { if (alive && own === publicationReadVersion) setPublicationDetailsLoading(false); }
   }
   function confirmAnnotation() {
     if (annotationBlocked() || !activeConfigured() || !annotationCount()) return;
@@ -1640,7 +1681,7 @@ export function ImportPaper(props: {
           <FileText size={26} />
           <div>
             <h2>{missingAccuracyRoles().length ? "完成导入配置" : "检查导入模型配置"}</h2>
-            <p class="muted">必需模型用途已完成 {6 - missingAccuracyRoles().length}/6。{missingAccuracyRoles().length ? "解析复核仅在按问题修订时使用。" : "请检查上方错误对应的配置；用途齐全不代替服务与材料能力检查。"}</p>
+            <p class="muted">处理模型与复核模型已配置 {2 - missingAccuracyRoles().length}/2。{missingAccuracyRoles().length ? "分别选择 DS Flash 处理、Qwen 复核后保存。" : "请检查上方错误对应的配置；模型还需支持实际材料。"}</p>
             <Show when={missingAccuracyRoles().length}><p class="muted">还需配置：{missingAccuracyRoles().join("、")}</p></Show>
           </div>
           <button class="primary" onClick={() => props.onConfigure("models", { from: "import", materialKind: fileKind() })}>
@@ -1686,8 +1727,8 @@ export function ImportPaper(props: {
           <p>{chosenFileKind() === "document" ? "开始后，原文件将发送至下方识别服务，识别材料将按用途发送至对应模型服务。" : "开始后，文本内容将按用途发送至下方模型服务；不使用试卷识别服务。"}处理可能产生服务费用，原件和进度会保存在本机。</p>
           <Show when={chosenFileKind() === "document"}><p><strong>试卷识别：</strong>{ocrDestination()}</p></Show>
           <p><strong>模型服务：</strong>{[...new Set(uploadDestinations().map(destination => destination.service))].join("；")}</p>
-          <details><summary>查看本次模型配置（6项用途）</summary><dl><For each={uploadDestinations()}>{destination => <div><dt>{destination.role}</dt><dd>{destination.configuration} · {destination.service}</dd></div>}</For></dl></details>
-          <div class="import-upload-confirmation-actions"><button type="button" class="secondary" disabled={Boolean(busy())} onClick={() => setFile(null)}>取消选择</button>
+          <details><summary>查看处理与复核模型</summary><dl><For each={uploadDestinations()}>{destination => <div><dt>{destination.role}</dt><dd>{destination.configuration} · {destination.service}</dd></div>}</For></dl></details>
+          <div class="import-upload-confirmation-actions"><button type="button" class="secondary" disabled={Boolean(busy())} onClick={() => { setFile(null); setNotice(""); }}>取消选择</button>
             <button type="button" class="primary" disabled={Boolean(busy()) || checking() || !accuracyConfigured() || chosenFileKind() === "document" && !ocrConfigured()} onClick={() => parse()}>开始识别与整理</button></div>
         </section>}</Show>
       </Show>
@@ -1726,10 +1767,11 @@ export function ImportPaper(props: {
             onAnnotation={confirmAnnotation}
             publishDisabled={Boolean(busy()) || dirty() || editingDirty() || !pendingApprove().length || publishFrozen() || Boolean(activeJob())}
             publishPrimary={triageFilter() === "source_ready" || reviewSummary().sourcePending === 0}
-            onPublish={() => { setPublishError(""); setConfirmPublish(true); }} tools={<div class="import-record-tools" ref={recordToolsElement}>
+            publishReason={publicationBlockedReason()}
+            onPublish={() => { void openPublication(); }} tools={<div class="import-record-tools" ref={recordToolsElement}>
                 <button class="icon-button secondary" ref={recordToolsButton} aria-label="更多试卷操作" title="更多试卷操作" aria-expanded={recordToolsOpen()} onClick={() => setRecordToolsOpen(value => !value)}><MoreHorizontal size={18} /></button>
                 <Show when={recordToolsOpen()}><div class="import-record-tools-menu" role="group" aria-label="更多试卷操作">
-                  <Show when={!activeJob() && (canContinueAccuracy() || canContinueTeaching() || ["failed", "cancelled", "processing", "interrupted", "budget_paused"].includes(record().status))}><button disabled={Boolean(busy()) || dirty() || publishFrozen() || !configured()} onClick={() => { setRecordToolsOpen(false); if (!prepareAttempt) prepareId = operationId(); void parse(true); }}>{accuracyRecord() ? "继续未完成处理" : canContinueTeaching() ? "继续处理教学稿" : "重新解析"}</button></Show>
+                  <Show when={!activeJob() && (canContinueAccuracy() || canContinueTeaching() || ["failed", "cancelled", "processing", "interrupted", "budget_paused"].includes(record().status))}><button disabled={Boolean(busy()) || dirty() || publishFrozen() || !configured()} onClick={() => { setRecordToolsOpen(false); if (!prepareAttempt) prepareId = operationId(); void parse(true); }}>{accuracyRecord() ? "继续未完成处理" : canContinueTeaching() ? "继续处理教学稿" : "继续识别"}</button></Show>
                   <Show when={props.onAssembly}><button disabled={Boolean(busy()) || publishFrozen()} onClick={() => {setRecordToolsOpen(false);guardNavigation(() => props.onAssembly?.());}}><ArrowLeft size={16} />返回组卷</button></Show>
                   <Show when={props.onGuide}><button onClick={() => {setRecordToolsOpen(false);props.onGuide?.();}}><CircleHelp size={16} />导入说明</button></Show>
                   <button disabled={Boolean(busy()) || publishFrozen()} onClick={() => {setRecordToolsOpen(false);guardNavigation(() => {void props.onBank().catch((failure:any)=>setError(failure.message));});}}>题库</button>
@@ -1763,7 +1805,7 @@ export function ImportPaper(props: {
                       <button type="button" class="import-failure-resume-button"
                         disabled={Boolean(busy()) || dirty() || publishFrozen() || !configured()}
                         onClick={(e) => { e.stopPropagation(); if (!prepareAttempt) prepareId = operationId(); void parse(true); }}>
-                        {accuracyRecord() ? "继续处理" : canContinueTeaching() ? "继续处理教学稿" : "重新解析"}
+                        {accuracyRecord() ? "继续处理" : canContinueTeaching() ? "继续处理教学稿" : "继续识别"}
                       </button>
                     </Show>
                     <span class="import-failure-toggle">
@@ -2464,7 +2506,7 @@ export function ImportPaper(props: {
               </div>
             </div>
             <footer class="import-review-footer">
-              <span class="import-save-status muted" role="status">{busy() || notice() || (editingDirty() ? "有未保存的字段修改" : dirty() ? "有未保存修改" : "进度已保存")}</span>
+              <span class="import-save-status muted" role="status">{busy() || notice() || (editingDirty() ? "有未保存的字段修改" : dirty() ? "有未保存修改" : currentTriage() && (sourceReviewState(currentTriage()!) === "pending" || isTeachingPending(currentTriage()!)) ? "进度已保存，本题仍有待办" : published(current()) ? "进度已保存" : "进度已保存，入库前仍须确认")}</span>
               <nav class="import-question-navigation" aria-label="单题审核导航">
                 <button type="button" class="text-button" disabled={Boolean(busy()) || selected() <= 0} onClick={() => moveQuestion("previous")}><ChevronLeft size={15} />上一题</button>
                 <button type="button" class="text-button" disabled={Boolean(busy())} onClick={nextTodo}>{accuracyRecord() ? "下一待处理题" : reviewDomain() === "teaching" ? "下一项AI待办" : "下一原题待办"}<ChevronRight size={15} /></button>
@@ -2485,7 +2527,7 @@ export function ImportPaper(props: {
             </div>
           </Show>
           <Show when={history().length} fallback={
-            <Show when={!historyLoading() && !historyError()}><div class="empty-state">暂无导入记录，选择试卷开始导入。</div></Show>
+            <Show when={!historyLoading() && !historyError()}><div class="empty-state">{checking() ? "暂无导入记录，正在检查配置…" : !accuracyConfigured() ? "暂无导入记录，配置模型后即可选择试卷。" : "暂无导入记录，选择试卷开始导入。"}</div></Show>
           }>
             <table class="import-records-table">
               <thead><tr><th scope="col">试卷名称</th><th scope="col">状态</th><th scope="col">题目</th><th scope="col">导入时间</th><th scope="col" class="import-record-operation">操作</th></tr></thead>
@@ -2541,20 +2583,20 @@ export function ImportPaper(props: {
           stable
           busy={Boolean(busy())}
           onClose={() => {
-            if (!publishFrozen()) setConfirmPublish(false);
+            if (!publishFrozen()) { ++publicationReadVersion; setPublicationDetailsLoading(false); setConfirmPublish(false); }
           }}
           footer={
             <>
               <button
                 class="secondary"
                 disabled={Boolean(busy()) || publishFrozen()}
-                onClick={() => setConfirmPublish(false)}
+                onClick={() => { ++publicationReadVersion; setPublicationDetailsLoading(false); setConfirmPublish(false); }}
               >
                 取消
               </button>
               <button
                 class="primary"
-                disabled={Boolean(busy())}
+                disabled={Boolean(busy()) || publicationDetailsLoading() || !publishFrozen() && !publicationPreviewCurrent()}
                 onClick={publish}
               >
                 {busy() ? "入库中…" : publishFrozen() ? "重试入库" : "确认入库"}
@@ -2563,12 +2605,14 @@ export function ImportPaper(props: {
           }
         >
           <p>本次将以下 {pendingApprove().length} 道原题加入本地题库，范围按每题检查结果确定。</p>
-          <p class="import-publication-scope"><strong>原题＋AI内容 {pendingApprove().filter(q=>reviewEligibility()[q.questionId]?.publicationScope === "source_and_teaching").length} 题</strong><span>原题及组卷信息 {pendingApprove().filter(q=>reviewEligibility()[q.questionId]?.publicationScope === "source_only").length} 题；对应AI答案解析不包含在本次入库中。</span></p>
+          <Show when={publicationDetailsLoading()}><p class="muted" role="status">正在读取本次题干摘要，尚未入库…</p></Show>
+          <p class="import-publication-scope"><strong>含 AI 答案与解析 {pendingApprove().filter(q=>reviewEligibility()[q.questionId]?.publicationScope === "source_and_teaching").length} 题</strong><span>不含 AI 答案与解析 {pendingApprove().filter(q=>reviewEligibility()[q.questionId]?.publicationScope === "source_only").length} 题。</span></p>
           <Show when={questions().some(q=>!published(q) && !pendingApprove().some(ready=>ready.questionId===q.questionId))}>
             <p class="muted">不会入库：第 {questions().filter(q=>!published(q) && !pendingApprove().some(ready=>ready.questionId===q.questionId)).map(q=>q.sourceLabel || questions().indexOf(q)+1).join("、")} 题。未通过的原题及AI解析继续保留待处理。</p>
           </Show>
-          <ul class="import-publication-list"><For each={pendingApprove()}>{question => <li><span>第 {question.sourceLabel || questions().findIndex(q => q.questionId === question.questionId) + 1} 题</span><strong>{reviewEligibility()[question.questionId]?.publicationScope === "source_and_teaching" ? "原题＋AI内容" : reviewEligibility()[question.questionId]?.publicationScope === "source_only" ? "原题及组卷信息（保留原卷参考）" : "内容范围待重新读取"}</strong></li>}</For></ul>
-          <p class="muted">AI内容包括答案解析和考查信息；原题保留实际原卷参考。原题及组卷信息仍可能包含主考知识、解法依赖和难度，不发布AI答案解析。未采用的AI内容继续保留待处理。</p>
+          <ul class="import-publication-list"><For each={pendingApprove()}>{question => <li><div><span>第 {question.sourceLabel || questions().findIndex(q => q.questionId === question.questionId) + 1} 题</span><div class="import-publication-excerpt"><RichText text={question.stem || "题干详情尚未读取"} question={previewQuestion(question)} teacher /></div></div><strong>{reviewEligibility()[question.questionId]?.publicationScope === "source_and_teaching" ? "含 AI 答案与解析" : reviewEligibility()[question.questionId]?.publicationScope === "source_only" ? "不含 AI 答案与解析" : "内容范围待重新读取"}</strong></li>}</For></ul>
+          <Show when={!publicationDetailsLoading() && !publishFrozen() && publicationPreviewValid() && !publicationPreviewCurrent()}><p class="warning-text" role="status">题目或入库范围已变化，请关闭后重新核对清单。</p></Show>
+          <p class="muted">两种范围均保留原题、实际原卷参考，以及随题保存的知识点、解法依赖和难度。“含 AI 答案与解析”还会保存 AI 教学稿；未采用的 AI 内容继续保留待处理。</p>
           <ErrorBanner message={publishError()} />
           <Show when={publishError() && publishFrozen()}>
             <p class="muted">
@@ -2623,6 +2667,15 @@ export function ImportPaper(props: {
       <Show when={leaveAction()}>
         <Modal title="有未保存的字段修改" onClose={() => setLeaveAction(null)} footer={<><button class="secondary" onClick={() => setLeaveAction(null)}>继续编辑</button><button class="primary" onClick={() => { const action = leaveAction(); setLeaveAction(null); setTeachingDirty(false); setSourceFieldDirty(false); setSourceFieldEdit(undefined); setDiscardFieldRequest(value => value + 1); setEditTeachingRequest(0); setEditTeachingField(""); action?.(); }}>放弃本次编辑并继续</button></>}>
           <p>当前字段的修改尚未保存。放弃后保留进入本次编辑时的内容，已保存的修订保持不变。</p>
+        </Modal>
+      </Show>
+      <Show when={historyLeaveConfirm()}>
+        <Modal title="有未保存的整卷修改" busy={Boolean(busy())} onClose={() => { if (!busy()) setHistoryLeaveConfirm(false); }}
+          footer={<><button class="secondary" disabled={Boolean(busy())} onClick={() => setHistoryLeaveConfirm(false)}>继续编辑</button>
+            <button class="secondary" disabled={Boolean(busy())} onClick={() => { editBuffers.delete(record().importId); setDirty(false); setHistoryLeaveConfirm(false); finishBackToHistory(); }}>放弃修改并返回</button>
+            <button class="primary" disabled={Boolean(busy()) || editingDirty()} onClick={async () => { if (await save()) { setHistoryLeaveConfirm(false); finishBackToHistory(); } }}>保存并返回</button></>}>
+          <p>整卷高级编辑的修改尚未保存到本机。请选择保存、放弃，或继续编辑；保存失败会保留当前修改。</p>
+          <ErrorBanner message={error()} />
         </Modal>
       </Show>
       <ImportSourceFieldEditor request={sourceFieldEdit()?.request} currentIdentity={sourceFieldIdentity()}

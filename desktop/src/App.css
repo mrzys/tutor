@@ -1,0 +1,6 @@
+.requirements-confirm-warnings { margin: 18px 0 12px; padding: 12px 16px; border-left: 3px solid var(--warning); background: var(--surface-hover); color: var(--warning); font-size: 14px; line-height: 1.8; }
+.requirements-confirm-warnings > p { margin: 6px 0 0; }
+.requirements-confirm-warnings > strong { font-weight: 600; }
+.sidebar-busy-note { margin: 2px 12px 10px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.paper-preview-state { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+body:has([role="dialog"]) .toast { display: none; }

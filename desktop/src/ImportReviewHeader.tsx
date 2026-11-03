@@ -10,6 +10,7 @@ export function ImportReviewHeader(props: {
   headingRef: (element: HTMLHeadingElement) => void; tools: JSX.Element;
   annotationCount: number; annotationDisabled: boolean; annotationReason: string; onAnnotation: () => void;
   publishDisabled: boolean; publishPrimary: boolean; onPublish: () => void;
+  publishReason?: string;
   accuracy?: boolean;
 }) {
   return <header class="import-review-header">
@@ -23,6 +24,7 @@ export function ImportReviewHeader(props: {
           <ListPlus size={16} /><span>考查信息</span><span class="import-annotation-count">{props.annotationCount} 题待补</span>
         </button></Show>
         <button type="button" class={props.publishPrimary ? "primary" : "secondary"} disabled={props.publishDisabled}
+          title={props.publishReason || "确认本次题目与内容范围后入库"} aria-describedby={props.publishDisabled ? "import-publication-blocked-reason" : undefined}
           onClick={props.onPublish}>将 {props.summary.sourceReady} 道{props.accuracy ? "题" : "原题"}入库</button>
         {props.tools}
       </div>
@@ -34,6 +36,7 @@ export function ImportReviewHeader(props: {
             disabled={props.disabled} onClick={() => props.onFilter(id)}>{label}<span>{count}</span></button>
         }</For>
       </nav>
+      <Show when={props.publishDisabled && props.publishReason}><p class="import-publication-blocked-reason muted" id="import-publication-blocked-reason" role="status">{props.publishReason}</p></Show>
     </div>
   </header>;
 }

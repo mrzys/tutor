@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { accuracyRequiredRoles } from '../src/import-accuracy.ts';
 import { uploadModelDestinations, uploadOcrDestination } from '../src/import-upload.ts';
 
-test('simulated send notice uses every actual role binding, never the active profile or optional repair profile', () => {
+test('simulated send notice discloses processing and review profiles, never the general profile or credentials', () => {
   const model = { activeProfileId: 'other', importRoles: Object.fromEntries(accuracyRequiredRoles.map(([key]) => [key, 'saved'])),
     profiles: [{ id: 'saved', name: '模拟已保存', provider: 'custom', model: 'simulated-model', baseUrl: 'https://user:password@models.example/v1?secret=x', apiKey: 'must-not-render' }, { id: 'other', name: '不应显示' }] };
   const result = uploadModelDestinations(model);
-  assert.equal(result.length, 6);
+  assert.equal(result.length, 2);
+  assert.deepEqual(result.map(row => row.role), ['处理模型', '复核模型']);
   assert.ok(result.every(row => row.configuration === '模拟已保存' && row.service === 'models.example · simulated-model'));
   assert.doesNotMatch(JSON.stringify(result), /password|secret|must-not-render|不应显示/);
   model.importRoles.sourceParsing = 'missing';

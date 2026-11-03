@@ -263,7 +263,7 @@ export function BlueprintView(props: {
             disabled={props.busy || !review().canSelect}
             onClick={() => props.configured ? props.onSelect("llm") : props.onConfigure()}
           >
-            {!slots().length ? "生成草稿，保留缺口" : !quantity().matches ? "继续选题，保留缺口" : "采用安排，开始选题"} <ArrowRight size={17} />
+            {review().actionLabel} <ArrowRight size={17} />
           </button>
         </div>
       </footer>

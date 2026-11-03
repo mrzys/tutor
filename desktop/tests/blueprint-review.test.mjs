@@ -91,6 +91,9 @@ test('模拟不足不阻塞：部分及空规划可继续，原定数量不变�
   assert.equal(blueprintReview(empty, tasks).missingGoals.length, 1);
   assert.equal(blueprintReview(original, tasks).hasExcess, true);
   assert.equal(blueprintReview(original, tasks).canSelect, false);
+  assert.equal(blueprintReview(original, tasks).actionLabel, '请先把题位减回原定题量');
+  assert.equal(blueprintReview(plan, tasks).actionLabel, '继续选题，保留缺口');
+  assert.equal(blueprintReview(empty, tasks).actionLabel, '生成草稿，保留缺口');
   const invalid = structuredClone(plan); invalid.slots[0].taskId = 'fake';
   assert.equal(blueprintReview(invalid, tasks).canSelect, false);
   assert.deepEqual(plan, before); assert.deepEqual(empty.requirements, original.requirements);

@@ -106,6 +106,14 @@ pub(crate) fn eligible(store: &Store, record: &Value, q: &Value) -> AppResult<bo
     if value.is_null() || value["composition"].is_null() || value["lastError"].is_object() {
         return Ok(false);
     }
+    let math_report = checked_report(store, &value, "math")?;
+    if super::two_model::is_run(store, record)? && scope::publication_scope(&value) == "source_only"
+        && (!good(&math_report) || targets(q,"math").iter().any(|target| rows(&math_report["checks"]).iter().filter(|check| check["target"] == *target && check["status"] == "checked" && !s(check,"basis").trim().is_empty()).count() != 1)) {
+        // Merged metadata was generated together with the proposed solution.
+        // Withholding that text cannot publish its still-dependent paths or
+        // difficulty before math (or full concrete teacher evidence) is sound.
+        return Ok(false);
+    }
     if !scope::eligible_reports(
         q,
         &value,
@@ -135,9 +143,13 @@ fn read_bound(store: &Store, relative: &str, expected: &str) -> AppResult<Value>
     }
     Ok(serde_json::from_slice(&bytes)?)
 }
-fn verify_execution_artifact(store: &Store, reference: &Value) -> AppResult<Value> {
+pub(super) fn verify_execution_artifact(store: &Store, reference: &Value) -> AppResult<Value> {
     if reference.is_null() {
         return Ok(Value::Null);
+    }
+    if reference.get("combinedResponse").is_some() {
+        let parent = verify_execution_artifact(store, &reference["combinedResponse"])?;
+        return super::two_model::component_from_payload(&parent, s(reference, "component"));
     }
     let envelope = store::get_artifact(store, reference)?;
     let mut payload = envelope["payload"].clone();
@@ -162,6 +174,8 @@ fn verify_execution_artifact(store: &Store, reference: &Value) -> AppResult<Valu
         "accuracy_math_verification" => "mathVerification",
         "accuracy_teaching_verification" => "teachingVerification",
         "accuracy_repair" => "teachingReview",
+        "accuracy_combined_generation" => "teachingGeneration",
+        "accuracy_combined_verification" | "accuracy_combined_repair" => "teachingReview",
         _ => "",
     };
     if role.is_empty()
@@ -245,6 +259,9 @@ pub(crate) fn verify_question(store: &Store, record: &Value, q: &Value) -> AppRe
     }
     read_source(store, record)?;
     paddle::verify_audit(store, record)?;
+    if super::two_model::is_run(store, record)? {
+        return super::two_model::verify_question(store, record, q);
+    }
     let value = state(store, record, q)?;
     if artifact(store, &value["sourceCandidate"])? != source_input(q) {
         return Err(err("accuracy_integrity", "来源候选不能重放。"));

@@ -88,14 +88,15 @@ export function ImportAccuracyStatus(props: { question: any; importId: string; r
     </details></Show>
     <Show when={evidence().length}><details><summary>核对依据与分歧</summary><For each={evidence()}>{domain => <section><h4>{domain.label}</h4>
       <Show when={domain.basis}><p><ReviewMessage text={domain.basis} /></p></Show><For each={domain.checks}>{check => <p><strong>{check.label} · {check.status}：</strong><ReviewMessage text={check.basis} /></p>}</For>
-      <For each={domain.disagreements}>{item => <section><p><strong>{item.label}</strong></p><Show when={item.claimA}><p>候选结论：<ReviewMessage text={item.claimA} /></p></Show><Show when={item.claimB}><p>独立解结论：<ReviewMessage text={item.claimB} /></p></Show>
-        <Show when={item.stepA}><p>候选步骤：<ReviewMessage text={item.stepA} /></p></Show><Show when={item.stepB}><p>独立解步骤：<ReviewMessage text={item.stepB} /></p></Show><Show when={item.basis}><p>核对依据：<ReviewMessage text={item.basis} /></p></Show>
+      <For each={domain.disagreements}>{item => <section><p><strong>{item.label}</strong></p><Show when={item.claimA}><p>候选结论：<ReviewMessage text={item.claimA} /></p></Show><Show when={item.claimB}><p>{props.question?.accuracy?.strategyVersion === "import-two-model-v1" ? "对照结论" : "独立解结论"}：<ReviewMessage text={item.claimB} /></p></Show>
+        <Show when={item.stepA}><p>候选步骤：<ReviewMessage text={item.stepA} /></p></Show><Show when={item.stepB}><p>{props.question?.accuracy?.strategyVersion === "import-two-model-v1" ? "对照步骤" : "独立解步骤"}：<ReviewMessage text={item.stepB} /></p></Show><Show when={item.basis}><p>核对依据：<ReviewMessage text={item.basis} /></p></Show>
       </section>}</For>
     </section>}</For></details></Show>
-    <details><summary>本次发布范围 · {savedScope() === "source_only" ? "原题及组卷信息" : "原题及AI答案解析、考查信息"}</summary>
+    <p class="muted">模型未发现疑点仍需在入库前确认；已保存不代表已发布。</p>
+    <details><summary>本次发布范围 · {savedScope() === "source_only" ? "不含 AI 答案与解析" : "含 AI 答案与解析"}</summary>
       <label class="field-label">本次发布范围<select aria-label="本次发布范围" disabled={props.disabled || saving() || props.question?.accuracy?.canReview !== true}
         value={scopeDraft()?.publicationScope || savedScope()} onChange={event => { setScopeDraft(createAccuracyScopeDraft(props.question, props.importId, props.revision, event.currentTarget.value, operationId())); setFailure(""); }}>
-        <option value="source_and_teaching">原题及AI答案解析、考查信息</option><option value="source_only">原题及组卷信息（不含AI答案解析）</option>
+        <option value="source_and_teaching">含 AI 答案与解析</option><option value="source_only">不含 AI 答案与解析（保留原卷参考及组卷信息）</option>
       </select></label>
       <p class="muted">原题始终保留实际原卷参考；不采用AI答案解析时，仍可能包含主考知识、解法依赖和难度，须完成相应核对，不能绕过已知问题。</p>
       <Show when={scopeDraft() && !accuracyScopeCurrent(scopeDraft(), props.question, props.importId, props.revision)}><p class="warning-text">题目或允许操作已变化，请重新读取后选择本次范围。</p></Show>

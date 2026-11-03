@@ -1,0 +1,13 @@
+/* Workspace feedback and real controls stay outside the printable sheet. */
+.teacher-reference-status { display: flex; align-items: baseline; gap: 6px; margin: 10px 0; color: var(--muted); font-size: var(--font-caption); line-height: 1.65; }
+.teacher-reference-status > svg { flex-shrink: 0; align-self: center; }
+.draft-question .draft-question-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; margin-top: 10px; }
+.draft-question-tools .teacher-reference-status { flex: 1 1 220px; min-width: 0; margin: 0; }
+.draft-question .question-actions,
+.draft-question:hover .question-actions,
+.draft-question:focus-within .question-actions { position: relative; inset: auto; flex: 0 0 auto; margin: 0; opacity: 1; pointer-events: auto; transform: none; transition: none; border: 0; background: transparent; padding: 0; box-shadow: none; }
+.draft-question .question-actions button { min-width: 44px; min-height: 44px; padding: 8px 10px; font-size: 13px; }
+.draft-question .question-actions .popover button { min-height: 44px; }
+.draft-question .question-actions .popover { top: auto; bottom: 100%; }
+@media (max-width: 760px) { .draft-question .draft-question-tools { align-items: stretch; } .draft-question-tools .teacher-reference-status { flex-basis: 100%; } .draft-question .question-actions { max-width: 100%; flex-wrap: wrap; margin-left: auto; } }
+@media print { .teacher-reference-status, .draft-question-tools { display: none !important; } }

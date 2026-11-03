@@ -27,6 +27,9 @@ enum AccuracyTask {
     Metadata,
     Teaching,
     Repair,
+    CombinedGeneration,
+    CombinedVerification,
+    CombinedRepair,
 }
 
 impl AccuracyTask {
@@ -39,6 +42,9 @@ impl AccuracyTask {
             "accuracy_teaching_generation" | "meta" => Ok(Self::Metadata),
             "accuracy_teaching_verification" | "teachingVerify" => Ok(Self::Teaching),
             "accuracy_repair" | "repair" => Ok(Self::Repair),
+            "accuracy_combined_generation" => Ok(Self::CombinedGeneration),
+            "accuracy_combined_verification" => Ok(Self::CombinedVerification),
+            "accuracy_combined_repair" => Ok(Self::CombinedRepair),
             _ => Err(AppError::new(
                 "accuracy_task_invalid",
                 "准确性流程模型任务无效，未发起请求。",
@@ -55,11 +61,14 @@ impl AccuracyTask {
             Self::Metadata => "accuracy_teaching_generation",
             Self::Teaching => "accuracy_teaching_verification",
             Self::Repair => "accuracy_repair",
+            Self::CombinedGeneration => "accuracy_combined_generation",
+            Self::CombinedVerification => "accuracy_combined_verification",
+            Self::CombinedRepair => "accuracy_combined_repair",
         }
     }
 
     fn timeout(self) -> u64 {
-        if matches!(self, Self::Independent | Self::Math) {
+        if matches!(self, Self::Independent | Self::Math | Self::CombinedGeneration | Self::CombinedVerification | Self::CombinedRepair) {
             180
         } else {
             120
@@ -68,6 +77,9 @@ impl AccuracyTask {
 
     fn instruction(self) -> &'static str {
         match self {
+            Self::CombinedGeneration => "本次一次完成解答与教学信息候选，不核验自己、不宣称已通过。严格返回responseContract的questionId、solution、metadata三个字段。solution含完整答案、解析、实际小问partCoverage与limitations；高中方法、条件、定义域、分类端点与必要证明闭环不可省略。metadata仅依据本次solution的实际解法和catalogue真实目录，给出主考叶UID、逐路径依赖/前提、任务、五档内容难度与具体依据、examFocus及可观察studentRequirements。目录身份未知保持空值，不补造UID或递归补知识，不把难度说成得分率。原题、原参考和图像均锁定；原卷无参考保持原缺项，不把新解答写成原答案。没有独立盲解阶段，不能声称独立求解或独立核验完成。原题歧义、缺材料或无法解答明确limitations/issues。",
+            Self::CombinedVerification => "这是独立于生成请求的一次合并复核，只核验、不修稿，不是盲解。一次返回questionId及source、math、teaching三个分域报告；每个报告严格覆盖requiredTargets对应域，每个target逐字复制且恰好一次，具体子位置写findings.fieldPath。source对照实际原页核题型、题干条件、选项、小问、公式图表、跨页、素材及原参考存在性，OCR只作导航；原页未可见或不清保留unresolved，原卷无答案解析是合法缺项。source.assetDisclosures须覆盖所有学生/参考裁图，含答案或用途不明的素材不得冒称student_original。math核题目有效性、候选答案和证明及真实原参考，列实际计算、适用条件、反例或缺口；不因候选自评或两个模型一致就通过，不声称有未执行的盲解。teaching依据同一候选实际解法、真实目录和catalogue.difficultyRubric核主考、完整路径依赖、任务、难度及具体依据、examFocus和studentRequirements；未取得数学有效性时依赖该解法的教学目标须保留unresolved，不能把有问题的解答作为已核验依据。数学或来源有问题时仍逐域给出具体检查结果，不省略其他报告。每项checks.basis须具体；findings仅含真实问题/未判，正面依据放checks.basis。no_issue_found仅当全部checks为checked且findings=[]；缺依据为unresolved而非通过。难度按实际rubric及相邻档边界核对，不凭个人偏好升档。未知保持未知，不改题面、答案或教学字段，不输出修订候选。",
+            Self::CombinedRepair => "这是用户针对concreteProblem显式授权的一次有界合并候选修订。严格返回questionId、solution、metadata。scope=metadata时solution必须逐字保留lockedSolution，禁止变更已核对的答案、证明、partCoverage与limitations；只有scope=solution_and_metadata才允许修订实际数学问题及受其影响的教学字段。仅修复具体问题及其实际依赖的解答/教学字段；保留未涉及的正确内容。原题、原参考、素材及来源身份锁定，不能改写或补造条件、清除来源问题。metadata须与修订后实际solution及本次真实目录一致；未知保持空值。无法可靠修复保留limitations/issues，不宣称自检等于复核；修订后仍需单独的合并复核。没有独立盲解，不得声称已执行。",
             Self::Source => {
                 "你只核对来源保真，不求解或修稿。实际原页是证据，OCR用于定位。逐字段核题型、题干条件、选项、小问、公式、图表、跨页及原参考存在性，原页不清或未实际可见保留unresolved。原卷本身疑似错误与转录不一致分别记录；原卷无答案解析是合法缺项，不能补造。每题逐项覆盖并引用实际页/块/素材和具体原文，不用全批一句通过替代。"
             }
@@ -322,7 +334,7 @@ fn request_body(
     let instruction = task.system_instruction();
     let generation = matches!(
         task,
-        AccuracyTask::Solution | AccuracyTask::Metadata | AccuracyTask::Repair
+        AccuracyTask::Solution | AccuracyTask::Metadata | AccuracyTask::Repair | AccuracyTask::CombinedGeneration | AccuracyTask::CombinedRepair
     );
     let mut body = json!({"model":client.model,"messages":[{"role":"system","content":instruction},{"role":"user","content":content}],"response_format":{"type":"json_object"},"max_tokens":if generation {16000}else{24576},"temperature":0.2});
     compatible_provider_request_options(&mut body, &client.base_url, &client.model);
@@ -414,6 +426,15 @@ impl ModelClient {
                 task.name().to_owned(),
                 json!({"instruction":task.system_instruction(),"timeoutSeconds":task.timeout()}),
             );
+        }
+        json!({"tasks":tasks})
+    }
+
+    /// Separate snapshot keeps every frozen six-stage run byte-for-byte stable.
+    pub(crate) fn combined_accuracy_policy_snapshot() -> Value {
+        let mut tasks = serde_json::Map::new();
+        for task in [AccuracyTask::CombinedGeneration, AccuracyTask::CombinedVerification, AccuracyTask::CombinedRepair] {
+            tasks.insert(task.name().to_owned(), json!({"instruction":task.system_instruction(),"timeoutSeconds":task.timeout()}));
         }
         json!({"tasks":tasks})
     }

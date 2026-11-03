@@ -12,10 +12,10 @@ const assemblySteps: GuideStep[] = [
   { title: "确认成卷与导出", teacher: "核对题目与名称，确认成卷，再生成所需版本的 PDF。", system: "固定本次题目内容。以后继续编辑会创建新草稿，原卷与已有 PDF 保留。", caption: "确认后的试卷保留原样，方便再次使用。" },
 ];
 const importSteps: GuideStep[] = [
-  { title: "完成用途配置", teacher: "在设置中明确分配拆题、解析生成、来源核验、独立求解、数学核验和教学核验六项用途，并保存。PDF / DOCX 还需独立配置 PaddleOCR。", system: "按各用途已保存的模型和思考设置执行；解析复核仅在显式修订时使用。TXT / Markdown 无需 OCR，仍需六项模型用途。", caption: "同一模型配置可以用于多个用途，分配后显式保存。" },
+  { title: "配置两个模型", teacher: "在设置中选择处理模型（DS Flash）和复核模型（Qwen），再保存。PDF / DOCX 还需独立配置 PaddleOCR。", system: "处理模型负责拆题和内容生成，复核模型核对来源、数学及教学信息；按已保存的模型与思考设置执行。", caption: "只需选择处理模型和复核模型。" },
   { title: "确认发送原卷", teacher: "选择原件，核对文件及将使用的识别、模型服务，再点击开始。之后可以离开页面，在导入记录查看进展。", system: "接受后先将原件保存在本机，再后台处理。DOCX 通过本机 Word 或 LibreOffice 转为 PDF；缺少工具时提示先导出 PDF。", caption: "确认开始后才发送材料，后台处理不占用组卷。" },
   { title: "识别与转录", teacher: "查看来源整理进展；需要核对时，将转录结果与原页并排阅读。", system: "PaddleOCR 保留逐页文字、公式、布局及实际图表素材；模型按来源转录题目和原卷参考。失败保留原件及成功断点，继续处理由你发起。", caption: "原卷参考按实际来源保留，原卷没有的内容不补成原参考。" },
-  { title: "求解与分域核验", teacher: "查看原题、AI 答案解析和考查信息，以及来源、答案与证明、教学信息的具体核对结果。", system: "独立求解与生成稿分开处理，再核对来源、数学及教学字段。报告缺失、判断依据不足或仍有问题时保留待处理；模型核对未发现问题不等于教师已审核或实测正确。", caption: "每个域显示实际核对状态，不用高置信代替核验。" },
+  { title: "生成与统一复核", teacher: "查看原题、AI 答案解析和考查信息，以及来源、答案与证明、教学信息的具体核对结果。", system: "拆题后，每题一次生成答案解析与教学信息，再一次对照原卷统一复核。报告缺失、依据不足或仍有问题时保留待处理；不额外盲解，模型核对不等于教师已审核。", caption: "拆题后每题两次模型调用，来源、数学与教学状态分别保留。" },
   { title: "处理未决事项", teacher: "按当前事项对照原页、核算证明或检查考查信息，填写实际核对依据；需要模型修订时，明确问题后发起一次修订。", system: "已有有效核验的域无需重复人工确认。修改内容后，受影响的核对需要重新完成；技术失败、缺材料与内容疑点分别保留原因。", caption: "教师实质核对可以处理模型未判；只点确认不能忽略已知错误。" },
   { title: "确认加入题库", teacher: "点击“加入题库”，核对本次各题的交付范围，再统一确认符合条件的题目。", system: "分别保存模型核验与教师核对依据。选择“仅原题及组卷信息”时，仍核对原题、原参考及实际交付的主考、解法依赖和难度；不发布 AI 答案解析。查看历史不外呼，旧记录沿原流程。", caption: "未解决的题继续保留，不必处理完整份试卷才能离开。" },
 ];
@@ -103,7 +103,7 @@ function Demonstration(props: { topic: Topic; step: number; elapsed: number | nu
           <div class="usage-demo-upload"><Upload size={30} /><strong>阶段练习原卷.pdf</strong><span>核对文件和接收服务 → 明确点击开始</span><small>接受后保存在本机并后台处理，可继续其它操作</small></div>
         </Show>
       }>
-        <div class="usage-demo-config"><div><Settings2 size={20} /><span><strong>六项模型用途</strong><small>拆题、解析生成、来源核验</small><small>独立求解、数学核验、教学核验</small></span><Check size={18} /></div><div><ScanLine size={20} /><span><strong>PaddleOCR</strong><small>PDF / DOCX 需要独立接口与密钥</small></span><Check size={18} /></div><p>解析复核：按具体问题显式修订时使用</p></div>
+        <div class="usage-demo-config"><div><Settings2 size={20} /><span><strong>两个模型</strong><small>DS Flash：处理</small><small>Qwen：复核</small></span><Check size={18} /></div><div><ScanLine size={20} /><span><strong>PaddleOCR</strong><small>PDF / DOCX 需要独立接口与密钥</small></span><Check size={18} /></div><p>保存后生效，模型问题修订由你显式发起</p></div>
       </Show>
     }>
       <AssemblyDemonstration step={props.step} elapsed={props.elapsed} playing={props.playing} />
@@ -177,7 +177,7 @@ export function UsageGuide(props: { initialTopic?: Topic }) {
       <For each={[["assembly", "组卷", BookOpen], ["import", "导入试卷", Upload]] as const}>{([key, label, Icon], index) => <button type="button" role="tab" aria-selected={topic() === key} aria-controls={`${uid}-topic-panel`} id={`${uid}-topic-${key}`} tabindex={topic() === key ? 0 : -1} onClick={() => selectTopic(key)} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); const next: Topic = event.key === "Home" ? "assembly" : event.key === "End" ? "import" : index() === 0 ? "import" : "assembly"; selectTopic(next); document.getElementById(`${uid}-topic-${next}`)?.focus(); } }}><Icon size={17} />{label}</button>}</For>
     </div>
     <div id={`${uid}-topic-panel`} role="tabpanel" aria-labelledby={`${uid}-topic-${topic()}`} class="usage-guide-topic-panel">
-      <p class="usage-guide-intro">{topic() === "assembly" ? "你确定要求与安排，系统从题库找题；检查满意后再确认成卷。" : "确认发送原卷后，后台识别、转录、独立求解与分域核验；处理未决事项，再确认符合条件的题目入库。"}</p>
+      <p class="usage-guide-intro">{topic() === "assembly" ? "你确定要求与安排，系统从题库找题；检查满意后再确认成卷。" : "确认发送原卷后，后台识别、转录，由处理模型生成、复核模型核对；处理未决事项，再确认符合条件的题目入库。"}</p>
       <div class="usage-guide-steps" role="tablist" aria-label={topic() === "assembly" ? "组卷步骤" : "导入步骤"}>
         <For each={steps()}>{(item, index) => <button type="button" id={tabId(index())} role="tab" aria-selected={step() === index()} aria-controls={panelId} tabindex={step() === index() ? 0 : -1} onClick={() => selectStep(index())} onKeyDown={(event) => keyStep(event, index())}><span class="usage-guide-step-number">{index() + 1}</span><span>{item.title}</span></button>}</For>
       </div>

@@ -4,6 +4,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  createUniqueId,
   onCleanup,
 } from "solid-js";
 import { Portal } from "solid-js/web";
@@ -20,7 +21,8 @@ import {
 import { operationId, purposeLabel, purposes, request } from "./bridge";
 import { ErrorBanner, Modal, Popover } from "./ui";
 import { ScopeTree } from "./ScopeTree";
-import { composerRequirements } from "./composer-requirements";
+import { composerRequirements, composerSubmitState } from "./composer-requirements";
+import "./Composer.css";
 
 type Mention = { start: number; end: number; query: string };
 const CARET_ANCHOR = "\u200b";
@@ -64,6 +66,8 @@ export function Composer(props: {
     props.initial?.scoringMode === "points",
   );
   const [text, setText] = createSignal(props.initial?.teacherRequest || "");
+  const actionHintId = createUniqueId();
+  const submitState = createMemo(() => composerSubmitState(props.configured, props.busy, Boolean(scope().length || text().trim())));
   const [student, setStudent] = createSignal<any>(
     props.initial?.student || null,
   );
@@ -344,8 +348,9 @@ export function Composer(props: {
     }
   }
   function submit() {
-    if (props.busy || (!scope().length && !text().trim())) return;
+    if (props.busy) return;
     if (!props.configured) { props.onConfigure(); return; }
+    if (!scope().length && !text().trim()) return;
     props.onSubmit(
       {
         ...composerRequirements(defaults(), props.initial, scope(), text()),
@@ -629,7 +634,7 @@ export function Composer(props: {
               }
               contentEditable={!props.busy}
               data-empty={!text() && !student() ? "true" : "false"}
-              data-placeholder="例如：今天讲了集合的交、并、补，出 8 道基础练习。输入 @ 关联学生。"
+              data-placeholder="写下题量、难度或补充要求；输入 @ 关联学生。"
               onBeforeInput={(event) => {
                 deletingInput = !event.isComposing && event.inputType.startsWith("delete");
                 clearingSelection = deletingInput && entireSelection();
@@ -657,12 +662,12 @@ export function Composer(props: {
           <div class="composer-bottom">
             <span class="muted">Enter 发送 · Shift+Enter 换行</span>
             <div class="composer-submit">
-              <Show when={!props.configured}><button type="button" disabled={props.busy} onClick={props.onConfigure}>配置模型</button></Show>
-              <button class="primary" disabled={props.busy || (!scope().length && !text().trim())}>
-                开始组卷 <ArrowUp size={18} />
+              <button class="primary" disabled={submitState().disabled} aria-describedby={submitState().hint ? actionHintId : undefined}>
+                {submitState().label} <ArrowUp size={18} />
               </button>
             </div>
           </div>
+          <Show when={submitState().hint}><p id={actionHintId} class="composer-action-hint" role="status">{submitState().hint}</p></Show>
         </div>
       </form>
       <Show when={menu() === "scope"}>

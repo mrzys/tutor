@@ -15,7 +15,7 @@ test("old ready/model self-review never acquires the new verification status or 
 });
 test("three domains retain independent unknown/failure/manual states instead of inheriting overall ready", () => {
   const q = question(); q.accuracy.status = "ready";
-  assert.equal(accuracyStatus(q, "source").label, "模型核对未发现问题");
+  assert.equal(accuracyStatus(q, "source").label, "模型未发现疑点");
   assert.equal(accuracyStatus(q, "math").kind, "needs_review");
   assert.equal(accuracyStatus(q, "teaching").kind, "pending");
   q.accuracy.mathematics.status = "teacher_reviewed";
@@ -82,16 +82,33 @@ test("missing bindings and malformed findings cannot create authorized actions o
   assert.equal(entries[1].partId, null);
 });
 test("new uploads require saved explicit purpose bindings; legacy/general readiness is never a substitute", () => {
-  const roles = ["sourceParsing", "teachingGeneration", "sourceVerification", "independentSolve", "mathVerification", "teachingVerification"];
+  const roles = ["sourceParsing", "teachingGeneration", "teachingReview"];
   const model = { configured: true, importConfigured: true, profiles: [{ id: "sim-profile", configured: true }], importRoles: {}, effectiveImportRoles: {} };
   assert.equal(accuracyModelReadiness(model).configured, false);
   for (const role of roles) { model.importRoles[role] = "sim-profile"; model.effectiveImportRoles[role] = { strategy: "explicit", configured: true, profileId: "sim-profile" }; }
   assert.deepEqual(accuracyModelReadiness(model), { configured: true, missing: [] });
-  assert.deepEqual(accuracyModelReadiness(model, true).missing, ["解析复核"]);
-  model.effectiveImportRoles.independentSolve.strategy = "legacy";
-  assert.deepEqual(accuracyModelReadiness(model).missing, ["独立求解"]);
-  model.effectiveImportRoles.independentSolve.strategy = "explicit"; model.effectiveImportRoles.mathVerification.profileId = "another-profile";
-  assert.deepEqual(accuracyModelReadiness(model).missing, ["数学核验"]);
+  model.effectiveImportRoles.teachingReview.strategy = "legacy";
+  assert.deepEqual(accuracyModelReadiness(model).missing, ["复核模型"]);
+  model.effectiveImportRoles.teachingReview.strategy = "explicit"; model.effectiveImportRoles.sourceParsing.profileId = "another-profile";
+  assert.deepEqual(accuracyModelReadiness(model).missing, ["处理模型"]);
+  model.effectiveImportRoles.sourceParsing.profileId = "sim-profile";
+  model.profiles.push({ id: "other-profile", configured: true });
+  model.importRoles.sourceParsing = "other-profile";
+  model.effectiveImportRoles.sourceParsing.profileId = "other-profile";
+  assert.deepEqual(accuracyModelReadiness(model).missing, ["处理模型"]);
+  model.importRoles.sourceParsing = "sim-profile"; model.effectiveImportRoles.sourceParsing.profileId = "sim-profile";
+  model.effectiveImportRoles.independentSolve = { configured: false };
+  assert.equal(accuracyModelReadiness(model).configured, true);
+});
+
+test("old six-stage tasks retain their saved readiness instead of requiring the new review binding", () => {
+  const keys = ["sourceParsing", "teachingGeneration", "sourceVerification", "independentSolve", "mathVerification", "teachingVerification"];
+  const model = { profiles: [{ id: "old", configured: true }], importRoles: {}, effectiveImportRoles: {} };
+  for (const key of keys) { model.importRoles[key] = "old"; model.effectiveImportRoles[key] = { strategy: "explicit", configured: true, profileId: "old" }; }
+  assert.equal(accuracyModelReadiness(model, "import-accuracy-first-v3").configured, true);
+  assert.deepEqual(accuracyModelReadiness(model).missing, ["复核模型"]);
+  model.importRoles.independentSolve = null;
+  assert.deepEqual(accuracyModelReadiness(model, "import-accuracy-first-v3").missing, ["独立求解"]);
 });
 test("source human review can bind an explicit empty candidate before a generated solution exists", () => {
   const q = question(); q.accuracy.candidateSha256 = "";

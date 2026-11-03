@@ -12,7 +12,8 @@ mod scope;
 #[path = "accuracy/store.rs"]
 pub(crate) mod store;
 
-const VERSION: &str = "import-accuracy-first-v3";
+const VERSION: &str = "import-two-model-v1";
+const LEGACY_VERSION: &str = "import-accuracy-first-v3";
 const ENGINE: &str = "import-accuracy-first-v1";
 pub(crate) fn current_strategy_version() -> &'static str {
     VERSION
@@ -25,6 +26,12 @@ const ROLES: [&str; 4] = [
 ];
 
 pub(crate) fn validate_configuration(model: &ModelClient) -> AppResult<()> {
+    two_model::validate_configuration(model)
+}
+pub(crate) fn validate_configuration_for_record(store: &Store, model: &ModelClient, record: &Value) -> AppResult<()> {
+    if two_model::is_run(store, record)? { validate_configuration(model) } else { validate_legacy_configuration(model) }
+}
+fn validate_legacy_configuration(model: &ModelClient) -> AppResult<()> {
     model.import_source_model()?;
     model.import_generator()?;
     for role in ROLES {
@@ -42,18 +49,24 @@ pub(crate) fn initialize_run(
         return Ok(());
     }
     let strategy = strategy_snapshot(model)?;
+    initialize_run_with_strategy(store, record, &strategy)
+}
+fn initialize_run_with_strategy(store: &Store, record: &mut Value, strategy: &Value) -> AppResult<()> {
     let run = store::create_run(
         store,
         s(record, "importId"),
-        &strategy,
+        strategy,
         &source_identity(record),
-        &json!({"maxCalls":324,"maxInputTokens":10_000_000,"maxOutputTokens":16_000_000,"maxActiveWallSeconds":7200,"maxInFlight":3,"maxRoleInFlight":2,"roleInFlightCaps":{"sourceParsing":3},"roleCallCaps":{"sourceParsing":81,"sourceVerification":40,"teachingGeneration":80,"independentSolve":40,"mathVerification":80,"teachingVerification":80,"teachingReview":40}}),
+        &json!({"maxCalls":324,"maxInputTokens":10_000_000,"maxOutputTokens":16_000_000,"maxActiveWallSeconds":7200,"maxInFlight":3,"maxRoleInFlight":2,"roleInFlightCaps":{"sourceParsing":3},"roleCallCaps":{"sourceParsing":81,"sourceVerification":40,"teachingGeneration":if strategy["strategyVersion"] == VERSION {40}else{80},"independentSolve":40,"mathVerification":80,"teachingVerification":80,"teachingReview":if strategy["strategyVersion"] == VERSION {120}else{40}}}),
     )?;
     attach_run(store, record, &run)?;
     Ok(())
 }
 fn strategy_snapshot(model: &ModelClient) -> AppResult<Value> {
-    validate_configuration(model)?;
+    two_model::strategy_snapshot(model)
+}
+fn legacy_strategy_snapshot(model: &ModelClient) -> AppResult<Value> {
+    validate_legacy_configuration(model)?;
     let mut bindings = json!({"sourceParsing":model.import_source_model()?.import_execution_identity()?,"teachingGeneration":model.import_generator()?.import_execution_identity()?});
     for role in ROLES {
         bindings[role] = model
@@ -64,7 +77,7 @@ fn strategy_snapshot(model: &ModelClient) -> AppResult<Value> {
     let input_limits = json!({"accuracy_source_verification":24_000,"accuracy_solution_generation":16_000,"accuracy_independent_solve":16_000,"accuracy_math_verification":40_000,"accuracy_teaching_generation":160_000,"accuracy_teaching_verification":160_000,"accuracy_repair":160_000});
     let rubric: Value = serde_json::from_str(include_str!("../../../resources/difficulty-rubric.json"))?;
     Ok(
-        json!({"strategyVersion":VERSION,"pipelineVersion":ENGINE,"processSchemaVersion":1,"bindings":bindings,"roleSettings":model.public_settings()["effectiveImportRoles"],"policy":ModelClient::accuracy_policy_snapshot(),"responseContracts":contracts,"inputLimits":input_limits,"sourceProjection":"source-page-locations-v1","catalogueProjection":"accuracy-catalogue-columns-rows-v1","difficultyRubric":rubric,"evidenceReuse":"exact-inputs-accepted-artifacts-v1","unknownUsagePolicy":"retain-reservation-continue-other-questions-v1","stages":["source","solution","independent","math","metadata","teaching"],"composition":"locked-mathematics-metadata-only-v1","maxRepairsPerQuestion":1,"selfConfidenceGrantsEligibility":false}),
+        json!({"strategyVersion":LEGACY_VERSION,"pipelineVersion":ENGINE,"processSchemaVersion":1,"bindings":bindings,"roleSettings":model.public_settings()["effectiveImportRoles"],"policy":ModelClient::accuracy_policy_snapshot(),"responseContracts":contracts,"inputLimits":input_limits,"sourceProjection":"source-page-locations-v1","catalogueProjection":"accuracy-catalogue-columns-rows-v1","difficultyRubric":rubric,"evidenceReuse":"exact-inputs-accepted-artifacts-v1","unknownUsagePolicy":"retain-reservation-continue-other-questions-v1","stages":["source","solution","independent","math","metadata","teaching"],"composition":"locked-mathematics-metadata-only-v1","maxRepairsPerQuestion":1,"selfConfidenceGrantsEligibility":false}),
     )
 }
 fn attach_run(store: &Store, record: &mut Value, run: &Value) -> AppResult<()> {
@@ -76,11 +89,16 @@ fn attach_run(store: &Store, record: &mut Value, run: &Value) -> AppResult<()> {
 /// An explicit strategy revision keeps the original source and ancestor quota.
 /// It never edits a frozen run or adopts a rejected response as a successful one.
 pub(crate) fn revise_run(store: &Store, model: &ModelClient, record: &mut Value) -> AppResult<()> {
+    // Existing six-stage runs keep their strategy family even on an explicit
+    // policy refresh. The two-model flow is selected by a new upload only.
+    let strategy = if two_model::is_run(store, record)? { strategy_snapshot(model)? } else { legacy_strategy_snapshot(model)? };
+    revise_run_with_strategy(store, record, strategy)
+}
+fn revise_run_with_strategy(store: &Store, record: &mut Value, strategy: Value) -> AppResult<()> {
     let previous = run_for(store, record)?;
     if previous["budgetState"]["inFlight"] != 0 || previous["status"] == "running" {
         return Err(err("import_busy", "当前处理仍在运行，未切换策略。"));
     }
-    let strategy = strategy_snapshot(model)?;
     if strategy == previous["strategy"] {
         return Err(err(
             "accuracy_strategy_unchanged",
@@ -361,6 +379,8 @@ fn good(report: &Value) -> bool {
 fn artifact(store: &Store, reference: &Value) -> AppResult<Value> {
     if reference.is_null() {
         Ok(Value::Null)
+    } else if reference.get("combinedResponse").is_some() {
+        two_model::component_payload(store, reference)
     } else {
         store::artifact_payload(store, reference)
     }
@@ -405,7 +425,10 @@ fn checked_report(store: &Store, value: &Value, domain: &str) -> AppResult<Value
 }
 fn review_targets(q: &Value, value: &Value, domain: &str) -> Vec<String> {
     let all = targets(q, domain);
-    if scope::publication_scope(value) != "source_only" || domain == "source" {
+    if scope::publication_scope(value) != "source_only" || domain == "source"
+        // In the merged flow metadata is proposed before math is checked.
+        // Its delivered knowledge/path/difficulty depend on that same solution.
+        || domain == "math" && !value["generation"].is_null() {
         return all;
     }
     all.into_iter()
@@ -503,7 +526,7 @@ fn model_call(
             .unwrap_or(65_536);
         let output_cap = if matches!(
             task,
-            "accuracy_solution_generation" | "accuracy_teaching_generation" | "accuracy_repair"
+            "accuracy_solution_generation" | "accuracy_teaching_generation" | "accuracy_repair" | "accuracy_combined_generation" | "accuracy_combined_repair"
         ) {
             65_536
         } else {
@@ -570,6 +593,8 @@ pub(crate) fn process(
 mod projection;
 #[path = "accuracy/runner.rs"]
 mod runner;
+#[path = "accuracy/two_model.rs"]
+mod two_model;
 pub(crate) use projection::{
     apply_to_entry, detail_version, dispatch, eligible, project_record, repair_job,
     validate_action, verify_manifest, verify_question,
@@ -583,6 +608,9 @@ mod replay_tests;
 #[cfg(test)]
 #[path = "accuracy/pipeline_tests.rs"]
 mod tests;
+#[cfg(test)]
+#[path = "accuracy/two_model_tests.rs"]
+mod two_model_tests;
 #[cfg(test)]
 #[path = "accuracy/vision_pipeline_tests.rs"]
 mod vision_pipeline_tests;

@@ -713,7 +713,7 @@ fn source_only_withholds_actual_focus_error_preserves_findings_and_publishes_rem
 }
 
 #[test]
-fn actual_txt_background_entry_omits_production_catalogue_from_source_and_runs_all_six_later_stages()
+fn actual_txt_background_entry_omits_production_catalogue_from_source_and_runs_two_later_requests()
  {
     let provider = Provider::start(Scenario::Clean);
     let (directory, initial_store, model, _unused_original) = fixture(&provider);
@@ -763,8 +763,8 @@ fn actual_txt_background_entry_omits_production_catalogue_from_source_and_runs_a
     let sent = provider.sent();
     assert_eq!(
         sent.len(),
-        7,
-        "one actual transcription request and six independent later stage requests"
+        3,
+        "one actual transcription request and two real combined later requests"
     );
     let first = &sent[0].1;
     let context: Value =
@@ -776,7 +776,7 @@ fn actual_txt_background_entry_omits_production_catalogue_from_source_and_runs_a
     assert!(prompt.contains("只保真整理"));
     assert!(!prompt.contains("每题按同一内容难度标准重新估计"));
     let run = store::load_run(&store, s(&record, "accuracyRunId")).unwrap();
-    assert_eq!(run["budgetState"]["usedCalls"], 7);
+    assert_eq!(run["budgetState"]["usedCalls"], 3);
     assert_eq!(run["budgetState"]["roleCalls"]["sourceParsing"], 1);
     assert_eq!(read_source(&store, &record).unwrap(), original.as_bytes());
     let manifest = super::super::build_manifest(&store, &record).unwrap();
@@ -786,7 +786,7 @@ fn actual_txt_background_entry_omits_production_catalogue_from_source_and_runs_a
         bank_before,
         "teacher publication still requires its explicit step"
     );
-    assert_eq!(provider.sent().len(), 7);
+    assert_eq!(provider.sent().len(), 3);
 }
 
 #[test]

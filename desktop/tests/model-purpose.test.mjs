@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assignImportRole, assignRequiredImportRoles, assignImportRoleThinking, emptyImportRoles, emptyImportRoleThinking, importRoleChoices, importRoleDefinitions, importRoleThinkingChoices, profileImportRoles, pruneImportRoleThinking, readImportRoles, readImportRoleThinking, requiredImportRoles } from '../src/model-purpose.ts';
+import { assignImportModel, assignImportRole, assignImportRoleThinking, emptyImportRoles, emptyImportRoleThinking, importModelDefinitions, importModelProfileId, importRoleChoices, importRoleDefinitions, importRoleThinkingChoices, profileImportRoles, pruneImportRoleThinking, readImportRoles, readImportRoleThinking } from '../src/model-purpose.ts';
 const profiles = [{ id: 'sim-ds-low', name: '模拟拆题配置', provider: 'deepseek', model: 'deepseek-flash', reasoningEffort: 'low' },
   { id: 'sim-qwen', name: '模拟复核配置', provider: 'qianwenai', model: 'qwen3.8-flash', reasoningEffort: 'on' }];
 test('legacy absent/null stays one explicit mode; assigned empty roles are never fallback', () => {
@@ -131,23 +131,28 @@ test('four new purposes have exact profile-bound independent thinking and deleti
   assert.throws(() => assignImportRoleThinking(null, 'independentSolve', 'low', null, profiles));
 });
 
-test('explicit shared selection prepares only six required purposes and preserves optional repair without changing saved input', () => {
-  const savedProfiles = profiles.map(profile => ({ ...profile, configured: true }));
-  const before = structuredClone({ assignedRoles, savedProfiles });
-  const next = assignRequiredImportRoles(assignedRoles, profiles[0].id, profiles, savedProfiles);
-  assert.equal(requiredImportRoles.length, 6);
-  for (const role of requiredImportRoles) assert.equal(next[role.id], profiles[0].id);
+test('two-model selection binds processing and transcription explicitly without changing historical verification or review', () => {
+  const old = { ...assignedRoles, sourceParsing: profiles[1].id, sourceVerification: profiles[1].id, independentSolve: profiles[0].id }, before = structuredClone(old);
+  assert.equal(importModelDefinitions.length, 2);
+  assert.equal(importModelProfileId(old, 'teachingGeneration'), '');
+  const next = assignImportModel(old, 'teachingGeneration', profiles[0].id, profiles);
+  assert.equal(next.sourceParsing, profiles[0].id);
+  assert.equal(next.teachingGeneration, profiles[0].id);
+  assert.equal(importModelProfileId(next, 'teachingGeneration'), profiles[0].id);
   assert.equal(next.teachingReview, profiles[1].id);
-  assert.deepEqual({ assignedRoles, savedProfiles }, before);
-  const fromLegacy = assignRequiredImportRoles(null, profiles[0].id, profiles, savedProfiles);
+  assert.equal(next.sourceVerification, old.sourceVerification);
+  assert.equal(next.independentSolve, old.independentSolve);
+  assert.deepEqual(old, before);
+  const fromLegacy = assignImportModel(null, 'teachingGeneration', profiles[0].id, profiles);
   assert.equal(fromLegacy.teachingReview, null);
+  assert.equal(fromLegacy.sourceVerification, null);
 });
 
-test('explicit shared selection preserves valid per-purpose thinking and only removes bindings made stale by that selection', () => {
+test('processing selection preserves valid transcription thinking and only clears stale overrides', () => {
   const roles = { ...emptyImportRoles(), sourceParsing: profiles[0].id, teachingGeneration: profiles[1].id, teachingReview: profiles[1].id };
   const thinking = { ...emptyImportRoleThinking(), sourceParsing: binding('low'), teachingGeneration: binding('on', profiles[1]), teachingReview: binding('on', profiles[1]) };
   const before = structuredClone({ roles, thinking });
-  const nextRoles = assignRequiredImportRoles(roles, profiles[0].id, profiles, profiles.map(profile => ({ ...profile, configured: true })));
+  const nextRoles = assignImportModel(roles, 'teachingGeneration', profiles[0].id, profiles);
   const nextThinking = pruneImportRoleThinking(thinking, nextRoles, profiles);
   assert.deepEqual(nextThinking.sourceParsing, binding('low'));
   assert.equal(nextThinking.teachingGeneration, null);
@@ -155,12 +160,12 @@ test('explicit shared selection preserves valid per-purpose thinking and only re
   assert.deepEqual({ roles, thinking }, before);
 });
 
-test('shared selection rejects unsaved, incomplete or changed model identities instead of falling back to another profile', () => {
-  const saved = profiles.map(profile => ({ ...profile, configured: true }));
-  assert.throws(() => assignRequiredImportRoles(null, 'missing', profiles, saved));
-  assert.throws(() => assignRequiredImportRoles(null, profiles[0].id, profiles, [saved[1]]));
-  assert.throws(() => assignRequiredImportRoles(null, profiles[0].id, profiles, [{ ...saved[0], configured: false }, saved[1]]));
-  for (const changed of [{ model: 'unknown-model' }, { provider: 'bailian' }, { reasoningEffort: 'high' }]) {
-    assert.throws(() => assignRequiredImportRoles(null, profiles[0].id, [{ ...profiles[0], ...changed }, profiles[1]], saved));
-  }
+test('review selection and clearing leave processing intact and invalid model identities cannot be assigned', () => {
+  const next = assignImportModel(assignedRoles, 'teachingReview', null, profiles);
+  assert.deepEqual(next, { ...assignedRoles, teachingReview: null });
+  assert.equal(importModelProfileId(next, 'teachingReview'), '');
+  const cleared = assignImportModel(assignedRoles, 'teachingGeneration', null, profiles);
+  assert.deepEqual(cleared, { ...assignedRoles, sourceParsing: null, teachingGeneration: null });
+  assert.throws(() => assignImportModel(null, 'teachingGeneration', 'missing', profiles));
+  assert.throws(() => assignImportModel(null, 'independentSolve', profiles[0].id, profiles));
 });

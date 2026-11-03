@@ -1,6 +1,6 @@
 use super::*;
 
-fn frozen_model(
+pub(super) fn frozen_model(
     store: &Store,
     record: &Value,
     model: &ModelClient,
@@ -14,7 +14,7 @@ fn frozen_model(
         model.import_accuracy_model(role)?
     };
     let run = run_for(store, record)?;
-    if role != "teachingReview"
+    if (role != "teachingReview" || super::two_model::is_run(store, record)?)
         && selected.import_execution_identity()? != run["strategy"]["bindings"][role]
     {
         return Err(err(
@@ -22,7 +22,7 @@ fn frozen_model(
             "用途配置已变更，请恢复本次保存的配置后继续；不会自动换模型或重置预算。",
         ));
     }
-    if role != "teachingReview"
+    if (role != "teachingReview" || super::two_model::is_run(store, record)?)
         && model.public_settings()["effectiveImportRoles"][role]
             != run["strategy"]["roleSettings"][role]
     {
@@ -176,7 +176,7 @@ pub(super) fn validate_source_report(q: &Value, report: &Value) -> AppResult<()>
 fn images_for_reference(q: &Value, assets: &[Value]) -> AppResult<Vec<Value>> {
     images_for_group(q, assets, "teacher")
 }
-fn images_for_group(q: &Value, assets: &[Value], group: &str) -> AppResult<Vec<Value>> {
+pub(super) fn images_for_group(q: &Value, assets: &[Value], group: &str) -> AppResult<Vec<Value>> {
     rows(&q[group]["assets"])
         .into_iter()
         .map(|reference| {
@@ -230,7 +230,7 @@ fn images_for_student(q: &Value, assets: &[Value], source_report: &Value) -> App
     }
     Ok(out)
 }
-fn source_page_locations(page: &Value, q: &Value) -> Value {
+pub(super) fn source_page_locations(page: &Value, q: &Value) -> Value {
     let wanted = ids(&q["sourceBlockIds"]);
     let blocks:Vec<_>=rows(&page["blocks"]).into_iter().filter_map(|block|{
         let id=block["id"].as_str().map(str::to_owned).unwrap_or_else(||block["id"].to_string());
@@ -272,7 +272,11 @@ pub(super) fn process(
     record: &mut Value,
     cancel: &AtomicBool,
 ) -> AppResult<()> {
-    validate_configuration(model)?;
+    if super::two_model::is_run(store, record)? {
+        validate_configuration(model)?;
+    } else {
+        validate_legacy_configuration(model)?;
+    }
     let mut saved = record.clone();
     // Remove only the legacy process placeholder from new records. Raw source
     // fields, references, OCR, and provenance stay intact.
@@ -349,6 +353,9 @@ pub(super) fn process_question(
     catalogue: &Value,
     cancel: &AtomicBool,
 ) -> AppResult<()> {
+    if super::two_model::is_run(store, record)? {
+        return super::two_model::process_question(store, model, record, q, value, pages, assets, catalogue, cancel);
+    }
     let qid = s(q, "questionId");
     let source = source_input(q);
     if value["sourceCandidate"].is_null() {
@@ -589,6 +596,9 @@ pub(super) fn repair(
     basis: &str,
     cancel: &AtomicBool,
 ) -> AppResult<()> {
+    if super::two_model::is_run(store, record)? {
+        return super::two_model::repair(store, model, record, q, value, basis, cancel);
+    }
     if value["repairCalls"].as_u64().unwrap_or(0) > 0 || value["solution"].is_null() {
         return Err(err(
             "accuracy_repair_exhausted",

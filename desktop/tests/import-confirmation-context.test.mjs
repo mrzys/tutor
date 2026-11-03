@@ -124,7 +124,7 @@ test("simulated accuracy source_only keeps teaching gates and distinguishes publ
   assert.equal(context.sourceConfirmBlocked, false);
   assert.equal(context.barriers.filter(row => row.kind === "action").length, 0);
   assert.deepEqual(context.barriers, [{ kind: "publication", message: "模拟：主考知识和难度仍须核对" }]);
-  assert.equal(context.statuses.find(row => row.id === "source").status, "模型核对未发现问题");
+  assert.equal(context.statuses.find(row => row.id === "source").status, "模型未发现疑点");
   assert.equal(context.statuses.find(row => row.id === "solution").tone, "blocked");
   assert.equal(context.statuses.find(row => row.id === "assessment").tone, "pending");
 });

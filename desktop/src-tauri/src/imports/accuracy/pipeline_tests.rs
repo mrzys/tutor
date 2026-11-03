@@ -19,10 +19,14 @@ pub(super) enum Scenario {
     TeachingMetadataIssue,
     MetadataOverwrite,
     RichKnowledge,
+    CombinedReportInvalid,
+    CombinedMetadataRepairOverwrite,
+    MathCandidateIssue,
+    CombinedIndependentClaim,
 }
 
 pub(super) struct Provider {
-    endpoint: String,
+    pub(super) endpoint: String,
     requests: Arc<Mutex<Vec<(String, Value, Value)>>>,
     stop: Arc<AtomicBool>,
     worker: Option<JoinHandle<()>>,
@@ -126,6 +130,10 @@ fn read_request(stream: &mut TcpStream) -> (String, Value) {
 fn stage_name(context: &Value) -> &'static str {
     if context.get("document").is_some() {
         "source_transcription"
+    } else if context.get("generationSha256").is_some() {
+        "combined_verification"
+    } else if context["responseContract"]["properties"]["solution"]["type"] == "object" {
+        "combined_generation"
     } else if context.get("originalPages").is_some() {
         "source"
     } else if context.get("independent").is_some() {
@@ -142,6 +150,23 @@ fn stage_name(context: &Value) -> &'static str {
 }
 fn provider_result(stage: &str, context: &Value, scenario: Scenario) -> Value {
     let id = &context["questionId"];
+    if stage == "combined_generation" {
+        let mut result=json!({"questionId":id,"solution":provider_result("solution",context,scenario),"metadata":provider_result("metadata",context,scenario)});
+        if matches!(scenario,Scenario::CombinedMetadataRepairOverwrite) && context.get("concreteProblem").is_some() { result["solution"]["answer"]=json!("unauthorized changed answer"); }
+        return result;
+    }
+    if stage == "combined_verification" {
+        let mut reports=json!({"questionId":id});
+        for domain in ["source","math","teaching"] {
+            let mut input=context.clone();
+            input["requiredTargets"]=context["requiredTargets"][domain].clone();
+            if domain == "source" {input["candidate"]=context["sourceCandidate"].clone();input["originalReference"]=context["sourceCandidate"]["originalReference"].clone();}
+            reports[domain]=provider_result(domain,&input,scenario);
+        }
+        if matches!(scenario,Scenario::CombinedReportInvalid) {reports["teaching"]["checks"]=json!([]);}
+        if matches!(scenario,Scenario::CombinedIndependentClaim) {reports["math"]["disagreements"]=json!([{"claimA":"模拟候选42","claimB":"声称不存在的盲解0","classification":"independent_defect","basis":"模拟错误身份声明：实际没有执行盲解。","affectedFields":["candidate.solution"],"partId":null,"stepA":null,"stepB":null}]);}
+        return reports;
+    }
     if stage == "source_transcription" {
         return json!({"title":"隔离HTTP模拟原卷","questions":[{"questionType":"fill_blank","sourceLabel":"1","pages":[1],"stem":"隔离回归题：计算 $17+25=$____。","options":[],"parts":[],"answer":"42（reference-answer-canary）","solution":"17+25=42（reference-proof-canary）","review":{"status":"ready","confidence":"low","summary":"模拟HTTP：原题及原参考按本次17+25输入保留。","issues":[],"evidencePages":[1]}}]});
     }
@@ -166,7 +191,7 @@ fn provider_result(stage: &str, context: &Value, scenario: Scenario) -> Value {
         return metadata;
     }
     let broken = stage == "source" && matches!(scenario, Scenario::SourceIssue)
-        || stage == "math" && matches!(scenario, Scenario::MathIssue)
+        || stage == "math" && matches!(scenario, Scenario::MathIssue | Scenario::MathCandidateIssue)
         || stage == "teaching"
             && matches!(
                 scenario,
@@ -174,7 +199,9 @@ fn provider_result(stage: &str, context: &Value, scenario: Scenario) -> Value {
             );
     let mut checks = rows(&context["requiredTargets"]).iter().map(|target| json!({"target":target,"status":"checked","basis":"模拟HTTP服务已逐项检查本次明确目标。"})).collect::<Vec<_>>();
     if broken {
-        let index = if stage == "teaching" && matches!(scenario, Scenario::TeachingIssue) {
+        let index = if stage == "math" && matches!(scenario,Scenario::MathCandidateIssue) {
+            checks.iter().position(|check| check["target"]=="candidate.solution").unwrap()
+        } else if stage == "teaching" && matches!(scenario, Scenario::TeachingIssue) {
             checks
                 .iter()
                 .position(|check| check["target"] == "teachingFocus.examFocus")
@@ -231,7 +258,9 @@ fn fixture_with_parts(
     };
     let q = normalize_question(&json!({"questionType":if with_parts{"free_response"}else{"fill_blank"},"stem":if with_parts{"隔离回归题：根据各小问完成计算。"}else{"隔离回归题：计算 $17+25=$____。"},"options":[],"parts":parts,"answer":"42（reference-answer-canary）","solution":"17+25=42（reference-proof-canary）","sourceLabel":"1","pages":[1],"knowledgeSchemaVersion":2,"primaryKnowledgeUids":[],"solutionPaths":[],"difficultyAssessment":{"level":null,"basis":"","rubricVersion":"content-demand-v1"}}), "simulated-accuracy-unique-q", 1).unwrap();
     let mut record = json!({"importId":"simulated-accuracy-pipeline","filename":"隔离HTTP回归.txt","revision":1,"status":"pending_review","source":source,"sourceIssues":[],"extractedPages":[{"page":1,"text":original}],"questions":[q],"publishedQuestionIds":[],"publicationHistory":[],"operations":[],"updatedAt":"2026-11-02T00:00:00Z"});
-    initialize_run(&store, &model, &mut record).unwrap();
+    // This fixture represents a persisted six-stage run. New-flow tests use an
+    // explicit new initialization rather than reinterpreting old evidence.
+    initialize_run_with_strategy(&store, &mut record, &legacy_strategy_snapshot(&model).unwrap()).unwrap();
     store
         .put_document("imports", s(&record, "importId"), &record)
         .unwrap();
