@@ -147,6 +147,9 @@ export function Settings(props: {
   const [personalBaseline, setPersonalBaseline] = createSignal(props.profile?.nickname || "");
   const [modelBaseline, setModelBaseline] = createSignal("");
   const [personalError, setPersonalError] = createSignal("");
+  const [personalSaveFailed, setPersonalSaveFailed] = createSignal(false);
+  const [modelSaveFailed, setModelSaveFailed] = createSignal(false);
+  const [ocrSaveFailed, setOcrSaveFailed] = createSignal(false);
   const [savedMessage, setSavedMessage] = createSignal("");
   const [nickname, setNickname] = createSignal(props.profile?.nickname || "");
   const [profiles, setProfiles] = createSignal<ModelDraft[]>([]);
@@ -322,6 +325,7 @@ export function Settings(props: {
     setError("");
     try {
       applySettings(await request("model_get"));
+      setModelSaveFailed(false);
       setConflict(false);
     } catch (error: any) {
       setError(error.message);
@@ -347,6 +351,7 @@ export function Settings(props: {
     setOcrError("");
     try {
       applyOcr(await request("ocr_get"));
+      setOcrSaveFailed(false);
       setOcrConflict(false);
     } catch (failure: any) { setOcrError(failure.message); }
     finally { setOcrLoading(false); }
@@ -359,6 +364,7 @@ export function Settings(props: {
     if (busy() || ocrLoading() || !ocrLoaded() || ocrConflict()) return;
     setBusy(true);
     setOcrError("");
+    setOcrSaveFailed(false);
     setSavedMessage("");
     try {
       const result = await request("ocr_save", { expectedRevision: ocrRevision(), ...ocr(), baseUrl: ocr().baseUrl.trim(), model: ocr().model.trim() });
@@ -367,6 +373,7 @@ export function Settings(props: {
       setSavedMessage("试卷识别配置已保存");
     } catch (failure: any) {
       setOcrError(failure.message);
+      setOcrSaveFailed(ocrDirty());
       if (failure.code === "revision_conflict") setOcrConflict(true);
     } finally { setBusy(false); }
   }
@@ -520,6 +527,7 @@ export function Settings(props: {
     if (busy() || !nickname().trim()) return;
     setBusy(true);
     setPersonalError("");
+    setPersonalSaveFailed(false);
     setSavedMessage("");
     try {
       const saved = await request("profile_save", { nickname: nickname().trim(), defaultSubject: "math" });
@@ -529,6 +537,7 @@ export function Settings(props: {
       setSavedMessage("个人设置已保存");
     } catch (error: any) {
       setPersonalError(error.message);
+      setPersonalSaveFailed(personalDirty());
     } finally { setBusy(false); }
   }
   async function saveModels() {
@@ -536,10 +545,12 @@ export function Settings(props: {
     if (editing()) { finishEditor(); return; }
     if (profiles().some(item => item.requiresApiKey && !item.apiKey)) {
       setError("已更换服务商的配置需要重新输入密钥，再保存。");
+      setModelSaveFailed(true);
       return;
     }
     setBusy(true);
     setError("");
+    setModelSaveFailed(false);
     setSavedMessage("");
     try {
       const roles = readImportRoles(importRoles(), profiles());
@@ -556,6 +567,7 @@ export function Settings(props: {
       setSavedMessage("模型配置已保存");
     } catch (error: any) {
       setError(error.message);
+      setModelSaveFailed(modelDirty());
       if (error.code === "revision_conflict") setConflict(true);
     } finally {
       setBusy(false);
@@ -593,8 +605,7 @@ export function Settings(props: {
                   </select>
                 </label>
               </fieldset>
-              <ErrorBanner message={personalError()} />
-              <footer class="settings-footer"><span role="status" class="muted">{savedMessage()}</span><button type="submit" class="primary" disabled={busy() || !nickname().trim() || !personalDirty()}>{busy() ? "保存中…" : "保存"}</button></footer>
+              <footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={personalError()} /><span role="status" class="muted">{personalSaveFailed() ? "保存失败，昵称修改仍保留，请处理以上问题后重试。" : savedMessage()}</span></section><button type="submit" class="primary" disabled={busy() || !nickname().trim() || !personalDirty()}>{busy() ? "保存中…" : "保存"}</button></footer>
             </form>
           </Show>
           <Show when={section() === "models"}>
@@ -681,7 +692,7 @@ export function Settings(props: {
                     <button type="button" aria-pressed={importRoles() === null} onClick={() => changeRoleMode("legacy")}>沿用原策略</button>
                   </div>
                   <Show when={importRoles() !== null} fallback={<div class="model-purpose-legacy">
-                    <p class="muted">沿用原策略：DeepSeek Flash低思考拆题；DeepSeek Flash高思考生成解析；千问AI平台Qwen3.8 Flash开启思考复核。</p>
+                    <p class="muted">此处保留历史策略的模型绑定；旧千问 AI 平台配置与阿里云百炼配置分别保存。新上传使用上方明确选择的处理与复核模型，无需为它补配旧平台的特定型号。已有任务仍沿冻结配置执行，不会自动换模型。</p>
                     <Show when={savedImportRoles() === null}><For each={importRoleDefinitions.filter(role => effectiveImportRoles()?.[role.id]?.strategy === "legacy" && effectiveImportRoles()?.[role.id]?.configured === false)}>{role => <p class="warning-text" role="status">{role.label}：{effectiveImportRoles()?.[role.id]?.error?.message || "缺少所需配置，请补充对应模型配置或按用途指定。"}</p>}</For></Show>
                     <p class="muted model-purpose-note">原策略只用于旧导入任务。新上传请在上方选择处理模型和复核模型，再保存。</p>
                   </div>}>
@@ -731,12 +742,12 @@ export function Settings(props: {
           </Show>
         </section>
       </fieldset>
-      <ErrorBanner message={error()} />
+      <Show when={editing()}><ErrorBanner message={error()} /></Show>
       <Show when={conflict()}>
         <p class="muted">修改仍保留在此处。重新读取将放弃本次模型配置修改。</p>
         <button type="button" class="secondary" disabled={busy() || loading()} onClick={() => load(true)}>重新读取（放弃本次修改）</button>
       </Show>
-              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><span role="status" class="muted">{savedMessage() || (modelDirty() ? "有未保存的修改，保存后生效" : "设置已保存")}</span><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
+              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={error()} /><span role="status" class="muted">{modelSaveFailed() && error() ? "保存失败，模型与用途修改仍保留，请处理以上问题后重试。" : savedMessage() || (modelDirty() ? "有未保存的修改，保存后生效" : loaded() ? "设置已保存" : "设置尚未读取，暂不能保存")}</span></section><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
             </form>
           </Show>
           <Show when={section() === "ocr"}>
@@ -770,12 +781,11 @@ export function Settings(props: {
                   <Show when={ocrWarning()}><p class="warning-text" role="alert">{ocrWarning()}</p></Show>
                 </Show>
               </Show>
-              <ErrorBanner message={ocrError()} />
               <Show when={ocrConflict()}>
                 <p class="muted">设置已在其他窗口更新，当前输入仍保留。重新读取将放弃本次识别配置修改。</p>
                 <button type="button" class="secondary" disabled={busy() || ocrLoading()} onClick={() => loadOcr(true)}>重新读取（放弃本次修改）</button>
               </Show>
-              <footer class="settings-footer"><span role="status" class="muted">{savedMessage()}</span><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><button type="submit" class="primary" disabled={busy() || ocrLoading() || !ocrLoaded() || ocrConflict() || !ocrDirty()}>{busy() ? "保存中…" : "保存"}</button></div></footer>
+              <footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={ocrError()} /><span role="status" class="muted">{ocrSaveFailed() ? "保存失败，识别配置修改仍保留，请处理以上问题后重试。" : savedMessage()}</span></section><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><button type="submit" class="primary" disabled={busy() || ocrLoading() || !ocrLoaded() || ocrConflict() || !ocrDirty()}>{busy() ? "保存中…" : "保存"}</button></div></footer>
             </form>
           </Show>
           <Show when={section() === "data"}>

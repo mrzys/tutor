@@ -79,7 +79,7 @@ export function blueprintReview(blueprint: any, tasks: any[]) {
   const expectedPoints = scored ? blueprint.requirements?.targetScore || 0 : 0;
   const missingGoals = missingRequiredGoals(blueprint, tasks);
   const hasExcess = slots.length > 60 || blueprintTypes.some(type => quantity.actualCounts[type] > quantity.expectedCounts[type]);
-  const actionLabel = hasExcess ? "请先把题位减回原定题量" : invalidTasks.length ? "请先调整无效考查任务" : invalidPoints.length ? "请先调整题位分值" : !slots.length ? "生成草稿，保留缺口" : !quantity.matches ? "继续选题，保留缺口" : "采用安排，开始选题";
+  const actionLabel = hasExcess ? "请先调整超出的题位" : invalidTasks.length ? "请先调整无效考查任务" : invalidPoints.length ? "请先调整题位分值" : !slots.length ? "生成草稿，保留缺口" : !quantity.matches ? "继续选题，保留缺口" : "采用安排，开始选题";
   return { quantity, invalidTasks, invalidPoints, points, expectedPoints, missingGoals, hasExcess, actionLabel,
     canSelect: !hasExcess && !invalidTasks.length && !invalidPoints.length };
 }

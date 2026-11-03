@@ -128,6 +128,7 @@ export function BlueprintView(props: {
   let editorReturnId = "blueprint-add-slot";
   const slots = () => props.blueprint?.slots || [];
   const req = () => props.blueprint?.requirements || {};
+  const requirementsText = () => [req().teacherRequest, req().goal].find(value => typeof value === "string" && value.trim())?.trim() || "";
   const goals = () => req().teachingGoals || [];
   const missing = () => missingRequiredGoals(props.blueprint, props.config.tasks || []);
   const review = () => blueprintReview(props.blueprint, props.config.tasks || []);
@@ -185,6 +186,7 @@ export function BlueprintView(props: {
           <h2 id="blueprint-heading" tabIndex={-1}>题位规划</h2>
           <div class="blueprint-heading-actions"><span class="muted">{slots().length} 题</span><button id="blueprint-add-slot" type="button" class="secondary" disabled={props.busy || !editableTypes().length} onClick={() => openEditor()}><Plus size={16} />新增题位</button></div>
         </div>
+        <Show when={requirementsText()}><p class="plan-slot-reason">本卷要求：<RichText text={teachingDisplayText(requirementsText())} /></p></Show>
         <Show when={!quantity().matches}>
           <section class="blueprint-quantity-review" aria-label="题位数量待调整">
             <h3>题位数量与原需求不一致</h3>
@@ -226,7 +228,7 @@ export function BlueprintView(props: {
               <span class="muted">{slot.number}</span>
               <div>
                 <div class="blueprint-task-line"><BlueprintTaskPicker slot={slot} label={slot.taskLabel || props.config.tasks.find((task: any) => task.id === slot.taskId)?.label || "选择考查任务"} options={availableTasks(props.blueprint, slot, props.config.tasks || [])} disabled={props.busy} onChange={id => task(slot, id)} /><BlueprintSlotActions slot={slot} disabled={props.busy} onEdit={() => openEditor(slot)} onRemove={() => remove(slot)} /></div>
-                <p class="plan-target-difficulty">目标难度：{slotDifficulty(slot, req(), props.config.assemblyIndex).targetLabel || "未指定"}</p>
+                <p class="plan-target-difficulty">目标难度：{slotDifficulty(slot, req(), props.config.assemblyIndex).targetLabel || (requirementsText() ? "未单独分档，仍按本卷要求选题" : "未指定")}</p>
                 <Show when={slot.planningReason}>
                   <p class="plan-slot-reason"><RichText text={teachingDisplayText(slot.planningReason)} /></p>
                 </Show>
@@ -252,14 +254,16 @@ export function BlueprintView(props: {
         <Show when={!slots().length}><p class="muted blueprint-empty">尚无题位，请新增题位并选择真实考查任务。</p></Show>
       </section>
       <footer class="workbench-footer">
-        <span class="muted">
+        <span id="blueprint-action-status" class="muted" role="status">
           {slots().length} 题 ·{" "}
           {req().scoringMode === "none" ? "不计分" : `${req().targetScore} 分`}
+          <Show when={review().hasExcess}> · 题位超出原定数量，请删除或调整题型后继续。</Show>
         </span>
         <div class="inline-actions">
           <Show when={!props.configured}><button disabled={props.busy} onClick={props.onConfigure}>配置模型</button></Show>
           <button
             class="primary"
+            aria-describedby="blueprint-action-status"
             disabled={props.busy || !review().canSelect}
             onClick={() => props.configured ? props.onSelect("llm") : props.onConfigure()}
           >

@@ -53,6 +53,7 @@ export function Composer(props: {
   onConfigure: () => void;
   initial?: any;
   initialStudentOffset?: number;
+  onHasInput?: (hasInput: boolean) => void;
   onSubmit: (requirements: any, text: string, mode: string, studentOffset?: number) => void;
 }) {
   const defaults = () => props.config?.defaultRequirements || {};
@@ -71,6 +72,9 @@ export function Composer(props: {
   const [student, setStudent] = createSignal<any>(
     props.initial?.student || null,
   );
+  createEffect(() => props.onHasInput?.(Boolean(
+    text().trim() || scope().length || student() || scored() || purpose() !== "consolidation",
+  )));
   const [menu, setMenu] = createSignal("");
   const [mention, setMention] = createSignal<Mention | null>(null);
   const [students, setStudents] = createSignal<any[]>([]);

@@ -300,6 +300,7 @@ export default function App() {
   const [sidebar, setSidebar] = createSignal(innerWidth > 760);
   const [composerKey, setComposerKey] = createSignal(0);
   const [composerStudentOffset, setComposerStudentOffset] = createSignal<number>();
+  const [composerHasInput, setComposerHasInput] = createSignal(false);
   const [preview, setPreview] = createSignal(false);
   const [kind, setKind] = createSignal("student");
   const [rename, setRename] = createSignal(false);
@@ -320,7 +321,7 @@ export default function App() {
   const [review, setReview] = createSignal("");
   const [toast, setToast] = createSignal("");
   const [discardAssembly, setDiscardAssembly] = createSignal<{ label: string; action: () => void } | null>(null);
-  const hasUnconfirmedAssembly = () => Boolean(req() && !draft()?.draftId && !paper()?.paperId);
+  const hasUnconfirmedAssembly = () => Boolean((req() || composerHasInput()) && !draft()?.draftId && !paper()?.paperId);
   onMount(() => {
     const protectRequirements = (event: BeforeUnloadEvent) => {
       if (!hasUnconfirmedAssembly()) return;
@@ -447,6 +448,7 @@ export default function App() {
     developerEvent("new_assembly");
     setStage("requirements");
     setReq(null);
+    setComposerHasInput(false);
     setComposerStudentOffset(undefined);
     setIntakeSummary(null);
     setPreparation(null);
@@ -1112,6 +1114,7 @@ export default function App() {
                           config={config()}
                           initial={req()}
                           initialStudentOffset={composerStudentOffset()}
+                          onHasInput={setComposerHasInput}
                           busy={Boolean(busy()) || assemblyStartupPending()}
                           configured={configured()}
                           onSubmit={prepare}

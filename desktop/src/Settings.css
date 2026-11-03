@@ -130,6 +130,8 @@
 .model-list-heading p, .model-credentials-note { font-size: var(--font-small); line-height: 1.7; margin: 6px 0 0; }
 .settings-page.is-model-settings .model-provider-children { margin-left: 0; padding-left: 0; border-left: none; }
 .settings-page .model-settings-footer { position: sticky; bottom: -32px; z-index: 5; background: var(--surface); padding: 16px 0 20px; margin-top: 24px; }
+.settings-save-feedback { min-width: 0; flex: 1; display: grid; gap: 6px; overflow-wrap: anywhere; }
+.settings-save-feedback .error-banner { margin: 0; }
 .model-settings-footer > div { display: flex; gap: 10px; flex-shrink: 0; }
 .settings-page .model-settings-footer > div > button { margin: 0; min-height: 44px; }
 .model-purpose-item .settings-model-select { margin-bottom: 5px; }
@@ -180,6 +182,7 @@
   .model-mode-switch { display: flex; }
   .model-mode-switch button { flex: 1; }
   .settings-page .model-settings-footer { bottom: -28px; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+  .settings-save-feedback { flex-basis: 100%; }
   .model-settings-footer > div { margin-left: auto; }
 }
 .settings-import-context { min-width: 0; margin-bottom: 24px; padding: 16px 20px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--surface-radius); font-size: 13px; line-height: 1.7; }
