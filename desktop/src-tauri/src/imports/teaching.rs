@@ -506,12 +506,24 @@ pub(super) fn explicit_review_candidates(
     save_new(&output.join("summary.json"), &summary)?;
     Ok(summary)
 }
+// These patterns come only from the fixed matcher definitions below. Cache
+// their compilation, never a question, candidate, finding or readiness result:
+// every read continues to scan and validate the current source-bound text.
+fn fixed_matcher_regex(expression: &str) -> std::sync::Arc<Regex> {
+    type Compiled = std::collections::HashMap<String, std::sync::Arc<Regex>>;
+    static EXPRESSIONS: OnceLock<std::sync::Mutex<Compiled>> = OnceLock::new();
+    let mut cache = EXPRESSIONS.get_or_init(Default::default).lock()
+        .expect("fixed teaching matcher cache lock");
+    cache.entry(expression.to_owned()).or_insert_with(|| {
+        std::sync::Arc::new(Regex::new(expression).expect("fixed teaching matcher expression"))
+    }).clone()
+}
 fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
     if name == "vector-cross-product" {
         // Require two explicit vector operands, not scalar multiplication or
         // a dot product. Match only a review location, not mathematical error.
         let vector = r"\\(?:overrightarrow|vec)\s*\{\s*[A-Za-z][A-Za-z0-9]{0,11}\s*\}";
-        return Regex::new(&format!(r"{vector}\s*\\times\s*{vector}")).unwrap()
+        return fixed_matcher_regex(&format!(r"{vector}\s*\\times\s*{vector}"))
             .find_iter(text).map(|m| (m.start(), m.end())).collect();
     }
     if name == "higher-derivative-fraction" {
@@ -520,15 +532,15 @@ fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
         let dependent=r"(?:[A-Za-z]|\\[A-Za-z]+)(?:\s*_\s*(?:\{[A-Za-z0-9]+\}|[A-Za-z0-9]))?(?:\s*\([^{}()\r\n]{0,80}\))?";
         let pattern=format!(r"\\(?:frac|dfrac|tfrac)\s*\{{\s*{differential}\s*\^\s*{order}\s*(?:{dependent})?\s*\}}\s*\{{\s*{differential}\s*(?:[A-Za-z]|\\[A-Za-z]+)\s*\^\s*{order}\s*\}}");
         let unicode=format!(r"{differential}[³⁴⁵⁶⁷⁸⁹]\s*(?:{dependent})?\s*/\s*{differential}\s*(?:[A-Za-z]|\\[A-Za-z]+)[³⁴⁵⁶⁷⁸⁹]");
-        return Regex::new(&format!("{pattern}|{unicode}")).unwrap().find_iter(text).map(|m|(m.start(),m.end())).collect();
+        return fixed_matcher_regex(&format!("{pattern}|{unicode}")).find_iter(text).map(|m|(m.start(),m.end())).collect();
     }
     if name == "modulo-notation" {
         // LaTeX command names end before a digit, underscore or Chinese text.
         // A regex word boundary would miss valid compact forms like \pmod3.
-        let mut found = Regex::new(r"(?i)\\(?:pmod|bmod)").unwrap().find_iter(text)
+        let mut found = fixed_matcher_regex(r"(?i)\\(?:pmod|bmod)").find_iter(text)
             .filter(|m| text[m.end()..].chars().next().is_none_or(|c| !c.is_ascii_alphabetic()))
             .map(|m| (m.start(), m.end())).collect::<Vec<_>>();
-        found.extend(Regex::new(r"(?i)[（(]\s*mod\s+[^()（）\r\n]{1,32}[)）]").unwrap()
+        found.extend(fixed_matcher_regex(r"(?i)[（(]\s*mod\s+[^()（）\r\n]{1,32}[)）]")
             .find_iter(text).map(|m| (m.start(), m.end())));
         return found;
     }
@@ -547,7 +559,7 @@ fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
     if let Some((pattern, left, right)) = contextual {
         let english = name == "english-classroom-method";
         let expression = if english { format!("(?i){pattern}") } else { pattern.to_owned() };
-        return Regex::new(&expression).unwrap().find_iter(text)
+        return fixed_matcher_regex(&expression).find_iter(text)
             .filter(|m| !left || text[..m.start()].chars().next_back().is_none_or(|c| !c.is_ascii_alphabetic() && (english || c != '\\')))
             .filter(|m| !right || m.as_str().chars().next_back().is_none_or(|c| !c.is_ascii_alphabetic()) || text[m.end()..].chars().next().is_none_or(|c| !c.is_ascii_alphabetic()))
             .map(|m| (m.start(), m.end())).collect();
@@ -603,8 +615,7 @@ fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
             for sentence in text.split_inclusive(['。', '！', '？', '!', '?', '\n']) {
                 if sentence.contains("同余")
                     || !matcher("modulo-notation", sentence).is_empty()
-                    || Regex::new(r"模\s*\$?\s*\d+|[（(]\s*mod\s+")
-                        .unwrap()
+                    || fixed_matcher_regex(r"模\s*\$?\s*\d+|[（(]\s*mod\s+")
                         .is_match(sentence)
                 {
                     let offset = sentence.as_ptr() as usize - text.as_ptr() as usize;
@@ -622,8 +633,7 @@ fn matcher(name: &str, text: &str) -> Vec<(usize, usize)> {
         }
         _ => panic!("unknown shared teaching matcher {name}"),
     };
-    Regex::new(&format!("(?i){expression}"))
-        .unwrap()
+    fixed_matcher_regex(&format!("(?i){expression}"))
         .find_iter(text)
         .map(|m| (m.start(), m.end()))
         .collect()
@@ -647,8 +657,7 @@ fn display_findings(field: &str, text: &str) -> Vec<Value> {
     for (i, _) in text.match_indices("\\n") {
         let rest = &text[i + 2..];
         if !escaped(text, i)
-            && Regex::new(r"^(?:$|[\s\p{Han}\p{P}$])")
-                .unwrap()
+            && fixed_matcher_regex(r"^(?:$|[\s\p{Han}\p{P}$])")
                 .is_match(rest)
         {
             out.push(json!({"type":"display","code":"literal_newline_escape","fieldPath":field,"start":text[..i].encode_utf16().count()}));

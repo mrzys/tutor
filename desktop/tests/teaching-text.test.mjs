@@ -26,6 +26,17 @@ test('只折合公式附近的单换行，保留段落和原有行内公式', ()
   assert.equal(compactTeachingText('已有$x+1$与\\(y\\)。'), '已有$x+1$与\\(y\\)。');
 });
 
+test('生成稿围住短公式的换行不强制独占一行，实际多行推导仍保留', () => {
+  const raw = '令\n$$\n  x=\\frac{\\pi}{3}-\\alpha,\n$$\n则代入原式。';
+  const view = compactTeachingText(raw);
+  assert.equal(view, '令 \\(x=\\frac{\\pi}{3}-\\alpha,\\) 则代入原式。');
+  assert.deepEqual(mathSegments(view).filter(p => p.type === 'math').map(p => p.source.trim()),
+    mathSegments(raw).filter(p => p.type === 'math').map(p => p.source.trim()));
+  assert.ok(raw.includes('$$\n'));
+  const multiline = '$$\n  x=1\n  y=2\n$$';
+  assert.equal(compactTeachingText(multiline), multiline);
+});
+
 test('多行、矩阵、长推导继续独立展示，图片和表格引用不丢失', () => {
   for (const formula of [String.raw`\[\begin{cases}x=1\\y=2\end{cases}\]`, '$$x=1\ny=2$$', `$$${'x+'.repeat(50)}1$$`]) {
     assert.equal(compactTeachingText(formula), formula);

@@ -93,6 +93,7 @@
 .import-records-table th:nth-child(2) { width: 112px; }
 .import-records-table th:nth-child(3) { width: 80px; }
 .import-records-table th:nth-child(4) { width: 176px; }
+.import-records-table th.import-record-operation { width: 128px; text-align: right; }
 .import-records-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); }
 .import-records-table td:first-child { padding-left: 0; }
 .import-records-table tbody tr:hover { background: var(--surface, #f7f7f7); }
@@ -108,6 +109,8 @@
 .import-record-status span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .import-record-status span[data-status="failed"] { color: var(--danger, #b42318); }
 .import-record-count, .import-record-date { color: var(--muted); font-size: 13px; }
+.import-records-table td.import-record-operation { text-align: right; padding-right: 0; }
+.import-record-action { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 112px; min-height: 44px; padding: 6px 8px; white-space: nowrap; font-size: 14px; }
 .import-records-pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 0; font-size: 13px; }
 .import-page-controls, .import-page-numbers { display: flex; align-items: center; gap: 4px; }
 .import-page-numbers button { min-width: 44px; padding: 8px; }
@@ -130,6 +133,8 @@
   .import-records-table td { border: 0; }
   .import-records-table td:first-child { flex: 1; min-width: 0; padding: 8px 0; }
   .import-records-table .import-record-status { flex-shrink: 0; padding: 8px 0 8px 6px; font-size: 12px; }
+  .import-records-table tr { flex-wrap: wrap; }
+  .import-records-table td.import-record-operation { flex: 0 0 100%; padding: 0 0 4px; }
   .import-records-table .import-record-count, .import-records-table .import-record-date { display: none; }
   .import-record-open > svg:last-child { display: none; }
   .import-record-name .import-record-mobile-meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }

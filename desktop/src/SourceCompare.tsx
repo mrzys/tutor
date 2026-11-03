@@ -7,7 +7,7 @@ import { request } from "./bridge";
 import { RichText } from "./Paper";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import "./SourceCompare.css";
-import { sourcePageFocus } from "./source-page-focus";
+import { sourcePageFocusState } from "./source-page-focus";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 type CompareMode = "split" | "image" | "text";
@@ -53,23 +53,30 @@ export function SourcePageViewer(props: SourcePageViewerProps) {
   const [error, setError] = createSignal(""), [retry, setRetry] = createSignal(0), [focusTick, setFocusTick] = createSignal(0);
   const [expanded, setExpanded] = createSignal(false);
   let pane!: HTMLDivElement, stage!: HTMLDivElement, canvas!: HTMLCanvasElement;
+  let originalImage: HTMLImageElement | undefined, focusFrame = 0;
   let closed = false, loadVersion = 0, renderVersion = 0, pdfVersion = 0, identity = "", pdfOwner = "", autoFocusIdentity = "";
   let pdfTask: PDFDocumentLoadingTask | null = null, pdfPromise: Promise<PDFDocumentProxy> | null = null, renderTask: RenderTask | null = null;
   let drag: { pointer: number; x: number; y: number; left: number; top: number } | null = null;
   const cache = new Map<string, any>();
-  const focus = createMemo(() => sourcePageFocus(source(), String(props.question?.questionId || "")));
+  // The review question is a reactive proxy: unrelated detail/prefetch updates
+  // must not reset a source image whose import, question and page are unchanged.
+  const sourceImportId = createMemo(() => props.importId);
+  const sourceQuestionId = createMemo(() => String(props.question?.questionId || ""));
+  const focusState = createMemo(() => sourcePageFocusState(source(), sourceQuestionId()));
+  const focus = () => focusState().focus;
+  const imageUrl = createMemo(() => source()?.image ? `data:image/png;base64,${source().image.dataBase64}` : "");
   const pages = createMemo(() => [...new Set((props.pages || []).filter(number => Number.isSafeInteger(number) && number > 0))]);
   const pageCount = () => source()?.pageCount || Math.max(1, ...pages());
   function stopRender() { renderVersion++; renderTask?.cancel(); renderTask = null; if (canvas) { canvas.width = 0; canvas.height = 0; } }
   function resetPdf() { stopRender(); pdfVersion++; void pdfTask?.destroy().catch(() => {}); pdfTask = null; pdfPromise = null; pdfOwner = ""; }
   createEffect(() => {
-    const next = `${props.importId}|${props.question?.questionId || ""}`;
+    const next = `${sourceImportId()}|${sourceQuestionId()}`;
     if (next === identity) return;
     if (identity.split("|")[0] !== props.importId) { resetPdf(); cache.clear(); }
     identity = next; setExpanded(false); setPage(pages()[0] || 1); setZoom(initialZoom); setFocusTick(value => value + 1);
   });
   createEffect(() => {
-    const importId = props.importId, questionId = String(props.question?.questionId || ""), number = page(); retry();
+    const importId = sourceImportId(), questionId = sourceQuestionId(), number = page(); retry();
     const own = ++loadVersion, key = `${importId}|${questionId}|${number}`;
     stopRender(); setSource(null); setImageReady(false); setError(""); setLoading(true);
     (async () => {
@@ -116,10 +123,27 @@ export function SourcePageViewer(props: SourcePageViewerProps) {
     })().catch(failure => { if (!closed && own === renderVersion && failure.name !== "RenderingCancelledException") setError(failure.message || "原卷页面显示失败。"); })
       .finally(() => { if (!closed && own === renderVersion) setRendering(false); });
   });
+  function verifyRenderedImage(element: HTMLImageElement | undefined) {
+    const value = source()?.image;
+    if (!element || !element.isConnected || element !== originalImage || !value || element.getAttribute("src") !== imageUrl()
+      || !element.complete || !element.naturalWidth || !element.naturalHeight) return;
+    if (value.width && (element.naturalWidth !== value.width || element.naturalHeight !== value.height)) {
+      setError("原页图像尺寸与已保存材料不一致，未定位题目。"); setImageReady(false); return;
+    }
+    setImageReady(true);
+  }
+  createEffect(() => {
+    imageUrl(); const own = loadVersion;
+    if (!source()?.image) return;
+    // A cached page may keep the same decoded <img> and src during a question
+    // switch. No new load event is guaranteed; validate that actual element too.
+    queueMicrotask(() => { if (!closed && own === loadVersion) verifyRenderedImage(originalImage); });
+  });
   function locate() {
-    if (!pane || !stage) return; const bounds = focus()?.bounds;
-    pane.scrollTo({ left: bounds ? Math.max(0, stage.offsetLeft + stage.clientWidth * bounds.left / 100 - 16) : 0,
-      top: bounds ? Math.max(0, stage.offsetTop + stage.clientHeight * bounds.top / 100 - 24) : 0, behavior: "instant" });
+    const bounds = focus()?.bounds;
+    if (!pane || !stage || !bounds || !imageReady()) return;
+    pane.scrollTo({ left: Math.max(0, stage.offsetLeft + stage.clientWidth * bounds.left / 100 - 16),
+      top: Math.max(0, stage.offsetTop + stage.clientHeight * bounds.top / 100 - 24), behavior: "instant" });
   }
   createEffect(() => {
     focusTick(); props.focusRequest; zoom(); width(); if (!imageReady()) return;
@@ -131,10 +155,12 @@ export function SourcePageViewer(props: SourcePageViewerProps) {
       // zoom choices are retained until switching question or page.
       setZoom(Math.max(1, Math.min(2.5, Math.round(90 / current.bounds.width * 4) / 4)));
     }
-    requestAnimationFrame(() => { if (!closed) locate(); });
+    cancelAnimationFrame(focusFrame);
+    const own = loadVersion;
+    focusFrame = requestAnimationFrame(() => { focusFrame = 0; if (!closed && own === loadVersion) locate(); });
   });
   onMount(() => { const observer = new ResizeObserver(entries => { const next = entries[0]?.contentRect.width; if (next && Math.round(next) !== width()) setWidth(Math.round(next)); }); observer.observe(pane); onCleanup(() => observer.disconnect()); });
-  onCleanup(() => { closed = true; loadVersion++; resetPdf(); cache.clear(); });
+  onCleanup(() => { closed = true; loadVersion++; cancelAnimationFrame(focusFrame); resetPdf(); cache.clear(); });
   function beginDrag(event: PointerEvent) { if (event.button !== 0 || event.pointerType === "touch" || (event.target as HTMLElement).closest("button,a,input,select,textarea")) return; drag = { pointer:event.pointerId, x:event.clientX, y:event.clientY, left:pane.scrollLeft, top:pane.scrollTop }; pane.setPointerCapture(event.pointerId); pane.classList.add("is-dragging"); event.preventDefault(); }
   function endDrag() { drag = null; pane.classList.remove("is-dragging"); }
   return <><section class="source-page-viewer" aria-label="本题原卷">
@@ -148,14 +174,17 @@ export function SourcePageViewer(props: SourcePageViewerProps) {
         <button type="button" aria-label="缩小原图" title="缩小原图" disabled={zoom() <= 1} onClick={()=>setZoom(v=>Math.max(1,v-.25))}><ZoomOut size={16}/></button>
         <button type="button" title="恢复适合宽度" aria-label="恢复适合宽度" onClick={()=>setZoom(1)}>{Math.round(zoom()*100)}%</button>
         <button type="button" aria-label="放大原图" title="放大原图" disabled={zoom() >= 3} onClick={()=>setZoom(v=>Math.min(3,v+.25))}><ZoomIn size={16}/></button>
-        <button type="button" class="source-page-locate" aria-label="定位当前题原图" title={!focus() ? "缺少可靠的本题坐标，显示整页原图" : "定位当前题在原卷中的位置"} disabled={!focus() || !imageReady()} onClick={locate}><LocateFixed size={16}/>定位本题</button>
+        <button type="button" class="source-page-locate" aria-label="定位当前题原图" title={!focus() ? focusState().reason : !imageReady() ? "原图显示完成后可定位本题" : "定位当前题在原卷中的位置"} disabled={!focus() || !imageReady()} onClick={locate}><LocateFixed size={16}/>定位本题</button>
       </div>
     </div>
+    <Show when={source() && !loading() && !error() && (!focus() || !imageReady())}>
+      <p class="source-page-location-note" role="status">{focus() ? "原图正在显示，完成后将自动定位本题。" : focusState().reason}</p>
+    </Show>
     <div class="source-page-image-scroll" ref={pane} tabIndex={0} aria-label="原图，可滚动或拖动浏览" onPointerDown={beginDrag} onPointerMove={event=>{ if (drag?.pointer===event.pointerId) { pane.scrollLeft=drag.left+drag.x-event.clientX; pane.scrollTop=drag.top+drag.y-event.clientY; } }} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}>
       <Show when={loading()}><Busy label="正在读取已保存的原卷…"/></Show><ErrorBanner message={error()} retry={()=>{cache.clear();setRetry(v=>v+1);}}/>
       <Show when={rendering()}><p class="muted" role="status">正在显示原卷页面…</p></Show>
       <div class="source-page-image-stage" ref={stage} style={{width:`${zoom()*100}%`}}>
-        <Show when={source()?.image}><img class="source-page-original" draggable={false} src={`data:image/png;base64,${source()?.image.dataBase64}`} alt={`原卷第 ${page()} 页`} onLoad={event=>{ const value=source()?.image; if (value?.width && (event.currentTarget.naturalWidth!==value.width || event.currentTarget.naturalHeight!==value.height)) {setError("原页图像尺寸与已保存材料不一致，未定位题目。");setImageReady(false);return;}setImageReady(true); }} onError={()=>{setImageReady(false);setError("已保存的原页图像无法显示，请查看原卷 PDF。");}}/></Show>
+        <Show when={source()?.image}><img class="source-page-original" ref={originalImage} draggable={false} src={imageUrl()} alt={`原卷第 ${page()} 页`} onLoad={event=>verifyRenderedImage(event.currentTarget)} onError={event=>{ if (!event.currentTarget.isConnected || event.currentTarget !== originalImage || event.currentTarget.getAttribute("src") !== imageUrl()) return; setImageReady(false);setError("已保存的原页图像无法显示，请查看原卷 PDF。");}}/></Show>
         <canvas class="source-page-canvas" ref={canvas} hidden={Boolean(source()?.image) || !source()?.hasPdf} aria-label={`原卷 PDF 第 ${page()} 页`}/>
         <Show when={imageReady()}><For each={focus()?.boxes || []}>{box=><span class="source-page-focus" aria-hidden="true" style={{left:`${box.left}%`,top:`${box.top}%`,width:`${box.width}%`,height:`${box.height}%`}}/>}</For></Show>
       </div>

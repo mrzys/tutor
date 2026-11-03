@@ -3,6 +3,7 @@ import { Portal } from "solid-js/web";
 import { operationId, request } from "./bridge";
 import { ErrorBanner, Modal } from "./ui";
 import "./ImportAccuracyStatus.css";
+import { ReviewMessage } from "./ReviewMessage";
 import { accuracyActionCanSubmit, accuracyActionCurrent, accuracyActionPayload, accuracyBudget, accuracyCanReviewDomain, accuracyDomainLabel, accuracyDomains,
   accuracyEvidence, accuracyFieldLabel, accuracyFindings, accuracyScopeCurrent, accuracyScopePayload, accuracyStatus, createAccuracyActionDraft, createAccuracyScopeDraft,
   type AccuracyAction, type AccuracyActionDraft, type AccuracyDomain, type AccuracyScopeDraft } from "./import-accuracy";
@@ -74,21 +75,21 @@ export function ImportAccuracyStatus(props: { question: any; importId: string; r
     } finally { if (session.activeOperationId === selected.operationId) { session.activeOperationId = null; setSaving(false); } }
   }
   return <Show when={status()}>{overall => <section class="import-accuracy-status" aria-label="分域核对">
-    <p role="status"><strong>{overall().stageLabel}</strong> · {overall().label}<Show when={overall().reason}>：{overall().reason}</Show></p>
+    <p role="status"><strong>{overall().stageLabel}</strong> · {overall().label}<Show when={overall().reason}>：<ReviewMessage text={overall().reason} /></Show></p>
     <For each={accuracyDomains}>{domain => <div class="import-teaching-actions">
       <strong>{domain.label}</strong><span>{accuracyStatus(props.question, domain.id)?.label || "尚未完成核对"}</span>
-      <Show when={accuracyStatus(props.question, domain.id)?.reason && accuracyStatus(props.question, domain.id)?.reason !== accuracyStatus(props.question, domain.id)?.label}><span class="muted">{accuracyStatus(props.question, domain.id)?.reason}</span></Show>
+      <Show when={accuracyStatus(props.question, domain.id)?.reason && accuracyStatus(props.question, domain.id)?.reason !== accuracyStatus(props.question, domain.id)?.label}><span class="muted"><ReviewMessage text={accuracyStatus(props.question, domain.id)?.reason} /></span></Show>
       <Show when={accuracyCanReviewDomain(props.question, domain.id)}><button type="button" class="text-button" disabled={props.disabled || saving()} onClick={() => begin("review", domain.id)}>人工核对{domain.label}</button></Show>
     </div>}</For>
     <Show when={findings().length}><details><summary>具体问题（{findings().length}）</summary>
-      <For each={findings()}>{finding => <div><p><strong>{accuracyDomainLabel(finding.domain)}<Show when={accuracyFieldLabel(finding.fieldPath)}> · {accuracyFieldLabel(finding.fieldPath)}</Show>：</strong>{finding.message}</p>
-        <Show when={finding.basis}><p class="muted">核对依据：{finding.basis}</p></Show>
+      <For each={findings()}>{finding => <div><p><strong>{accuracyDomainLabel(finding.domain)}<Show when={accuracyFieldLabel(finding.fieldPath)}> · {accuracyFieldLabel(finding.fieldPath)}</Show>：</strong><ReviewMessage text={finding.message} /></p>
+        <Show when={finding.basis}><p class="muted">核对依据：<ReviewMessage text={finding.basis} /></p></Show>
       </div>}</For>
     </details></Show>
     <Show when={evidence().length}><details><summary>核对依据与分歧</summary><For each={evidence()}>{domain => <section><h4>{domain.label}</h4>
-      <Show when={domain.basis}><p>{domain.basis}</p></Show><For each={domain.checks}>{check => <p><strong>{check.label} · {check.status}：</strong>{check.basis}</p>}</For>
-      <For each={domain.disagreements}>{item => <section><p><strong>{item.label}</strong></p><Show when={item.claimA}><p>候选结论：{item.claimA}</p></Show><Show when={item.claimB}><p>独立解结论：{item.claimB}</p></Show>
-        <Show when={item.stepA}><p>候选步骤：{item.stepA}</p></Show><Show when={item.stepB}><p>独立解步骤：{item.stepB}</p></Show><Show when={item.basis}><p>核对依据：{item.basis}</p></Show>
+      <Show when={domain.basis}><p><ReviewMessage text={domain.basis} /></p></Show><For each={domain.checks}>{check => <p><strong>{check.label} · {check.status}：</strong><ReviewMessage text={check.basis} /></p>}</For>
+      <For each={domain.disagreements}>{item => <section><p><strong>{item.label}</strong></p><Show when={item.claimA}><p>候选结论：<ReviewMessage text={item.claimA} /></p></Show><Show when={item.claimB}><p>独立解结论：<ReviewMessage text={item.claimB} /></p></Show>
+        <Show when={item.stepA}><p>候选步骤：<ReviewMessage text={item.stepA} /></p></Show><Show when={item.stepB}><p>独立解步骤：<ReviewMessage text={item.stepB} /></p></Show><Show when={item.basis}><p>核对依据：<ReviewMessage text={item.basis} /></p></Show>
       </section>}</For>
     </section>}</For></details></Show>
     <details><summary>本次发布范围 · {savedScope() === "source_only" ? "原题及组卷信息" : "原题及AI答案解析、考查信息"}</summary>

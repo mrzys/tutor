@@ -1,6 +1,7 @@
 import { For, Show, type JSX } from "solid-js";
 import { Pencil } from "lucide-solid";
 import type { TriageIssue } from "./import-triage";
+import { ReviewMessage } from "./ReviewMessage";
 
 /** Rich text remains selectable/readable; a click opens the exact AI field.
  * Existing links, images and marked-issue controls retain their own actions. */
@@ -16,7 +17,7 @@ export function TeachingEditableField(props: {
       props.onEdit(props.path);
     }}>
     {props.children}
-    <For each={props.issues.filter(issue => issue.target?.fieldPath === props.path)}>{issue => <p class="import-teaching-field-issue">{issue.message}</p>}</For>
+    <For each={props.issues.filter(issue => issue.target?.fieldPath === props.path)}>{issue => <p class="import-teaching-field-issue"><ReviewMessage text={issue.message} /></p>}</For>
     <Show when={props.editable}><button type="button" class="text-button import-teaching-field-edit"
       aria-label={`修改${props.label}`} title={`修改${props.label}`} onClick={() => props.onEdit(props.path)}><Pencil size={15} /></button></Show>
   </div>;

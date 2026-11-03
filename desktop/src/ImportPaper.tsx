@@ -55,10 +55,13 @@ import { requiredReviewChecks, sourceReviewLabel, sourceReviewDescription, brief
 import { MathSnippetBar } from "./MathSnippetBar";
 import { TeachingReviewActions } from "./TeachingAnalysis";
 import { ImportQuestionReading } from "./ImportQuestionReading";
+import { ImportReadingTabs, type ImportReadingTab } from "./ImportReadingTabs";
+import { ImportConfirmationContext } from "./ImportConfirmationContext";
+import { importConfirmationContext } from "./import-confirmation-context";
 import { beginAccuracyStatusAction, createAccuracyStatusSession, ImportAccuracyStatus } from "./ImportAccuracyStatus";
-import { accuracyCanReviewDomain, accuracyDomainLabel, accuracyDomains, accuracyFieldLabel, accuracyFindings, accuracyImportAction, accuracyKnowledgeNames, accuracyModelReadiness, accuracyPendingDomains, accuracyPremiseNames, accuracyPreviewCandidate, accuracyReadingExpanded, accuracyStatus, accuracySuggestedDomain, type AccuracyDomain } from "./import-accuracy";
+import { accuracyCanReviewDomain, accuracyDomainLabel, accuracyFieldLabel, accuracyFindings, accuracyImportAction, accuracyKnowledgeNames, accuracyModelReadiness, accuracyPendingDomains, accuracyPremiseNames, accuracyPreviewCandidate, accuracyStatus, accuracySuggestedDomain, type AccuracyDomain } from "./import-accuracy";
 import { uploadModelDestinations, uploadOcrDestination } from "./import-upload";
-import { ImportReviewHeader } from "./ImportReviewHeader";
+import { ImportReviewHeader, type ImportReviewPrimaryFilter } from "./ImportReviewHeader";
 import { ImportSourceFieldEditor } from "./ImportSourceFieldEditor";
 import { ImportEditableSourceField } from "./ImportEditableSourceField";
 import { readImportSourceField, replaceImportSourceField, type ImportSourceFieldRequest } from "./import-source-edit";
@@ -68,8 +71,10 @@ import { importTriage, type TriageIssue } from "./import-triage";
 import { groupReviewIssues, isReviewOutcomeGroup, sourceCorrectionForGroup, reviewDisplayMessage, reviewFieldLabel, type ReviewIssueGroup, type SourceCorrectionDisplay } from "./import-review-presentation";
 import { importTeachingStatus } from "./import-teaching-status";
 import { importFailure, importStage } from "./import-process";
-import { sourceConfirmationUpdate, sourceConfirmationScopeLabel } from "./import-source-confirmation";
+import { sourceConfirmationUpdate, sourceConfirmationScopeLabel, sourceConfirmationContentIssues } from "./import-source-confirmation";
 import { teachingDisplayText } from "./teaching-text";
+import { ReviewMessage } from "./ReviewMessage";
+import { reviewMessageText } from "./review-message";
 import { importReviewSummary, isTeachingPending, sourceReviewState, reviewRowsForFilter, nextReviewQuestion, reviewStatusLabel } from "./import-review-flow";
 import { hasImportQuestionDetail, mergeImportView, mergeImportQuestionDetail, createImportQuestionRequests, createImportRefreshQueue } from "./import-detail-sync";
 import { createImportAnnotationPlan, importAnnotationPlanCurrent, type ImportAnnotationPlan } from "./import-annotation";
@@ -199,7 +204,7 @@ export function ImportPaper(props: {
   const [teachingControls, setTeachingControls] = createSignal<Record<string, TeachingReviewControls>>({});
   const [teachingActions, setTeachingActions] = createSignal<Record<string, any>>({});
   const [sourceCorrectionDisplays, setSourceCorrectionDisplays] = createSignal<Record<string, SourceCorrectionDisplay[]>>({});
-  const [triageFilter, setTriageFilter] = createSignal("source_pending");
+  const [triageFilter, setTriageFilter] = createSignal<ImportReviewPrimaryFilter>("source_pending");
   const [focusedIssue, setFocusedIssue] = createSignal("");
   const [locationNotice, setLocationNotice] = createSignal("");
   const [teachingDirty, setTeachingDirty] = createSignal(false);
@@ -222,12 +227,14 @@ export function ImportPaper(props: {
   let lastFocusedTextarea: HTMLTextAreaElement | null = null;
   const [sourceFocusRequest, setSourceFocusRequest] = createSignal(0);
   const [detailTab, setDetailTab] = createSignal<"solution" | "assessment">("solution");
-  const [detailFocusRequest, setDetailFocusRequest] = createSignal(0);
   const [queueVisible, setQueueVisible] = createSignal(true);
   const [issuesVisible, setIssuesVisible] = createSignal(false);
   const [reviewDomain, setReviewDomain] = createSignal<"source" | "teaching">("source");
   const [accuracyFocus, setAccuracyFocus] = createSignal<{ questionId: string; domain: AccuracyDomain } | null>(null);
-  const accuracyDomain = () => accuracyFocus()?.questionId === current()?.questionId ? accuracyFocus()!.domain : accuracySuggestedDomain(current());
+  const accuracyDomain = () => {
+    const focus = accuracyFocus(), question = current();
+    return focus && question && focus.questionId === question.questionId ? focus.domain : accuracySuggestedDomain(question);
+  };
   const pendingAccuracyDomains = () => accuracyPendingDomains(current());
   const [editTeachingField, setEditTeachingField] = createSignal("");
   const [sourceConfirmationNote, setSourceConfirmationNote] = createSignal("");
@@ -296,11 +303,10 @@ export function ImportPaper(props: {
     if (identity === reviewQuestionIdentity) return;
     reviewQuestionIdentity = identity;
     const row = currentTriage();
-    const domain = triageFilter() === "teaching" ? "teaching" : ["source_pending", "source_ready"].includes(triageFilter()) ? "source" : row && sourceReviewState(row) === "pending" ? "source" : row && isTeachingPending(row) ? "teaching" : "source";
+    const domain = ["source_pending", "source_ready"].includes(triageFilter()) ? "source" : row && sourceReviewState(row) === "pending" ? "source" : row && isTeachingPending(row) ? "teaching" : "source";
     setReviewDomain(domain);
     const target = reviewProblemGroups().flatMap(group => group.locatableIssues).find(issue => issue.domain === domain);
     setDetailTab(domain === "teaching" && teachingFieldPanel(target?.target?.fieldPath) === "assessment" ? "assessment" : "solution");
-    setDetailFocusRequest(value => value + 1);
     setIssuesVisible(!accuracyRecord() && reviewProblemGroups().some(group => !group.locatableIssues.length));
     if (target) requestAnimationFrame(() => {
       if (`${record()?.importId}|${current()?.questionId}|${triageFilter()}` === identity && preview() && !teachingEditorOpen() && !sourceEditorOpen()) locateIssue(target);
@@ -334,7 +340,8 @@ export function ImportPaper(props: {
     const accuracy = accuracyStatus(row.question);
     if (accuracy) {
       if (["ready", "reviewed"].includes(accuracy.kind)) return "";
-      return accuracy.reason || accuracy.label;
+      const text = accuracy.reason || accuracy.label || "";
+      return text.length > 8 ? text.slice(0, 8) : text;
     }
     const substantive = row.issues.filter(issue => issue.id !== "source:not-reviewed");
     if (!substantive.length) return "";
@@ -348,7 +355,13 @@ export function ImportPaper(props: {
       if (["generation_failed", "review_failed"].includes(state.kind)) return title;
       if (title === "考查信息待核对") return title;
     }
-    return (first.members.some(issue => issue.type === "term") ? first.title : first.message).slice(0, 60);
+    const title = first.title;
+    if (title) {
+      if (title.startsWith("检查术语“")) return "术语提示";
+      if (title.length > 8) return title.slice(0, 8);
+      return title;
+    }
+    return "待核对";
   }
   function TeachingStatusActions() {
     return <Show when={!current()?.accuracy}><div class="import-teaching-state-actions">
@@ -376,7 +389,7 @@ export function ImportPaper(props: {
   const canShowOriginal = () => Boolean(record()?.ocrSource || record()?.renderedPdf || record()?.source?.extension === "pdf");
   const otherQuestionEdits = createMemo(() => dirty() && questions().some(item => item.questionId !== current()?.questionId
     && JSON.stringify(item) !== JSON.stringify((record()?.questions || []).find((old: any) => old.questionId === item.questionId))));
-  function changeFilter(value: string) {
+  function changeFilter(value: ImportReviewPrimaryFilter) {
     guardNavigation(() => {
       setTriageFilter(value);
       if (!visibleTriage().some(row => row.questionId === current()?.questionId) && visibleTriage()[0]) selectQuestion(visibleTriage()[0].questionId);
@@ -394,21 +407,45 @@ export function ImportPaper(props: {
     guardNavigation(() => { document.querySelectorAll(".import-field-highlight").forEach(el => el.classList.remove("import-field-highlight")); setSelected(questions().findIndex(q => q.questionId === id)); setPreview(true); setDetailTab("solution"); setEditTeachingField(""); setEditTeachingRequest(0); setFocusedIssue(""); setLocationNotice(""); requestAnimationFrame(() => { const pane = document.querySelector<HTMLElement>(".import-reading-pane"); if (pane) pane.scrollTop = 0; const decision = document.querySelector<HTMLElement>(".import-review-body"); if (decision) decision.scrollTop = 0; }); });
   }
   function nextTodo() {
-    const task = accuracyRecord() ? "source_pending" : triageFilter() === "teaching" || reviewDomain() === "teaching" ? "teaching" : "source_pending";
+    const task = accuracyRecord() ? "source_pending" : reviewDomain() === "teaching" ? "teaching" : "source_pending";
     const next = nextReviewQuestion(triage().rows, current()?.questionId, task);
-    if (next) guardNavigation(() => { if (!visibleTriage().some(row=>row.questionId === next)) setTriageFilter(task); selectQuestion(next); });
+    if (next) guardNavigation(() => { if (!visibleTriage().some(row=>row.questionId === next)) setTriageFilter(task === "teaching" ? "all" : "source_pending"); selectQuestion(next); });
     else setNotice(accuracyRecord() ? "没有其他待处理题；本题尚未解决的事项仍保留，可查看可入库题。" : task === "teaching" ? "没有其他AI内容待办；本题未解决的问题仍保留。" : "没有其他原题待核对；可查看可入库题，AI内容待办另行保留。");
   }
-  function focusAccuracyDomain(domain: AccuracyDomain) {
+  function scrollReadingTarget(target: HTMLElement, includeTabs = true) {
+    const pane = target.closest<HTMLElement>(".import-reading-pane");
+    if (!pane) return;
+    const headingHeight = pane.querySelector<HTMLElement>(".import-question-heading")?.getBoundingClientRect().height || 0;
+    const tabsHeight = includeTabs ? pane.querySelector<HTMLElement>(".import-reading-tabs")?.getBoundingClientRect().height || 0 : 0;
+    pane.scrollTo({ top: pane.scrollTop + target.getBoundingClientRect().top - pane.getBoundingClientRect().top - headingHeight - tabsHeight - 12, behavior: "instant" });
+  }
+  function focusAccuracyDomain(domain: AccuracyDomain, reveal = true) {
     if (!current()?.accuracy) return;
     setAccuracyFocus({ questionId: current().questionId, domain });
     if (reviewView() === "image") setReviewView("split");
-    requestAnimationFrame(() => {
+    if (reveal) requestAnimationFrame(() => {
       const selector = domain === "source" ? ".import-source-reading" : `[data-reading-section="${domain === "math" ? "solution" : "assessment"}"]`;
       const target = document.querySelector<HTMLElement>(selector);
-      if (target instanceof HTMLDetailsElement) target.open = true;
-      target?.scrollIntoView({ block: "start" });
+      if (target) scrollReadingTarget(target, domain !== "source");
     });
+  }
+  function selectReadingTab(tab: ImportReadingTab) {
+    if (reviewView() === "image") setReviewView("split");
+    if (current()?.accuracy) focusAccuracyDomain(tab === "solution" ? "math" : "teaching", false);
+    else setDetailTab(tab);
+  }
+  function showPublicationConditions() {
+    if (reviewView() === "image") setReviewView("split");
+    requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(".import-accuracy-status");
+      if (target) scrollReadingTarget(target);
+    });
+  }
+  function observeQuestionHeading(element: HTMLElement) {
+    const update = () => element.parentElement?.style.setProperty("--import-question-heading-height", `${element.getBoundingClientRect().height}px`);
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    onCleanup(() => observer.disconnect());
   }
   function beginAccuracyAction(kind: "review" | "repair") {
     if (!current()?.accuracy || busy() || activeJob() || publishFrozen() || dirty() || editingDirty()) return;
@@ -420,32 +457,33 @@ export function ImportPaper(props: {
     setReviewDomain(issue.domain);
     if (reviewView() === "image") setReviewView("split");
     if (issue.domain === "teaching") setDetailTab(teachingFieldPanel(issue.target?.fieldPath) === "assessment" ? "assessment" : "solution");
-    setDetailFocusRequest(value => value + 1);
     setFocusedIssue(issue.id);
-    const target = issue.target;
-    if (!target || issue.location === "unavailable") { setIssuesVisible(true); setLocationNotice("请按完整字段核对。"); return; }
-    const fields = Array.from(document.querySelectorAll<HTMLElement>("[data-import-field]"));
-    const element = fields.find(el => el.dataset.importField === `${issue.domain}:${target.fieldPath}`);
-    if (!element) { setLocationNotice("当前内容无法定位到原句段，请查看完整字段。"); return; }
-    for (let parent = element.parentElement; parent; parent = parent.parentElement) if (parent instanceof HTMLDetailsElement) parent.open = true;
-    document.querySelectorAll(".import-field-highlight").forEach(el => el.classList.remove("import-field-highlight"));
-    element.classList.add("import-field-highlight");
-    const mark = Array.from(element.querySelectorAll<HTMLElement>("[data-review-issue-ids]"))
-      .find(item => item.dataset.reviewIssueIds?.split(" ").includes(issue.id));
-    const anchor = mark || element;
-    const pane = element.closest<HTMLElement>(".import-reading-pane");
-    if (pane) pane.scrollTo({ top: pane.scrollTop + anchor.getBoundingClientRect().top - pane.getBoundingClientRect().top - 48, behavior: "instant" });
-    anchor.focus({ preventScroll: true });
-    // Rich text contains math nodes. Highlight the exact, version-bound field,
-    // never a guessed DOM substring which could split an equation.
-    setLocationNotice("");
+    const questionId = current()?.questionId;
+    requestAnimationFrame(() => {
+      if (current()?.questionId !== questionId) return;
+      const target = issue.target;
+      if (!target || issue.location === "unavailable") { setIssuesVisible(true); setLocationNotice("请按完整字段核对。"); return; }
+      const fields = Array.from(document.querySelectorAll<HTMLElement>("[data-import-field]"));
+      const element = fields.find(el => el.dataset.importField === `${issue.domain}:${target.fieldPath}`);
+      if (!element) { setLocationNotice("当前内容无法定位到原句段，请查看完整字段。"); return; }
+      for (let parent = element.parentElement; parent; parent = parent.parentElement) if (parent instanceof HTMLDetailsElement) parent.open = true;
+      document.querySelectorAll(".import-field-highlight").forEach(el => el.classList.remove("import-field-highlight"));
+      element.classList.add("import-field-highlight");
+      const mark = Array.from(element.querySelectorAll<HTMLElement>("[data-review-issue-ids]"))
+        .find(item => item.dataset.reviewIssueIds?.split(" ").includes(issue.id));
+      const anchor = mark || element;
+      scrollReadingTarget(anchor, issue.domain === "teaching");
+      anchor.focus({ preventScroll: true });
+      // Rich text contains math nodes. Highlight the exact, version-bound field,
+      // never a guessed DOM substring which could split an equation.
+      setLocationNotice("");
+    });
   }
   function openTeachingEditor(fieldPath = "") {
     if (sourceEditorOpen() || sourceFieldEdit()) return;
     setReviewDomain("teaching");
     setPreview(true);
     if (fieldPath) setDetailTab(teachingFieldPanel(fieldPath) || "solution");
-    setDetailFocusRequest(value => value + 1);
     setEditTeachingField(fieldPath);
     setEditTeachingRequest(value => value + 1);
   }
@@ -532,7 +570,8 @@ export function ImportPaper(props: {
     finally { if (alive) working(""); }
   }
   async function quickConfirmCurrentSource() {
-    if (busy() || activeJob() || editingDirty() || publishFrozen() || !current() || activeIssues().length || otherQuestionEdits()) return;
+    if (busy() || activeJob() || editingDirty() || publishFrozen() || !current() || current().accuracy
+      || !currentTriage() || sourceReviewState(currentTriage()!) !== "pending" || activeIssues().length || otherQuestionEdits()) return;
     setSourceConfirmed(true);
     await confirmCurrentSource();
   }
@@ -667,7 +706,7 @@ export function ImportPaper(props: {
       (key) => question.reviewChecks?.[key] === true,
     ) && Boolean(question.reviewBasis?.trim());
   const activeIssues = () => [...new Set(
-    [...(record()?.sourceIssues || []).filter((issue: any) =>
+    [...sourceConfirmationContentIssues(current()), ...(record()?.sourceIssues || []).filter((issue: any) =>
       issue?.blocking !== false && (!Number(issue?.page) || (current()?.pages || []).includes(Number(issue.page)))),
       ...(current()?.reviewIssues || []).filter((issue: any) => issue?.blocking !== false),
       ...(reviewEligibility()[current()?.questionId]?.sourceMaterialFindings || [])]
@@ -692,7 +731,12 @@ export function ImportPaper(props: {
     window.addEventListener("beforeunload", warnUnsaved);
     onCleanup(() => window.removeEventListener("beforeunload", warnUnsaved));
     const closeTools = (event: PointerEvent) => { if (!recordToolsElement?.contains(event.target as Node)) setRecordToolsOpen(false); };
-    const escapeTools = (event: KeyboardEvent) => { if (event.key === "Escape" && recordToolsOpen()) { setRecordToolsOpen(false); recordToolsButton?.focus({ preventScroll: true }); } };
+    const escapeTools = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (recordToolsOpen()) { setRecordToolsOpen(false); recordToolsButton?.focus({ preventScroll: true }); return; }
+        if (issuesVisible()) { setIssuesVisible(false); return; }
+      }
+    };
     document.addEventListener("pointerdown", closeTools);
     document.addEventListener("keydown", escapeTools);
     onCleanup(() => { document.removeEventListener("pointerdown", closeTools); document.removeEventListener("keydown", escapeTools); });
@@ -702,7 +746,7 @@ export function ImportPaper(props: {
       const target = event.target as HTMLElement | null;
       if (target?.closest("input,textarea,select,[contenteditable=true]")) return;
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        if (!current()?.accuracy && preview() && reviewDomain() === "source" && currentTriage() && sourceReviewState(currentTriage()!) === "pending"
+        if (!current()?.accuracy && preview() && currentTriage() && sourceReviewState(currentTriage()!) === "pending"
           && !dirty() && !activeIssues().length && !otherQuestionEdits() && !busy() && !activeJob() && !publishFrozen() && !editingDirty()) {
           event.preventDefault(); void quickConfirmCurrentSource();
         }
@@ -729,7 +773,9 @@ export function ImportPaper(props: {
   });
   createEffect(() => {
     props.modelRevision;
-    void checkConfiguration(false);
+    // Read the current strategy once, without subscribing configuration reads
+    // to every question-detail merge or neighbour prefetch in this record.
+    untrack(() => { void checkConfiguration(false); });
   });
   createEffect(() =>
     props.onBusy(Boolean(busy()) || publishFrozen()),
@@ -1008,7 +1054,7 @@ export function ImportPaper(props: {
       const sourceFirst = rows.findIndex(row => sourceReviewState(row) === "pending");
       const teachingFirst = rows.findIndex(isTeachingPending);
       const first = sourceFirst >= 0 ? sourceFirst : teachingFirst;
-      setTriageFilter(sourceFirst >= 0 ? "source_pending" : teachingFirst >= 0 ? "teaching" : "all");
+      setTriageFilter(sourceFirst >= 0 ? "source_pending" : "all");
       setFocusedIssue(""); setLocationNotice("");
       props.onFocusReview?.();
       setOriginalPreview(false);
@@ -1477,33 +1523,72 @@ export function ImportPaper(props: {
       },
     };
   }
+  function CurrentQuestionActions() {
+    return <div class="import-current-task">
+      <Show when={current()}>
+        <Show when={!preview() || dirty()} fallback={<>
+          <Show when={!current()?.accuracy && currentTriage() && sourceReviewState(currentTriage()!) === "pending"}>
+            <Show when={activeIssues().length}><button type="button" class="text-button" onClick={() => {
+              const issue = currentTriage()?.issues.find(issue => issue.domain === "source" && issue.target);
+              if (issue) { setIssuesVisible(true); locateIssue(issue); }
+              else if (sourceConfirmationContentIssues(current()).length) openSourceAdvancedEditor("stem");
+              else setIssuesVisible(true);
+            }}>先修正原题问题</button></Show>
+            <button type="button" class="primary import-confirm-source" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen() || otherQuestionEdits() || Boolean(activeIssues().length)}
+              onClick={quickConfirmCurrentSource} aria-keyshortcuts="Control+Enter" title={`已对照原卷，确认${sourceConfirmationScopeLabel(current())}；Ctrl+Enter`}><Check size={15} />确认原题并继续</button>
+            <details class="import-task-note"><summary>核对备注</summary><div><textarea rows={2} maxLength={3000} value={sourceConfirmationNote()} aria-label="本题核对备注" placeholder="核对备注（选填）" onInput={event => setSourceConfirmationNote(event.currentTarget.value)} /></div></details>
+          </Show>
+          <Show when={currentTriage() && ["eligible", "published"].includes(sourceReviewState(currentTriage()!))}><span class="import-source-eligibility"><Check size={14} />{published(current()) ? "原题已入库" : current()?.accuracy ? "本次成果具备确认条件" : "原题可入库"}</span></Show>
+          <Show when={current()?.accuracy && !published(current()) && !reviewEligibility()[current()?.questionId]?.eligible}>
+              <Show when={pendingAccuracyDomains().length && accuracyCanReviewDomain(current(), accuracyDomain())} fallback={<button type="button" class="secondary" onClick={showPublicationConditions}>查看核对与发布条件</button>}>
+              <button type="button" class="primary" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen()}
+                onClick={() => beginAccuracyAction("review")}>核对{accuracyDomainLabel(accuracyDomain())}</button>
+            </Show>
+            <Show when={current()?.accuracy?.canRepair === true && pendingAccuracyDomains().length}><button type="button" class="text-button" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen()} onClick={() => beginAccuracyAction("repair")}>按问题修订一次</button></Show>
+          </Show>
+        </>}>
+          <button type="button" class="primary" disabled={Boolean(busy()) || !dirty() || publishFrozen()} onClick={save}><Save size={15} />保存修改</button>
+          <Show when={!preview()}><button type="button" class="secondary" disabled={Boolean(busy())} onClick={() => setPreview(true)}>预览排版</button></Show>
+        </Show>
+        <Show when={dirty()}><button type="button" class="text-button" disabled={Boolean(busy()) || publishFrozen()} onClick={() => {
+          editBuffers.delete(record().importId); setQuestions(clone(record().questions || [])); setEditBaseRevision(record().revision);
+          setDirty(false); setError(""); setPreview(true); setNotice("已撤销未保存修改。"); void open(record().importId);
+        }}>撤销修改</button></Show>
+      </Show>
+    </div>;
+  }
+  const confirmationContext = createMemo(() => importConfirmationContext({
+    record: record(), question: current(), row: currentTriage(), controls: teachingControls()[current()?.questionId],
+    eligibility: reviewEligibility()[current()?.questionId], domain: current()?.accuracy ? reviewDomain() : "source", accuracyDomain: accuracyDomain(),
+    preview: preview(), dirty: dirty(), otherQuestionEdits: otherQuestionEdits(), busy: busy(),
+    activeJob: Boolean(activeJob()), editingDirty: editingDirty(), publicationPending: publishFrozen(),
+    sourceBlockers: activeIssues(),
+  }));
   function AccuracyQuestionReading(props: { question: any }) {
     const presentation = createMemo(() => previewQuestion(props.question));
     const candidate = () => presentation().accuracyCandidate;
     const difficulty = () => candidate()?.difficultyAssessment || props.question.difficultyAssessment;
     const focus = () => candidate()?.teachingFocus;
     return <article class="import-preview import-question-reading">
-      <nav class="import-accuracy-domains" aria-label="本题核对项目">
-        <For each={accuracyDomains}>{domain => <button type="button" aria-pressed={accuracyDomain() === domain.id}
-          onClick={() => focusAccuracyDomain(domain.id)}><strong>{domain.label}</strong><span>{accuracyStatus(props.question, domain.id)?.label}</span></button>}</For>
-      </nav>
       <p class="import-accuracy-remaining" role="status">{reviewEligibility()[props.question.questionId]?.eligible
         ? "本次发布范围已具备确认条件；未采用内容中的疑点继续保留。"
         : pendingAccuracyDomains().length ? `有 ${pendingAccuracyDomains().length} 个域仍有未决事项，请结合本次发布范围处理；无需逐域重复人工确认。` : "各域已完成核对；请查看仍未满足的发布条件。"}</p>
       <section class="import-source-reading" aria-label="原卷题目与参考">
+        <p class="import-source-review-status muted">原题 · {accuracyStatus(props.question, "source")?.label}</p>
         <QuestionBody question={presentation()} hideMissingTeacherMaterials number={props.question.sourceLabel} teacher hideSource reviewFieldPrefix="source:"
           renderReviewField={(path, content) => <ImportEditableSourceField path={path} label={reviewFieldLabel(path, "source")} editable={sourceCanEdit(path)}
             issues={currentTriage()?.issues || []} onEdit={openSourceFieldEditor}>{content}</ImportEditableSourceField>} />
       </section>
-      <Show when={candidate()}>{value => <details class="import-reading-section" open={accuracyReadingExpanded(props.question, "math", accuracyDomain())} data-reading-section="solution">
-        <summary><span>AI答案与解析 <small>{accuracyStatus(props.question, "math")?.label}</small></span></summary>
+      <ImportReadingTabs questionKey={props.question.questionId} value={accuracyDomain() === "teaching" ? "assessment" : "solution"}
+        onChange={selectReadingTab} statuses={{ solution: accuracyStatus(props.question, "math")?.label,
+          assessment: accuracyStatus(props.question, "teaching")?.label }} solution={
+      <Show when={candidate()} fallback={<p class="muted">本题尚无AI教学稿，已有原卷参考保留在“原题”中。</p>}>{value => <section class="import-reading-section" data-reading-section="solution">
         <div class="import-reading-section-content" aria-label="AI答案与解析">
           <Show when={value().answer}><p><strong>生成答案：</strong><RichText text={value().answer} question={presentation()} teacher /></p></Show>
           <Show when={value().teachingSolution}><RichText text={value().teachingSolution} question={presentation()} teacher /></Show>
         </div>
-      </details>}</Show>
-      <details class="import-reading-section" open={accuracyReadingExpanded(props.question, "teaching", accuracyDomain())} data-reading-section="assessment">
-        <summary><span>考查信息 <small>{accuracyStatus(props.question, "teaching")?.label}</small></span></summary>
+      </section>}</Show>} assessment={
+      <section class="import-reading-section" data-reading-section="assessment">
         <div class="import-reading-section-content" aria-label="考查信息">
           <dl class="import-reading-facts"><div><dt>难度</dt><dd>{difficultyLevels.find(item => item.id === difficulty()?.level)?.label || "未评估"}<small>内容估计</small></dd></div>
             <div><dt>主考知识点</dt><dd>{accuracyKnowledgeNames(props.question, props.question.primaryKnowledgeUids)}</dd></div>
@@ -1515,7 +1600,7 @@ export function ImportPaper(props: {
             <Show when={path.requiredPremises?.length}><p>额外工具或条件：{accuracyPremiseNames(props.question, path.requiredPremises)}</p></Show><RichText text={path.basis} question={presentation()} teacher />
           </section>}</For>
         </div>
-      </details>
+      </section>} />
     </article>;
   }
   return (
@@ -1668,7 +1753,7 @@ export function ImportPaper(props: {
                       <AlertCircle size={17} aria-hidden="true" />
                       <strong>{["annotation", "review", "teaching_retry", "accuracy_repair"].includes(selectedJob()?.mode) ? "本次处理未完成" : "导入未完成"}</strong>
                     </span>
-                    <span class="import-failure-summary-reason">{detail().summary}</span>
+                    <span class="import-failure-summary-reason"><ReviewMessage text={detail().summary} /></span>
                     <Show when={detail().ocrCompleted}>
                       <span class="import-failure-preserved-inline"><Check size={14} aria-hidden="true" />原件与识别材料已保留</span>
                     </Show>
@@ -1758,6 +1843,7 @@ export function ImportPaper(props: {
                         <div class="import-audit-workspace" classList={{"is-issues-open": issuesVisible()}}>
                         <div class="import-reading-workspace" data-review-view={canShowOriginal() ? reviewView() : "text"} data-split-ratio={splitRatio()}>
                           <div class="import-compare-toolbar" role="group" aria-label="题目阅读工具">
+                            <div class="import-reading-controls">
                             <button type="button" class="text-button" aria-pressed={queueVisible()} onClick={() => setQueueVisible(value => !value)}><Columns2 size={16} />题目清单</button>
                             <Show when={canShowOriginal()}><div class="import-reading-view-controls">
                               <select aria-label="阅读方式" value={reviewView()} onChange={event => setReviewView(event.currentTarget.value as "image" | "split" | "text")}>
@@ -1770,7 +1856,12 @@ export function ImportPaper(props: {
                             <button type="button" class="text-button import-problems-toggle" aria-expanded={issuesVisible()} aria-controls="import-question-problems" onClick={() => setIssuesVisible(value => !value)}>
                               <AlertCircle size={16} />本题待办<Show when={reviewProblemGroups().length}><span>{reviewProblemGroups().length}</span></Show>
                             </button>
+                            </div>
+                            <div class="import-question-actions" role="group" aria-label="本题操作">
+                              <CurrentQuestionActions />
+                            </div>
                           </div>
+                          <ImportConfirmationContext context={confirmationContext()} />
                           <div class="import-comparison-panes">
                             <Show when={canShowOriginal()}>
                               <section class="import-inline-original" hidden={reviewView() === "text"} aria-label="当前题原卷">
@@ -1778,7 +1869,7 @@ export function ImportPaper(props: {
                               </section>
                             </Show>
                         <div class="import-reading-pane">
-                        <div class="bank-results-heading import-question-heading">
+                        <div class="bank-results-heading import-question-heading" ref={observeQuestionHeading}>
                           <div><strong>第 {question.sourceLabel || selected() + 1} 题</strong><small class="muted">{typeTitles[question.questionType] || "题目"}</small></div>
                           <Show when={!question.accuracy}><button type="button" class="text-button" disabled={Boolean(busy()) || published(question) || editingDirty()}
                             onClick={() => preview() ? openSourceAdvancedEditor() : setPreview(true)}>
@@ -1786,7 +1877,7 @@ export function ImportPaper(props: {
                           </button></Show>
                         </div>
                         <Show when={question.annotationError?.message}>
-                          <p class="warning-text">考查信息未完成：{question.annotationError.message}。原题已保留，可重试。</p>
+                          <p class="warning-text">考查信息未完成：<ReviewMessage text={question.annotationError.message} />。原题已保留，可重试。</p>
                         </Show>
                         <Show when={question.duplicateCandidates?.length}>
                           <aside class="import-duplicate-notice">
@@ -2297,13 +2388,13 @@ export function ImportPaper(props: {
                           </>}>
                           <ImportQuestionReading question={question} presentation={previewQuestion(question)} controls={teachingControls()[question.questionId]}
                             issues={(currentTriage()?.issues || []).filter(issue => !reviewProblemGroups().some(group => group.members.includes(issue) && currentCorrection(group)))}
-                            domain={reviewDomain()} focus={detailTab()} focusRequest={detailFocusRequest()}
+                            tab={detailTab()} onTabChange={selectReadingTab}
                             sourceCanEdit={sourceCanEdit} teachingCanEdit={teachingCanEdit} onEditSource={openSourceFieldEditor} onEditTeaching={openTeachingEditor}
                             onSelectIssue={id => { setIssuesVisible(true); selectMarkedIssue(id); }} knowledgeNames={knowledgeNames} premiseNames={premiseNames} />
                         <TeachingReviewActions question={question} controls={teachingControls()[question.questionId]} hideTrigger
                           disabled={Boolean(busy()) || Boolean(activeJob()) || publishFrozen() || dirty()}
                           disabledReason={dirty() ? "请先保存或撤销当前未保存编辑，再核对教学稿。" : undefined}
-                          renderText={text => <RichText text={text} question={previewQuestion(question)} teacher />}
+                          renderText={text => <RichText text={reviewMessageText(text)} question={previewQuestion(question)} teacher />}
                           onAcknowledge={acknowledgeTeachingIssue} onPatch={patchTeachingField}
                           editRequest={editTeachingRequest()} editFieldPath={editTeachingField()} discardRequest={discardFieldRequest()}
                           onEditRequestHandled={handled => { if (handled === editTeachingRequest()) batch(() => { setEditTeachingRequest(0); setEditTeachingField(""); }); }}
@@ -2313,12 +2404,13 @@ export function ImportPaper(props: {
                         </div>
                           </div>
                         </div>
+                        <Show when={issuesVisible()}><div class="import-problems-backdrop" aria-hidden="true" onClick={() => setIssuesVisible(false)} /></Show>
                         <aside class="import-question-problems" id="import-question-problems" hidden={!issuesVisible()} aria-label="本题待办">
                           <header><h3>本题待办</h3><button type="button" class="text-button" onClick={() => setIssuesVisible(false)}>收起</button></header>
                           <div class="import-review-body" tabIndex={-1}>
                             <Show when={!question.accuracy} fallback={<Show when={accuracyFindings(question).length} fallback={<p class="muted">当前没有具体疑点；仍须按各域的实际状态完成核对。</p>}>
                               <For each={accuracyFindings(question)}>{finding => <section class="import-review-context"><p><strong>{accuracyDomainLabel(finding.domain)}<Show when={accuracyFieldLabel(finding.fieldPath)}> · {accuracyFieldLabel(finding.fieldPath)}</Show></strong></p>
-                                <RichText text={finding.message} question={previewQuestion(question)} teacher /><Show when={finding.basis}><p>核对依据：</p><RichText text={finding.basis} question={previewQuestion(question)} teacher /></Show>
+                                <RichText text={reviewMessageText(finding.message)} question={previewQuestion(question)} teacher /><Show when={finding.basis}><p>核对依据：</p><RichText text={reviewMessageText(finding.basis)} question={previewQuestion(question)} teacher /></Show>
                               </section>}</For>
                             </Show>}>
                             <Show when={activeJob()}><p class="muted" role="status">后台处理中，完成后可保存。</p></Show>
@@ -2326,9 +2418,9 @@ export function ImportPaper(props: {
                               <ol class="import-review-problems" aria-label="需要核对的事项" tabIndex={-1}>
                                 <For each={reviewProblemGroups()}>{group => <li class="import-review-problem" data-review-member-ids={group.members.map(issue => issue.id).join(" ")} data-tone={group.tone} data-active={group.members.some(issue => issue.id === focusedIssue())}>
                                   <small class="muted">{group.domain === "source" ? "原题" : "AI内容"}</small>
-                                  <strong>{currentCorrection(group) ? sourceCorrectionLabel() : group.title}</strong>
+                                  <strong><ReviewMessage text={currentCorrection(group) ? sourceCorrectionLabel() : group.title} /></strong>
                                   <Show when={currentCorrection(group)}>{correction => <><RichText text={correction().basis} /><button type="button" class="text-button" onClick={() => viewCorrection(group)}><LinkIcon size={14} />查看修正处</button></>}</Show>
-                                  <Show when={!currentCorrection(group) && !group.locatableIssues.length}><RichText text={teachingDisplayText(reviewDisplayMessage(group.message))} /></Show>
+                                  <Show when={!currentCorrection(group) && !group.locatableIssues.length}><RichText text={reviewMessageText(teachingDisplayText(reviewDisplayMessage(group.message)))} /></Show>
                                   <For each={groupLocations(group)}>{issue => <div class="import-problem-field-actions">
                                     <button type="button" class="text-button" onClick={() => locateIssue(issue)}><LinkIcon size={14} />{reviewFieldLabel(issue.target?.fieldPath, issue.domain)}</button>
                                     <Show when={issue.domain === "source" && sourceCanEdit(issue.target?.fieldPath || "")}><button type="button" class="text-button" onClick={() => openSourceFieldEditor(issue.target!.fieldPath)}><Pencil size={14} />修改</button></Show>
@@ -2338,13 +2430,28 @@ export function ImportPaper(props: {
                               </ol>
                             </Show>
                             <Show when={locationNotice()}><p class="muted" role="status">{locationNotice()}</p></Show>
+                            <Show when={!question.accuracy && (teachingControls()[question.questionId]?.canPatch || teachingActions()[question.questionId]?.canRetryGeneration
+                              || canContinueTeaching() || teachingActions()[question.questionId]?.canPublishTeaching || teachingActions()[question.questionId]?.canResumeTeachingPublication)}>
+                              <details class="import-opinion-details import-teaching-operation-details"><summary>教学内容处理</summary>
+                                <TeachingStatusActions />
+                                <Show when={teachingControls()[question.questionId]?.canPatch}><button type="button" class="secondary" disabled={Boolean(busy()) || Boolean(activeJob()) || publishFrozen() || dirty() || editingDirty()}
+                                  onClick={() => openTeachingEditor(reviewProblemGroups().flatMap(group=>group.locatableIssues).find(issue=>issue.domain === "teaching" && teachingCanEdit(issue.target?.fieldPath || ""))?.target?.fieldPath)}><Pencil size={15} />修改AI内容</button></Show>
+                                <Show when={teachingActions()[question.questionId]?.canPublishTeaching || teachingActions()[question.questionId]?.canResumeTeachingPublication}>
+                                  <button type="button" class="primary" disabled={Boolean(busy()) || Boolean(activeJob()) || dirty() || editingDirty() || publishFrozen()} onClick={() => askQuestionAction("publish")}>{teachingActions()[question.questionId]?.canResumeTeachingPublication ? "继续上次解析更新" : "更新题库解析"}</button>
+                                </Show>
+                              </details>
+                            </Show>
+                            <details class="import-opinion-details import-operation-details"><summary>操作说明</summary>
+                              <p><strong><ReviewMessage text={confirmationContext().scope} /></strong></p>
+                              <p><ReviewMessage text={confirmationContext().note} /></p>
+                            </details>
                             <details class="import-opinion-details"><summary>处理记录与核对依据</summary>
-                              <For each={currentTriage()?.issues || []}>{issue => <section class="import-review-context"><p><strong>{issue.domain === "source" ? "原题" : "AI内容"} · {issue.provenanceLabel}</strong></p><RichText text={issue.message} /><p>{issue.process.nextAction}</p></section>}</For>
+                              <For each={currentTriage()?.issues || []}>{issue => <section class="import-review-context"><p><strong>{issue.domain === "source" ? "原题" : "AI内容"} · {issue.provenanceLabel}</strong></p><RichText text={reviewMessageText(issue.message)} /><p><ReviewMessage text={issue.process.nextAction} /></p></section>}</For>
                               <For each={!dirty() ? sourceCorrectionDisplays()[question.questionId] || [] : []}>{correction => <section class="import-review-context"><p><strong>原题转录比对记录</strong> · 第 {correction.evidencePage} 页；{correction.checkedBy}；{correction.checkedAt}</p><RichText text={correction.basis} /><p>此记录不替代原题确认或入库审核。</p></section>}</For>
-                              <Show when={!question.accuracy && question.modelReview}><RichText text={question.modelReview.summary || ""} /><p class="muted">模型自评：{confidenceLabel(question.modelReview.confidence)}；不等于独立核验。</p></Show>
+                              <Show when={!question.accuracy && question.modelReview}><RichText text={reviewMessageText(question.modelReview.summary || "")} /><p class="muted">模型自评：{confidenceLabel(question.modelReview.confidence)}；不等于独立核验。</p></Show>
                               <Show when={question.teachingWorkflow}><p class="muted">生成 {Number(question.teachingWorkflow.generationCalls || 0)} 次 · 复核 {Number(question.teachingWorkflow.reviewCalls || 0)} 次</p></Show>
-                              <Show when={question.reviewBasis}><p>核对记录：{question.reviewBasis}</p></Show>
-                              <For each={currentTriage()?.notices || []}>{issue => <RichText text={issue.message} />}</For>
+                              <Show when={question.reviewBasis}><p>核对记录：<ReviewMessage text={question.reviewBasis} /></p></Show>
+                              <For each={currentTriage()?.notices || []}>{issue => <RichText text={reviewMessageText(issue.message)} />}</For>
                             </details>
                             </Show>
                           </div>
@@ -2357,47 +2464,10 @@ export function ImportPaper(props: {
               </div>
             </div>
             <footer class="import-review-footer">
-              <div class="import-current-task">
-                <Show when={current()}>
-                  <Show when={!preview() || dirty()} fallback={<>
-                    <Show when={!current()?.accuracy && reviewDomain() === "source" && currentTriage() && sourceReviewState(currentTriage()!) === "pending"}>
-                      <Show when={!activeIssues().length} fallback={<button type="button" class="secondary" onClick={() => { setIssuesVisible(true); const issue = currentTriage()?.issues.find(issue => issue.domain === "source" && issue.target); if (issue) locateIssue(issue); }}>先修正原题问题</button>}>
-                        <button type="button" class="primary import-confirm-source" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen() || otherQuestionEdits()}
-                          onClick={quickConfirmCurrentSource} aria-keyshortcuts="Control+Enter" title={`已对照原卷，确认${sourceConfirmationScopeLabel(current())}；Ctrl+Enter`}><Check size={15} />确认原题并继续</button>
-                        <details class="import-task-note"><summary>核对备注</summary><div><textarea rows={2} maxLength={3000} value={sourceConfirmationNote()} aria-label="本题核对备注" placeholder="核对备注（选填）" onInput={event => setSourceConfirmationNote(event.currentTarget.value)} /></div></details>
-                      </Show>
-                    </Show>
-                    <Show when={!current()?.accuracy && reviewDomain() === "teaching"}>
-                      <TeachingStatusActions />
-                      <Show when={teachingControls()[current()?.questionId]?.canPatch}><button type="button" class="secondary" disabled={Boolean(busy()) || Boolean(activeJob()) || publishFrozen() || dirty() || editingDirty()}
-                        onClick={() => openTeachingEditor(reviewProblemGroups().flatMap(group=>group.locatableIssues).find(issue=>issue.domain === "teaching" && teachingCanEdit(issue.target?.fieldPath || ""))?.target?.fieldPath)}><Pencil size={15} />修改AI内容</button></Show>
-                      <Show when={teachingActions()[current()?.questionId]?.canPublishTeaching || teachingActions()[current()?.questionId]?.canResumeTeachingPublication}>
-                        <button type="button" class="primary" disabled={Boolean(busy()) || Boolean(activeJob()) || dirty() || editingDirty() || publishFrozen()} onClick={() => askQuestionAction("publish")}>{teachingActions()[current()?.questionId]?.canResumeTeachingPublication ? "继续上次解析更新" : "更新题库解析"}</button>
-                      </Show>
-                      <Show when={currentTriage() && sourceReviewState(currentTriage()!) === "pending"}><button type="button" class="text-button" onClick={() => { setReviewDomain("source"); document.querySelector<HTMLElement>(".import-source-reading")?.scrollIntoView({block:"start"}); }}>核对原题</button></Show>
-                    </Show>
-                    <Show when={currentTriage() && ["eligible", "published"].includes(sourceReviewState(currentTriage()!))}><span class="import-source-eligibility"><Check size={14} />{published(current()) ? "原题已入库" : current()?.accuracy ? "本次成果具备确认条件" : "原题可入库"}</span></Show>
-                    <Show when={current()?.accuracy && !published(current()) && !reviewEligibility()[current()?.questionId]?.eligible}>
-                      <Show when={pendingAccuracyDomains().length && accuracyCanReviewDomain(current(), accuracyDomain())} fallback={<button type="button" class="secondary" onClick={() => document.querySelector(".import-accuracy-status")?.scrollIntoView({ block: "start" })}>查看核对与发布条件</button>}>
-                        <button type="button" class="primary" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen()}
-                          onClick={() => beginAccuracyAction("review")}>核对{accuracyDomainLabel(accuracyDomain())}</button>
-                      </Show>
-                      <Show when={current()?.accuracy?.canRepair === true && pendingAccuracyDomains().length}><button type="button" class="text-button" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen()} onClick={() => beginAccuracyAction("repair")}>按问题修订一次</button></Show>
-                    </Show>
-                  </>}>
-                    <button type="button" class="primary" disabled={Boolean(busy()) || !dirty() || publishFrozen()} onClick={save}><Save size={15} />保存修改</button>
-                    <Show when={!preview()}><button type="button" class="secondary" disabled={Boolean(busy())} onClick={() => setPreview(true)}>预览排版</button></Show>
-                  </Show>
-                  <Show when={dirty()}><button type="button" class="text-button" disabled={Boolean(busy()) || publishFrozen()} onClick={() => {
-                    editBuffers.delete(record().importId); setQuestions(clone(record().questions || [])); setEditBaseRevision(record().revision);
-                    setDirty(false); setError(""); setPreview(true); setNotice("已撤销未保存修改。"); void open(record().importId);
-                  }}>撤销修改</button></Show>
-                </Show>
-              </div>
               <span class="import-save-status muted" role="status">{busy() || notice() || (editingDirty() ? "有未保存的字段修改" : dirty() ? "有未保存修改" : "进度已保存")}</span>
               <nav class="import-question-navigation" aria-label="单题审核导航">
                 <button type="button" class="text-button" disabled={Boolean(busy()) || selected() <= 0} onClick={() => moveQuestion("previous")}><ChevronLeft size={15} />上一题</button>
-                <button type="button" class="text-button" disabled={Boolean(busy())} onClick={nextTodo}>{accuracyRecord() ? "下一待处理题" : triageFilter() === "teaching" || reviewDomain() === "teaching" ? "下一项AI待办" : "下一原题待办"}<ChevronRight size={15} /></button>
+                <button type="button" class="text-button" disabled={Boolean(busy())} onClick={nextTodo}>{accuracyRecord() ? "下一待处理题" : reviewDomain() === "teaching" ? "下一项AI待办" : "下一原题待办"}<ChevronRight size={15} /></button>
               </nav>
             </footer>
           </Show>
@@ -2418,7 +2488,7 @@ export function ImportPaper(props: {
             <Show when={!historyLoading() && !historyError()}><div class="empty-state">暂无导入记录，选择试卷开始导入。</div></Show>
           }>
             <table class="import-records-table">
-              <thead><tr><th scope="col">试卷名称</th><th scope="col">状态</th><th scope="col">题目</th><th scope="col">导入时间</th></tr></thead>
+              <thead><tr><th scope="col">试卷名称</th><th scope="col">状态</th><th scope="col">题目</th><th scope="col">导入时间</th><th scope="col" class="import-record-operation">操作</th></tr></thead>
               <tbody><For each={history()}>{(item) => (
                 <tr>
                   <td><button class="import-record-open" data-import-id={item.importId}
@@ -2431,11 +2501,19 @@ export function ImportPaper(props: {
                       <Show when={item.status === "failed"}><small class="import-record-failure-meta">{importStage(item, item).label} · {importFailure(item.error, { record: item, job: item }).categoryLabel}</small></Show>
                       <Show when={item.actionSummary?.label}><small class="import-record-action-summary">{item.actionSummary.label}</small></Show>
                       <small class="import-record-mobile-meta">{item.questionCount} 题 · {importDate(item.createdAt)}</small>
-                    </span><Show when={openingImportId() === item.importId} fallback={<><Show when={item.actionSummary?.nextActionLabel}><span class="import-record-next-action">{item.actionSummary.nextActionLabel}</span></Show><ChevronRight size={16} aria-hidden="true" /></>}><span class="import-opening-label" role="status"><LoaderCircle size={15} class="spin" />正在打开</span></Show>
+                    </span>
                   </button></td>
                   <td class="import-record-status"><span data-status={item.status} title={message(item.error) || statusLabels[item.status]}>{statusLabels[item.status] || "待审核"}</span></td>
                   <td class="import-record-count">{item.questionCount} 题</td>
                   <td class="import-record-date"><time dateTime={item.createdAt}>{importDate(item.createdAt)}</time></td>
+                  <td class="import-record-operation"><button type="button" class="text-button import-record-action"
+                    aria-label={`${item.actionSummary?.nextActionLabel || "打开记录"}：${item.displayTitle || item.filename}`}
+                    disabled={Boolean(busy()) || openingImportId() === item.importId} aria-busy={openingImportId() === item.importId}
+                    onClick={() => open(item.importId)}>
+                    <Show when={openingImportId() === item.importId} fallback={<>{item.actionSummary?.nextActionLabel || "打开记录"}<ChevronRight size={16} aria-hidden="true" /></>}>
+                      <span class="import-opening-label" role="status"><LoaderCircle size={15} class="spin" />正在打开</span>
+                    </Show>
+                  </button></td>
                 </tr>
               )}</For></tbody>
             </table>

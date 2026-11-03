@@ -18,7 +18,7 @@ export function teachingDisplayText(value: unknown): string {
 export function compactTeachingText(value: unknown): string {
   const parts = mathSegments(typeof value === "string" ? value : "");
   const compact = parts.map(part => part.type === "math" && part.displayMode
-    && part.source.trim().length <= 90 && !/[\r\n]|\\\\|\\(?:begin|end|tag|label|overset|underset)\b/.test(part.source)
+    && part.source.trim().length <= 90 && !/[\r\n]|\\\\|\\(?:begin|end|tag|label|overset|underset)\b/.test(part.source.trim())
     && !part.source.includes("\\)"));
   return parts.map((part, index) => {
     if (compact[index] && part.type === "math") return `\\(${part.source.trim()}\\)`;

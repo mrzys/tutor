@@ -93,6 +93,9 @@ export function importAssessmentPresentation(question: any, controls?: TeachingR
   const paths = Array.isArray(question?.solutionPaths) ? question.solutionPaths : [];
   return {
     level: annotated ? question.difficultyAssessment.level : generated ? draft.level : null,
+    // A pending content estimate stays readable without becoming the effective
+    // annotation. Ready estimates already use the existing level projection.
+    candidateLevel: !ready && draft && levels.includes(draft.level) ? draft.level : null,
     basis: annotated ? question.difficultyAssessment.basis || "" : generated ? draft.basis : "",
     difficultyOrigin: annotated ? "已存标注" : generated ? "AI内容估计" : "",
     examFocus: question?.knowledgeMappingSource === "teacher_edit" && question?.task?.label?.trim()

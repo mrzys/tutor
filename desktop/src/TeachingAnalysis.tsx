@@ -324,8 +324,11 @@ export function TeachingReviewActions(props: TeachingReviewActionsProps) {
                   </section>
                 </div>
                 <details class="teaching-edit-preview"><summary>预览修改后的排版</summary><div>{props.renderText(value().replacement)}</div></details>
-                <label class="field-label teaching-edit-basis">修改依据（必填）<textarea rows={2} maxLength={5000} aria-label="教学稿局部修订依据" value={value().basis} placeholder="简述修改及核对依据" onInput={event => updateDraft({ basis: event.currentTarget.value })} /></label>
-                <label class="check-row"><input type="checkbox" checked={value().confirmed} onChange={event => updateDraft({ confirmed: event.currentTarget.checked })} /><span>已核对修改前后内容及受影响的结论</span></label>
+                <div class="teaching-edit-audit-card">
+                  <label class="field-label teaching-edit-basis">修改依据（必填）<textarea rows={2} maxLength={5000} aria-label="教学稿局部修订依据" value={value().basis} placeholder="简述修改及核对依据" onInput={event => updateDraft({ basis: event.currentTarget.value })} /></label>
+                  <label class="check-row"><input type="checkbox" checked={value().confirmed} onChange={event => updateDraft({ confirmed: event.currentTarget.checked })} /><span>已核对修改前后内容及受影响的结论</span></label>
+                </div>
+
               </fieldset>
               <Show when={failure()}><p class="warning-text" role="alert">{failure()}</p></Show>
             </form>

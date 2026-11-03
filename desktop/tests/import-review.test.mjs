@@ -8,6 +8,7 @@ test('simulated assessment: ready draft fills display gaps without inventing for
   const original = JSON.stringify(q);
   const view = importAssessmentPresentation(q);
   assert.equal(view.level,'easy_medium');
+  assert.equal(view.candidateLevel,null);
   assert.equal(view.examFocus,'判断充分必要条件');
   assert.equal(view.difficultyOrigin,'AI内容估计');
   assert.equal(view.hasTeachingSolution,true);
@@ -20,10 +21,52 @@ test('simulated assessment: manual difficulty wins and pending drafts never beco
   const q = {difficultyAssessment:{level:'medium',basis:'人工依据'},task:{id:'t',label:'正式任务'},primaryKnowledgeUids:['k'],solutionPaths:[{id:'p'}],teachingWorkflow:{status:'needs_review',candidateResult:{difficultyAssessment:{level:'hard'},teachingFocus:{examFocus:'待核考点'},teachingSolution:'问题稿'}}};
   const view=importAssessmentPresentation(q);
   assert.equal(view.level,'medium'); assert.equal(view.basis,'人工依据');
+  assert.equal(view.candidateLevel,'hard');
   assert.equal(view.examFocus,'正式任务'); assert.equal(view.needsSupplement,false);
   assert.equal(view.hasTeachingSolution,false); assert.equal(view.teachingSolutionPending,true);
   assert.equal(importAssessmentPresentation({...q,knowledgeMappingSource:'teacher_edit',teachingWorkflow:{...q.teachingWorkflow,status:'ready_candidate',finalResult:q.teachingWorkflow.candidateResult}}).examFocus,'正式任务');
   assert.equal(importAssessmentPresentation({...q,difficultyAssessment:{level:null}}).level,null);
+});
+
+test('simulated assessment: pending known difficulty remains a separate estimate and never supplies formal metadata or publication readiness', () => {
+  for (const level of ['easy','easy_medium','medium','medium_hard','hard']) {
+    const q = {difficultyAssessment:{level:null,basis:''},primaryKnowledgeUids:[],solutionPaths:[],task:{label:''},
+      teachingWorkflow:{status:'needs_review',reviewFailurePending:true,sourceContentSha256:'a'.repeat(64),
+        candidateResult:{difficultyAssessment:{level,basis:'模拟候选难度依据'},teachingFocus:{examFocus:'模拟候选考点'},
+          teachingSolution:'模拟尚待核对的解析',issues:['模拟：仍须核对证明步骤']},findings:[{type:'quality',dimension:'proof',message:'模拟：证明尚未核对'}]}};
+    const controls={sourceContentSha256:'a'.repeat(64),candidateSha256:'b'.repeat(64),canPatch:true,canAcknowledge:false,issues:[],editableFields:[]};
+    const before=structuredClone({q,controls});
+    const view=importAssessmentPresentation(q,controls);
+    assert.equal(view.candidateLevel,level);
+    assert.equal(view.level,null); assert.equal(view.basis,''); assert.equal(view.difficultyOrigin,'');
+    assert.equal(view.examFocus,''); assert.equal(view.needsSupplement,true);
+    assert.equal(view.hasTeachingSolution,false); assert.equal(importTeachingPresentation(q,controls).ready,false);
+    assert.deepEqual(view.paths,[]); assert.deepEqual(q.primaryKnowledgeUids,[]);
+    assert.deepEqual({q,controls},before);
+  }
+});
+
+test('simulated assessment: ready estimates are not duplicated and an explicit stored difficulty still takes precedence', () => {
+  const q={difficultyAssessment:{level:'easy',basis:'模拟明确保存的正式依据'},primaryKnowledgeUids:['simulated-k'],solutionPaths:[],task:{label:'模拟正式考点'},
+    teachingWorkflow:{status:'ready_candidate',finalResult:{difficultyAssessment:{level:'hard',basis:'模拟生成依据'},issues:[]}}};
+  const before=structuredClone(q), view=importAssessmentPresentation(q);
+  assert.equal(view.level,'easy'); assert.equal(view.basis,'模拟明确保存的正式依据');
+  assert.equal(view.difficultyOrigin,'已存标注'); assert.equal(view.candidateLevel,null);
+  const generated=importAssessmentPresentation({...q,difficultyAssessment:{level:null}});
+  assert.equal(generated.level,'hard'); assert.equal(generated.candidateLevel,null);
+  assert.deepEqual(q,before);
+});
+
+test('simulated assessment: missing or unknown candidate levels stay unknown instead of being inferred from prose or old references', () => {
+  for (const level of [undefined,null,'','unknown','medium-high',' medium ',0,0.7]) {
+    const q={difficultyAssessment:{level:null},primaryKnowledgeUids:[],solutionPaths:[],task:{label:''},
+      teachingWorkflow:{status:'needs_review',candidateResult:{difficultyAssessment:{level,basis:'模拟文字：大概属于中等偏较难'},
+        teachingFocus:{examFocus:'模拟候选考点'}}},legacyReferences:{difficultyAssessment:{level:'hard'}}};
+    const before=structuredClone(q), view=importAssessmentPresentation(q);
+    assert.equal(view.candidateLevel,null); assert.equal(view.level,null); assert.equal(view.basis,'');
+    assert.deepEqual(q,before);
+  }
+  assert.equal(importAssessmentPresentation({difficultyAssessment:{level:'medium'}}).candidateLevel,null);
 });
 
 test('simulated assessment: stale bindings and failed review holds never supply effective metadata', () => {
@@ -31,6 +74,7 @@ test('simulated assessment: stale bindings and failed review holds never supply 
   const control = {sourceContentSha256:'a'.repeat(64),candidateSha256:'c'.repeat(64)};
   assert.equal(importAssessmentPresentation(q,control).level,'medium');
   assert.equal(importAssessmentPresentation(q,{...control,sourceContentSha256:'b'.repeat(64)}).level,null);
+  assert.equal(importAssessmentPresentation(q,{...control,sourceContentSha256:'b'.repeat(64)}).candidateLevel,null);
   assert.equal(importAssessmentPresentation(q,{...control,candidateSha256:null}).examFocus,'');
   q.teachingWorkflow.reviewFailurePending=true;
   assert.equal(importAssessmentPresentation(q,control).level,null);

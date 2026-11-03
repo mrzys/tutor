@@ -3,20 +3,21 @@
 .import-source-field-dialog .modal:has(.import-source-field-form) .modal-footer { padding-top:12px; padding-bottom:12px; }
 .import-source-field-context { margin:0 0 12px; color:var(--muted); font-size:14px; }
 .import-source-field-form fieldset { min-width:0; margin:0; padding:0; border:0; }
-.import-source-field-comparison { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+.import-source-field-comparison { display:grid; grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr); gap:16px; }
 .import-source-field-comparison > section { min-width:0; }
-.import-source-field-comparison h3 { margin:0 0 8px; font-size:14px; font-weight:600; }
-.import-source-field-original { max-height:180px; padding:10px 12px; overflow:auto; overflow-wrap:anywhere; line-height:1.75; border:1px solid var(--line); border-radius:var(--control-radius); background:var(--surface-subtle); }
+.import-source-field-comparison h3 { margin:0 0 6px; font-size:13px; font-weight:600; color:var(--accent); }
+.import-source-field-original { max-height:140px; padding:8px 12px; overflow:auto; overflow-wrap:anywhere; line-height:1.65; font-size:13px; border:1px solid var(--line); border-radius:var(--control-radius); background:var(--surface-subtle); }
 .import-source-field-original img,.import-source-field-preview img { max-width:100%; height:auto; }
-.import-source-field-comparison textarea { display:block; width:100%; min-height:132px; line-height:1.75; resize:vertical; }
-.import-source-field-dialog[data-long=true] .import-source-field-original { max-height:min(40dvh,340px); }
-.import-source-field-dialog[data-long=true] .import-source-field-comparison textarea { min-height:250px; }
-.import-source-field-comparison .import-math-toolbar { flex-wrap:nowrap; overflow-x:auto; padding:2px 6px; margin-top:0; }
-.import-source-field-comparison .import-math-token { flex-shrink:0; min-width:44px; min-height:44px; }
+.import-source-field-comparison textarea { display:block; width:100%; min-height:96px; line-height:1.65; font-size:13px; resize:vertical; }
+.import-source-field-dialog[data-long=true] .import-source-field-original { max-height:min(30dvh,260px); }
+.import-source-field-dialog[data-long=true] .import-source-field-comparison textarea { min-height:200px; }
+.import-source-field-comparison .import-math-toolbar { display:flex; align-items:center; gap:3px; flex-wrap:nowrap; overflow-x:auto; padding:3px 6px; margin:0 0 6px; background:var(--surface-subtle); border:1px solid var(--line); border-radius:6px; }
+.import-source-field-comparison .import-math-token { flex-shrink:0; min-width:28px; height:28px; padding:2px 6px; font-size:12px; border:1px solid transparent; border-radius:4px; background:var(--surface); cursor:pointer; transition:all .12s ease; }
+.import-source-field-comparison .import-math-token:hover { background:var(--surface-hover); border-color:var(--line); }
 .import-source-field-comparison .import-math-toolbar-label { display:none; }
-.import-source-field-preview { margin-top:8px; }
-.import-source-field-preview > summary { min-height:44px; align-content:center; cursor:pointer; font-size:14px; color:var(--muted); }
-.import-source-field-preview > div { line-height:1.75; overflow-wrap:anywhere; }
+.import-source-field-preview { margin-top:6px; }
+.import-source-field-preview > summary { min-height:32px; align-content:center; cursor:pointer; font-size:13px; color:var(--muted); }
+.import-source-field-preview > div { line-height:1.65; font-size:13px; overflow-wrap:anywhere; }
 .import-source-field-dialog .modal-footer button { min-height:44px; }
 @media(max-width:700px) {
   .import-source-field-dialog .modal:has(.import-source-field-form) { max-height:calc(100dvh - 24px); }

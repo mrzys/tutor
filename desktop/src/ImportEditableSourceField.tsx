@@ -1,6 +1,7 @@
 import { For, Show, type JSX } from "solid-js";
 import { Pencil } from "lucide-solid";
 import type { TriageIssue } from "./import-triage";
+import { ReviewMessage } from "./ReviewMessage";
 
 export function ImportEditableSourceField(props: {
   path: string; label: string; editable: boolean; issues: readonly TriageIssue[];
@@ -13,7 +14,7 @@ export function ImportEditableSourceField(props: {
     }}>
     {props.children}
     <For each={props.issues.filter(issue => issue.domain === "source" && issue.target?.fieldPath === props.path)}>{issue =>
-      <p class="import-source-field-issue">{issue.message}</p>
+      <p class="import-source-field-issue"><ReviewMessage text={issue.message} /></p>
     }</For>
     <Show when={props.editable}><button type="button" class="text-button import-source-field-edit"
       aria-label={`修改${props.label}`} title={`修改${props.label}`} onClick={() => props.onEdit(props.path)}><Pencil size={15} /></button></Show>

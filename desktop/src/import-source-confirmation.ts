@@ -17,6 +17,13 @@ export function sourceConfirmationScopeLabel(question: any): string {
   ].join("、");
 }
 
+/** Structural content boundary shared with Rust's normalize_question. This is
+ * not a semantic judgement and never fills a missing source from an AI draft. */
+export function sourceConfirmationContentIssues(question: any): string[] {
+  if (!question || question._detailLoaded === false) return [];
+  return typeof question.stem !== "string" || !question.stem.trim() ? ["题干不能为空，请先补全原题内容。"] : [];
+}
+
 /** Prepare one explicit user confirmation for the existing import_review_save
  * contract. This neither publishes the source nor acknowledges an AI draft.
  * Rust still owns CAS, source/material completeness and publication checks. */
@@ -31,6 +38,8 @@ export function sourceConfirmationUpdate(record: any, questionId: string, option
   const matches = record.questions.filter((question: any) => question?.questionId === questionId);
   if (matches.length !== 1) throw new Error("当前题目身份不唯一或已变化，请重新读取。");
   const question = matches[0];
+  const contentIssues = sourceConfirmationContentIssues(question);
+  if (contentIssues.length) throw new Error(contentIssues[0]);
   if (options.persistedQuestions && record.questions.some((item: any) => item.questionId !== questionId
     && JSON.stringify(item) !== JSON.stringify(options.persistedQuestions?.find(old => old.questionId === item.questionId)))) {
     throw new Error("其他题有未保存修改，请先保存或撤销，再确认本题。");

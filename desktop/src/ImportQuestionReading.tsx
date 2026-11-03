@@ -1,5 +1,4 @@
-import { For, Show, createEffect, createMemo, createSignal, type JSX } from "solid-js";
-import { ChevronDown } from "lucide-solid";
+import { For, Show, createMemo, type JSX } from "solid-js";
 import { QuestionBody, RichText } from "./Paper";
 import { TeachingEditableField } from "./TeachingEditableField";
 import { ImportEditableSourceField } from "./ImportEditableSourceField";
@@ -9,12 +8,13 @@ import { reviewFieldLabel } from "./import-review-presentation";
 import { difficultyLevels } from "./assembly-details";
 import { compactTeachingText, teachingDisplayText } from "./teaching-text";
 import type { TriageIssue } from "./import-triage";
+import { ImportReadingTabs, type ImportReadingTab } from "./ImportReadingTabs";
 
 /** Reading only. The parent owns the session, exact versions, and both kinds
- * of editor; expanding a section never fetches or saves anything. */
+ * of editor; switching tabs never starts model work or saves anything. */
 export function ImportQuestionReading(props: {
   question: any; presentation: any; controls?: TeachingReviewControls; issues: readonly TriageIssue[];
-  domain: "source" | "teaching"; focus: "solution" | "assessment"; focusRequest: number;
+  tab: ImportReadingTab; onTabChange: (tab: ImportReadingTab) => void;
   sourceCanEdit: (path: string) => boolean; teachingCanEdit: (path: string) => boolean;
   onEditSource: (path: string) => void; onEditTeaching: (path: string) => void;
   onSelectIssue: (id: string) => void;
@@ -22,22 +22,6 @@ export function ImportQuestionReading(props: {
 }) {
   const draft = createMemo(() => importTeachingPresentation(props.question, props.controls));
   const assessment = createMemo(() => importAssessmentPresentation(props.question, props.controls));
-  const [aiOpen, setAiOpen] = createSignal(false), [assessmentOpen, setAssessmentOpen] = createSignal(false);
-  let previousQuestion = "", previousFocus = -1;
-  createEffect(() => {
-    const id = props.question.questionId, focus = props.focusRequest;
-    if (id !== previousQuestion) {
-      previousQuestion = id;
-      setAiOpen(props.domain === "teaching" && props.focus === "solution");
-      setAssessmentOpen(props.domain === "teaching" && props.focus === "assessment");
-    }
-    if (focus !== previousFocus) {
-      previousFocus = focus;
-      if (props.domain === "teaching") {
-        if (props.focus === "assessment") setAssessmentOpen(true); else setAiOpen(true);
-      }
-    }
-  });
   const issuesFor = (path: string) => props.issues.filter(issue => issue.domain === "teaching" && issue.target?.fieldPath === path);
   const marked = (path: string, value: string) => <ReviewMarkedText text={value} fieldPath={path}
     issues={props.issues} binding={props.controls} compact projectText={text => compactTeachingText(teachingDisplayText(text))}
@@ -47,34 +31,37 @@ export function ImportQuestionReading(props: {
   const sourceField = (path: string, children: JSX.Element) => <ImportEditableSourceField path={path}
     label={reviewFieldLabel(path, "source")} editable={props.sourceCanEdit(path)} issues={props.issues} onEdit={props.onEditSource}>{children}</ImportEditableSourceField>;
   const primaryIds = () => props.question.primaryKnowledgeUids || props.question.knowledgeUids || [];
-  const hasFormal = () => Boolean(assessment()?.level || assessment()?.examFocus || assessment()?.basis || primaryIds().length || assessment()?.paths.length);
   return <article class="import-preview import-question-reading">
     <section class="import-source-reading" aria-label="原卷题目与参考">
       <QuestionBody question={props.presentation} hideMissingTeacherMaterials number={props.question.sourceLabel}
         teacher hideSource reviewFieldPrefix="source:" renderReviewField={sourceField} />
     </section>
-    <Show when={draft()}>{value => <details class="import-reading-section" open={aiOpen()}
-      onToggle={event => setAiOpen(event.currentTarget.open)} data-reading-section="solution">
-      <summary><span>AI教学稿 <small>{value().ready ? "AI生成" : "待核对"}</small></span><ChevronDown size={16} /></summary>
+    <ImportReadingTabs questionKey={props.question.questionId} value={props.tab} onChange={props.onTabChange}
+      statuses={{ solution: draft() ? draft()!.ready ? "AI生成" : "待核对" : "未生成", assessment: assessment().needsSupplement ? "待补全" : "" }}
+      solution={
+    <Show when={draft()} fallback={<p class="muted">本题尚无AI教学稿，原卷实际答案与解析保留在“原题”中。</p>}>{value => <section class="import-reading-section" data-reading-section="solution">
       <div class="import-reading-section-content" aria-label="AI答案与解析">
         <Show when={value().answer}>{editable("answer", "AI答案", <p><strong>答案：</strong>{marked("answer", value().answer)}</p>)}</Show>
         <Show when={value().solution}>{editable("teachingSolution", "AI解析", marked("teachingSolution", value().solution))}</Show>
       </div>
-    </details>}</Show>
-    <details class="import-reading-section" open={assessmentOpen()} onToggle={event => setAssessmentOpen(event.currentTarget.open)} data-reading-section="assessment">
-      <summary><span>考查信息 <small>{hasFormal() ? "难度与知识点" : "待补全"}</small></span><ChevronDown size={16} /></summary>
+    </section>}</Show>
+      } assessment={
+    <section class="import-reading-section" data-reading-section="assessment">
       <div class="import-reading-section-content" aria-label="考查信息">
         <Show when={assessment()}>{value => <>
-          <Show when={value().level || value().examFocus || primaryIds().length}><dl class="import-reading-facts">
-            <Show when={value().level}><div><dt>难度</dt><dd>{difficultyLevels.find(level => level.id === value().level)?.label || value().level}<small>{value().difficultyOrigin}</small></dd></div></Show>
-            <Show when={value().examFocus}><div><dt>考查点</dt><dd>
+          <dl class="import-reading-facts">
+            <div><dt>主考知识点</dt><dd>{props.knowledgeNames(primaryIds())}<Show when={!primaryIds().length}><small>待补全</small></Show></dd></div>
+            <div><dt>难度</dt><dd>
+              <Show when={value().level} fallback={<>未评估<small>待补全</small></>}>{level => <>{difficultyLevels.find(item => item.id === level())?.label || level()}<small>{value().difficultyOrigin}</small></>}</Show>
+              <Show when={value().candidateLevel}>{level => <small class="import-candidate-difficulty">AI候选：{difficultyLevels.find(item => item.id === level())?.label} · 待核对</small>}</Show>
+            </dd></div>
+            <div><dt>考查点</dt><dd><Show when={value().examFocus} fallback={<>未标注<small>待补全</small></>}>
               <Show when={draft()?.ready && props.question.knowledgeMappingSource !== "teacher_edit" && props.teachingCanEdit("teachingFocus.examFocus")}
                 fallback={<RichText text={teachingDisplayText(value().examFocus)} question={props.presentation} teacher />}>
                 {editable("teachingFocus.examFocus", "AI考查点", marked("teachingFocus.examFocus", draft()?.examFocus || value().examFocus))}
               </Show>
-            </dd></div></Show>
-            <Show when={primaryIds().length}><div><dt>主考知识点</dt><dd>{props.knowledgeNames(primaryIds())}</dd></div></Show>
-          </dl></Show>
+            </Show></dd></div>
+          </dl>
           <Show when={draft()}>{candidate => <div class="import-candidate-assessment">
             <Show when={(!candidate().ready || value().difficultyOrigin !== "AI内容估计") && (candidate().basis || props.teachingCanEdit("difficultyAssessment.basis"))}>
               {editable("difficultyAssessment.basis", "候选难度依据", <><h4>{candidate().ready ? "AI难度依据" : "候选难度依据 · 待核对"}</h4>{marked("difficultyAssessment.basis", candidate().basis || "尚未填写难度依据")}</>)}
@@ -97,9 +84,10 @@ export function ImportQuestionReading(props: {
               <RichText text={teachingDisplayText(path.basis || "本条解法依据待补充。")} question={props.presentation} teacher />
             </section>
           }</For></section></Show>
-          <Show when={!hasFormal()}><p class="muted">正式考查信息尚未补全，可通过页头的整卷入口处理。原题核对和手动选题可继续进行。</p></Show>
+          <Show when={value().needsSupplement}><p class="muted">正式考查信息尚未补全，可通过页头的“考查信息”入口补充缺失项。原题核对和手动选题可继续进行。</p></Show>
         </>}</Show>
       </div>
-    </details>
+    </section>
+      } />
   </article>;
 }

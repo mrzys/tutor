@@ -32,27 +32,28 @@
 .teaching-review-options-content textarea { width:100%; }
 .teaching-edit-context { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; margin:0 0 8px; color:var(--muted); font-size:14px; }
 .teaching-edit-context button { min-height:44px; }
-.teaching-edit-comparison { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-bottom: 8px; }
+.teaching-edit-comparison { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 16px; margin-bottom: 6px; }
 .teaching-edit-original, .teaching-edit-replacement { min-width: 0; }
-.teaching-edit-original h3, .teaching-edit-replacement h3 { margin: 0 0 8px; font-size:14px; color: var(--accent); }
-.teaching-edit-original-content { max-height:132px; overflow:auto; padding:10px 12px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: var(--control-radius); line-height: 1.75; overflow-wrap: anywhere; }
+.teaching-edit-original h3, .teaching-edit-replacement h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--accent); }
+.teaching-edit-original-content { max-height: 140px; overflow: auto; padding: 8px 12px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: var(--control-radius); line-height: 1.65; font-size: 13px; overflow-wrap: anywhere; }
 .teaching-edit-original-content img { max-width: 100%; height: auto; }
-.teaching-edit-replacement textarea { display:block; width:100%; min-height:104px; resize:vertical; line-height:1.75; }
-.teaching-edit-dialog[data-long=true] .teaching-edit-original-content { max-height:min(34dvh,300px); }
-.teaching-edit-dialog[data-long=true] .teaching-edit-replacement textarea { min-height:224px; }
-.teaching-edit-replacement .import-math-toolbar { flex-wrap:nowrap; overflow-x:auto; padding:2px 6px; margin-top:0; }
-.teaching-edit-replacement .import-math-token { flex-shrink:0; min-width:44px; min-height:44px; }
-.teaching-edit-replacement .import-math-toolbar-label { display:none; }
-.teaching-edit-preview { margin:0; }
-.teaching-edit-preview > summary { min-height:44px; align-content:center; cursor:pointer; color:var(--muted); font-size:14px; }
-.teaching-edit-preview > div { margin:8px 0 12px; line-height:1.75; overflow-wrap:anywhere; }
-.teaching-edit-form .import-manual-fields { min-width:0; padding:0; }
-.teaching-edit-form .check-row { min-height:44px; align-items:center; margin-top:6px; line-height:1.7; font-size:14px; }
-.teaching-edit-form .check-row input { flex-shrink: 0; margin-top: 5px; }
-.teaching-edit-form .field-label > textarea { width: 100%; }
-.teaching-edit-form .teaching-edit-basis { margin:0; gap:6px; font-size:14px; }
-.teaching-edit-form .teaching-edit-basis textarea { min-height:68px; }
-.teaching-edit-form .warning-text { margin-top: 14px; }
+.teaching-edit-replacement textarea { display: block; width: 100%; min-height: 96px; resize: vertical; line-height: 1.65; font-size: 13px; }
+.teaching-edit-dialog[data-long=true] .teaching-edit-original-content { max-height: min(30dvh, 260px); }
+.teaching-edit-dialog[data-long=true] .teaching-edit-replacement textarea { min-height: 200px; }
+.teaching-edit-replacement .import-math-toolbar { display: flex; align-items: center; gap: 3px; flex-wrap: nowrap; overflow-x: auto; padding: 3px 6px; margin: 0 0 6px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: 6px; }
+.teaching-edit-replacement .import-math-token { flex-shrink: 0; min-width: 28px; height: 28px; padding: 2px 6px; font-size: 12px; border: 1px solid transparent; border-radius: 4px; background: var(--surface); cursor: pointer; transition: all .12s ease; }
+.teaching-edit-replacement .import-math-token:hover { background: var(--surface-hover); border-color: var(--line); }
+.teaching-edit-replacement .import-math-toolbar-label { display: none; }
+.teaching-edit-preview { margin: 4px 0 0; }
+.teaching-edit-preview > summary { min-height: 32px; align-content: center; cursor: pointer; color: var(--muted); font-size: 13px; }
+.teaching-edit-preview > div { margin: 6px 0 10px; line-height: 1.65; font-size: 13px; overflow-wrap: anywhere; }
+.teaching-edit-form .import-manual-fields { min-width: 0; padding: 0; }
+.teaching-edit-audit-card { margin-top: 10px; padding: 10px 14px; background: var(--surface-subtle); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+.teaching-edit-audit-card .teaching-edit-basis { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 500; }
+.teaching-edit-audit-card .teaching-edit-basis textarea { min-height: 52px; font-size: 13px; line-height: 1.6; }
+.teaching-edit-audit-card .check-row { margin: 0; font-size: 13px; min-height: auto; display: flex; align-items: center; gap: 6px; }
+.teaching-edit-audit-card .check-row input { flex-shrink: 0; margin: 0; }
+.teaching-edit-form .warning-text { margin-top: 12px; }
 
 @media (max-width: 760px) {
   .teaching-edit-dialog .modal:has(.teaching-edit-form) { max-height:calc(100dvh - 24px); }
