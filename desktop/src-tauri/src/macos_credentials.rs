@@ -5,6 +5,7 @@ use ring::{
     rand::{SecureRandom, SystemRandom},
 };
 use security_framework::os::macos::keychain::SecKeychain;
+use std::sync::Mutex;
 use zeroize::Zeroizing;
 
 #[cfg(not(test))]
@@ -16,6 +17,46 @@ const NONCE_LENGTH: usize = 12;
 // Security.framework's errSecItemNotFound and errSecDuplicateItem.
 const ITEM_NOT_FOUND: i32 = -25300;
 const DUPLICATE_ITEM: i32 = -25299;
+
+#[derive(PartialEq, Eq)]
+struct MasterKeyIdentity<K> {
+    keychain: K,
+    service: String,
+    account: &'static str,
+}
+
+struct MasterKeyCache<I> {
+    keys: Mutex<Vec<(I, Zeroizing<Vec<u8>>)>>,
+}
+
+impl<I: PartialEq> MasterKeyCache<I> {
+    const fn new() -> Self {
+        Self {
+            keys: Mutex::new(Vec::new()),
+        }
+    }
+
+    fn get(
+        &self,
+        identity: I,
+        store: &impl MasterKeyStore,
+        create: bool,
+    ) -> AppResult<Zeroizing<Vec<u8>>> {
+        // Hold the lock through the first Keychain read so concurrent settings/OCR opens
+        // share one authorization. Failed reads stay retryable and are never cached.
+        let mut keys = self.keys.lock().map_err(|_| credential_error())?;
+        if let Some((_, key)) = keys.iter().find(|(cached, _)| cached == &identity) {
+            return Ok(key.clone());
+        }
+        let key = master_key(store, create)?;
+        keys.push((identity, key.clone()));
+        Ok(key)
+    }
+}
+
+// A successful authorization lasts for this process. Restarting reads the Keychain
+// again; locking or changing it externally does not revoke an already loaded key.
+static MASTER_KEYS: MasterKeyCache<MasterKeyIdentity<SecKeychain>> = MasterKeyCache::new();
 
 fn credential_error() -> AppError {
     AppError::new(
@@ -91,14 +132,33 @@ fn valid_envelope(input: &[u8]) -> bool {
         && input.len() >= HEADER.len() + NONCE_LENGTH + aead::AES_256_GCM.tag_len()
 }
 
+#[cfg(test)]
 fn transform(input: &[u8], decrypt: bool, store: &impl MasterKeyStore) -> AppResult<Vec<u8>> {
     // Bad or foreign platform data must not create a new master key or prompt Keychain access.
     if decrypt && !valid_envelope(input) {
         return Err(credential_error());
     }
     let master = master_key(store, !decrypt)?;
+    transform_with_master(input, decrypt, &master)
+}
+
+fn cached_transform<I: PartialEq>(
+    input: &[u8],
+    decrypt: bool,
+    store: &impl MasterKeyStore,
+    cache: &MasterKeyCache<I>,
+    identity: I,
+) -> AppResult<Vec<u8>> {
+    if decrypt && !valid_envelope(input) {
+        return Err(credential_error());
+    }
+    let master = cache.get(identity, store, !decrypt)?;
+    transform_with_master(input, decrypt, &master)
+}
+
+fn transform_with_master(input: &[u8], decrypt: bool, master: &[u8]) -> AppResult<Vec<u8>> {
     let key = LessSafeKey::new(
-        UnboundKey::new(&aead::AES_256_GCM, &master).map_err(|_| credential_error())?,
+        UnboundKey::new(&aead::AES_256_GCM, master).map_err(|_| credential_error())?,
     );
     if decrypt {
         let nonce =
@@ -129,6 +189,16 @@ fn transform(input: &[u8], decrypt: bool, store: &impl MasterKeyStore) -> AppRes
     }
 }
 
+fn keychain_transform(input: &[u8], decrypt: bool, service: &str) -> AppResult<Vec<u8>> {
+    let store = KeychainStore::new(service)?;
+    let identity = MasterKeyIdentity {
+        keychain: store.keychain.clone(),
+        service: service.to_owned(),
+        account: ACCOUNT,
+    };
+    cached_transform(input, decrypt, &store, &MASTER_KEYS, identity)
+}
+
 #[cfg(not(test))]
 pub(super) fn secret_bytes(input: &[u8], decrypt: bool) -> AppResult<Vec<u8>> {
     if decrypt && !valid_envelope(input) {
@@ -146,15 +216,15 @@ pub(super) fn secret_bytes(input: &[u8], decrypt: bool) -> AppResult<Vec<u8>> {
         if id.to_string() != suffix {
             return Err(credential_error());
         }
-        return transform(input, decrypt, &KeychainStore::new(service)?);
+        return keychain_transform(input, decrypt, service);
     }
-    transform(input, decrypt, &KeychainStore::new(SERVICE)?)
+    keychain_transform(input, decrypt, SERVICE)
 }
 
 #[cfg(test)]
 pub(super) fn secret_bytes(input: &[u8], decrypt: bool) -> AppResult<Vec<u8>> {
     tests::TEST_KEYCHAIN_SERVICE.with(|service| match service.borrow().as_deref() {
-        Some(service) => transform(input, decrypt, &KeychainStore::new(service)?),
+        Some(service) => keychain_transform(input, decrypt, service),
         None => tests::TEST_STORE.with(|store| transform(input, decrypt, store)),
     })
 }
@@ -163,6 +233,169 @@ pub(super) fn secret_bytes(input: &[u8], decrypt: bool) -> AppResult<Vec<u8>> {
 mod tests {
     use super::*;
     use std::cell::{Cell, RefCell};
+    use std::sync::{
+        Barrier,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+    };
+
+    struct ConcurrentStore {
+        key: Mutex<Option<Zeroizing<Vec<u8>>>>,
+        reads: AtomicUsize,
+        deny: AtomicBool,
+    }
+
+    impl ConcurrentStore {
+        fn new() -> Self {
+            Self {
+                key: Mutex::new(Some(Zeroizing::new(vec![4; KEY_LENGTH]))),
+                reads: AtomicUsize::new(0),
+                deny: AtomicBool::new(false),
+            }
+        }
+    }
+
+    impl MasterKeyStore for ConcurrentStore {
+        fn read(&self) -> AppResult<Option<Zeroizing<Vec<u8>>>> {
+            self.reads.fetch_add(1, Ordering::SeqCst);
+            if self.deny.load(Ordering::SeqCst) {
+                return Err(credential_error());
+            }
+            Ok(self.key.lock().unwrap().clone())
+        }
+
+        fn add(&self, key: &[u8]) -> AppResult<()> {
+            let mut existing = self.key.lock().unwrap();
+            if existing.is_none() {
+                *existing = Some(Zeroizing::new(key.to_vec()));
+            }
+            Ok(())
+        }
+    }
+
+    fn identity(keychain: &'static str, service: &str) -> MasterKeyIdentity<&'static str> {
+        MasterKeyIdentity {
+            keychain,
+            service: service.to_owned(),
+            account: ACCOUNT,
+        }
+    }
+
+    #[test]
+    fn master_cache_reads_once_for_repeated_and_concurrent_settings_opens() {
+        let cache = MasterKeyCache::new();
+        let store = ConcurrentStore::new();
+        let barrier = Barrier::new(8);
+        std::thread::scope(|scope| {
+            for _ in 0..8 {
+                scope.spawn(|| {
+                    barrier.wait();
+                    let sealed = cached_transform(
+                        b"simulated-setting",
+                        false,
+                        &store,
+                        &cache,
+                        identity("keychain-a", "test-service-a"),
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        cached_transform(
+                            &sealed,
+                            true,
+                            &store,
+                            &cache,
+                            identity("keychain-a", "test-service-a"),
+                        )
+                        .unwrap(),
+                        b"simulated-setting"
+                    );
+                });
+            }
+        });
+        assert_eq!(store.reads.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn master_cache_isolates_service_account_and_keychain() {
+        let cache = MasterKeyCache::new();
+        let store = ConcurrentStore::new();
+        for id in [
+            identity("keychain-a", "test-service-a"),
+            identity("keychain-a", "test-service-b"),
+            identity("keychain-b", "test-service-a"),
+            MasterKeyIdentity {
+                account: "another-account",
+                ..identity("keychain-a", "test-service-a")
+            },
+        ] {
+            cache.get(id, &store, false).unwrap();
+        }
+        cache
+            .get(identity("keychain-a", "test-service-a"), &store, false)
+            .unwrap();
+        assert_eq!(store.reads.load(Ordering::SeqCst), 4);
+    }
+
+    #[test]
+    fn master_cache_does_not_cache_denied_missing_or_invalid_keys() {
+        for initial in [
+            None,
+            Some(Zeroizing::new(vec![1; 5])),
+            Some(Zeroizing::new(vec![4; KEY_LENGTH])),
+        ] {
+            let cache = MasterKeyCache::new();
+            let store = ConcurrentStore::new();
+            let denied = initial.as_ref().is_some_and(|key| key.len() == KEY_LENGTH);
+            *store.key.lock().unwrap() = initial;
+            store.deny.store(denied, Ordering::SeqCst);
+            assert!(
+                cache
+                    .get(identity("keychain-a", "test-service-a"), &store, false)
+                    .is_err()
+            );
+            store.deny.store(false, Ordering::SeqCst);
+            *store.key.lock().unwrap() = Some(Zeroizing::new(vec![4; KEY_LENGTH]));
+            cache
+                .get(identity("keychain-a", "test-service-a"), &store, false)
+                .unwrap();
+            cache
+                .get(identity("keychain-a", "test-service-a"), &store, false)
+                .unwrap();
+            assert_eq!(store.reads.load(Ordering::SeqCst), 2);
+        }
+    }
+
+    #[test]
+    fn cached_master_preserves_existing_envelopes_and_tamper_checks() {
+        let store = MemoryStore::default();
+        let legacy = transform(b"simulated-existing-secret", false, &store).unwrap();
+        let cache = MasterKeyCache::new();
+        let open = |input: &[u8], decrypt| {
+            cached_transform(
+                input,
+                decrypt,
+                &store,
+                &cache,
+                identity("keychain-a", "test-service-a"),
+            )
+        };
+        let before = store.reads.get();
+        for input in [b"foreign-dpapi-data".as_slice(), HEADER, b""] {
+            assert!(open(input, true).is_err());
+        }
+        assert_eq!(store.reads.get(), before);
+        assert_eq!(open(&legacy, true).unwrap(), b"simulated-existing-secret");
+        let current = open(b"simulated-new-secret", false).unwrap();
+        for index in [0, HEADER.len(), current.len() - 1] {
+            let mut damaged = current.clone();
+            damaged[index] ^= 1;
+            assert!(open(&damaged, true).is_err());
+        }
+        assert_eq!(store.reads.get(), before + 1);
+        assert_eq!(
+            transform(&current, true, &store).unwrap(),
+            b"simulated-new-secret"
+        );
+    }
 
     #[derive(Default)]
     pub(super) struct MemoryStore {

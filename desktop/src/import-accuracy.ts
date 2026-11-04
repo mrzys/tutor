@@ -86,7 +86,7 @@ export function accuracyFindings(question: any): { id: string; domain: string; m
   }]);
 }
 export function accuracyFieldLabel(path: unknown): string {
-  const value = text(path).replace(/^student\./, "").replace(/^candidate\./, "").replace(/^originalReference\./, "");
+  const value = text(path).replace(/^student\./, "").replace(/^candidate\./, "").replace(/^originalReference\./, "").replace(/^teaching\./, "");
   if (value === "originalProblemValidity") return "题目有效性";
   if (value === "questionType") return "题型";
   if (value === "stem") return "题干";
@@ -98,6 +98,7 @@ export function accuracyFieldLabel(path: unknown): string {
   if (value.startsWith("primaryKnowledge")) return "主考知识";
   if (value.startsWith("solutionPaths")) return "解法依赖";
   if (value.startsWith("teachingFocus")) return "教学说明";
+  if (value === "task" || value.startsWith("task.")) return "考查任务";
   return "";
 }
 export function accuracyEvidence(question: any): { label: string; basis: string; checks: { label: string; status: string; basis: string }[]; disagreements: { label: string; claimA: string; claimB: string; stepA: string; stepB: string; basis: string }[] }[] {

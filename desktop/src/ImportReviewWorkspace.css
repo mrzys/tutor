@@ -25,7 +25,20 @@
 .import-review-modern button, .import-review-modern select { font-size: var(--font-body); }
 .import-review-modern button > svg { width: 1.125em; height: 1.125em; flex-shrink: 0; }
 .import-review-header { flex: none; min-width: 0; }
-.sidebar-collapsed .import-review-title-row { padding-left: 52px; }
+.import-pending-breakdown { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 4px 0 8px; font-size: 13px; }
+.import-action-guidance { flex: none; min-width: 0; max-height: 34vh; overflow-y: auto; padding: 10px 12px; margin: 4px 0 8px; border: 1px solid var(--line); border-radius: 12px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.import-action-guidance-heading { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.import-action-guidance-heading > strong { font-size: 15px; }
+.import-action-guidance p { margin: 4px 0; }
+.import-action-guidance ul { max-height: 112px; overflow-y: auto; margin: 6px 0; padding-left: 20px; }
+.import-action-guidance li + li { margin-top: 4px; }
+.import-action-guidance-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
+.import-action-guidance-actions > button { min-height: 44px; height: auto; white-space: normal; }
+@media (max-width: 700px) {
+  .import-action-guidance { max-height: 45vh; }
+  .import-action-guidance ul { max-height: 90px; }
+}
+.sidebar-collapsed .main-content.import-content:has(.import-review-modern) { padding-top: 68px; }
 .import-review-title-row { display: flex; align-items: center; gap: 8px; min-height: 40px; }
 .import-review-title-row h1 { flex: 1; min-width: 0; margin: 0; font-size: var(--review-title-size); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .import-review-title-row .import-history-back { flex: none; width: 44px; min-height: 44px; height: 44px; padding: 11px; justify-content: center; border-radius: 6px; }
@@ -212,6 +225,17 @@
 .import-task-note > div { position: absolute; z-index: 6; bottom: calc(100% + 8px); left: 0; width: 260px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 6px 24px #00000012; }
 .import-task-note textarea { width: 100%; min-height: 80px; }
 .import-review-modern .import-process-strip { flex: none; margin: 4px 0; font-size: var(--font-caption); }
+.import-processing-state { display: flex; align-items: flex-start; gap: 16px; padding: 24px; margin-top: 20px; border: 1px solid var(--line); border-radius: var(--surface-radius); }
+.import-processing-state > svg { flex: none; margin-top: 5px; color: var(--muted); }
+.import-processing-state > div { flex: 1; min-width: 0; }
+.import-processing-state h2 { margin: 4px 0 12px; font-size: var(--font-heading); line-height: 1.5; }
+.import-processing-state p { margin: 4px 0; line-height: 1.75; overflow-wrap: anywhere; }
+.import-processing-state > button { flex: none; min-height: 44px; }
+@media(max-width:700px) {
+  .import-processing-state { flex-wrap: wrap; padding: 18px; gap: 12px; }
+  .import-processing-state > div { flex-basis: calc(100% - 48px); }
+  .import-processing-state > button { margin-left: 36px; }
+}
 .import-review-modern > .import-failure { flex: none; max-height: 180px; overflow: auto; margin: 4px 0; }
 .import-review-modern .import-failure-title h3 { font-size: var(--font-body); }
 .import-review-modern .import-failure dl > div { grid-template-columns: calc(var(--font-body) * 5) minmax(0, 1fr); }

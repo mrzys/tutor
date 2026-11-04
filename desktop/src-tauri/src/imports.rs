@@ -1090,6 +1090,11 @@ fn verify_accuracy_source_configuration(store:&Store,model:&ModelClient,record:&
         || run["strategy"]["roleSettings"]["sourceParsing"]!=current["effectiveImportRoles"]["sourceParsing"] {
         return Err(err("accuracy_configuration_changed","拆题配置或思考设置已变更，请恢复本次保存的配置后继续；原策略和已用额度均保留。"));
     }
+    if run["strategy"]["bindings"]["sourceIndexing"].is_object()
+        && (run["strategy"]["bindings"]["sourceIndexing"] != model.import_source_index_model()?.import_execution_identity()?
+            || run["strategy"]["roleSettings"]["sourceIndexing"] != current["effectiveImportRoles"]["sourceIndexing"]) {
+        return Err(err("accuracy_configuration_changed","索引思考设置已变更，请恢复本次保存的配置后继续；原策略和已用额度均保留。"));
+    }
     Ok(())
 }
 fn source_transcription_context(store:&Store,record:&Value,pages:&[String])->AppResult<Value>{
@@ -1315,7 +1320,7 @@ fn process_import_scoped(
             return Ok(());
         }
         verify_accuracy_source_configuration(store,workflow_model,&record)?;
-        let source_model = accuracy::bind_model(&workflow_model.import_source_model()?, &record);
+        let source_model = accuracy::bind_model(store, &workflow_model.import_source_model()?, &record)?;
         let model = &source_model;
         let attempt_path = prepare_attempt_path(store, &record, op)?;
         let provider_path = attempt_path.with_extension("provider-response.json");

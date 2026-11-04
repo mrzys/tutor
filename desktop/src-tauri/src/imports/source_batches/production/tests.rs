@@ -38,6 +38,31 @@ fn fixture() -> (tempfile::TempDir, Store, Value, OcrDocument) {
     store.put_document("imports", id, &r).unwrap();
     (dir, store, r, d)
 }
+
+#[test]
+fn source_thinking_checkpoint_freezes_new_stages_and_never_migrates_old_successes() {
+    let (dir,store,mut record,_document)=fixture();
+    let mut model=ModelClient::test_client(dir.path(),"http://127.0.0.1:1/v1");
+    let setting=|effort:&str|json!({"profileId":"processor","provider":"deepseek","model":"deepseek-flash","reasoningEffort":effort});
+    let mut thinking=json!({"sourceIndexing":setting("low"),"sourceParsing":setting("high"),"teachingGeneration":setting("high"),"teachingReview":null});
+    model.save(&json!({"expectedRevision":0,"profiles":[{"id":"processor","name":"模拟处理","baseUrl":"https://api.deepseek.com","model":"deepseek-flash","apiKey":"simulated-processing-key"}],"activeProfileId":"processor","importRoles":{"sourceParsing":"processor","teachingGeneration":"processor","teachingReview":null},"importRoleThinking":thinking})).unwrap();
+    let mut checkpoint=json!({"version":VERSION,"pipelineVersion":PIPELINE,"plan":plan(),"batches":[{"status":"succeeded","questions":[{"questionId":"simulated-preserved"}],"attempts":[{"status":"succeeded","operationId":"simulated-success"}]}]});
+    let original=checkpoint.clone();
+    let old_client=source_stage_client(&model,&mut checkpoint,false).unwrap();
+    assert_eq!(old_client.import_source_index_model().unwrap().public_settings()["reasoningEffort"],"high");
+    assert_eq!(checkpoint,original);
+    let new_client=source_stage_client(&model,&mut checkpoint,true).unwrap();
+    assert_eq!(new_client.import_source_index_model().unwrap().public_settings()["reasoningEffort"],"low");
+    assert_eq!(checkpoint["batches"],original["batches"]);
+    record["sourceStructuring"]=checkpoint.clone();
+    store.put_document("imports",s(&record,"importId"),&record).unwrap();
+    let mut reloaded=store.document("imports",s(&record,"importId")).unwrap();
+    source_stage_client(&model,&mut reloaded["sourceStructuring"],false).unwrap();
+    thinking["sourceIndexing"]=setting("high");
+    model.save(&json!({"expectedRevision":model.public_settings()["revision"],"importRoleThinking":thinking})).unwrap();
+    assert_eq!(source_stage_client(&model,&mut reloaded["sourceStructuring"],false).err().unwrap().code,"accuracy_configuration_changed");
+    assert_eq!(store.document("imports",s(&record,"importId")).unwrap(),record);
+}
 fn plan() -> Value {
     json!({"questions":(1..=4).map(|i|json!({"sourceLabel":i.to_string(),"questionType":"free_response","sourceBlockIds":[format!("p1-b{i}"),"p1-b5"]})).collect::<Vec<_>>(),"sharedBlockIds":["p1-b5"],"documentBlockIds":[]})
 }

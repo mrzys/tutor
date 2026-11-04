@@ -17,6 +17,26 @@ fn findings(value: &Value) -> Value {
     }).collect::<Vec<_>>())
 }
 
+fn accuracy_findings(value: &Value) -> Value {
+    let mut result = findings(value);
+    for (original, summary) in rows(value).iter().zip(result.as_array_mut().into_iter().flatten()) {
+        let Some(summary) = summary.as_object_mut() else { continue; };
+        if let Some(domain) = original["domain"].as_str().filter(|domain| domain.chars().count() <= 80) {
+            summary.insert("domain".into(), json!(domain));
+        }
+        // Older accuracy projections put the technical error code in basis.
+        // Preserve that classifier without shipping full model/teacher evidence.
+        summary.remove("code");
+        let code = |key: &str| original[key].as_str().filter(|value| !value.is_empty() && value.len() <= 128
+            && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.')));
+        if let Some(code) = code("code") { summary.insert("code".into(), json!(code)); }
+        if original["domain"] == "process" || original["id"] == "technical_failure" {
+            if let Some(code) = code("basis") { summary.insert("basis".into(), json!(code)); }
+        }
+    }
+    result
+}
+
 fn text_shape(value: &Value, keys: &[&str]) -> Value {
     let mut result = json!({});
     for key in keys {
@@ -32,7 +52,7 @@ fn question_summary(q: &Value) -> Value {
     if q["accuracy"].is_object() {
         result["accuracy"]=q["accuracy"].clone();
         result["accuracy"].as_object_mut().unwrap().remove("candidate");
-        if q["accuracy"]["findings"].is_array() {result["accuracy"]["findings"]=findings(&q["accuracy"]["findings"]);}
+        if q["accuracy"]["findings"].is_array() {result["accuracy"]["findings"]=accuracy_findings(&q["accuracy"]["findings"]);}
     }
     // Structural presence only. The frontend still requires its existing ready
     // state before offering annotation; no generated proof text leaves here.
@@ -230,6 +250,32 @@ mod tests;
 #[cfg(test)]
 mod accuracy_tests {
     use super::*;
+
+    #[test]
+    fn summary_keeps_accuracy_problem_domains_and_legacy_error_codes_without_full_evidence(){
+        let q=json!({"questionId":"simulated-summary","stem":"SIMULATED_BODY","accuracy":{
+            "candidate":{"answer":"SIMULATED_CANDIDATE"},"findings":[
+                {"id":"technical_failure","domain":"process","message":"模型输出未通过结构校验",
+                    "basis":"accuracy_contract_invalid","code":"model_output_invalid_json","audit":{"raw":"SIMULATED_AUDIT"}},
+                {"id":"math-issue","domain":"mathematics","message":"证明依据不足","basis":"SIMULATED_FULL_EVIDENCE"},
+                {"id":"technical_failure","domain":"process","message":"错误代码缺失","basis":"SIMULATED_LONG_EVIDENCE ".repeat(100)},
+                {"id":"invalid-types","domain":{"raw":"SIMULATED_DOMAIN_OBJECT"},"code":{"raw":"SIMULATED_CODE_OBJECT"}}
+            ]}});
+        let summary=question_summary(&q);
+        let issues=&summary["accuracy"]["findings"];
+        assert_eq!(issues[0]["domain"],"process");
+        assert_eq!(issues[0]["basis"],"accuracy_contract_invalid");
+        assert_eq!(issues[0]["code"],"model_output_invalid_json");
+        assert_eq!(issues[1]["domain"],"mathematics");
+        assert!(issues[1].get("basis").is_none());
+        assert!(issues[2].get("basis").is_none());
+        assert!(issues[3].get("domain").is_none());
+        assert!(issues[3].get("code").is_none());
+        let encoded=summary.to_string();
+        for marker in ["SIMULATED_BODY","SIMULATED_CANDIDATE","SIMULATED_AUDIT","SIMULATED_FULL_EVIDENCE","SIMULATED_LONG_EVIDENCE","SIMULATED_DOMAIN_OBJECT","SIMULATED_CODE_OBJECT"] {
+            assert!(!encoded.contains(marker),"summary leaked {marker}");
+        }
+    }
 
     fn fixture()->(tempfile::TempDir,Store,Value){
         let dir=tempfile::tempdir().unwrap();

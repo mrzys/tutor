@@ -11,7 +11,7 @@ export const importRoleDefinitions = [
 ] as const;
 export type ImportRole = typeof importRoleDefinitions[number]["id"];
 export const importModelDefinitions = [
-  { id: "teachingGeneration", label: "处理模型", description: "拆题后，一次生成答案解析、知识点和难度等教学信息。", recommendation: "DeepSeek Flash", reason: "拆题和内容处理共用这套模型；拆题思考设置可单独保留。" },
+  { id: "teachingGeneration", label: "处理模型", description: "建立索引、拆分题目，再生成答案解析、知识点和难度等教学信息。", recommendation: "DeepSeek Flash", reason: "索引、拆题和解题共用这套模型，分别设置思考强度。" },
   { id: "teachingReview", label: "复核模型", description: "一次核对原卷来源、答案证明和教学信息，分别给出具体依据。", recommendation: "Qwen · 阿里云百炼", reason: "复核发现问题时保留待处理；修订由你显式发起，不自动循环。" },
 ] as const;
 export type ImportModel = typeof importModelDefinitions[number]["id"];
@@ -21,7 +21,8 @@ type LegacyImportRole = typeof legacyImportRoles[number];
 type RoleValues<T> = Record<LegacyImportRole, T | null> & Partial<Record<Exclude<ImportRole, LegacyImportRole>, T | null>>;
 export type ImportRoles = RoleValues<string> | null;
 export type ImportRoleThinkingEntry = { profileId: string; provider: string; model: string; reasoningEffort: string };
-export type ImportRoleThinking = RoleValues<ImportRoleThinkingEntry> | null;
+export type ImportThinkingRole = ImportRole | "sourceIndexing";
+export type ImportRoleThinking = (RoleValues<ImportRoleThinkingEntry> & { sourceIndexing?: ImportRoleThinkingEntry | null }) | null;
 export type PurposeProfile = { id: string; name: string; provider: string | null; model: string; reasoningEffort?: string };
 
 function validRoleShape(value: object): boolean {
@@ -78,34 +79,38 @@ export function emptyImportRoleThinking(): NonNullable<ImportRoleThinking> {
 function isRole(value: string): value is ImportRole {
   return importRoleDefinitions.some(role => role.id === value);
 }
-function validThinkingEntry(value: unknown, role: ImportRole, roles: ImportRoles, profiles: readonly PurposeProfile[]): value is ImportRoleThinkingEntry {
+const thinkingDefinitions = [...importRoleDefinitions, { id: "sourceIndexing", label: "索引" }] as const;
+function thinkingProfileId(roles: ImportRoles, role: ImportThinkingRole): string | null | undefined {
+  return roles?.[role === "sourceIndexing" ? "sourceParsing" : role];
+}
+function validThinkingEntry(value: unknown, role: ImportThinkingRole, roles: ImportRoles, profiles: readonly PurposeProfile[]): value is ImportRoleThinkingEntry {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const keys = ["profileId", "provider", "model", "reasoningEffort"];
   const entry = value as Record<string, unknown>;
   if (Object.keys(entry).length !== keys.length || keys.some(key => !Object.hasOwn(entry, key) || typeof entry[key] !== "string" || !entry[key] || entry[key] !== entry[key].trim() || /[\u0000-\u001f\u007f]/.test(entry[key]))) return false;
-  const profile = profiles.find(item => item.id === roles?.[role]);
+  const profile = profiles.find(item => item.id === thinkingProfileId(roles, role));
   return Boolean(profile && entry.profileId === profile.id && entry.provider === profile.provider && entry.model === profile.model
     && modelReasoningOptions(profile.provider, profile.model).some(option => option.id === entry.reasoningEffort && option.disabled !== true));
 }
 /** Overrides are bound to one exact purpose/profile/provider/model, not shared profile preferences. */
 export function readImportRoleThinking(value: unknown, roles: ImportRoles, profiles: readonly PurposeProfile[]): ImportRoleThinking {
   if (value == null) return null;
-  if (typeof value !== "object" || Array.isArray(value) || !validRoleShape(value)) throw new Error("用途思考设置读取不完整，请重新读取后再保存。");
+  if (typeof value !== "object" || Array.isArray(value) || !legacyImportRoles.every(role => Object.hasOwn(value, role)) || !Object.keys(value).every(key => thinkingDefinitions.some(role => role.id === key))) throw new Error("用途思考设置读取不完整，请重新读取后再保存。");
   const input = value as Record<string, unknown>, result: NonNullable<ImportRoleThinking> = { sourceParsing: null, teachingGeneration: null, teachingReview: null };
-  for (const role of importRoleDefinitions) {
+  for (const role of thinkingDefinitions) {
     if (!Object.hasOwn(input, role.id)) continue;
     const entry = input[role.id];
     if (entry !== null && !validThinkingEntry(entry, role.id, roles, profiles)) throw new Error(`${role.label}的思考设置与所选模型不匹配，请重新读取或选择。`);
     result[role.id] = entry === null ? null : { ...entry };
   }
-  if (!roles && importRoleDefinitions.some(role => result[role.id] != null)) throw new Error("沿用原策略时不能单独指定用途思考设置。");
+  if (!roles && thinkingDefinitions.some(role => result[role.id] != null)) throw new Error("沿用原策略时不能单独指定用途思考设置。");
   return result;
 }
 /** Explicit profile/model/purpose edits clear only the overrides whose binding became invalid. */
 export function pruneImportRoleThinking(thinking: ImportRoleThinking, roles: ImportRoles, profiles: readonly PurposeProfile[]): ImportRoleThinking {
   if (!thinking || !roles) return null;
   const result: NonNullable<ImportRoleThinking> = { sourceParsing: null, teachingGeneration: null, teachingReview: null };
-  for (const role of importRoleDefinitions) {
+  for (const role of thinkingDefinitions) {
     if (!Object.hasOwn(thinking, role.id)) continue;
     result[role.id] = null;
     const entry = thinking[role.id];
@@ -113,8 +118,8 @@ export function pruneImportRoleThinking(thinking: ImportRoleThinking, roles: Imp
   }
   return result;
 }
-export function assignImportRoleThinking(thinking: ImportRoleThinking, role: ImportRole, effort: string, roles: ImportRoles, profiles: readonly PurposeProfile[]): ImportRoleThinking {
-  if (!isRole(role)) throw new Error("模型用途无效。");
+export function assignImportRoleThinking(thinking: ImportRoleThinking, role: ImportThinkingRole, effort: string, roles: ImportRoles, profiles: readonly PurposeProfile[]): ImportRoleThinking {
+  if (!thinkingDefinitions.some(item => item.id === role)) throw new Error("模型用途无效。");
   if (!roles) {
     if (!effort) return null;
     throw new Error("请先选择按用途指定模型。");
@@ -122,11 +127,20 @@ export function assignImportRoleThinking(thinking: ImportRoleThinking, role: Imp
   const result = pruneImportRoleThinking(thinking, roles, profiles) || emptyImportRoleThinking();
   if (!effort) result[role] = null;
   else {
-    const profile = profiles.find(item => item.id === roles[role]);
+    const profile = profiles.find(item => item.id === thinkingProfileId(roles, role));
     if (!profile?.provider) throw new Error("请先为此用途选择模型配置。");
     result[role] = { profileId: profile.id, provider: profile.provider, model: profile.model, reasoningEffort: effort };
   }
   return readImportRoleThinking(result, roles, profiles);
+}
+export function assignProcessingThinking(thinking: ImportRoleThinking, roles: ImportRoles, profiles: readonly PurposeProfile[]): ImportRoleThinking {
+  const profile = profiles.find(item => item.id === roles?.sourceParsing);
+  if (!profile || roles?.teachingGeneration !== profile.id) return thinking;
+  let result = thinking;
+  for (const [role, effort] of [["sourceIndexing", "low"], ["sourceParsing", "high"], ["teachingGeneration", "high"]] as const) {
+    if (modelReasoningOptions(profile.provider, profile.model).some(option => option.id === effort && !option.disabled)) result = assignImportRoleThinking(result, role, effort, roles, profiles);
+  }
+  return result;
 }
 export function importRoleThinkingChoices(profile?: PurposeProfile | null): ReasoningOption[] {
   return [{ id: "", label: profile ? `跟随配置（${reasoningLabel(profile)}）` : "跟随配置", description: profile ? "使用该配置保存的默认思考设置。" : "请先为此用途选择模型配置。" },

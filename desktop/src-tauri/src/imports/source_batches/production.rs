@@ -385,6 +385,24 @@ fn finish_all(
     persist(store, record, saved)?;
     Ok(all)
 }
+fn source_stage_client(model: &ModelClient, checkpoint: &mut Value, new: bool) -> AppResult<ModelClient> {
+    if new && model.source_index_thinking_enabled() {
+        let roles = model.public_settings()["effectiveImportRoles"].clone();
+        checkpoint["thinkingPolicy"] = json!({"version":"source-stage-thinking-v1","sourceIndexing":roles["sourceIndexing"],"sourceParsing":roles["sourceParsing"]});
+    }
+    // Old checkpoints keep their original source thinking. New checkpoints
+    // freeze index and transcription independently without resetting quota.
+    if checkpoint["thinkingPolicy"].is_null() { return Ok(model.without_source_index_thinking()); }
+    let policy = &checkpoint["thinkingPolicy"];
+    let roles = model.public_settings()["effectiveImportRoles"].clone();
+    if policy["version"] != "source-stage-thinking-v1"
+        || policy["sourceIndexing"] != roles["sourceIndexing"]
+        || policy["sourceParsing"] != roles["sourceParsing"] {
+        return Err(err("accuracy_configuration_changed", "来源索引或拆题思考设置已变更，请恢复本次保存的配置后继续；成功批次与已用额度保留。"));
+    }
+    Ok(model.clone())
+}
+
 pub(crate) fn process(
     store: &Store,
     model: &ModelClient,
@@ -397,10 +415,15 @@ pub(crate) fn process(
 ) -> AppResult<Vec<Value>> {
     let start = Instant::now();
     check(start, cancel)?;
-    if record["sourceStructuring"].is_null() {
+    let new_checkpoint = record["sourceStructuring"].is_null();
+    if new_checkpoint {
         record["sourceStructuring"] = json!({"version":VERSION,"pipelineVersion":PIPELINE,"sourceSha256":record["source"]["sha256"],"manifestSha256":record["ocrSource"]["manifestSha256"],"plan":null,"planHash":null,"planAttempts":[],"batches":[]});
+    }
+    let stage_model = source_stage_client(model, &mut record["sourceStructuring"], new_checkpoint)?;
+    if new_checkpoint {
         persist(store, record, saved)?;
     }
+    let model = &stage_model;
     verify_successes(store, record, d)?;
     // Old canonical results retain their metadata. New source-only output does not
     // retroactively strip fields from successfully verified legacy checkpoints.

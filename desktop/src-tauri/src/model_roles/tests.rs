@@ -86,6 +86,98 @@ fn override_for(model: &ModelClient, id: &str, effort: &str) -> Value {
 }
 
 #[test]
+fn explicit_index_low_split_and_generation_high_reach_actual_http_and_keep_one_processing_key() {
+    use std::net::TcpListener;
+    let (dir, mut model) = fixture(true);
+    let original = model.profiles.iter().find(|p| p.id == "ds").unwrap().public();
+    let mut setting = thinking(override_for(&model,"ds","high"), override_for(&model,"ds","high"), Value::Null);
+    setting["sourceIndexing"] = override_for(&model,"ds","low");
+    model.save(&json!({"expectedRevision":model.revision,"importRoles":{"sourceParsing":"ds","teachingGeneration":"ds","teachingReview":"qw"},"importRoleThinking":setting})).unwrap();
+    let bytes = std::fs::read(&model.path).unwrap();
+    let model = ModelClient::open(dir.path()).unwrap();
+    assert_eq!(std::fs::read(&model.path).unwrap(), bytes);
+    assert_eq!(model.profiles.iter().find(|p| p.id == "ds").unwrap().public(),original);
+    let index = model.source_stage_model("question_import_plan").unwrap();
+    let split = model.source_stage_model("question_import").unwrap();
+    let generation = model.import_generator().unwrap();
+    let bodies = [
+        super::super::model_whole_trial::configured_source_body(&index,"simulated index",json!("source"),"question_import_plan").unwrap(),
+        super::super::model_whole_trial::configured_source_body(&split,"simulated split",json!("source"),"question_import").unwrap(),
+        super::super::model_accuracy::combined_generation_test_body(&generation),
+    ];
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let mut seen = vec![];
+        for _ in 0..3 {
+            let (mut stream,_) = listener.accept().unwrap();
+            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+            let mut bytes = vec![];
+            let mut buf = [0;4096];
+            let end = loop {
+                let n = stream.read(&mut buf).unwrap(); assert!(n>0);
+                bytes.extend_from_slice(&buf[..n]);
+                if let Some(end) = bytes.windows(4).position(|x| x==b"\r\n\r\n") {
+                    let header=String::from_utf8_lossy(&bytes[..end]);
+                    let size=header.lines().find_map(|l|l.to_ascii_lowercase().strip_prefix("content-length:").map(|n|n.trim().parse::<usize>().unwrap())).unwrap();
+                    if bytes.len()>=end+4+size { break end+4; }
+                }
+            };
+            seen.push((String::from_utf8_lossy(&bytes[..end]).to_string(),serde_json::from_slice::<Value>(&bytes[end..]).unwrap()));
+            write!(stream,"HTTP/1.1 200 OK\r\nContent-Length:2\r\nConnection:close\r\n\r\n{{}}").unwrap();
+        }
+        seen
+    });
+    tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap().block_on(async {
+        let http=reqwest::Client::builder().no_proxy().build().unwrap();
+        for (selected, body) in [index, split, generation].iter().zip(bodies) {
+            let mut request=model_http_request(&http,&selected.base_url,&selected.api_key,&body).build().unwrap();
+            assert_eq!(request.url().as_str(),"https://api.deepseek.com/chat/completions");
+            // Isolated transport destination only; production body/header builder.
+            *request.url_mut()=reqwest::Url::parse(&format!("http://{address}/chat/completions")).unwrap();
+            assert!(http.execute(request).await.unwrap().status().is_success());
+        }
+    });
+    let seen=server.join().unwrap();
+    for ((headers,body), effort) in seen.iter().zip(["low","high","high"]) {
+        assert!(headers.contains("Bearer simulated-source-key"));
+        assert!(!headers.contains("simulated-generation-key"));
+        assert_eq!(body["model"],"deepseek-flash");
+        assert_eq!(body["thinking"]["type"],"enabled");
+        assert_eq!(body["reasoning_effort"],effort);
+    }
+    assert!(seen[2].1["messages"][0]["content"].as_str().unwrap().contains("教学"));
+}
+
+#[test]
+fn optional_index_thinking_preserves_old_reads_saves_and_frozen_source_behavior() {
+    let (dir, mut model)=fixture(true);
+    let old_bytes=std::fs::read(&model.path).unwrap();
+    let reopened=ModelClient::open(dir.path()).unwrap();
+    assert_eq!(std::fs::read(&model.path).unwrap(),old_bytes);
+    assert!(reopened.public_settings()["importRoleThinking"].get("sourceIndexing").is_none());
+    assert_eq!(reopened.import_source_index_model().unwrap().reasoning_effort,reopened.import_source_model().unwrap().reasoning_effort);
+    let mut setting=thinking(override_for(&model,"ds","high"),Value::Null,Value::Null);
+    setting["sourceIndexing"]=override_for(&model,"ds","low");
+    model.save(&json!({"expectedRevision":model.revision,"importRoleThinking":setting})).unwrap();
+    let old_bound=model.with_accuracy_binding(json!({"runId":"simulated-old-frozen"}));
+    assert_eq!(old_bound.source_stage_model("question_import_plan").unwrap().reasoning_effort.as_deref(),Some("high"));
+    let new_bound=model.with_accuracy_binding(json!({"runId":"simulated-new-frozen","sourceIndexingEnabled":true}));
+    assert_eq!(new_bound.source_stage_model("question_import_plan").unwrap().reasoning_effort.as_deref(),Some("low"));
+    let mut old_client=setting.clone();old_client.as_object_mut().unwrap().remove("sourceIndexing");
+    model.save(&json!({"expectedRevision":model.revision,"importRoleThinking":old_client})).unwrap();
+    assert_eq!(model.public_settings()["importRoleThinking"]["sourceIndexing"],setting["sourceIndexing"]);
+    setting["sourceIndexing"]=Value::Null;
+    model.save(&json!({"expectedRevision":model.revision,"importRoleThinking":setting})).unwrap();
+    assert_eq!(model.import_source_index_model().unwrap().reasoning_effort.as_deref(),Some("high"));
+    let mut invalid=thinking(Value::Null,Value::Null,Value::Null);
+    invalid["sourceIndexing"]=override_for(&model,"qw","high");
+    let before=std::fs::read(&model.path).unwrap();
+    assert!(model.save(&json!({"expectedRevision":model.revision,"importRoles":{"sourceParsing":"qw","teachingGeneration":"mi","teachingReview":"qw"},"importRoleThinking":invalid})).is_err());
+    assert_eq!(std::fs::read(&model.path).unwrap(),before);
+}
+
+#[test]
 fn simulated_same_profile_purpose_thinking_is_independent_persistent_and_reaches_request_options() {
     let (dir, mut model) = fixture(true);
     let profile_before = model

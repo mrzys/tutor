@@ -60,6 +60,8 @@ import { ImportConfirmationContext } from "./ImportConfirmationContext";
 import { importConfirmationContext } from "./import-confirmation-context";
 import { beginAccuracyStatusAction, createAccuracyStatusSession, ImportAccuracyStatus } from "./ImportAccuracyStatus";
 import { accuracyCanReviewDomain, accuracyDomainLabel, accuracyFieldLabel, accuracyFindings, accuracyImportAction, accuracyKnowledgeNames, accuracyModelReadiness, accuracyPendingDomains, accuracyPremiseNames, accuracyPreviewCandidate, accuracyStatus, accuracySuggestedDomain, type AccuracyDomain } from "./import-accuracy";
+import { ImportActionGuidance } from "./ImportActionGuidance";
+import { accuracyGuidance, accuracyGuidanceSummary } from "./import-accuracy-guidance";
 import { uploadModelDestinations, uploadOcrDestination } from "./import-upload";
 import { ImportReviewHeader, type ImportReviewPrimaryFilter } from "./ImportReviewHeader";
 import { ImportSourceFieldEditor } from "./ImportSourceFieldEditor";
@@ -245,6 +247,7 @@ export function ImportPaper(props: {
   const [jobError, setJobError] = createSignal("");
   const selectedJob = () => jobs().find(job => job.importId === record()?.importId);
   const activeJob = () => { const job = selectedJob(); return job && ["queued", "running"].includes(job.status) ? job : null; };
+  const otherActiveJobs = () => jobs().filter(job => ["queued", "running"].includes(job.status) && job.importId !== record()?.importId);
   let recordDetailVersion: string | undefined;
   let importUnlisten: (() => void) | undefined;
   let connectingImportEvents: Promise<void> | undefined;
@@ -303,6 +306,8 @@ export function ImportPaper(props: {
     && !busy() && !activeJob() && !publishFrozen() && !dirty());
   const reviewProblemGroups = createMemo(() => reviewGroups().filter(group => !group.members.every(issue => issue.id === "source:not-reviewed") && !isReviewOutcomeGroup(group)));
   const reviewSummary = createMemo(() => importReviewSummary(triage().rows, reviewEligibility()));
+  const actionGuidance = createMemo(() => accuracyGuidance(current(), reviewEligibility()[current()?.questionId]?.eligible === true));
+  const pendingBreakdown = createMemo(() => accuracyGuidanceSummary(triage().rows.filter(row => sourceReviewState(row) === "pending").map(row => row.question), reviewEligibility()));
   let reviewQuestionIdentity = "";
   createEffect(() => {
     const identity = `${record()?.importId}|${current()?.questionId}|${triageFilter()}`;
@@ -345,8 +350,7 @@ export function ImportPaper(props: {
     if (state === "rejected") return "未采用";
     const accuracy = accuracyStatus(row.question);
     if (accuracy) {
-      if (["ready", "reviewed"].includes(accuracy.kind)) return "";
-      return accuracy.label || "待核对";
+      return accuracyGuidance(row.question, reviewEligibility()[row.questionId]?.eligible === true)?.label || accuracy.label;
     }
     const substantive = row.issues.filter(issue => issue.id !== "source:not-reviewed");
     if (!substantive.length) return "";
@@ -438,11 +442,20 @@ export function ImportPaper(props: {
     if (current()?.accuracy) focusAccuracyDomain(tab === "solution" ? "math" : "teaching", false);
     else setDetailTab(tab);
   }
-  function showPublicationConditions() {
+  function continueUnfinished() {
+    setRecordToolsOpen(false);
+    if (!prepareAttempt) prepareId = operationId();
+    void parse(true);
+  }
+  function showPublicationConditions(records = false) {
     if (reviewView() === "image") setReviewView("split");
     requestAnimationFrame(() => {
       const target = document.querySelector<HTMLElement>(".import-accuracy-status");
-      if (target) scrollReadingTarget(target);
+      if (target) {
+        const details = target.querySelector<HTMLDetailsElement>(records ? "details[data-processing-records]" : "details[data-accuracy-findings]");
+        if (details) details.open = true;
+        scrollReadingTarget(details || target);
+      }
     });
   }
   function observeQuestionHeading(element: HTMLElement) {
@@ -1064,6 +1077,7 @@ export function ImportPaper(props: {
   function apply(value: any, detail?: ImportDiagnostic, eligibility?: Record<string, any>, controls?: Record<string, TeachingReviewControls>, actions?: Record<string, any>, sourceDisplays?: Record<string, SourceCorrectionDisplay[]>, detailVersion?: string) {
     const opening = record()?.importId !== value.importId;
     if (opening) {
+      setCancelled(false);
       const rows = importTriage(value, eligibility, controls, [], actions).rows;
       const sourceFirst = rows.findIndex(row => sourceReviewState(row) === "pending");
       const teachingFirst = rows.findIndex(isTeachingPending);
@@ -1242,7 +1256,7 @@ export function ImportPaper(props: {
       if (!alive) return;
       applyResponse(result);
       setFile(null);
-      setNotice(["queued", "running"].includes(result.job?.status) ? "已加入后台解析，可继续组卷或浏览题库。完成后会通知你。" : "此试卷已处理，请查看题目与需要核对的事项。");
+      setNotice(["queued", "running"].includes(result.job?.status) ? "" : "此试卷已处理，请查看题目与需要核对的事项。");
       if (result.job) {
         jobStates.set(result.job.jobId, result.job.status);
         setJobs(items => [result.job, ...items.filter(job => job.importId !== result.job.importId)]);
@@ -1580,13 +1594,7 @@ export function ImportPaper(props: {
             <details class="import-task-note"><summary>核对备注</summary><div><textarea rows={2} maxLength={3000} value={sourceConfirmationNote()} aria-label="本题核对备注" placeholder="核对备注（选填）" onInput={event => setSourceConfirmationNote(event.currentTarget.value)} /></div></details>
           </Show>
           <Show when={currentTriage() && ["eligible", "published"].includes(sourceReviewState(currentTriage()!))}><span class="import-source-eligibility"><Check size={14} />{published(current()) ? "原题已入库" : current()?.accuracy ? "本次成果具备确认条件" : "原题可入库"}</span></Show>
-          <Show when={current()?.accuracy && !published(current()) && !reviewEligibility()[current()?.questionId]?.eligible}>
-              <Show when={pendingAccuracyDomains().length && accuracyCanReviewDomain(current(), accuracyDomain())} fallback={<button type="button" class="secondary" onClick={showPublicationConditions}>查看核对与发布条件</button>}>
-              <button type="button" class="primary" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen()}
-                onClick={() => beginAccuracyAction("review")}>核对{accuracyDomainLabel(accuracyDomain())}</button>
-            </Show>
-            <Show when={current()?.accuracy?.canRepair === true && pendingAccuracyDomains().length}><button type="button" class="text-button" disabled={Boolean(busy()) || Boolean(activeJob()) || editingDirty() || publishFrozen()} onClick={() => beginAccuracyAction("repair")}>按问题修订一次</button></Show>
-          </Show>
+
         </>}>
           <button type="button" class="primary" disabled={Boolean(busy()) || !dirty() || publishFrozen()} onClick={save}><Save size={15} />保存修改</button>
           <Show when={!preview()}><button type="button" class="secondary" disabled={Boolean(busy())} onClick={() => setPreview(true)}>预览排版</button></Show>
@@ -1611,9 +1619,7 @@ export function ImportPaper(props: {
     const difficulty = () => candidate()?.difficultyAssessment || props.question.difficultyAssessment;
     const focus = () => candidate()?.teachingFocus;
     return <article class="import-preview import-question-reading">
-      <p class="import-accuracy-remaining" role="status">{reviewEligibility()[props.question.questionId]?.eligible
-        ? "本次发布范围已具备确认条件；未采用内容中的疑点继续保留。"
-        : pendingAccuracyDomains().length ? `有 ${pendingAccuracyDomains().length} 个域仍有未决事项，请结合本次发布范围处理；无需逐域重复人工确认。` : "各域已完成核对；请查看仍未满足的发布条件。"}</p>
+
       <section class="import-source-reading" aria-label="原卷题目与参考">
         <p class="import-source-review-status muted">原题 · {accuracyStatus(props.question, "source")?.label}</p>
         <QuestionBody question={presentation()} hideMissingTeacherMaterials number={props.question.sourceLabel} teacher hideSource reviewFieldPrefix="source:"
@@ -1748,9 +1754,9 @@ export function ImportPaper(props: {
       </Show>
       <Show when={jobError() || importEventError()}><p class="warning-text" role="status">{jobError() || importEventError()}<button class="text-button" onClick={() => { void connectImportEvents(); refreshJobs(); }}>重新连接并读取进度</button></p></Show>
       <Show when={openingImportId() && record()}><p class="import-opening-notice" role="status"><LoaderCircle size={15} class="spin" />正在打开所选试卷…<button class="text-button" onClick={cancelOpeningImport}>取消打开</button></p></Show>
-      <Show when={jobs().some(job => ["queued", "running"].includes(job.status))}>
+      <Show when={otherActiveJobs().length}>
         <section class="import-background-jobs" aria-label="后台导入任务" aria-live="polite">
-          <For each={jobs().filter(job => ["queued", "running"].includes(job.status))}>{job => <div>
+          <For each={otherActiveJobs()}>{job => <div>
             <span><strong>{job.filename}</strong><small><b>{importStage(undefined, job).label}</b> · {job.message || "后台处理中，可继续其它操作。"}</small></span>
             <button class="text-button" disabled={Boolean(busy()) || dirty() || publishFrozen()} onClick={() => open(job.importId)}>查看进度</button>
             <button class="text-button" onClick={async () => { try { await request("import_job_cancel", {importId:job.importId, jobId:job.jobId,responseScope:"summary"}); void refreshJobs(); } catch(failure:any) {setJobError(failure.message);} }}>停止</button>
@@ -1759,7 +1765,7 @@ export function ImportPaper(props: {
       </Show>
       <Show when={record()}>
         <section class="import-review import-review-modern">
-          <ImportReviewHeader title={record().structuredSource?.exam?.title || record().filename} summary={reviewSummary()} filter={triageFilter()} accuracy={accuracyRecord()}
+          <ImportReviewHeader title={record().structuredSource?.exam?.title || record().filename} summary={reviewSummary()} filter={triageFilter()} accuracy={accuracyRecord()} pendingBreakdown={pendingBreakdown()}
             disabled={Boolean(busy()) || publishFrozen()} onBack={() => guardNavigation(backToHistory)} onFilter={changeFilter}
             headingRef={element => { detailHeading = element; }}
             annotationCount={annotationCount()} annotationDisabled={annotationBlocked() || !activeConfigured()}
@@ -1771,14 +1777,23 @@ export function ImportPaper(props: {
             onPublish={() => { void openPublication(); }} tools={<div class="import-record-tools" ref={recordToolsElement}>
                 <button class="icon-button secondary" ref={recordToolsButton} aria-label="更多试卷操作" title="更多试卷操作" aria-expanded={recordToolsOpen()} onClick={() => setRecordToolsOpen(value => !value)}><MoreHorizontal size={18} /></button>
                 <Show when={recordToolsOpen()}><div class="import-record-tools-menu" role="group" aria-label="更多试卷操作">
-                  <Show when={!activeJob() && (canContinueAccuracy() || canContinueTeaching() || ["failed", "cancelled", "processing", "interrupted", "budget_paused"].includes(record().status))}><button disabled={Boolean(busy()) || dirty() || publishFrozen() || !configured()} onClick={() => { setRecordToolsOpen(false); if (!prepareAttempt) prepareId = operationId(); void parse(true); }}>{accuracyRecord() ? "继续未完成处理" : canContinueTeaching() ? "继续处理教学稿" : "继续识别"}</button></Show>
+                  <Show when={!activeJob() && (canContinueAccuracy() || canContinueTeaching() || ["failed", "cancelled", "processing", "interrupted", "budget_paused"].includes(record().status))}><button disabled={Boolean(busy()) || dirty() || publishFrozen() || !configured()} onClick={continueUnfinished}>{accuracyRecord() ? "继续未完成处理" : canContinueTeaching() ? "继续处理教学稿" : "继续识别"}</button></Show>
                   <Show when={props.onAssembly}><button disabled={Boolean(busy()) || publishFrozen()} onClick={() => {setRecordToolsOpen(false);guardNavigation(() => props.onAssembly?.());}}><ArrowLeft size={16} />返回组卷</button></Show>
                   <Show when={props.onGuide}><button onClick={() => {setRecordToolsOpen(false);props.onGuide?.();}}><CircleHelp size={16} />导入说明</button></Show>
                   <button disabled={Boolean(busy()) || publishFrozen()} onClick={() => {setRecordToolsOpen(false);guardNavigation(() => {void props.onBank().catch((failure:any)=>setError(failure.message));});}}>题库</button>
                   <Show when={canRecheck()}><button disabled={Boolean(busy()) || publishFrozen() || !sourceConfigured() || editingDirty()} onClick={() => { setRecordToolsOpen(false); recheckQuestions(); }}>重新检查未完成题</button></Show>
                 </div></Show>
               </div>} />
-          <Show when={activeJob() || (!failureDiagnostic() && !questions().length)}><div class="import-process-strip" role="status" aria-live="polite" aria-label="试卷处理阶段">
+          <Show when={!questions().length && activeJob()}><section class="import-processing-state" role="status" aria-live="polite" aria-label="试卷处理进度">
+            <LoaderCircle size={24} class="spin" aria-hidden="true" />
+            <div><p class="muted">{processStage().stateLabel}</p><h2>{processStage().label}</h2>
+              <p>{activeJob()?.message || "正在整理原卷材料，题目生成后可在此核对。"}</p>
+              <Show when={activeJob()?.sourceBatchCount > 0}><p>已保存 {activeJob()?.completedSourceBatches} / {activeJob()?.sourceBatchCount} 批来源材料。</p></Show>
+              <p class="muted">可继续组卷或浏览题库，完成后会通知你。</p>
+            </div>
+            <button type="button" class="secondary" disabled={Boolean(busy()) || cancelled()} onClick={stop}>{cancelled() ? "正在停止…" : "停止处理"}</button>
+          </section></Show>
+          <Show when={questions().length && activeJob() || (!activeJob() && !failureDiagnostic() && !questions().length)}><div class="import-process-strip" role="status" aria-live="polite" aria-label="试卷处理阶段">
             <span class="import-process-stage">{processStage().stateLabel}：<strong>{processStage().label}</strong></span>
             <Show when={activeJob()?.sourceBatchCount > 0}><span class="muted">已保存 {activeJob()?.completedSourceBatches} / {activeJob()?.sourceBatchCount} 批</span></Show>
             <Show when={failureDiagnostic()}><span class="import-failure-category" data-category={failureView().category}>{failureView().categoryLabel}</span></Show>
@@ -1895,15 +1910,21 @@ export function ImportPaper(props: {
                                 <option value="image">原图加宽</option><option value="equal">1:1 对等</option><option value="text">排版加宽</option>
                               </select></Show>
                             </div></Show>
-                            <button type="button" class="text-button import-problems-toggle" aria-expanded={issuesVisible()} aria-controls="import-question-problems" onClick={() => setIssuesVisible(value => !value)}>
+                            <Show when={!question.accuracy}><button type="button" class="text-button import-problems-toggle" aria-expanded={issuesVisible()} aria-controls="import-question-problems" onClick={() => setIssuesVisible(value => !value)}>
                               <AlertCircle size={16} />本题待办<Show when={reviewProblemGroups().length}><span>{reviewProblemGroups().length}</span></Show>
-                            </button>
+                            </button></Show>
                             </div>
                             <div class="import-question-actions" role="group" aria-label="本题操作">
                               <CurrentQuestionActions />
                             </div>
                           </div>
-                          <ImportConfirmationContext context={confirmationContext()} />
+                          <Show when={actionGuidance()} fallback={<ImportConfirmationContext context={confirmationContext()} />}>{guidance =>
+                            <ImportActionGuidance guidance={guidance()} disabled={Boolean(busy()) || Boolean(activeJob()) || dirty() || editingDirty() || publishFrozen()}
+                              canContinue={!activeJob() && canContinueAccuracy() && configured()}
+                              onContinue={continueUnfinished} onDetails={() => showPublicationConditions(["technical", "budget"].includes(guidance().kind))}
+                              onReview={domain => { focusAccuracyDomain(domain, false); beginAccuracyAction("review"); }}
+                              onRepair={() => beginAccuracyAction("repair")} />
+                          }</Show>
                           <div class="import-comparison-panes">
                             <Show when={canShowOriginal()}>
                               <section class="import-inline-original" hidden={reviewView() === "text"} aria-label="当前题原卷">

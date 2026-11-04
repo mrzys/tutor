@@ -103,7 +103,7 @@ fn trial_body(context: &Value, prompt: &str, content: Value, effort: &str) -> Ap
     Ok(body)
 }
 
-fn configured_source_body(selected: &ModelClient, prompt: &str, content: Value, task: &str) -> AppResult<Value> {
+pub(super) fn configured_source_body(selected: &ModelClient, prompt: &str, content: Value, task: &str) -> AppResult<Value> {
     let mut body = json!({"model":selected.model,"messages":[{"role":"system","content":prompt},{"role":"user","content":content}],"response_format":{"type":"json_object"},"stream":true,"stream_options":{"include_usage":true},"max_tokens":16000});
     compatible_provider_request_options(&mut body, &selected.base_url, &selected.model);
     selected_reasoning_request_options(&mut body, &selected.base_url, &selected.model, selected.reasoning_effort.as_deref())?;
@@ -220,6 +220,10 @@ impl VisibleStream {
 }
 
 impl ModelClient {
+    pub(super) fn source_stage_model(&self, task: &str) -> AppResult<Self> {
+        if task == "question_import_plan" { self.import_source_index_model() }
+        else { self.import_source_model() }
+    }
     #[cfg(debug_assertions)]
     pub(crate) fn whole_transcription_trial(
         &self,
@@ -302,7 +306,8 @@ impl ModelClient {
             return Err(input_error("整卷试验硬截止仅支持明确授权的60或120秒。"));
         }
         let formal = matches!(task,"question_import_plan"|"question_import");
-        let selected = if formal { self.import_source_model()? } else { self.import_role("deepseek", "deepseek-flash", effort)? };
+        let selected = if formal { self.source_stage_model(task)? }
+            else { self.import_role("deepseek", "deepseek-flash", effort)? };
         let saved_effort = selected.reasoning_effort.as_deref();
         #[cfg(not(test))]
         if let Some(effort)=saved_effort { validate_reasoning_effort(&selected.base_url, &selected.model, effort)?; }

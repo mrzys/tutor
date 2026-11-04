@@ -179,13 +179,14 @@ fn aggregate_budget(store: &Store, run: &Value) -> AppResult<Value> {
         json!({"limits":current["operationBudget"],"usage":current["budgetState"],"pause":current["pause"],"budgetRunId":current["id"],"currentRunUsage":run["budgetState"]}),
     )
 }
-pub(crate) fn bind_model(model: &ModelClient, record: &Value) -> ModelClient {
+pub(crate) fn bind_model(store: &Store, model: &ModelClient, record: &Value) -> AppResult<ModelClient> {
     if s(record, "accuracyRunId").is_empty() {
-        model.clone()
+        Ok(model.clone())
     } else {
-        model.with_accuracy_binding(
-            json!({"runId":record["accuracyRunId"],"dataDir":record["accuracyDataDir"],"importId":record["importId"]}),
-        )
+        let run = store::load_run(store, s(record, "accuracyRunId"))?;
+        Ok(model.with_accuracy_binding(
+            json!({"runId":record["accuracyRunId"],"dataDir":record["accuracyDataDir"],"importId":record["importId"],"sourceIndexingEnabled":run["strategy"]["bindings"]["sourceIndexing"].is_object()}),
+        ))
     }
 }
 pub(crate) fn reserve_source_call(

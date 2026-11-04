@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assignImportModel, assignImportRole, assignImportRoleThinking, emptyImportRoles, emptyImportRoleThinking, importModelDefinitions, importModelProfileId, importRoleChoices, importRoleDefinitions, importRoleThinkingChoices, profileImportRoles, pruneImportRoleThinking, readImportRoles, readImportRoleThinking } from '../src/model-purpose.ts';
+import { assignImportModel, assignImportRole, assignImportRoleThinking, assignProcessingThinking, emptyImportRoles, emptyImportRoleThinking, importModelDefinitions, importModelProfileId, importRoleChoices, importRoleDefinitions, importRoleThinkingChoices, profileImportRoles, pruneImportRoleThinking, readImportRoles, readImportRoleThinking } from '../src/model-purpose.ts';
 const profiles = [{ id: 'sim-ds-low', name: '模拟拆题配置', provider: 'deepseek', model: 'deepseek-flash', reasoningEffort: 'low' },
   { id: 'sim-qwen', name: '模拟复核配置', provider: 'qianwenai', model: 'qwen3.8-flash', reasoningEffort: 'on' }];
 test('legacy absent/null stays one explicit mode; assigned empty roles are never fallback', () => {
@@ -168,4 +168,33 @@ test('review selection and clearing leave processing intact and invalid model id
   assert.deepEqual(cleared, { ...assignedRoles, sourceParsing: null, teachingGeneration: null });
   assert.throws(() => assignImportModel(null, 'teachingGeneration', 'missing', profiles));
   assert.throws(() => assignImportModel(null, 'independentSolve', profiles[0].id, profiles));
+});
+
+test('explicit processing preset separates index low from splitting and solving high without migrating reads', () => {
+  const old = { ...emptyImportRoleThinking(), sourceParsing: binding('low'), teachingReview: binding('on', profiles[1]) };
+  const before = structuredClone(old);
+  assert(!Object.hasOwn(readImportRoleThinking(old, assignedRoles, profiles), 'sourceIndexing'));
+  const next = assignProcessingThinking(old, assignedRoles, profiles);
+  assert.deepEqual(next.sourceIndexing, binding('low'));
+  assert.deepEqual(next.sourceParsing, binding('high'));
+  assert.deepEqual(next.teachingGeneration, binding('high'));
+  assert.deepEqual(next.teachingReview, old.teachingReview);
+  assert.deepEqual(old, before);
+});
+
+test('index thinking binds only to the splitting profile and stale index overrides are cleared', () => {
+  const next = assignImportRoleThinking(null, 'sourceIndexing', 'low', assignedRoles, profiles);
+  assert.deepEqual(next.sourceIndexing, binding('low'));
+  assert.throws(() => readImportRoles({ ...assignedRoles, sourceIndexing: profiles[0].id }, profiles));
+  assert.throws(() => readImportRoleThinking({ ...next, sourceIndexing: binding('on', profiles[1]) }, assignedRoles, profiles));
+  assert.equal(pruneImportRoleThinking(next, { ...assignedRoles, sourceParsing: profiles[1].id }, profiles).sourceIndexing, null);
+  assert.equal(pruneImportRoleThinking(next, { ...assignedRoles, sourceParsing: null }, profiles).sourceIndexing, null);
+});
+
+test('processing preset does not invent intensity levels for switch-only models or unknown capabilities', () => {
+  const roles = { ...assignedRoles, sourceParsing: profiles[1].id, teachingGeneration: profiles[1].id };
+  const old = { ...emptyImportRoleThinking(), sourceParsing: binding('on', profiles[1]) };
+  assert.deepEqual(assignProcessingThinking(old, roles, profiles), old);
+  const unknown = [{ ...profiles[0], model: 'simulated-unknown-model' }];
+  assert.equal(assignProcessingThinking(null, { ...assignedRoles, teachingReview: null }, unknown), null);
 });

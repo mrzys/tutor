@@ -16,6 +16,7 @@ const ROLE_KEYS: [&str; 7] = [
     "mathVerification",
     "teachingVerification",
 ];
+const INDEX_THINKING: &str = "sourceIndexing";
 
 fn valid_role_shape(value: &Value) -> bool {
     value.as_object().is_some_and(|o| {
@@ -79,6 +80,8 @@ pub(super) struct RoleThinkingOverride {
 #[derive(Clone, serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct ImportRoleThinking {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_indexing: Option<RoleThinkingOverride>,
     pub source_parsing: Option<RoleThinkingOverride>,
     pub teaching_generation: Option<RoleThinkingOverride>,
     pub teaching_review: Option<RoleThinkingOverride>,
@@ -101,14 +104,16 @@ impl ImportRoleThinking {
         if value.is_null() {
             return Ok(None);
         }
-        if !valid_role_shape(value) {
+        let mut role_shape = value.clone();
+        if let Some(object) = role_shape.as_object_mut() { object.remove(INDEX_THINKING); }
+        if !valid_role_shape(&role_shape) {
             return Err(input_error(
                 "用途思考设置须包含拆题、解析生成和解析复核三项。",
             ));
         }
         let thinking: Self = serde_json::from_value(value.clone())
             .map_err(|_| input_error("用途思考设置格式无效。"))?;
-        for role in ROLE_KEYS {
+        for role in ROLE_KEYS.into_iter().chain([INDEX_THINKING]) {
             if let Some(setting) = thinking.setting(role) {
                 setting.validate(role, roles, profiles)?;
             }
@@ -127,15 +132,20 @@ impl ImportRoleThinking {
             .and_then(|p| p.retain_matching(roles, profiles))
             .map(|p| serde_json::to_value(p))
             .transpose()?;
-        Self::parse(
-            &preserve_missing_accuracy_fields(value, previous),
-            roles,
-            profiles,
-        )
+        let mut updated = preserve_missing_accuracy_fields(value, previous.clone());
+        if let Some(input) = updated.as_object_mut() {
+            if !input.contains_key(INDEX_THINKING) {
+                if let Some(saved) = previous.as_ref().and_then(|p| p.get(INDEX_THINKING)) {
+                    input.insert(INDEX_THINKING.into(), saved.clone());
+                }
+            }
+        }
+        Self::parse(&updated, roles, profiles)
     }
 
     fn setting(&self, role: &str) -> Option<&RoleThinkingOverride> {
         match role {
+            "sourceIndexing" => self.source_indexing.as_ref(),
             "sourceParsing" => self.source_parsing.as_ref(),
             "teachingGeneration" => self.teaching_generation.as_ref(),
             "teachingReview" => self.teaching_review.as_ref(),
@@ -162,6 +172,7 @@ impl ImportRoleThinking {
                 .cloned()
         };
         Some(Self {
+            source_indexing: valid(INDEX_THINKING, &self.source_indexing),
             source_parsing: valid("sourceParsing", &self.source_parsing),
             teaching_generation: valid("teachingGeneration", &self.teaching_generation),
             teaching_review: valid("teachingReview", &self.teaching_review),
@@ -181,7 +192,7 @@ impl RoleThinkingOverride {
         profiles: &[ModelProfile],
     ) -> AppResult<()> {
         let profile = roles
-            .and_then(|roles| roles.id(role).ok().flatten())
+            .and_then(|roles| roles.id(if role == INDEX_THINKING { "sourceParsing" } else { role }).ok().flatten())
             .and_then(|id| profiles.iter().find(|profile| profile.id == id))
             .ok_or_else(|| input_error("请先为对应用途选择模型配置，再设置思考强度。"))?;
         if self.profile_id != profile.id
@@ -288,6 +299,31 @@ impl ModelClient {
         }
         self.import_role("deepseek", "deepseek-flash", "low")
     }
+    /// The index is a thinking override of the processing profile, not a third
+    /// model assignment. Missing old settings retain the source purpose exactly.
+    pub(crate) fn import_source_index_model(&self) -> AppResult<Self> {
+        let mut selected = self.import_source_model()?;
+        if self.accuracy_binding.as_ref().is_some_and(|b| b["sourceIndexingEnabled"] != true) {
+            return Ok(selected);
+        }
+        if let Some(thinking) = self.import_role_thinking.as_ref().and_then(|t| t.source_indexing.as_ref()) {
+            thinking.validate(INDEX_THINKING, self.import_roles.as_ref(), &self.profiles)?;
+            selected.reasoning_effort = Some(thinking.reasoning_effort.clone());
+        }
+        Ok(selected)
+    }
+    pub(crate) fn source_index_thinking_explicit(&self) -> bool {
+        self.import_role_thinking.as_ref().is_some_and(|t| t.source_indexing.is_some())
+    }
+    pub(crate) fn source_index_thinking_enabled(&self) -> bool {
+        self.source_index_thinking_explicit()
+            && !self.accuracy_binding.as_ref().is_some_and(|b| b["sourceIndexingEnabled"] != true)
+    }
+    pub(crate) fn without_source_index_thinking(&self) -> Self {
+        let mut selected = self.clone();
+        if let Some(thinking) = selected.import_role_thinking.as_mut() { thinking.source_indexing = None; }
+        selected
+    }
     pub(crate) fn import_source_role_explicit(&self) -> bool {
         self.import_roles.is_some()
     }
@@ -324,6 +360,9 @@ impl ModelClient {
             }
         };
         let mut result = json!({"sourceParsing":summarize("sourceParsing",self.import_source_model()),"teachingGeneration":summarize("teachingGeneration",self.import_generator()),"teachingReview":summarize("teachingReview",self.import_teaching_reviewer())});
+        if self.source_index_thinking_explicit() {
+            result[INDEX_THINKING] = summarize(INDEX_THINKING, self.import_source_index_model());
+        }
         for role in ACCURACY_ROLE_KEYS {
             result[role] = summarize(role, self.import_accuracy_model(role));
         }

@@ -4,7 +4,7 @@ import { request } from "./bridge";
 import { Busy, ErrorBanner, Modal } from "./ui";
 import { BankAnnotation } from "./BankAnnotation";
 import { blankModelProfile, changeModelProvider, changeProfileModel, createModelCatalogGuard, llmProviders, modelProfileError, modelProfilePayload, modelProvider, modelReasoningOptions, modelTitle, parseModelCatalog, providerPreset, reasoningLabel, type ModelCatalog } from "./model-presets";
-import { assignImportModel, assignImportRole, emptyImportRoles, importModelDefinitions, importModelProfileId, importRoleChoices, importRoleDefinitions, profileImportRoles, readImportRoles, assignImportRoleThinking, importRoleThinkingChoices, pruneImportRoleThinking, readImportRoleThinking, type ImportConfigurationContext, type ImportModel, type ImportRole, type ImportRoles, type ImportRoleThinking } from "./model-purpose";
+import { assignImportModel, assignImportRole, assignProcessingThinking, emptyImportRoles, importModelDefinitions, importModelProfileId, importRoleChoices, importRoleDefinitions, profileImportRoles, readImportRoles, assignImportRoleThinking, importRoleThinkingChoices, pruneImportRoleThinking, readImportRoleThinking, type ImportConfigurationContext, type ImportModel, type ImportRole, type ImportRoles, type ImportRoleThinking, type ImportThinkingRole } from "./model-purpose";
 import { accuracyModelReadiness } from "./import-accuracy";
 import deepseekIcon from "@lobehub/icons-static-svg/icons/deepseek-color.svg";
 import bailianIcon from "@lobehub/icons-static-svg/icons/alibabacloud-color.svg";
@@ -14,6 +14,7 @@ import "./Settings.css";
 
 const providerIcons: Record<string, string> = { deepseek: deepseekIcon, bailian: bailianIcon, xiaomi: xiaomiIcon, qianwenai: qwenIcon };
 const developerSources: Record<string, string> = { environment_off: "环境变量已强制关闭", environment_on: "环境变量已开启", command_line: "启动参数已开启" };
+const processingStages = [{ id: "sourceIndexing", label: "索引思考" }, { id: "sourceParsing", label: "拆题思考" }, { id: "teachingGeneration", label: "解题思考" }] as const;
 function ProviderIcon(props: { provider: string | null }) {
   return <Show when={props.provider && providerIcons[props.provider]}>{source => <img class="model-provider-icon" src={source()} alt="" aria-hidden="true" width="24" height="24" />}</Show>;
 }
@@ -22,16 +23,26 @@ function ModelIcon(props: { provider: string | null }) {
 }
 
 type SettingChoice = { id: string; label: string; detail?: string; provider?: string; disabled?: boolean };
-function SettingsSelect(props: { label: string; choices: SettingChoice[]; value: string; ownerId: string; placeholder?: string; disabled?: boolean; showDetail?: boolean; onChange: (value: string) => void }) {
+function SettingsSelect(props: { label: string; choices: SettingChoice[]; value: string; ownerId: string; placeholder?: string; disabled?: boolean; showDetail?: boolean; searchable?: boolean; onChange: (value: string) => void }) {
   const id = createUniqueId();
   const [open, setOpen] = createSignal(false);
   const [focused, setFocused] = createSignal(0);
   const [position, setPosition] = createSignal({ above: false, offset: 0, available: 256 });
   let root!: HTMLDivElement;
-  let trigger!: HTMLButtonElement;
-  const choices = () => props.choices;
-  const selected = () => choices().find(model => model.id === props.value);
-  createEffect(() => { props.ownerId; setOpen(false); });
+  const [query, setQuery] = createSignal<string | null>(null);
+  let composing = false;
+  let trigger!: HTMLButtonElement | HTMLInputElement;
+  const choices = () => {
+    const search = props.searchable ? query()?.trim().toLocaleLowerCase() : "";
+    return search ? props.choices.filter(model => `${model.id} ${model.label}`.toLocaleLowerCase().includes(search)) : props.choices;
+  };
+  const selected = () => props.choices.find(model => model.id === props.value);
+  const close = () => { setOpen(false); setQuery(null); };
+  createEffect(() => { props.ownerId; close(); });
+  createEffect(() => {
+    const items = choices();
+    if (props.searchable) setFocused(Math.max(0, items.findIndex(model => !model.disabled)));
+  });
   function reposition() {
     if (!root || !trigger) return;
     const bounds = trigger.getBoundingClientRect();
@@ -50,10 +61,31 @@ function SettingsSelect(props: { label: string; choices: SettingChoice[]; value:
     const above = below < Math.min(256, choices().length * 64 + 14) && aboveSpace > below;
     setPosition({ above, offset: above ? container.bottom - bounds.top + 6 : bounds.bottom - container.top + 6, available: Math.min(256, above ? aboveSpace : below) });
   }
-  const show = () => { if (props.disabled || !choices().length) return; const index = choices().findIndex(model => model.id === props.value && !model.disabled); setFocused(index >= 0 ? index : Math.max(0, choices().findIndex(model => !model.disabled))); reposition(); setOpen(true); };
-  const choose = (value: string) => { if (choices().find(choice => choice.id === value)?.disabled) return; props.onChange(value); setOpen(false); root.querySelector<HTMLButtonElement>('[role="combobox"]')?.focus({ preventScroll: true }); };
+  const show = () => { if (props.disabled || (!props.searchable && !choices().length)) return; const index = choices().findIndex(model => model.id === props.value && !model.disabled); setFocused(index >= 0 ? index : Math.max(0, choices().findIndex(model => !model.disabled))); reposition(); setOpen(true); };
+  const choose = (value: string) => { const choice = choices().find(choice => choice.id === value); if (!choice || choice.disabled) return; props.onChange(value); trigger.focus({ preventScroll: true }); close(); };
+  function keyDown(event: KeyboardEvent) {
+    if (composing || event.isComposing || event.keyCode === 229) return;
+    if (event.key === "Escape" && open()) { event.preventDefault(); event.stopPropagation(); close(); }
+    else if (["ArrowDown", "ArrowUp", ...(!props.searchable ? ["Home", "End"] : [])].includes(event.key)) {
+      event.preventDefault();
+      if (!open()) show();
+      else setFocused(index => {
+        const available = choices().map((choice, index) => ({ ...choice, index })).filter(choice => !choice.disabled).map(choice => choice.index);
+        if (!available.length) return 0;
+        if (event.key === "Home") return available[0];
+        if (event.key === "End") return available.at(-1)!;
+        const current = Math.max(0, available.indexOf(index));
+        return available[(current + (event.key === "ArrowDown" ? 1 : -1) + available.length) % available.length];
+      });
+    } else if (event.key === "Enter" || (event.key === " " && !props.searchable && open())) {
+      if (!props.searchable && !open()) return;
+      event.preventDefault();
+      if (!open()) show();
+      else { const choice = choices()[focused()]; if (choice && !choice.disabled) choose(choice.id); }
+    }
+  }
   onMount(() => {
-    const outside = (event: PointerEvent) => { if (!root.contains(event.target as Node)) setOpen(false); };
+    const outside = (event: PointerEvent) => { if (!root.contains(event.target as Node)) close(); };
     document.addEventListener("pointerdown", outside);
     onCleanup(() => document.removeEventListener("pointerdown", outside));
   });
@@ -85,31 +117,30 @@ function SettingsSelect(props: { label: string; choices: SettingChoice[]; value:
       else if (bounds.bottom > visible.bottom) list.scrollTop += bounds.bottom - visible.bottom;
     });
   });
-  return <div class="settings-model-select" classList={{ "has-detail": props.showDetail }} ref={root} onFocusOut={event => { if (!root.contains(event.relatedTarget as Node)) setOpen(false); }}>
+  return <div class="settings-model-select" classList={{ "has-detail": props.showDetail }} ref={root} onFocusOut={event => { if (!root.contains(event.relatedTarget as Node)) close(); }}>
     <span id={`${id}-label`} class="settings-field-title">{props.label}</span>
-    <button ref={trigger} type="button" role="combobox" disabled={props.disabled} aria-labelledby={`${id}-label`} aria-describedby={`${id}-value`} aria-expanded={open()} aria-controls={`${id}-options`} aria-haspopup="listbox"
-      aria-activedescendant={open() ? `${id}-option-${focused()}` : undefined}
-      class="settings-select-trigger" onClick={() => open() ? setOpen(false) : show()} onKeyDown={event => {
-        if (event.key === "Escape" && open()) { event.preventDefault(); event.stopPropagation(); setOpen(false); }
-        else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
-          event.preventDefault();
-          if (!open()) show();
-          else setFocused(index => {
-            const available = choices().map((choice, index) => ({ ...choice, index })).filter(choice => !choice.disabled).map(choice => choice.index);
-            if (!available.length) return index;
-            if (event.key === "Home") return available[0];
-            if (event.key === "End") return available.at(-1)!;
-            const current = Math.max(0, available.indexOf(index));
-            return available[(current + (event.key === "ArrowDown" ? 1 : -1) + available.length) % available.length];
-          });
-        } else if ((event.key === "Enter" || event.key === " ") && open()) { event.preventDefault(); choose(choices()[focused()].id); }
-      }}><span id={`${id}-value`} class="settings-select-value" classList={{ "is-placeholder": !selected() && !props.value }}><ProviderIcon provider={selected()?.provider || null} /><span class="settings-select-copy" title={[selected()?.label || props.value || props.placeholder || "请选择", props.showDetail ? selected()?.detail : ""].filter(Boolean).join(" · ")}><span>{selected()?.label || props.value || props.placeholder || "请选择"}</span><Show when={props.showDetail && selected()?.detail}><small>{selected()?.detail}</small></Show></span></span><ChevronDown size={16} classList={{ "is-open": open() }} /></button>
+    <Show when={props.searchable} fallback={
+    <button ref={element => { trigger = element; }} type="button" role="combobox" disabled={props.disabled} aria-labelledby={`${id}-label`} aria-describedby={`${id}-value`} aria-expanded={open()} aria-controls={`${id}-options`} aria-haspopup="listbox"
+      aria-activedescendant={open() && choices()[focused()] ? `${id}-option-${focused()}` : undefined}
+      class="settings-select-trigger" onClick={() => open() ? close() : show()} onKeyDown={keyDown}><span id={`${id}-value`} class="settings-select-value" classList={{ "is-placeholder": !selected() && !props.value }}><ProviderIcon provider={selected()?.provider || null} /><span class="settings-select-copy" title={[selected()?.label || props.value || props.placeholder || "请选择", props.showDetail ? selected()?.detail : ""].filter(Boolean).join(" · ")}><span>{selected()?.label || props.value || props.placeholder || "请选择"}</span><Show when={props.showDetail && selected()?.detail}><small>{selected()?.detail}</small></Show></span></span><ChevronDown size={16} classList={{ "is-open": open() }} /></button>
+    }>
+      <div class="settings-search-combobox">
+        <input ref={element => { trigger = element; }} type="text" role="combobox" autocomplete="off" spellcheck={false} disabled={props.disabled} aria-labelledby={`${id}-label`} aria-expanded={open()} aria-controls={`${id}-options`} aria-autocomplete="list" aria-haspopup="listbox"
+          aria-activedescendant={open() && choices()[focused()] ? `${id}-option-${focused()}` : undefined}
+          value={query() ?? selected()?.label ?? props.value} placeholder={props.placeholder || "输入模型名称或 ID 搜索"}
+          onFocus={show} onClick={event => { if (!open()) show(); if (query() === null) event.currentTarget.select(); }}
+          onInput={event => { setQuery(event.currentTarget.value); setOpen(true); }} onKeyDown={keyDown}
+          onCompositionStart={() => { composing = true; }} onCompositionEnd={() => { composing = false; }} />
+        <ChevronDown size={16} classList={{ "is-open": open() }} aria-hidden="true" />
+      </div>
+    </Show>
     <Show when={open()}><div id={`${id}-options`} role="listbox" aria-label={props.label} class="settings-select-options"
       style={{ top: position().above ? "auto" : `${position().offset}px`, bottom: position().above ? `${position().offset}px` : "auto", "max-height": `${position().available}px` }}>
       <For each={choices()}>{(model, index) => <button type="button" role="option" tabIndex={-1} id={`${id}-option-${index()}`} aria-selected={props.value === model.id} disabled={model.disabled}
         classList={{ "is-focused": focused() === index() }} onPointerMove={() => { if (!model.disabled) setFocused(index()); }} onMouseDown={event => event.preventDefault()} onClick={() => choose(model.id)}>
         <span class="settings-select-option-content"><ProviderIcon provider={model.provider || null} /><span><strong>{model.label}</strong><Show when={model.detail}><small>{model.detail}</small></Show></span></span><Show when={props.value === model.id}><Check size={16} /></Show>
       </button>}</For>
+      <Show when={props.searchable && !choices().some(choice => !choice.disabled)}><p class="settings-select-empty" role="status">没有匹配的模型，请调整搜索内容。</p></Show>
     </div></Show>
   </div>;
 }
@@ -170,7 +201,6 @@ export function Settings(props: {
   const [modelCatalog, setModelCatalog] = createSignal<ModelCatalog | null>(null);
   const [catalogLoading, setCatalogLoading] = createSignal(false);
   const [catalogError, setCatalogError] = createSignal("");
-  const [modelSearch, setModelSearch] = createSignal("");
   const catalogGuard = createModelCatalogGuard();
   onCleanup(() => catalogGuard.invalidate());
   const [revision, setRevision] = createSignal(0);
@@ -200,7 +230,18 @@ export function Settings(props: {
   const deleting = () => profiles().find((item) => item.id === deletingId());
   const deletionRoles = () => profileImportRoles(importRoles(), deletingId());
   const rolesDirty = () => JSON.stringify([importRoles(), importThinking()]) !== JSON.stringify([savedImportRoles(), savedImportThinking()]);
-  const roleProfile = (role: ImportRole) => profiles().find(profile => profile.id === importRoles()?.[role]);
+  const roleProfile = (role: ImportThinkingRole) => profiles().find(profile => profile.id === importRoles()?.[role === "sourceIndexing" ? "sourceParsing" : role]);
+  const supportsProcessingThinking = () => ["low", "high"].every(effort => importRoleThinkingChoices(roleProfile("sourceParsing")).some(option => option.id === effort && !option.disabled));
+  function processingThinkingChoices(role: ImportThinkingRole) {
+    const profile = roleProfile(role);
+    const choices = importRoleThinkingChoices(profile);
+    if (role === "sourceIndexing" && profile) {
+      const effort = importThinking()?.sourceParsing?.reasoningEffort;
+      const label = effort ? importRoleThinkingChoices(profile).find(choice => choice.id === effort)?.label : reasoningLabel(profile);
+      choices[0] = { id: "", label: `跟随拆题（${label}）`, description: "未单独设置索引时，沿用拆题阶段的思考设置。" };
+    }
+    return choices;
+  }
   const generalProfile = () => profiles().find(profile => profile.id === activeId());
   const isNew = (id: string) => !savedProfiles().some(item => item.id === id);
   const profileDirty = (item: ModelDraft) => item.requiresApiKey === true || JSON.stringify(modelProfilePayload(item, false)) !== JSON.stringify(modelProfilePayload(savedProfiles().find(saved => saved.id === item.id) || item, false)) || isNew(item.id);
@@ -224,6 +265,23 @@ export function Settings(props: {
   const editorDirty = () => editing() && editorState(editing()!) !== editorBaseline();
   const ocrState = () => JSON.stringify({ ...ocr(), baseUrl: ocr().baseUrl.trim(), model: ocr().model.trim() });
   const ocrDirty = () => ocrLoaded() && ocrState() !== ocrBaseline();
+  const unsavedMessage = "有未保存的修改，保存后生效";
+  const saveFailedMessage = "保存失败，修改已保留，请处理以上问题后重试。";
+  const personalFeedback = () => busy() ? "保存中…" : personalSaveFailed() && personalDirty() ? saveFailedMessage : personalDirty() ? unsavedMessage : savedMessage() || "个人设置已保存";
+  function modelFeedback() {
+    if (busy()) return "保存中…";
+    if (loading()) return "正在读取模型配置…";
+    if (!loaded()) return "模型配置尚未读取，请重试";
+    if (!modelDirty()) return savedProfiles().length ? "模型配置已保存" : "尚未添加模型配置";
+    if (modelSaveFailed() && error()) return saveFailedMessage;
+    return savedMessage() || unsavedMessage;
+  }
+  const ocrFeedback = () => busy() ? "保存中…" : ocrLoading() ? "正在读取试卷识别配置…" : !ocrLoaded() ? "试卷识别配置尚未读取，请重试" : ocrSaveFailed() && ocrDirty() ? saveFailedMessage : ocrDirty() ? unsavedMessage : savedMessage() || (ocrConfigured() ? "试卷识别配置已保存" : "尚未配置试卷识别");
+  function focusModelSetting(selector: string) {
+    const control = document.querySelector<HTMLElement>(`${selector} [role="combobox"]`);
+    control?.scrollIntoView({ block: "center" });
+    control?.focus({ preventScroll: true });
+  }
   function back() {
     if (busy()) return;
     if (personalDirty() || modelDirty() || editorDirty() || ocrDirty()) setDiscarding(true);
@@ -255,7 +313,7 @@ export function Settings(props: {
     setSavedMessage("");
     setError("");
   }
-  function changeRoleThinking(role: ImportRole, effort: string) {
+  function changeRoleThinking(role: ImportThinkingRole, effort: string) {
     if ((importThinking()?.[role]?.reasoningEffort || "") === effort) return;
     setImportThinking(current => assignImportRoleThinking(current, role, effort, importRoles(), profiles()));
     setSavedMessage("");
@@ -267,10 +325,16 @@ export function Settings(props: {
       const roles = assignImportModel(prior, model, profileId || null, profiles());
       const thinking = importRoles() !== null ? importThinking() : assignedThinkingDraft;
       setImportRoles(roles);
-      setImportThinking(pruneImportRoleThinking(thinking, roles, profiles()));
+      const retainedThinking = pruneImportRoleThinking(thinking, roles, profiles());
+      setImportThinking(model === "teachingGeneration" && profileId ? assignProcessingThinking(retainedThinking, roles, profiles()) : retainedThinking);
       setSavedMessage("");
       setError("");
     } catch (failure: any) { setError(failure.message); }
+  }
+  function useProcessingThinking() {
+    setImportThinking(assignProcessingThinking(importThinking(), importRoles(), profiles()));
+    setSavedMessage("已设置索引低思考、拆题与解题高思考，保存后生效");
+    setError("");
   }
   function applySettings(result: any) {
     if (!Array.isArray(result.profiles) || !Number.isSafeInteger(result.revision)) {
@@ -440,7 +504,6 @@ export function Settings(props: {
     setModelCatalog(null);
     setCatalogLoading(false);
     setCatalogError("");
-    setModelSearch("");
   }
   async function fetchModelCatalog() {
     const item = editing();
@@ -450,7 +513,6 @@ export function Settings(props: {
     setCatalogLoading(true);
     setCatalogError("");
     setModelCatalog(null);
-    setModelSearch("");
     setEditorDraft(draft => draft ? { ...draft, catalogToken: undefined } : draft);
     try {
       const result = await request("model_list", { provider: item.provider, profileId: item.id, ...(item.apiKey ? { apiKey: item.apiKey } : {}) });
@@ -466,9 +528,8 @@ export function Settings(props: {
     return modelCatalog()?.models.find(model => model.id === item.model)?.reasoningOptions || modelReasoningOptions(item.provider, item.model);
   }
   function modelChoices(item: ModelDraft): SettingChoice[] {
-    const search = modelSearch().trim().toLocaleLowerCase();
     const models = modelCatalog()?.models || [];
-    const choices: SettingChoice[] = models.filter(model => !search || `${model.id} ${model.label}`.toLocaleLowerCase().includes(search)).map(model => ({ id: model.id, label: model.label, detail: model.label === model.id ? undefined : model.id }));
+    const choices: SettingChoice[] = models.map(model => ({ id: model.id, label: model.label, detail: model.label === model.id ? undefined : model.id }));
     return !item.model || choices.some(model => model.id === item.model) ? choices : [{ id: item.model, label: `当前配置：${item.model}`, disabled: true }, ...choices];
   }
   let editorReturnTarget: HTMLElement | null = null;
@@ -513,7 +574,7 @@ export function Settings(props: {
     const thinkingCleared = JSON.stringify(retainedThinking) !== JSON.stringify(importThinking());
     setImportThinking(retainedThinking);
     closeEditor();
-    setSavedMessage(thinkingCleared ? "模型已更换，相关用途的思考设置已恢复为跟随配置；保存后生效" : "编辑已完成，点击保存后生效");
+    setSavedMessage(thinkingCleared ? "模型已更换，相关用途的思考设置已恢复为跟随配置；保存后生效" : unsavedMessage);
   }
   function remove() {
     setSavedMessage("");
@@ -605,7 +666,7 @@ export function Settings(props: {
                   </select>
                 </label>
               </fieldset>
-              <footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={personalError()} /><span role="status" class="muted">{personalSaveFailed() ? "保存失败，昵称修改仍保留，请处理以上问题后重试。" : savedMessage()}</span></section><button type="submit" class="primary" disabled={busy() || !nickname().trim() || !personalDirty()}>{busy() ? "保存中…" : "保存"}</button></footer>
+              <footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={personalError()} /><span role="status" class="muted">{personalFeedback()}</span></section><button type="submit" class="primary" disabled={busy() || !nickname().trim() || !personalDirty()}>{busy() ? "保存中…" : "保存"}</button></footer>
             </form>
           </Show>
           <Show when={section() === "models"}>
@@ -636,9 +697,8 @@ export function Settings(props: {
                     <div class="model-dependent-settings" aria-label="所选服务商的模型设置">
                       <div class="model-catalog-actions"><button type="button" class="secondary" onClick={fetchModelCatalog} disabled={catalogLoading() || (!item().apiKey.trim() && (!item().hasApiKey || item().requiresApiKey))}>{catalogLoading() ? "正在获取模型列表…" : modelCatalog() ? "刷新模型列表" : "获取模型列表"}</button><Show when={modelCatalog()}>{catalog => <span class="muted" role="status">已获取 {catalog().models.length} 个模型</span>}</Show></div>
                       <ErrorBanner message={catalogError()} />
-                      <Show when={modelCatalog()}><label class="field-label model-catalog-search">搜索模型<input type="search" value={modelSearch()} onInput={event => setModelSearch(event.currentTarget.value)} placeholder="输入模型名称或 ID" /></label></Show>
-                      <SettingsSelect label="模型" choices={modelChoices(item())} value={item().model} disabled={!modelCatalog() || catalogLoading()} placeholder="请先获取模型列表" ownerId={`${item().id}:${item().provider}:${modelCatalog()?.catalogToken || ""}`} onChange={value => update("model", value)} />
-                      <Show when={modelCatalog()} fallback={<p class="muted model-catalog-help">填写密钥后获取此服务商的模型列表；原配置的模型可以保留。</p>}><p class="muted model-catalog-help">列表由服务商返回，请选择支持对话的模型用于组卷。</p><Show when={!modelChoices(item()).some(model => !model.disabled)}><p class="muted" role="status">没有匹配的模型，请调整搜索内容。</p></Show></Show>
+                      <SettingsSelect searchable label="模型" choices={modelChoices(item())} value={item().model} disabled={!modelCatalog() || catalogLoading()} placeholder={modelCatalog() ? "输入模型名称或 ID 搜索" : "请先获取模型列表"} ownerId={`${item().id}:${item().provider}:${modelCatalog()?.catalogToken || ""}`} onChange={value => update("model", value)} />
+                      <Show when={modelCatalog()} fallback={<p class="muted model-catalog-help">填写密钥后获取此服务商的模型列表；原配置的模型可以保留。</p>}><p class="muted model-catalog-help">输入名称或 ID 筛选，再从服务商返回的列表中选择模型。</p></Show>
                       <Show when={reasoningOptions(item()).length} fallback={<Show when={item().model}><p class="muted settings-reasoning-help" role="status">尚未确认此型号的思考设置能力，沿用原请求设置。</p></Show>}>
                         <SettingsSelect label="默认思考设置" choices={reasoningChoices(item())} value={item().reasoningEffort || ""} ownerId={`${item().id}:${item().provider}:${item().model}`} onChange={updateReasoning} />
                         <Show when={reasoningOptions(item()).find(option => option.id === item().reasoningEffort)?.description}>{description => <p class="muted settings-reasoning-help">{description()}</p>}</Show>
@@ -648,7 +708,7 @@ export function Settings(props: {
                   </Show>
                   <Show when={item().warning}><p class="warning-text" role="alert">{item().warning}</p></Show>
                   <ErrorBanner message={editorError()} />
-                  <p class="muted model-editor-save-note">完成编辑后，点击保存生效。</p>
+                  <p class="muted model-editor-save-note">完成编辑后返回配置页，再点击“保存配置”生效；也可以先分配用途，再一起保存。</p>
                   <footer class="model-editor-actions"><button type="button" class="secondary" onClick={closeEditor}>取消</button><button type="submit" class="primary">完成编辑</button></footer>
                 </section>}</Show>
               }>
@@ -667,26 +727,37 @@ export function Settings(props: {
                 </div>
                 <Show when={modelPane() === "purposes"}>
                 <div id="model-purpose-panel" role="tabpanel" aria-labelledby="model-purpose-tab">
+                <Show when={!profiles().length || (!activeId() && !props.importContext)}>
+                  <section class="model-setup-guide" aria-labelledby="model-setup-heading">
+                    <h2 id="model-setup-heading">{profiles().length ? "选择模型用途" : "先添加一个模型"}</h2>
+                    <p>只组卷：添加模型后，将它设为通用模型。导入试卷：分别选择处理与复核模型；PDF / DOCX 还需配置试卷识别。</p>
+                    <Show when={profiles().length} fallback={<button type="button" class="primary" onClick={add}><Plus size={16} />添加第一个模型</button>}><button type="button" class="secondary" onClick={() => focusModelSetting(".model-general-settings")}>选择通用模型</button></Show>
+                  </section>
+                </Show>
                 <section class="model-purpose-settings" aria-labelledby="model-purpose-heading">
                   <section class="model-import-readiness" aria-labelledby="model-import-readiness-heading">
                     <div><strong id="model-import-readiness-heading">试卷导入</strong><span role="status">已保存模型 {2 - savedImportReadiness().missing.length}/2</span></div>
                     <Show when={savedImportReadiness().missing.length} fallback={<p>处理模型和复核模型已配置。</p>}><p>待配置：{savedImportReadiness().missing.join("、")}。</p></Show>
                     <Show when={modelDirty()}><p role="status">当前已选择 {selectedModelCount()}/2 个模型，保存后生效。</p></Show>
+                    <Show when={profiles().length}><div class="model-setup-actions"><For each={importModelDefinitions}>{model => <Show when={savedImportReadiness().missing.includes(model.label) && !importModelProfileId(importRoles(), model.id)}><button type="button" class="text-button" onClick={() => focusModelSetting(`[data-import-model="${model.id}"]`)}>选择{model.label}</button></Show>}</For></div></Show>
                     <Show when={props.importContext?.materialKind === "text"} fallback={<p>PaddleOCR：{!ocrLoaded() ? "配置尚未读取" : ocrConfigured() ? "已保存配置" : "尚未配置"}，PDF / DOCX 必需。<Show when={ocrDirty()}>有未保存的识别设置。</Show><button type="button" class="text-button" disabled={busy()} onClick={() => navigate("ocr")}>配置试卷识别</button></p>}><p>PaddleOCR：本次文本导入不适用。</p></Show>
                     <p class="muted">拆题后，每题由处理模型生成内容，再由复核模型统一核对。PDF / DOCX 对照原页还需模型支持图片。</p>
                   </section>
-                  <div class="model-purpose-heading"><div><h2 id="model-purpose-heading">处理与复核</h2><p class="muted">分别选择已保存的模型配置。</p></div><Show when={rolesDirty()}><span class="model-state-label">未保存</span></Show></div>
-                  <div class="model-purpose-grid model-import-models"><For each={importModelDefinitions}>{model => <section class="model-purpose-item" aria-label={model.label}>
+                  <div class="model-purpose-heading"><div><h2 id="model-purpose-heading">处理与复核</h2><p class="muted">选择已添加的模型配置，新增模型与用途可以一起保存。</p></div><Show when={rolesDirty()}><span class="model-state-label">未保存</span></Show></div>
+                  <div class="model-purpose-grid model-import-models"><For each={importModelDefinitions}>{model => <section class="model-purpose-item" aria-label={model.label} data-import-model={model.id}>
                     <header class="model-purpose-card-heading"><h3>{model.label}</h3><p class="muted">{model.description}</p></header>
-                    <div class="model-purpose-controls">
+                    <div class="model-purpose-controls" classList={{ "model-processing-controls": model.id === "teachingGeneration" }}>
                       <SettingsSelect label={model.label} ownerId={`import-model-${model.id}`} value={importModelProfileId(importRoles(), model.id)} choices={importRoleChoices(profiles())} showDetail onChange={value => changeImportModel(model.id, value)} />
-                      <SettingsSelect label={model.id === "teachingGeneration" ? "内容处理思考" : "复核思考"} ownerId={`import-model-thinking-${model.id}-${roleProfile(model.id)?.id}-${roleProfile(model.id)?.model}`} value={importThinking()?.[model.id]?.reasoningEffort || ""} choices={roleProfile(model.id) ? importRoleThinkingChoices(roleProfile(model.id)) : [{ id: "", label: "先选择模型" }]} disabled={!importModelProfileId(importRoles(), model.id) || importRoleThinkingChoices(roleProfile(model.id)).length < 2} onChange={value => changeRoleThinking(model.id, value)} />
+                      <Show when={model.id === "teachingGeneration"} fallback={<SettingsSelect label="复核思考" ownerId={`import-model-thinking-${model.id}-${roleProfile(model.id)?.id}-${roleProfile(model.id)?.model}`} value={importThinking()?.[model.id]?.reasoningEffort || ""} choices={roleProfile(model.id) ? importRoleThinkingChoices(roleProfile(model.id)) : [{ id: "", label: "先选择模型" }]} disabled={!importModelProfileId(importRoles(), model.id) || importRoleThinkingChoices(roleProfile(model.id)).length < 2} onChange={value => changeRoleThinking(model.id, value)} />}>
+                        <div class="model-processing-thinking"><For each={processingStages}>{stage => <SettingsSelect label={stage.label} ownerId={`processing-thinking-${stage.id}-${roleProfile(stage.id)?.id}-${roleProfile(stage.id)?.model}`} value={importThinking()?.[stage.id]?.reasoningEffort || ""} choices={roleProfile(stage.id) ? processingThinkingChoices(stage.id) : [{ id: "", label: "先选择模型" }]} disabled={!importModelProfileId(importRoles(), model.id) || processingThinkingChoices(stage.id).length < 2} onChange={value => changeRoleThinking(stage.id, value)} />}</For></div>
+                      </Show>
                     </div>
                     <div class="model-purpose-card-note"><span>{model.recommendation}</span></div>
+                    <Show when={model.id === "teachingGeneration"}><p class="muted">推荐索引低思考，拆题与解题高思考；修改保存后用于新任务，已有任务沿原设置。</p><Show when={importModelProfileId(importRoles(), model.id) && supportsProcessingThinking()}><button type="button" class="text-button" onClick={useProcessingThinking}>使用索引低、拆题与解题高</button></Show></Show>
                     <Show when={model.id === "teachingGeneration" && importRoles()?.sourceParsing && importRoles()?.teachingGeneration && importRoles()?.sourceParsing !== importRoles()?.teachingGeneration}><p class="warning-text">旧拆题与生成使用不同配置，请选择一个处理模型统一使用，保存后生效。</p></Show>
                   </section>}</For></div>
                   <details class="model-purpose-help model-legacy-purposes"><summary>高级设置与旧任务用途</summary>
-                  <p>旧任务继续使用原有用途和思考设置。新任务只需上方两个模型；选择处理模型会同时设置拆题和生成，原有拆题思考设置仍保留。</p>
+                  <p>旧任务继续使用原有用途和思考设置。新任务只需上方两个模型；选择处理模型会同时设置拆题和生成，并在模型支持时预设索引低思考、拆题与解题高思考。保存后生效。</p>
                   <div class="model-mode-switch" role="group" aria-label="用途设置方式">
                     <button type="button" aria-pressed={importRoles() !== null} onClick={() => changeRoleMode("assigned")}>按用途指定</button>
                     <button type="button" aria-pressed={importRoles() === null} onClick={() => changeRoleMode("legacy")}>沿用原策略</button>
@@ -708,7 +779,7 @@ export function Settings(props: {
                   </Show>
                   </details>
                 </section>
-                <section class="model-general-settings" aria-labelledby="model-general-heading"><div><h2 id="model-general-heading">组卷与其他功能</h2><p class="muted">使用所选配置的默认思考设置。</p><Show when={generalProfile()}>{profile => <p class="model-general-thinking">默认思考：{reasoningLabel(profile())}<button type="button" onClick={() => openEditor(profile())}>编辑默认设置</button></p>}</Show></div><SettingsSelect label="通用模型" ownerId="general-model" value={activeId() || ""} choices={[{id:"",label:"暂不使用通用模型"},...importRoleChoices(profiles()).filter(choice => choice.id)]} showDetail onChange={value => {setActiveId(value || null);setSavedMessage("");}} /></section>
+                <section class="model-general-settings" aria-labelledby="model-general-heading"><div><h2 id="model-general-heading">组卷与其他功能</h2><p class="muted">使用所选配置的默认思考设置。只组卷时，选择通用模型并保存即可，无需配置导入用途。</p><Show when={generalProfile()}>{profile => <p class="model-general-thinking">默认思考：{reasoningLabel(profile())}<button type="button" onClick={() => openEditor(profile())}>编辑默认设置</button></p>}</Show></div><SettingsSelect label="通用模型" ownerId="general-model" value={activeId() || ""} choices={[{id:"",label:"暂不使用通用模型"},...importRoleChoices(profiles()).filter(choice => choice.id)]} showDetail onChange={value => {setActiveId(value || null);setSavedMessage("");}} /></section>
                 </div>
                 </Show>
                 <Show when={modelPane() === "profiles"}>
@@ -747,7 +818,7 @@ export function Settings(props: {
         <p class="muted">修改仍保留在此处。重新读取将放弃本次模型配置修改。</p>
         <button type="button" class="secondary" disabled={busy() || loading()} onClick={() => load(true)}>重新读取（放弃本次修改）</button>
       </Show>
-              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={error()} /><span role="status" class="muted">{modelSaveFailed() && error() ? "保存失败，模型与用途修改仍保留，请处理以上问题后重试。" : savedMessage() || (modelDirty() ? "有未保存的修改，保存后生效" : loaded() ? "设置已保存" : "设置尚未读取，暂不能保存")}</span></section><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
+              <Show when={!editing()}><footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={error()} /><span role="status" class="muted">{modelFeedback()}</span></section><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><Show when={modelDirty()}><button type="button" class="secondary" disabled={busy() || loading()} onClick={() => void load(true)}>放弃修改</button></Show><button type="submit" class="primary" disabled={busy() || loading() || !loaded() || conflict() || !modelDirty()}>{busy() ? "保存中…" : "保存配置"}</button></div></footer></Show>
             </form>
           </Show>
           <Show when={section() === "ocr"}>
@@ -785,7 +856,7 @@ export function Settings(props: {
                 <p class="muted">设置已在其他窗口更新，当前输入仍保留。重新读取将放弃本次识别配置修改。</p>
                 <button type="button" class="secondary" disabled={busy() || ocrLoading()} onClick={() => loadOcr(true)}>重新读取（放弃本次修改）</button>
               </Show>
-              <footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={ocrError()} /><span role="status" class="muted">{ocrSaveFailed() ? "保存失败，识别配置修改仍保留，请处理以上问题后重试。" : savedMessage()}</span></section><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><button type="submit" class="primary" disabled={busy() || ocrLoading() || !ocrLoaded() || ocrConflict() || !ocrDirty()}>{busy() ? "保存中…" : "保存"}</button></div></footer>
+              <footer class="settings-footer model-settings-footer"><section class="settings-save-feedback"><ErrorBanner message={ocrError()} /><span role="status" class="muted">{ocrFeedback()}</span></section><div><Show when={props.importContext}><button type="button" class="secondary" disabled={busy()} onClick={back}>返回导入试卷</button></Show><button type="submit" class="primary" disabled={busy() || ocrLoading() || !ocrLoaded() || ocrConflict() || !ocrDirty()}>{busy() ? "保存中…" : "保存"}</button></div></footer>
             </form>
           </Show>
           <Show when={section() === "data"}>

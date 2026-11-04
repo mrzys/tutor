@@ -268,6 +268,55 @@ struct Run<'a> {
     cached_images: HashMap<String, resume::CachedImage>,
 }
 impl Run<'_> {
+    fn network_error(
+        audit: &Path,
+        sequence: usize,
+        phase: &str,
+        part: &str,
+        started: Instant,
+        failure: &reqwest::Error,
+    ) -> AppError {
+        let kind = if failure.is_timeout() {
+            "timeout"
+        } else if failure.is_connect() {
+            "connect"
+        } else {
+            "transport"
+        };
+        // Error Display/Debug and URLs may contain signed links or credentials.
+        // Only record fixed categories and the std I/O enum, in release as well.
+        let mut cause: Option<&(dyn std::error::Error + 'static)> = Some(failure);
+        let mut io_kind = None;
+        while let Some(current) = cause {
+            if let Some(io) = current.downcast_ref::<std::io::Error>() {
+                io_kind = Some(format!("{:?}", io.kind()));
+                break;
+            }
+            cause = current.source();
+        }
+        let diagnostic = json!({
+            "phase":phase,"part":part,"kind":kind,
+            "isConnect":failure.is_connect(),"isTimeout":failure.is_timeout(),
+            "isBody":failure.is_body(),"isRequest":failure.is_request(),
+            "elapsedMs":started.elapsed().as_millis() as u64,
+            "ioErrorKind":io_kind,"urlOrCredentialsStored":false
+        });
+        let path = audit.join(format!("network-{phase}-{:03}.json", sequence + 1));
+        if let Ok(mut file) = std::fs::OpenOptions::new().write(true).create_new(true).open(path) {
+            let _ = file.write_all(&serde_json::to_vec_pretty(&diagnostic).unwrap_or_default());
+        }
+        let reason = match kind {
+            "timeout" => "PaddleOCR 请求超时",
+            "connect" => "PaddleOCR 连接建立失败",
+            _ => "PaddleOCR 数据传输中断",
+        };
+        let state = if phase == "submit" {
+            "未取得识别任务编号，提交状态未知；"
+        } else {
+            ""
+        };
+        error("ocr_network", &format!("{reason}，{state}原文件及已有结果已保留，请检查网络后显式重试。"))
+    }
     fn save(&mut self, phase: &str, status: u16, body: &[u8]) -> AppResult<()> {
         self.sequence += 1;
         let text = String::from_utf8_lossy(body);
@@ -291,24 +340,13 @@ impl Run<'_> {
         limit: usize,
     ) -> AppResult<Vec<u8>> {
         check(self.cancel, self.start)?;
-        #[cfg(debug_assertions)]
-        let diagnostic_path=self.audit.join(format!("network-{phase}-{:03}.json",self.sequence+1));
-        #[cfg(debug_assertions)]
-        let diagnostic_started=self.start;
+        let diagnostic_started = Instant::now();
+        let audit = self.audit;
+        let sequence = self.sequence;
         let result = async {
-            let mut response = request.send().await.map_err(|failure| {
-                #[cfg(debug_assertions)]
-                if let Ok(mut file)=std::fs::OpenOptions::new().write(true).create_new(true).open(&diagnostic_path) {
-                    let diagnostic=json!({"phase":phase,"part":"headers","isConnect":failure.is_connect(),"isTimeout":failure.is_timeout(),"isBody":failure.is_body(),"isRequest":failure.is_request(),"elapsedMs":diagnostic_started.elapsed().as_millis() as u64,"urlOrCredentialsStored":false});
-                    let _=file.write_all(&serde_json::to_vec_pretty(&diagnostic).unwrap_or_default());
-                }
-                #[cfg(not(debug_assertions))]
-                let _=failure;
-                error(
-                    "ocr_network",
-                    "PaddleOCR 连接失败，原文件已保留，请检查网络后重试。",
-                )
-            })?;
+            let mut response = request.send().await.map_err(|failure|
+                Self::network_error(audit, sequence, phase, "headers", diagnostic_started, &failure)
+            )?;
             let status = response.status();
             let mut bytes = Vec::new();
             if response.content_length().is_some_and(|n| n > limit as u64) {
@@ -320,7 +358,7 @@ impl Run<'_> {
             while let Some(chunk) = response
                 .chunk()
                 .await
-                .map_err(|_| error("ocr_network", "PaddleOCR 响应读取中断，请重试。"))?
+                .map_err(|failure| Self::network_error(audit, sequence, phase, "body", diagnostic_started, &failure))?
             {
                 if bytes.len() + chunk.len() > limit {
                     return Err(error(
@@ -1078,6 +1116,60 @@ mod tests {
         let mut s = OcrSettings::open(root).unwrap();
         s.save(&json!({"expectedRevision":s.public_settings()["revision"],"baseUrl":format!("{base}/jobs"),"model":"PaddleOCR-VL-1.6","apiKey":"simulated-ocr-secret"})).unwrap();
         s
+    }
+    #[test]
+    fn network_failures_keep_safe_diagnostics_and_unknown_submission_state() {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        for mode in ["connect", "timeout", "transport"] {
+            let dir = tempfile::tempdir().unwrap();
+            let cancel = AtomicBool::new(false);
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            let url = format!("http://{}/private?token=simulated-url-secret", listener.local_addr().unwrap());
+            let server = if mode == "connect" {
+                drop(listener);
+                None
+            } else {
+                Some(std::thread::spawn(move || {
+                    let (mut stream, _) = listener.accept().unwrap();
+                    stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                    let mut request = [0; 4096];
+                    let _ = stream.read(&mut request).unwrap();
+                    if mode == "timeout" {
+                        std::thread::sleep(Duration::from_millis(150));
+                    } else {
+                        stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\n{}").unwrap();
+                    }
+                }))
+            };
+            let mut run = Run {
+                endpoint: Url::parse(&url).unwrap(), key: "simulated-auth-secret",
+                audit: dir.path(), cancel: &cancel, start: Instant::now(),
+                sequence: 0, total: 0, docx: false, cached_images: HashMap::new(),
+            };
+            let phase = if mode == "transport" { "poll" } else { "submit" };
+            let client = Client::builder().no_proxy().timeout(Duration::from_millis(75)).build().unwrap();
+            let failure = runtime.block_on(run.response(
+                phase, client.get(&url).bearer_auth(run.key), MAX_JSON,
+            )).unwrap_err();
+            assert_eq!(failure.code, "ocr_network");
+            assert_eq!(failure.message.contains("提交状态未知"), phase == "submit");
+            assert!(failure.message.contains(match mode {
+                "connect" => "连接建立失败", "timeout" => "请求超时", _ => "数据传输中断",
+            }));
+            let bytes = std::fs::read(dir.path().join(format!("network-{phase}-001.json"))).unwrap();
+            let diagnostic: Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(diagnostic["kind"], mode);
+            assert_eq!(diagnostic["phase"], phase);
+            assert_eq!(diagnostic["part"], if mode == "transport" { "body" } else { "headers" });
+            assert!(diagnostic["elapsedMs"].is_u64());
+            if mode == "connect" { assert_eq!(diagnostic["ioErrorKind"], "ConnectionRefused"); }
+            let saved = String::from_utf8(bytes).unwrap();
+            for private in ["simulated-url-secret", "simulated-auth-secret", "127.0.0.1", "/private", "Bearer"] {
+                assert!(!saved.contains(private));
+                assert!(!failure.message.contains(private));
+            }
+            if let Some(server) = server { server.join().unwrap(); }
+        }
     }
     fn png() -> Vec<u8> {
         let image = DynamicImage::new_rgb8(12, 16);

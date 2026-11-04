@@ -25,6 +25,44 @@ pub(super) fn combined_fixture(
 }
 
 #[test]
+fn source_index_thinking_is_frozen_only_for_new_explicit_runs_without_resetting_old_quota() {
+    let provider=Provider::start(Scenario::Clean);
+    let (_dir,store,mut model,mut record)=combined_fixture(&provider);
+    let setting=|effort:&str|json!({"profileId":"processor","provider":"deepseek","model":"deepseek-flash","reasoningEffort":effort});
+    let mut thinking=json!({"sourceParsing":setting("high"),"teachingGeneration":setting("high"),"teachingReview":null});
+    model.save(&json!({"expectedRevision":model.public_settings()["revision"],"profiles":[
+        {"id":"processor","name":"模拟处理","baseUrl":"https://api.deepseek.com","model":"deepseek-flash","apiKey":"simulated-processing-key"},
+        {"id":"reviewer","name":"模拟复核","baseUrl":"https://dashscope.aliyuncs.com/compatible-mode/v1","model":"qwen-flash","apiKey":"simulated-review-key"}],
+        "importRoleThinking":thinking})).unwrap();
+    record["importId"]=json!("simulated-old-source-thinking");
+    record.as_object_mut().unwrap().remove("accuracyRunId");
+    initialize_run(&store,&model,&mut record).unwrap();
+    let old=run_for(&store,&record).unwrap();
+    assert!(old["strategy"]["bindings"].get("sourceIndexing").is_none());
+    thinking["sourceIndexing"]=setting("low");
+    model.save(&json!({"expectedRevision":model.public_settings()["revision"],"importRoleThinking":thinking})).unwrap();
+    super::super::verify_accuracy_source_configuration(&store,&model,&record).unwrap();
+    let bound=bind_model(&store,&model,&record).unwrap();
+    assert_eq!(bound.public_settings()["effectiveImportRoles"]["sourceParsing"]["reasoningEffort"],"high");
+    assert_eq!(bound.import_source_index_model().unwrap().public_settings()["reasoningEffort"],"high");
+    initialize_run(&store,&model,&mut record).unwrap();
+    assert_eq!(run_for(&store,&record).unwrap(),old);
+    record["importId"]=json!("simulated-new-source-thinking");
+    record.as_object_mut().unwrap().remove("accuracyRunId");
+    initialize_run(&store,&model,&mut record).unwrap();
+    let frozen=run_for(&store,&record).unwrap();
+    assert_eq!(frozen["strategy"]["roleSettings"]["sourceIndexing"]["reasoningEffort"],"low");
+    assert_eq!(frozen["strategy"]["roleSettings"]["sourceParsing"]["reasoningEffort"],"high");
+    assert_eq!(frozen["strategy"]["roleSettings"]["teachingGeneration"]["reasoningEffort"],"high");
+    thinking["sourceIndexing"]=setting("high");
+    model.save(&json!({"expectedRevision":model.public_settings()["revision"],"importRoleThinking":thinking})).unwrap();
+    assert_eq!(super::super::verify_accuracy_source_configuration(&store,&model,&record).unwrap_err().code,"accuracy_configuration_changed");
+    assert_eq!(run_for(&store,&record).unwrap(),frozen);
+    assert_eq!(store::load_run(&store,s(&old,"id")).unwrap(),old);
+    assert!(provider.sent().is_empty(),"freezing and checking settings must never call a provider");
+}
+
+#[test]
 fn two_real_requests_use_only_processing_and_review_models_and_replay_without_blind_claims() {
     let provider = Provider::start(Scenario::Clean);
     let (_dir, mut store, model, mut record) = combined_fixture(&provider);

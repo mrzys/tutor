@@ -357,6 +357,11 @@ fn request_body(
     Ok(body)
 }
 
+#[cfg(test)]
+pub(super) fn combined_generation_test_body(client: &ModelClient) -> Value {
+    request_body(client, AccuracyTask::CombinedGeneration, &json!({"questionId":"simulated-stage-thinking"}), &[]).unwrap()
+}
+
 fn sanitize(client: &ModelClient, value: &str) -> (String, bool) {
     let mut text = value.to_owned();
     for secret in client.diagnostic_secrets() {

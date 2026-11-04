@@ -1,3 +1,4 @@
+import { accuracyGuidance } from "./import-accuracy-guidance";
 import { For, Show, createMemo, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 import { operationId, request } from "./bridge";
@@ -79,10 +80,10 @@ export function ImportAccuracyStatus(props: { question: any; importId: string; r
     <For each={accuracyDomains}>{domain => <div class="import-teaching-actions">
       <strong>{domain.label}</strong><span>{accuracyStatus(props.question, domain.id)?.label || "尚未完成核对"}</span>
       <Show when={accuracyStatus(props.question, domain.id)?.reason && accuracyStatus(props.question, domain.id)?.reason !== accuracyStatus(props.question, domain.id)?.label}><span class="muted"><ReviewMessage text={accuracyStatus(props.question, domain.id)?.reason} /></span></Show>
-      <Show when={accuracyCanReviewDomain(props.question, domain.id)}><button type="button" class="text-button" disabled={props.disabled || saving()} onClick={() => begin("review", domain.id)}>人工核对{domain.label}</button></Show>
+      <Show when={accuracyGuidance(props.question)?.kind !== "technical" && accuracyCanReviewDomain(props.question, domain.id)}><button type="button" class="text-button" disabled={props.disabled || saving()} onClick={() => begin("review", domain.id)}>人工核对{domain.label}</button></Show>
     </div>}</For>
-    <Show when={findings().length}><details><summary>具体问题（{findings().length}）</summary>
-      <For each={findings()}>{finding => <div><p><strong>{accuracyDomainLabel(finding.domain)}<Show when={accuracyFieldLabel(finding.fieldPath)}> · {accuracyFieldLabel(finding.fieldPath)}</Show>：</strong><ReviewMessage text={finding.message} /></p>
+    <Show when={findings().length}><details data-accuracy-findings><summary>具体问题（{findings().length}）</summary>
+      <For each={findings()}>{finding => <div><p><strong>{finding.domain === "process" ? "处理异常" : accuracyDomainLabel(finding.domain)}<Show when={accuracyFieldLabel(finding.fieldPath)}> · {accuracyFieldLabel(finding.fieldPath)}</Show>：</strong><ReviewMessage text={finding.message} /></p>
         <Show when={finding.basis}><p class="muted">核对依据：<ReviewMessage text={finding.basis} /></p></Show>
       </div>}</For>
     </details></Show>
@@ -103,10 +104,10 @@ export function ImportAccuracyStatus(props: { question: any; importId: string; r
       <button type="button" class="secondary" disabled={!canSaveScope()} onClick={saveScope}>{saving() ? "保存中…" : "保存发布范围"}</button>
     </details>
     <Show when={!open() && failure()}><ErrorBanner message={failure()} /></Show>
-    <Show when={budget()}>{value => <details><summary>额度与处理记录 · {value().calls}</summary>
+    <Show when={budget()}>{value => <details data-processing-records><summary>额度与处理记录 · {value().calls}</summary>
       <p class="muted">当前阶段：{overall().stageLabel}</p><p class="muted">{value().input}</p><p class="muted">{value().output}</p><p class="muted">{value().unknown}</p><p class="muted">{value().time}</p>
     </details>}</Show>
-    <Show when={props.question?.accuracy?.canRepair === true}><div class="import-teaching-actions"><button type="button" class="secondary" disabled={props.disabled || saving()} onClick={() => begin("repair")}>按具体问题修订一次</button></div></Show>
+    <Show when={accuracyGuidance(props.question)?.canRepair === true}><div class="import-teaching-actions"><button type="button" class="secondary" disabled={props.disabled || saving()} onClick={() => begin("repair")}>按具体问题修订一次</button></div></Show>
     <Show when={open() && draft()}>{value => <Portal><div class="import-accuracy-dialog"><Modal title={draft()!.kind === "review" ? `人工核对${accuracyDomainLabel(draft()!.domain)}` : "按具体问题修订一次"} busy={saving()} onClose={() => { if (!saving()) setOpen(false); }}
       footer={<><button type="button" class="secondary" disabled={saving()} onClick={() => setOpen(false)}>返回阅读</button><button type="button" class="primary" disabled={!canSubmit()} onClick={() => submit()}>{saving() ? "保存中…" : draft()!.kind === "review" ? "保存实际核对" : "发起一次修订"}</button></>}>
       <form onSubmit={submit}>

@@ -33,8 +33,12 @@ pub(super) fn validate_configuration(model: &ModelClient) -> AppResult<()> {
 pub(super) fn strategy_snapshot(model: &ModelClient) -> AppResult<Value> {
     validate_configuration(model)?;
     let settings = model.public_settings();
-    let role_settings = json!({"sourceParsing":settings["effectiveImportRoles"]["sourceParsing"],"teachingGeneration":settings["effectiveImportRoles"]["teachingGeneration"],"teachingReview":settings["effectiveImportRoles"]["teachingReview"]});
-    let bindings = json!({"sourceParsing":model.import_source_model()?.import_execution_identity()?,"teachingGeneration":model.import_generator()?.import_execution_identity()?,"teachingReview":model.import_teaching_reviewer()?.import_execution_identity()?});
+    let mut role_settings = json!({"sourceParsing":settings["effectiveImportRoles"]["sourceParsing"],"teachingGeneration":settings["effectiveImportRoles"]["teachingGeneration"],"teachingReview":settings["effectiveImportRoles"]["teachingReview"]});
+    let mut bindings = json!({"sourceParsing":model.import_source_model()?.import_execution_identity()?,"teachingGeneration":model.import_generator()?.import_execution_identity()?,"teachingReview":model.import_teaching_reviewer()?.import_execution_identity()?});
+    if model.source_index_thinking_explicit() {
+        role_settings["sourceIndexing"] = settings["effectiveImportRoles"]["sourceIndexing"].clone();
+        bindings["sourceIndexing"] = model.import_source_index_model()?.import_execution_identity()?;
+    }
     let rubric: Value =
         serde_json::from_str(include_str!("../../../../resources/difficulty-rubric.json"))?;
     Ok(

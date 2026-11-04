@@ -21,7 +21,6 @@
 .model-catalog-actions button { min-height: 44px; }
 .model-catalog-actions > span, .model-catalog-help { font-size: var(--font-small); line-height: 1.75; }
 .model-catalog-help { margin: -10px 0 20px; }
-.model-catalog-search { margin-bottom: 18px; }
 .settings-select-value, .settings-select-option-content > span { min-width: 0; overflow-wrap: anywhere; }
 .settings-reasoning-help { margin: -10px 0 20px; font-size: var(--font-small); line-height: 1.75; }
 .model-profile-name { margin: 24px 0; font-size: var(--font-small); }
@@ -80,6 +79,11 @@
 .settings-select-trigger:disabled { color: var(--muted); cursor: not-allowed; }
 .settings-select-trigger svg { transition: transform 120ms; }
 .settings-select-trigger svg.is-open { transform: rotate(180deg); }
+.settings-search-combobox { position: relative; }
+.settings-page .settings-search-combobox input { width: 100%; min-height: 44px; padding-right: 44px; }
+.settings-search-combobox > svg { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); pointer-events: none; transition: transform 120ms; }
+.settings-search-combobox > svg.is-open { transform: translateY(-50%) rotate(180deg); }
+.settings-select-empty { margin: 0; padding: 14px 12px; font-size: var(--font-small); color: var(--muted); line-height: 1.7; }
 .settings-select-options { position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: 0; padding: 6px; border: 1px solid var(--control-border); border-radius: var(--control-radius); background: var(--surface); max-height: 256px; overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; }
 .settings-select-options > button { width: 100%; min-height: 64px; padding: 10px 12px; justify-content: space-between; text-align: left; border-radius: var(--control-radius); }
 .settings-select-options > button.is-focused { background: var(--surface-hover); }
@@ -92,6 +96,12 @@
 .settings-select-copy { min-width: 0; display: grid; gap: 3px; }
 .settings-select-copy > small { color: var(--muted); font-size: var(--font-small); line-height: 1.55; white-space: normal; }
 .settings-page .model-purpose-settings { margin-top: 22px; }
+.model-setup-guide { margin-top: 22px; padding: 20px; border: 1px solid var(--line); border-radius: var(--surface-radius); }
+.model-setup-guide h2 { margin: 0; font-size: 16px; font-weight: 600; }
+.model-setup-guide p { margin: 8px 0 16px; font-size: var(--font-small); line-height: 1.75; }
+.model-setup-guide button { min-height: 44px; gap: 6px; }
+.model-setup-actions { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.settings-page .settings-main { scroll-padding-block: 20px 160px; }
 .model-purpose-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .model-purpose-heading h2 { margin: 0; font-size: 16px; font-weight: 600; }
 .model-purpose-heading p { margin: 5px 0 0; font-size: var(--font-small); }
@@ -103,6 +113,8 @@
 .model-purpose-card-heading h3 { margin: 0; font-size: 15px; font-weight: 600; white-space: nowrap; }
 .model-purpose-card-heading p { margin: 0; font-size: var(--font-small); line-height: 1.6; }
 .model-purpose-controls { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.model-purpose-controls.model-processing-controls { grid-template-columns: minmax(0, 1fr); }
+.model-processing-thinking { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .model-purpose-controls .settings-field-title { font-size: var(--font-small); margin-bottom: 7px; }
 .model-purpose-controls .settings-select-trigger { height: 64px; }
 .model-purpose-controls .settings-select-trigger:disabled { opacity: 1; color: var(--muted); }
@@ -162,6 +174,8 @@
   .model-purpose-card-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
 }
 @media (max-width: 700px) {
+  .settings-model-select.has-detail .settings-select-trigger, .model-purpose-controls .settings-select-trigger { height: auto; min-height: 64px; }
+  .settings-select-trigger .settings-select-copy > span, .settings-select-trigger .settings-select-copy > small { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
   .settings-page .settings-nav { flex-wrap: nowrap; overflow-x: auto; }
   .settings-page .settings-nav button { flex-shrink: 0; padding-inline: 6px; gap: 5px; font-size: 13px; }
   .settings-page .settings-nav svg { width: 16px; height: 16px; }
@@ -179,6 +193,7 @@
   .model-workspace-toolbar > button { padding-inline: 10px; }
   .model-purpose-item { padding: 16px; }
   .model-purpose-controls, .model-general-settings { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .model-processing-thinking { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .model-mode-switch { display: flex; }
   .model-mode-switch button { flex: 1; }
   .settings-page .model-settings-footer { bottom: -28px; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
@@ -201,4 +216,4 @@
 @media (max-width: 600px) {
   .settings-import-context, .model-import-readiness { padding: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .settings-select-trigger svg, .settings-developer-switch > span:first-child::before { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .settings-select-trigger svg, .settings-search-combobox > svg, .settings-developer-switch > span:first-child::before { transition: none; } }
